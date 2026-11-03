@@ -5,7 +5,7 @@
 </style></head><body><main><header><div><h1>Project6581</h1><p>SID Studio · classic C64 mono patch · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary">Enable authentic SID</button><button id="panic">Stop all</button></div></header>
 <div class="panel controls"><label>Chip character <select id="chip"><option value="6581">MOS 6581</option><option value="8580">MOS 8580</option></select></label><label>Master volume <input id="volume" type="range" min="0" max="100" value="55"></label><label>Filter cutoff <input id="cutoff" type="range" min="50" max="10000" value="7000"></label><label>Resonance <input id="resonance" type="range" min="0" max="100" value="10"></label><label>Filter mode <select id="mode"><option value="lowpass">Low-pass</option><option value="bandpass">Band-pass</option><option value="highpass">High-pass</option></select></label></div>
 <p id="sidEngineStatus" role="status">Audio disabled. Enable authentic SID to play.</p><p id="sidPlaybackStatus" role="status" aria-live="off">SID playback diagnostics appear here after enabling authentic SID.</p><div id="voices" class="voices"></div>
-<section class="panel"><h2>Arpeggiator</h2><div class="controls"><label>Arp <input id="arpOn" type="checkbox"></label><label>Latch <input id="arpLatch" type="checkbox"></label><label>Pattern <select id="arpPattern"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label><label>Rate <select id="arpRate"><option value="1">1/4</option><option value="2">1/8</option><option value="4" selected>1/16</option><option value="8">1/32</option></select></label><label>BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label><button id="arpClear">Clear latch</button></div><small id="arpStatus">Arp off</small></section><section class="panel"><h2>Keyboard</h2><p>Touch and hold to play. Monophonic C64-style patch, with last-note priority.</p><div id="keyboard" class="keyboard"></div></section>
+<section class="panel"><h2>Game Arp</h2><div class="controls"><label>Enabled <input id="gameArpOn" type="checkbox" checked></label><label>Style <select id="gameArpStyle"><option value="action">Action</option><option value="adventure">Adventure</option><option value="arcade">Arcade</option></select></label></div><small>Hold a key to play a repeating C64-style sequence. Uses the rate, BPM and latch controls below.</small></section><section class="panel"><h2>Arpeggiator</h2><div class="controls"><label>Arp <input id="arpOn" type="checkbox"></label><label>Latch <input id="arpLatch" type="checkbox"></label><label>Pattern <select id="arpPattern"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label><label>Rate <select id="arpRate"><option value="1">1/4</option><option value="2">1/8</option><option value="4" selected>1/16</option><option value="8">1/32</option></select></label><label>BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label><button id="arpClear">Clear latch</button></div><small id="arpStatus">Arp off</small></section><section class="panel"><h2>Keyboard</h2><p>Touch and hold to play. Monophonic C64-style patch, with last-note priority.</p><div id="keyboard" class="keyboard"></div></section>
 <footer><p id="buildInfo">Project6581 v__BUILD_VERSION__ · Built __BUILD_TIMESTAMP__ (UTC)</p><strong>Engine status:</strong> Select “Enable authentic SID” to use reSIDfp hardware emulation. No prototype audio engine is available. In authentic mode, live PWM and voice-control updates during held notes are not yet supported.</footer></main>
 <script>
 const $=id=>document.getElementById(id);let sidController=null,sidAudio=null;let sidKeys=0;
@@ -14,22 +14,45 @@ const ranges=[['attack','Attack',0,2,.01],['decay','Decay',0,3,.01],['sustain','
 settings.forEach((s,i)=>{const el=document.createElement('section');el.className='panel';el.innerHTML='<h2>SID voice</h2><label>Enabled <input type="checkbox" data-prop="enabled" checked></label><label>Waveform <select data-prop="wave"><option value="triangle">Triangle</option><option value="sawtooth">Sawtooth</option><option value="square">Pulse</option><option value="noise">Noise</option></select></label>'+ranges.map(([p,name,min,max,step])=>'<label>'+name+' <input data-prop="'+p+'" type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+s[p]+'"><output>'+s[p]+'</output></label>').join('');$('voices').append(el);el.querySelector('select').value=s.wave;el.querySelectorAll('[data-prop]').forEach(inp=>inp.addEventListener('input',()=>{s[inp.dataset.prop]=inp.type==='checkbox'?inp.checked:inp.type==='range'?Number(inp.value):inp.value;if(inp.nextElementSibling?.tagName==='OUTPUT')inp.nextElementSibling.textContent=inp.value;}));});
 function play(note){if(!sidController)return;if(!settings[0].enabled)return;sidController.noteOn(note,()=>settings[0]);}
 function stop(note){sidController?.noteOff(note)}
-function panic(){sidController?.panic()}
+function panic(){gameStop();sidController?.panic()}
 $('panic').addEventListener('click',panic);window.addEventListener('blur',panic);
 const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 const arp={held:new Set(),latched:new Set(),timer:null,index:0,step:0,last:null};
+const gamePatterns={action:[0,12,7,12,0,7,12,19],adventure:[0,3,7,12,7,3,10,7],arcade:[0,12,0,7,12,7,3,7]};
+const game={held:[],latched:null,timer:null,last:null,step:0};
+const gameEnabled=()=>$('gameArpOn').checked;
+function gameStop(){if(game.timer!==null){clearInterval(game.timer);game.timer=null}if(game.last!==null){stop(game.last);game.last=null}}
+function gameRoot(){return game.held.length?game.held[game.held.length-1]:$('arpLatch').checked?game.latched:null}
+function gameTick(){
+  const root=gameRoot();if(root===null){gameStop();$('arpStatus').textContent='No notes held';return}
+  if(game.last!==null)stop(game.last);
+  const pattern=gamePatterns[$('gameArpStyle').value]??gamePatterns.action;
+  game.last=Math.min(127,root+pattern[game.step++%pattern.length]);
+  play(game.last);
+  $('arpStatus').textContent='Game Arp · '+$('gameArpStyle').selectedOptions[0].text+' · '+names[root%12]+(Math.floor(root/12)-1);
+}
+function gameRestart(){
+  gameStop();game.step=0;
+  if(!gameEnabled())return;
+  if(gameRoot()===null){$('arpStatus').textContent='Game Arp ready';return}
+  gameTick();
+  const ms=60000/Number($('arpBpm').value)/Number($('arpRate').value);
+  game.timer=setInterval(gameTick,ms);
+}
 const arpEnabled=()=>$('arpOn').checked;
 function arpNotes(){return [...($('arpLatch').checked?arp.latched:arp.held)].sort((a,b)=>a-b)}
 function arpStopVoice(){if(arp.last!==null){stop(arp.last);arp.last=null}}
 function arpTick(){const notes=arpNotes();arpStopVoice();if(!notes.length){$('arpStatus').textContent='No notes held';return}let pattern=$('arpPattern').value,seq=pattern==='down'?[...notes].reverse():pattern==='updown'&&notes.length>1?[...notes,...notes.slice(1,-1).reverse()]:notes;let note=pattern==='random'?notes[Math.floor(Math.random()*notes.length)]:seq[arp.step++%seq.length];arp.last=note;play(note);$('arpStatus').textContent='Playing '+names[note%12]+(Math.floor(note/12)-1)+' · '+notes.length+' notes';}
-function arpRestart(){if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.step=0;if(arpEnabled()){panic();arpTick();const ms=60000/Number($('arpBpm').value)/Number($('arpRate').value);arp.timer=setInterval(arpTick,ms)}else{$('arpStatus').textContent='Arp off';arp.latched.clear();}}
-function keyDown(note){if(sidController){sidKeys++;$('sidPlaybackStatus').textContent='SID key presses: '+sidKeys+' · waiting for audio samples…'}if(!arpEnabled()){play(note);return}if(!arp.held.has(note)){if($('arpLatch').checked){if(arp.held.size===0)arp.latched.clear();arp.latched.add(note)}arp.held.add(note)}if(arp.timer===null)arpRestart();}
-function keyUp(note){if(!arpEnabled()){stop(note);return}arp.held.delete(note);if(!$('arpLatch').checked&&arp.held.size===0){arpStopVoice();$('arpStatus').textContent='No notes held';}}
+function arpRestart(){if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.step=0;if(arpEnabled()&&!gameEnabled()){panic();arpTick();const ms=60000/Number($('arpBpm').value)/Number($('arpRate').value);arp.timer=setInterval(arpTick,ms)}else{$('arpStatus').textContent='Arp off';arp.latched.clear();}}
+function keyDown(note){if(sidController){sidKeys++;$('sidPlaybackStatus').textContent='SID key presses: '+sidKeys+' · waiting for audio samples…'}if(gameEnabled()){if(!game.held.includes(note))game.held.push(note);game.latched=note;gameRestart();return}if(!arpEnabled()){play(note);return}if(!arp.held.has(note)){if($('arpLatch').checked){if(arp.held.size===0)arp.latched.clear();arp.latched.add(note)}arp.held.add(note)}if(arp.timer===null)arpRestart();}
+function keyUp(note){if(gameEnabled()){game.held=game.held.filter(n=>n!==note);gameRestart();return}if(!arpEnabled()){stop(note);return}arp.held.delete(note);if(!$('arpLatch').checked&&arp.held.size===0){arpStopVoice();$('arpStatus').textContent='No notes held';}}
+$('gameArpOn').addEventListener('change',()=>{game.held=[];game.latched=null;gameStop();arpRestart();$('arpStatus').textContent=gameEnabled()?'Game Arp ready':'Game Arp off'});
+$('gameArpStyle').addEventListener('change',gameRestart);
 $('arpOn').addEventListener('change',()=>{arp.held.clear();arp.latched.clear();arpRestart()});
-$('arpLatch').addEventListener('change',()=>{arp.latched.clear();if($('arpLatch').checked)arp.held.forEach(n=>arp.latched.add(n));arpRestart()});
-['arpPattern','arpRate'].forEach(id=>$(id).addEventListener('change',arpRestart));
-$('arpBpm').addEventListener('input',()=>{$('bpmValue').textContent=$('arpBpm').value;arpRestart()});
-$('arpClear').addEventListener('click',()=>{arp.latched.clear();arp.held.clear();arpStopVoice();$('arpStatus').textContent='Latch cleared'});
+$('arpLatch').addEventListener('change',()=>{arp.latched.clear();if(gameEnabled()){gameRestart();return}if($('arpLatch').checked)arp.held.forEach(n=>arp.latched.add(n));arpRestart()});
+['arpPattern','arpRate'].forEach(id=>$(id).addEventListener('change',()=>gameEnabled()?gameRestart():arpRestart()));
+$('arpBpm').addEventListener('input',()=>{$('bpmValue').textContent=$('arpBpm').value;if(gameEnabled())gameRestart();else arpRestart()});
+$('arpClear').addEventListener('click',()=>{arp.latched.clear();arp.held.clear();game.latched=null;game.held=[];gameStop();arpStopVoice();$('arpStatus').textContent='Latch cleared'});
 const keys=new Map();for(let n=48;n<=72;n++){let k=document.createElement('button');k.className='key'+(names[n%12].includes('♯')?' black':'');k.textContent=names[n%12]+(Math.floor(n/12)-1);k.setAttribute('aria-label','Play '+k.textContent);k.addEventListener('pointerdown',e=>{e.preventDefault();k.setPointerCapture(e.pointerId);k.classList.add('down');keyDown(n)});const end=()=>{k.classList.remove('down');keyUp(n)};k.addEventListener('pointerup',end);k.addEventListener('pointercancel',end);k.addEventListener('lostpointercapture',end);$('keyboard').append(k);keys.set(n,k)}
 const layout='awsedftgyhujkolp;';window.addEventListener('keydown',e=>{if(e.repeat||e.target.matches('input,select'))return;let idx=layout.indexOf(e.key.toLowerCase());if(idx>=0&&idx<25){e.preventDefault();let n=48+idx;keys.get(n)?.classList.add('down');keyDown(n)}});window.addEventListener('keyup',e=>{let idx=layout.indexOf(e.key.toLowerCase());if(idx>=0&&idx<25){let n=48+idx;keys.get(n)?.classList.remove('down');keyUp(n)}});
 
