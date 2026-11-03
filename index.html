@@ -79,7 +79,7 @@ async function startSid(){
     // Attach a rejection handler immediately, including WASM-fetch failures.
     void ready.catch(()=>{});
     let timeout;
-    const audio=await createReSidFpAudio({model:Number($('chip').value),onContext:context=>{sidContext=context},onStatus:event=>{
+    const audio=await createReSidFpAudio({model:Number($('chip').value),onContext:context=>{sidContext=context},onProgress:message=>{status.textContent=message},onStatus:event=>{
       if(event.type==='ready'&&event.renderer)resolveReady();
       if(event.type==='error')rejectReady(new Error(event.message));
       if(event.type==='audio-stats'){
@@ -107,7 +107,7 @@ $('sidStart').addEventListener('click',startSid);
 function unlockSidAudio(){
   if(!sidContext||sidContext.state!=='suspended')return;
   // Call resume synchronously inside the trusted gesture for iPad Safari.
-  sidContext.resume().then(()=>{$('sidEngineStatus').textContent='Authentic reSIDfp active · monophonic SID voice.'}).catch(err=>{$('sidEngineStatus').textContent='Tap again to enable audio: '+err.message});
+  sidContext.resume().then(()=>{if(sidAudio)$('sidEngineStatus').textContent='Authentic reSIDfp active · monophonic SID voice.'}).catch(err=>{$('sidEngineStatus').textContent='Tap again to enable audio: '+err.message});
 }
 document.addEventListener('pointerdown',unlockSidAudio,{capture:true});
 document.addEventListener('keydown',unlockSidAudio,{capture:true});
