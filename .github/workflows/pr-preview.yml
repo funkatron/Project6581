@@ -1,0 +1,83 @@
+name: Build PR preview
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: preview-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    # Do not execute untrusted fork PR code with a write-capable token.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: mymindstorm/setup-emsdk@v14
+        if: github.event.action != 'closed'
+        with:
+          version: '4.0.15'
+      - name: Install SID build dependencies
+        if: github.event.action != 'closed'
+        run: sudo apt-get update && sudo apt-get install -y autoconf automake libtool pkg-config
+      - name: Build and test authentic SID
+        if: github.event.action != 'closed'
+        run: |
+          npm test
+          bash scripts/build-residfp.sh
+          test -s dist/residfp.wasm
+          node scripts/check-wasm-imports.mjs
+          node scripts/smoke-test-sid.mjs
+          node scripts/stamp-build.mjs
+      - name: Stage preview content
+        if: github.event.action != 'closed'
+        run: |
+          mkdir -p "$RUNNER_TEMP/pr-content"
+          cp index.html "$RUNNER_TEMP/pr-content/"
+          cp -R src dist "$RUNNER_TEMP/pr-content/"
+          printf '%s\n' 'PR #${{ github.event.pull_request.number }} preview' > "$RUNNER_TEMP/pr-content/PREVIEW.txt"
+      - name: Publish preview to preview-assets branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_ACTION: ${{ github.event.action }}
+        run: |
+          set -euo pipefail
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global --add safe.directory "$RUNNER_TEMP/preview-assets"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads origin preview-assets >/dev/null 2>&1; then
+            git fetch origin preview-assets
+            git worktree add -B preview-assets "$RUNNER_TEMP/preview-assets" FETCH_HEAD
+          else
+            git worktree add --detach "$RUNNER_TEMP/preview-assets"
+            cd "$RUNNER_TEMP/preview-assets"
+            git checkout --orphan preview-assets
+            git rm -rf . || true
+            git clean -fdx
+            touch .nojekyll
+          fi
+          cd "$RUNNER_TEMP/preview-assets"
+          if [ "$PR_ACTION" = closed ]; then
+            git rm -r -f "pr-${PR_NUMBER}" 2>/dev/null || true
+          else
+            rm -rf "pr-${PR_NUMBER}"
+            mkdir -p "pr-${PR_NUMBER}"
+            cp -R "$RUNNER_TEMP/pr-content/." "pr-${PR_NUMBER}/"
+          fi
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "ci: update preview for PR #${PR_NUMBER} (${PR_ACTION})"
+            git push origin preview-assets
+          fi
+      - name: Request Pages rebuild with updated previews
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY"
