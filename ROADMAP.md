@@ -20,3 +20,18 @@
 - [ ] Verify latency improvements with before/after measurements on iPad Safari and desktop.
 
 **Completion condition:** Demonstrated lower median and tail key-to-sound latency under equivalent test conditions, with reliable SID-only audio and no regression in arpeggiator timing.
+
+## Planned: three assignable LFOs
+
+**Goal:** Add three independent low-frequency oscillators for modulation of synthesizer controls while preserving authentic SID audio generation.
+
+- [ ] Provide **LFO 1**, **LFO 2**, and **LFO 3**, each with independent enable, rate, depth, and waveform controls.
+- [ ] Offer selectable modulation waveforms: sine, triangle, sawtooth, square, and sample-and-hold/random. These are modulation shapes, not additional SID audio oscillator waveforms.
+- [ ] Allow each LFO to target any applicable continuous slider parameter, including filter cutoff, resonance, volume, detune, ADSR, pulse width, PWM depth, and PWM rate.
+- [ ] Permit multiple LFOs to target the same parameter with predictable summation, clamping, and clear display of the base value versus modulation.
+- [ ] Ensure modulation updates do not permanently overwrite manually selected slider values.
+- [ ] Respect waveform-dependent controls: pulse-related modulation should have no audible effect unless the Pulse waveform is active.
+- [ ] Keep the interface usable on iPad, with compact routing controls and no unnecessary panel scrolling.
+- [ ] Test LFO waveform shapes, timing, routing, combined modulation, and stop/reset behavior; evaluate AudioWorklet-rate scheduling where browser timers would introduce audible stepping.
+
+**Completion condition:** Three LFOs can run simultaneously, independently modulate selected sliders, and stop cleanly without changing saved base control values or compromising SID playback.
