@@ -33,3 +33,22 @@ test('pulse modulation is inactive for non-pulse waveforms',()=>{
 test('all intended continuous slider targets are routable',()=>{
  for(const target of ['volume','cutoff','resonance','detune','attack','decay','sustain','release','pulse','pwmDepth','pwmRate'])assert.ok(LFO_TARGETS[target]);
 });
+
+test('disabling or retargeting an LFO restores every former target to its base value',()=>{
+ const base={cutoff:5000,resonance:40,volume:50,pulse:45};
+ const lfo={enabled:true,wave:'square',phase:0,rate:1,depth:.5,target:'pulse'};
+ assert.notEqual(modulate(base,[lfo],0).pulse,base.pulse);
+ lfo.enabled=false;
+ assert.deepEqual(modulate(base,[lfo],0),base);
+ lfo.enabled=true;
+ lfo.target='cutoff';
+ const changed=modulate(base,[lfo],0);
+ assert.equal(changed.pulse,base.pulse);
+ assert.notEqual(changed.cutoff,base.cutoff);
+ lfo.target='resonance';
+ assert.equal(modulate(base,[lfo],0).cutoff,base.cutoff);
+ lfo.target='volume';
+ assert.equal(modulate(base,[lfo],0).resonance,base.resonance);
+ lfo.enabled=false;
+ assert.deepEqual(modulate(base,[lfo],0),base);
+});
