@@ -1,6 +1,6 @@
 // Invoke only after a user gesture on Safari (AudioContext unlock).
 export async function createReSidFpAudio({model=6581,onStatus=()=>{}}={}){
-  const context=new AudioContext();
+  const context=new AudioContext({latencyHint:'interactive'});
   try {
     const version=Date.now().toString(36);
     await context.audioWorklet.addModule('./src/residfp-worklet.js?v='+version);
@@ -15,7 +15,20 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{}}={}){
     node.port.onmessage=({data})=>onStatus(data);
     node.port.postMessage({type:'load',bytes,model},[bytes]);
     await context.resume();
-    return {context,node,write:(register,value)=>node.port.postMessage({type:'write',register,value}),
-      close:async()=>{node.disconnect();await context.close()}};
+    // Group register writes from one key press into a single port message.
+    let pending=[],scheduled=false,closed=false;
+    const flush=()=>{
+      scheduled=false;
+      if(closed||!pending.length)return;
+      const writes=pending;pending=[];
+      node.port.postMessage({type:'writes',writes});
+    };
+    return {context,node,
+      write:(register,value)=>{
+        if(closed)return;
+        pending.push([register,value]);
+        if(!scheduled){scheduled=true;queueMicrotask(flush)}
+      },
+      close:async()=>{closed=true;pending=[];node.disconnect();await context.close()}};
   } catch(err){await context.close();throw err}
 }
