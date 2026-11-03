@@ -21,6 +21,17 @@ replacement = '''    filterSummer();
     filterVcrIds();'''
 s = s[:start] + replacement + s[end:]
 p.write_text(s)
+
+p = Path('vendor/libresidfp/src/FilterModelConfig8580.cpp')
+s = p.read_text()
+start = s.index('#ifdef HAVE_JTHREADS\\n    using sidThread = std::jthread;')
+end = s.index('\\n}', start)
+replacement = '''    filterSummer();
+    filterMixer();
+    filterGain();
+    filterResonance();'''
+s = s[:start] + replacement + s[end:]
+p.write_text(s)
 PY
 cd vendor/libresidfp
 autoreconf -fi
