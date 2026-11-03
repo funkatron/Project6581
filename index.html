@@ -76,6 +76,8 @@ async function startSid(){
       import('./src/create-residfp-audio.js?v=__BUILD_ID__'),import('./src/live-sid-controller.js?v=__BUILD_ID__')]);
     let resolveReady,rejectReady;
     const ready=new Promise((resolve,reject)=>{resolveReady=resolve;rejectReady=reject});
+    // Attach a rejection handler immediately, including WASM-fetch failures.
+    void ready.catch(()=>{});
     let timeout;
     const audio=await createReSidFpAudio({model:Number($('chip').value),onContext:context=>{sidContext=context},onStatus:event=>{
       if(event.type==='ready'&&event.renderer)resolveReady();
