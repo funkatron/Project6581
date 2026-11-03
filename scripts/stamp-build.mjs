@@ -1,0 +1,10 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+const {version}=JSON.parse(readFileSync('package.json','utf8'));
+if(!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version))throw Error('Invalid semantic version');
+const builtAt=new Date().toISOString();
+const buildId=version+'+'+builtAt.replace(/[-:.]/g,'');
+let html=readFileSync('index.html','utf8');
+if(!html.includes('__BUILD_VERSION__')||!html.includes('__BUILD_TIMESTAMP__'))throw Error('Missing build placeholders');
+html=html.replaceAll('__BUILD_VERSION__',version).replaceAll('__BUILD_TIMESTAMP__',builtAt).replaceAll('__BUILD_ID__',buildId);
+writeFileSync('index.html',html);
+console.log('Project6581',version,'built',builtAt);
