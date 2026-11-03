@@ -72,8 +72,14 @@ async function startSid(){
   sidStarting=true;button.disabled=true;$('sidSpinner').hidden=false;
   status.textContent='Loading authentic reSIDfp…';
   try{
-    const [{createReSidFpAudio},{LiveSidController}]=await Promise.all([
+    status.textContent='Loading SID JavaScript modules…';
+    let moduleTimeout;
+    const modules=Promise.all([
       import('./src/create-residfp-audio.js?v=__BUILD_ID__'),import('./src/live-sid-controller.js?v=__BUILD_ID__')]);
+    const [{createReSidFpAudio},{LiveSidController}]=await Promise.race([
+      modules,
+      new Promise((_,reject)=>{moduleTimeout=setTimeout(()=>reject(new Error('SID JavaScript module loading timed out after 15 seconds')),15000)})
+    ]).finally(()=>clearTimeout(moduleTimeout));
     let resolveReady,rejectReady;
     const ready=new Promise((resolve,reject)=>{resolveReady=resolve;rejectReady=reject});
     // Attach a rejection handler immediately, including WASM-fetch failures.
