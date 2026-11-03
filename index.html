@@ -2,10 +2,10 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#141923"><title>Project6581 | SID Studio</title>
 <style>
 :root{font-family:system-ui,-apple-system,sans-serif;color:#f2f3f7;background:#141923}*{box-sizing:border-box}body{margin:0;padding:clamp(12px,3vw,30px)}main{max-width:1050px;margin:auto}h1{margin:0}p,small{color:#aeb7c7}header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.panel{background:#202836;border:1px solid #394459;border-radius:14px;padding:16px;margin:14px 0}button,select{background:#35435b;color:white;border:1px solid #65728b;border-radius:8px;padding:11px;font:inherit;touch-action:manipulation}button:active{background:#5a6c88}button:focus-visible,input:focus-visible{outline:3px solid #f3ba5a}button.primary{background:#b46c28;color:white}.voices{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.voices .panel{margin:0}label{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px;margin:10px 0}input[type=range]{width:52%;accent-color:#f2ae60;touch-action:pan-x}.keyboard{display:flex;overflow-x:auto;min-height:170px;touch-action:none;user-select:none}.key{position:relative;flex:1 0 40px;min-width:40px;border-radius:0 0 7px 7px;background:#eee;color:#171717;border:1px solid #555;display:flex;align-items:end;justify-content:center;padding-bottom:12px}.key.black{background:#1c2534;color:white;height:105px;min-width:29px;flex:0 0 29px;margin:0 -14.5px;z-index:2;border:1px solid #728096}.key.down{background:#e8aa59;color:#171717}footer{margin-top:18px;font-size:12px;color:#aeb7c7}.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-</style></head><body><main><header><div><h1>Project6581</h1><p>SID Studio · three-voice synthesizer</p></div><div class="controls"><button id="start" class="primary">Enable audio</button><button id="panic">Stop all</button></div></header>
+</style></head><body><main><header><div><h1>Project6581</h1><p>SID Studio · three-voice prototype · authentic engine in development</p></div><div class="controls"><button id="start" class="primary">Enable audio</button><button id="panic">Stop all</button></div></header>
 <div class="panel controls"><label>Chip character <select id="chip"><option value="6581">MOS 6581</option><option value="8580">MOS 8580</option></select></label><label>Master volume <input id="volume" type="range" min="0" max="100" value="55"></label><label>Filter cutoff <input id="cutoff" type="range" min="50" max="10000" value="5000"></label><label>Resonance <input id="resonance" type="range" min="0" max="100" value="20"></label><label>Filter mode <select id="mode"><option value="lowpass">Low-pass</option><option value="bandpass">Band-pass</option><option value="highpass">High-pass</option></select></label></div>
 <div id="voices" class="voices"></div>
-<section class="panel"><h2>Arpeggiator</h2><div class="controls"><label>Arp <input id="arpOn" type="checkbox"></label><label>Latch <input id="arpLatch" type="checkbox"></label><label>Pattern <select id="arpPattern"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label><label>Rate <select id="arpRate"><option value="1">1/4</option><option value="2">1/8</option><option value="4" selected>1/16</option><option value="8">1/32</option></select></label><label>BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label><button id="arpClear">Clear latch</button></div><small id="arpStatus">Arp off</small></section><section class="panel"><h2>Authentic SID playback · reSIDfp</h2><p>Load a PSID or RSID tune to render through cycle-accurate 6581/8580 emulation. The live keyboard above continues using the prototype engine.</p><div class="controls"><label>SID file <input id="sidFile" type="file" accept=".sid"></label><label>Render seconds <select id="sidDuration"><option>15</option><option selected>30</option><option>60</option></select></label><button id="sidRender">Render authentic SID</button><button id="sidStop">Stop playback</button></div><p id="sidStatus" role="status">Select a .sid file to begin. Some RSID tunes require separately supplied C64 ROMs.</p></section><section class="panel"><h2>Keyboard</h2><p>Touch and hold to play. One note per voice, three notes maximum.</p><div id="keyboard" class="keyboard"></div></section>
+<section class="panel"><h2>Arpeggiator</h2><div class="controls"><label>Arp <input id="arpOn" type="checkbox"></label><label>Latch <input id="arpLatch" type="checkbox"></label><label>Pattern <select id="arpPattern"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label><label>Rate <select id="arpRate"><option value="1">1/4</option><option value="2">1/8</option><option value="4" selected>1/16</option><option value="8">1/32</option></select></label><label>BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label><button id="arpClear">Clear latch</button></div><small id="arpStatus">Arp off</small></section><section class="panel"><h2>Keyboard</h2><p>Touch and hold to play. One note per voice, three notes maximum.</p><div id="keyboard" class="keyboard"></div></section>
 <footer><strong>Engine status:</strong> This prototype uses Web Audio approximations (including a software-generated pulse oscillator with real-time PWM), not cycle-accurate SID emulation. Chip selection changes filter character only. Hardware-accurate 6581/8580 synthesis requires a reSIDfp-based engine.</footer></main>
 <script>
 const $=id=>document.getElementById(id);let ctx,filter,master,active=new Map(),order=[],counter=0;
@@ -36,34 +36,4 @@ $('arpBpm').addEventListener('input',()=>{$('bpmValue').textContent=$('arpBpm').
 $('arpClear').addEventListener('click',()=>{arp.latched.clear();arp.held.clear();arpStopVoice();$('arpStatus').textContent='Latch cleared'});
 const keys=new Map();for(let n=48;n<=72;n++){let k=document.createElement('button');k.className='key'+(names[n%12].includes('♯')?' black':'');k.textContent=names[n%12]+(Math.floor(n/12)-1);k.setAttribute('aria-label','Play '+k.textContent);k.addEventListener('pointerdown',e=>{e.preventDefault();k.setPointerCapture(e.pointerId);k.classList.add('down');keyDown(n)});const end=()=>{k.classList.remove('down');keyUp(n)};k.addEventListener('pointerup',end);k.addEventListener('pointercancel',end);k.addEventListener('lostpointercapture',end);$('keyboard').append(k);keys.set(n,k)}
 const layout='awsedftgyhujkolp;';window.addEventListener('keydown',e=>{if(e.repeat||e.target.matches('input,select'))return;let idx=layout.indexOf(e.key.toLowerCase());if(idx>=0&&idx<25){e.preventDefault();let n=48+idx;keys.get(n)?.classList.add('down');keyDown(n)}});window.addEventListener('keyup',e=>{let idx=layout.indexOf(e.key.toLowerCase());if(idx>=0&&idx<25){let n=48+idx;keys.get(n)?.classList.remove('down');keyUp(n)}});
-</script><script type="module">
-let renderedAudio=null;
-const status=document.getElementById('sidStatus');
-document.getElementById('sidRender').addEventListener('click',async()=>{
-const file=document.getElementById('sidFile').files?.[0];
-if(!file){status.textContent='Choose a .sid file first.';return}
-const button=document.getElementById('sidRender');button.disabled=true;
-let engine;
-try{
-status.textContent='Loading reSIDfp WebAssembly…';
-const {SidAudioEngine}=await import('https://esm.sh/libsidplayfp-wasm@1.0.1?bundle');
-engine=new SidAudioEngine({engine:'residfp'});
-const bytes=new Uint8Array(await file.arrayBuffer());
-await engine.loadSidBuffer(bytes);
-await engine.setEmulationConfig({sidModel:document.getElementById('chip').value==='6581'?'MOS6581':'MOS8580',forceSidModel:true});
-status.textContent='Rendering accurate SID audio…';
-const seconds=Number(document.getElementById('sidDuration').value);
-const pcm=await engine.renderSeconds(seconds);
-const sampleRate=engine.sampleRate||48000;
-const audioContext=new (window.AudioContext||window.webkitAudioContext)();
-await audioContext.resume();
-const frames=Math.floor(pcm.length/2);
-const buffer=audioContext.createBuffer(2,frames,sampleRate);
-for(let c=0;c<2;c++){const channel=buffer.getChannelData(c);for(let i=0;i<frames;i++)channel[i]=pcm[i*2+c]/32768}
-if(renderedAudio){try{renderedAudio.source.stop()}catch{}await renderedAudio.context.close()}
-const source=audioContext.createBufferSource();source.buffer=buffer;source.connect(audioContext.destination);source.start();renderedAudio={source,context:audioContext};
-status.textContent='Playing '+file.name+' · '+seconds+' seconds · reSIDfp ('+document.getElementById('chip').value+')';
-}catch(err){status.textContent='Could not render SID: '+(err?.message||String(err))}finally{engine?.dispose();button.disabled=false}
-});
-document.getElementById('sidStop').addEventListener('click',async()=>{if(renderedAudio){try{renderedAudio.source.stop()}catch{}await renderedAudio.context.close();renderedAudio=null}status.textContent='Playback stopped.'});
 </script></body></html>
