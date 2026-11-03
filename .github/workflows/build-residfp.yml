@@ -1,0 +1,25 @@
+name: Build authentic SID WASM
+on:
+  push:
+    paths:
+      - 'native/**'
+      - 'scripts/build-residfp.sh'
+      - '.github/workflows/build-residfp.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '4.0.15'
+      - run: sudo apt-get update && sudo apt-get install -y autoconf automake libtool pkg-config
+      - run: bash scripts/build-residfp.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: residfp-wasm
+          path: dist/residfp.wasm
