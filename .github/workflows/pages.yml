@@ -35,6 +35,18 @@ jobs:
       - run: node scripts/check-wasm-imports.mjs
       - run: node scripts/smoke-test-sid.mjs
       - run: node scripts/stamp-build.mjs
+      - name: Include published PR previews
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --heads origin preview-assets >/dev/null 2>&1; then
+            git fetch origin preview-assets
+            mkdir -p "$RUNNER_TEMP/preview-assets"
+            git archive FETCH_HEAD | tar -x -C "$RUNNER_TEMP/preview-assets"
+            for preview in "$RUNNER_TEMP"/preview-assets/pr-*; do
+              [ -d "$preview" ] || continue
+              cp -R "$preview" "./$(basename "$preview")"
+            done
+          fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
