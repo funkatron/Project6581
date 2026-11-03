@@ -42,8 +42,9 @@ int sid_init_stage() { return init_stage; }
 const char* sid_init_error() { return init_error; }
 void sid_write(int reg, int value) {
   // Chip-local registers are addressed in 0x20-byte banks.
+  if(reg<0)return;
   const int index=reg/0x20, local=reg%0x20;
-  if (index>=0 && index<3 && local<=0x18 && chips[index]) chips[index]->write(local,static_cast<uint8_t>(value));
+  if(index<3 && local<=0x18 && chips[index]) chips[index]->write(local,static_cast<uint8_t>(value));
 }
 int sid_render(int frames) {
   if (!chips[0] || frames < 1 || frames > 4096) return 0;
