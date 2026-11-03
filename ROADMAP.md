@@ -26,6 +26,7 @@
 **Goal:** Add three independent low-frequency oscillators for modulation of synthesizer controls while preserving authentic SID audio generation.
 
 - [ ] Provide **LFO 1**, **LFO 2**, and **LFO 3**, each with independent enable, rate, depth, and waveform controls.
+- [x] Implement and test the pure waveform evaluation and modulation-routing core (PR in progress; not connected to audio/UI).
 - [ ] Offer selectable modulation waveforms: sine, triangle, sawtooth, square, and sample-and-hold/random. These are modulation shapes, not additional SID audio oscillator waveforms.
 - [ ] Allow each LFO to target any applicable continuous slider parameter, including filter cutoff, resonance, volume, detune, ADSR, pulse width, PWM depth, and PWM rate.
 - [ ] Permit multiple LFOs to target the same parameter with predictable summation, clamping, and clear display of the base value versus modulation.
