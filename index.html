@@ -68,6 +68,7 @@ function updateSidFilter(){
 ['volume','cutoff','resonance','mode'].forEach(id=>$(id).addEventListener('input',updateSidFilter));
 async function startSid(){
   const button=$('sidStart'),status=$('sidEngineStatus');button.disabled=true;
+  if(sidAudio)return;
   status.textContent='Loading authentic reSIDfp…';
   try{
     const [{createReSidFpAudio},{LiveSidController}]=await Promise.all([
@@ -92,7 +93,7 @@ async function startSid(){
     if(Number.isFinite(base))parts.push('base '+(base*1000).toFixed(1)+' ms');
     if(Number.isFinite(output))parts.push('output '+(output*1000).toFixed(1)+' ms');
     $('sidLatencyStatus').textContent=parts.length?'Browser audio latency: '+parts.join(' / ')+' (not total key-to-sound latency)':'Browser audio latency: not reported.';
-    button.hidden=true;
+    button.hidden=true;button.disabled=false;
     if(audio.context.state==='suspended')status.textContent='SID ready · touch a key to unlock audio.';
     if(audio.context.state==='running')status.textContent='Authentic reSIDfp active · monophonic SID voice. Change chip model by reloading.';
   }catch(err){status.textContent='Authentic SID unavailable: '+(err.message||err)+'. No audio fallback is available.';button.disabled=false;button.hidden=false}
