@@ -7,7 +7,10 @@ test('patch for fixes and documentation',()=>{
   assert.equal(calculateVersion('0.1.0',['docs: beginner guide']),'0.1.1');
 });
 test('minor for features and reset patch',()=>{
-  assert.equal(calculateVersion('0.1.0',['fix: a','feat: b']),'0.2.0');
+  // git log returns newest first; the feature occurred after the fix.
+  assert.equal(calculateVersion('0.1.0',['feat: b','fix: a']),'0.2.0');
+  // A later fix should increment the patch after a feature.
+  assert.equal(calculateVersion('0.1.0',['fix: a','feat: b']),'0.2.1');
 });
 test('breaking changes stay pre-1.0 until explicitly promoted',()=>{
   assert.equal(calculateVersion('0.1.0',['feat!: change SID interface']),'0.2.0');
