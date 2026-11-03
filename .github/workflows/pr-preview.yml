@@ -2,6 +2,8 @@ name: Build PR preview
 on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
+    paths-ignore:
+      - '**/*.md'
 permissions:
   contents: write
   actions: write

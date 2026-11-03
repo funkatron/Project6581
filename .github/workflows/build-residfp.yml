@@ -6,6 +6,10 @@ on:
       - 'scripts/build-residfp.sh'
       - '.github/workflows/build-residfp.yml'
   pull_request:
+    paths:
+      - 'native/**'
+      - 'scripts/build-residfp.sh'
+      - '.github/workflows/build-residfp.yml'
   workflow_dispatch:
 permissions:
   contents: read
