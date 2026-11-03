@@ -11,7 +11,7 @@ extern "C" {
 int sid_init(int model, int sample_rate) {
   try {
     chip = std::make_unique<reSIDfp::SID>();
-    chip->setChipModel(model == 8580 ? reSIDfp::MOS8580 : reSIDfp::MOS6581);
+    chip->setChipModel(model == 8580 ? reSIDfp::CSG8580 : reSIDfp::MOS6581);
     chip->setSamplingParameters(985248.0, reSIDfp::DECIMATE, sample_rate);
     chip->reset();
     chip->write(0x18,0x0f);
