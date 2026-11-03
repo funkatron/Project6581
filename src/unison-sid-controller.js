@@ -5,7 +5,7 @@ import {SidRegisters} from './sid-registers.js';
 export class UnisonSidController {
   constructor(write,{voiceCount=1,detune=0}={}){
     this.chips=Array.from({length:3},(_,chip)=>new SidRegisters((reg,value)=>write(chip*0x20+reg,value)));
-    this.voiceCount=voiceCount;this.detune=detune;this.held=[];this.current=null;this.settings=null;
+    this.voiceCount=1;this.detune=0;this.held=[];this.current=null;this.settings=null;this.configure({voiceCount,detune});
   }
   configure({voiceCount=this.voiceCount,detune=this.detune}={}){
     const count=Math.max(1,Math.min(8,Math.round(Number(voiceCount)||1)));
