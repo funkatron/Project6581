@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101721"><title>Project6581 | SID Studio</title>
 <style>
 :root{font-family:system-ui,-apple-system,sans-serif;color:#f3f5fa;background:#101721;color-scheme:dark}
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}body{height:100dvh}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}
 body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 main{height:100%;max-width:1400px;margin:auto;padding:clamp(8px,1.5vw,18px);display:grid;grid-template-rows:auto auto minmax(0,1fr) auto auto;gap:8px;overflow:hidden}
 header{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
@@ -36,7 +36,7 @@ input[type=checkbox]{width:22px;height:22px;accent-color:#eaa75d}
 .key.down{background:#e8a759;color:#151b24}
 footer{font-size:10px;color:#9fadc1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 footer p{display:inline;margin:0}footer strong,footer strong~*{display:none}
-.diagnostics{display:none}
+.diagnostics{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 @media(max-width:900px),(max-height:620px){
  main{grid-template-rows:auto auto auto minmax(0,1fr) auto auto;gap:6px;padding:6px}
  .workspace{grid-template-columns:1fr;display:block}
