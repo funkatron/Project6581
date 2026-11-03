@@ -4,6 +4,9 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
   const context=new AudioContext({latencyHint:'interactive'});
   try {
     onContext(context);
+    // Desktop browsers may permit autoplay. Never await this promise:
+    // Safari can leave it pending until a trusted gesture occurs.
+    void context.resume().catch(()=>{});
     const version=Date.now().toString(36);
     await context.audioWorklet.addModule('./src/residfp-worklet.js?v='+version);
     const response=await fetch('./dist/residfp.wasm?v='+version,{cache:'no-store'});
