@@ -25,6 +25,7 @@ jobs:
       - run: bash scripts/build-residfp.sh
       - run: test -s dist/residfp.wasm
       - run: node scripts/check-wasm-imports.mjs
+      - run: node scripts/smoke-test-sid.mjs
       - run: node scripts/stamp-build.mjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
