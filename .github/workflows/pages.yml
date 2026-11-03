@@ -26,11 +26,20 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+      - name: Restore compiled SID engine
+        id: sid-cache
+        uses: actions/cache@v4
+        with:
+          path: dist/residfp.wasm
+          key: sid-wasm-emsdk-4.0.15-linux-v1-${{ hashFiles('scripts/build-residfp.sh', 'native/**') }}
       - uses: mymindstorm/setup-emsdk@v14
+        if: steps.sid-cache.outputs.cache-hit != 'true'
         with:
           version: '4.0.15'
-      - run: sudo apt-get update && sudo apt-get install -y autoconf automake libtool pkg-config
-      - run: bash scripts/build-residfp.sh
+      - if: steps.sid-cache.outputs.cache-hit != 'true'
+        run: sudo apt-get update && sudo apt-get install -y autoconf automake libtool pkg-config
+      - if: steps.sid-cache.outputs.cache-hit != 'true'
+        run: bash scripts/build-residfp.sh
       - run: test -s dist/residfp.wasm
       - run: node scripts/check-wasm-imports.mjs
       - run: node scripts/smoke-test-sid.mjs
