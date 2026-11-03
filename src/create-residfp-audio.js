@@ -1,7 +1,12 @@
-// Invoke only after a user gesture on Safari (AudioContext unlock).
-export async function createReSidFpAudio({model=6581,onStatus=()=>{}}={}){
-  const context=new AudioContext();
+import {createSidWriteBatcher} from './sid-write-batcher.js';
+// Preload on page load; unlock audio separately during a trusted user gesture.
+export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=()=>{}}={}){
+  const context=new AudioContext({latencyHint:'interactive'});
   try {
+    onContext(context);
+    // Desktop browsers may permit autoplay. Never await this promise:
+    // Safari can leave it pending until a trusted gesture occurs.
+    void context.resume().catch(()=>{});
     const version=Date.now().toString(36);
     await context.audioWorklet.addModule('./src/residfp-worklet.js?v='+version);
     const response=await fetch('./dist/residfp.wasm?v='+version,{cache:'no-store'});
@@ -14,8 +19,9 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{}}={}){
     node.connect(context.destination);
     node.port.onmessage=({data})=>onStatus(data);
     node.port.postMessage({type:'load',bytes,model},[bytes]);
-    await context.resume();
-    return {context,node,write:(register,value)=>node.port.postMessage({type:'write',register,value}),
-      close:async()=>{node.disconnect();await context.close()}};
+    const batcher=createSidWriteBatcher(message=>node.port.postMessage(message));
+    return {context,node,
+      write:(register,value)=>batcher.write(register,value),
+      close:async()=>{batcher.close();node.disconnect();await context.close()}};
   } catch(err){await context.close();throw err}
 }

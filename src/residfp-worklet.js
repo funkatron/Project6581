@@ -9,6 +9,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     this.port.onmessage=({data})=>{
       if(data?.type==='load')this.load(data.bytes,data.model??6581);
       else if(data?.type==='write')this.queue.push([data.register,data.value]);
+      else if(data?.type==='writes'&&Array.isArray(data.writes))this.queue.push(...data.writes);
       else if(data?.type==='reset')this.exports?.sid_reset();
     };
   }
