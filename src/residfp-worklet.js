@@ -16,6 +16,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       const wasi={fd_write:()=>0,fd_close:()=>0,fd_seek:()=>0,proc_exit:()=>0,environ_sizes_get:()=>0,environ_get:()=>0,args_sizes_get:()=>0,args_get:()=>0};
       const {instance}=await WebAssembly.instantiate(bytes,{wasi_snapshot_preview1:wasi,env:{}});
       const e=instance.exports;
+      if(!e.memory || !e.sid_init || !e.sid_write || !e.sid_render || !e.sid_pcm_ptr)throw Error('Missing required WASM exports');
       e._initialize?.();
       if(!e.sid_init(model,sampleRate))throw Error('SID initialization failed');
       this.exports=e;
@@ -30,7 +31,9 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     this.queue.length=0;
     const frames=channels[0].length;
     if(e.sid_render(frames)!==frames)return true;
-    const pcm=new Int16Array(e.memory.buffer,e.sid_pcm_ptr(),frames);
+    const ptr=e.sid_pcm_ptr();
+    if(ptr<0 || ptr+frames*2>e.memory.buffer.byteLength){this.port.postMessage({type:'error',message:'Invalid PCM buffer'});this.exports=null;return true}
+    const pcm=new Int16Array(e.memory.buffer,ptr,frames);
     for(let i=0;i<frames;i++)for(const channel of channels)channel[i]=pcm[i]/32768;
     return true;
   }
