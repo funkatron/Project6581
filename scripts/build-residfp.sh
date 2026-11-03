@@ -7,7 +7,7 @@ if [[ ! -d vendor/libresidfp/.git ]]; then
 fi
 cd vendor/libresidfp
 autoreconf -fi
-emconfigure ./configure --disable-shared --enable-static --disable-dependency-tracking
+emconfigure ./configure --host=wasm32-unknown-emscripten --build=x86_64-pc-linux-gnu --disable-shared --enable-static --disable-dependency-tracking
 emmake make -j2
 cd ../..
 em++ -O2 -std=c++17 -fexceptions -Ivendor/libresidfp/src \
