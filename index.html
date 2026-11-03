@@ -8,7 +8,7 @@
 <section class="panel"><h2>Game Arp</h2><div class="controls"><label>Enabled <input id="gameArpOn" type="checkbox" checked></label><label>Style <select id="gameArpStyle"><option value="action">Action</option><option value="adventure">Adventure</option><option value="arcade">Arcade</option></select></label></div><small>Hold a key to play a repeating C64-style sequence. Uses the rate, BPM and latch controls below.</small></section><section class="panel"><h2>Arpeggiator</h2><div class="controls"><label>Arp <input id="arpOn" type="checkbox"></label><label>Latch <input id="arpLatch" type="checkbox"></label><label>Pattern <select id="arpPattern"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label><label>Rate <select id="arpRate"><option value="1">1/4</option><option value="2">1/8</option><option value="4" selected>1/16</option><option value="8">1/32</option><option value="16">1/64</option><option value="32">1/128</option></select></label><label>BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label><button id="arpClear">Clear latch</button></div><small id="arpStatus">Arp off</small></section><section class="panel"><h2>Keyboard</h2><p>Touch and hold to play. Monophonic C64-style patch, with last-note priority.</p><div id="keyboard" class="keyboard"></div></section>
 <footer><p id="buildInfo">Project6581 v__BUILD_VERSION__ · Built __BUILD_TIMESTAMP__ (UTC)</p><strong>Engine status:</strong> Authentic reSIDfp initializes on page load. Safari may require the first touch to unlock audio. No prototype audio engine is available. In authentic mode, live PWM and voice-control updates during held notes are not yet supported.</footer></main>
 <script>
-const $=id=>document.getElementById(id);let sidController=null,sidAudio=null;let sidKeys=0;
+const $=id=>document.getElementById(id);let sidController=null,sidAudio=null,sidContext=null;let sidKeys=0;
 const settings=[{wave:'square',attack:0.002,decay:0.12,sustain:0.8,release:0.12,pulse:50,pwmDepth:0,pwmRate:1,enabled:true}];
 const ranges=[['attack','Attack',0,2,.01],['decay','Decay',0,3,.01],['sustain','Sustain',0,1,.01],['release','Release',.01,4,.01],['pulse','Pulse width',5,95,1],['pwmDepth','PWM depth',0,45,1],['pwmRate','PWM rate (Hz)',.1,12,.1]];
 settings.forEach((s,i)=>{const el=document.createElement('section');el.className='panel';el.innerHTML='<h2>SID voice</h2><label>Enabled <input type="checkbox" data-prop="enabled" checked></label><label>Waveform <select data-prop="wave"><option value="triangle">Triangle</option><option value="sawtooth">Sawtooth</option><option value="square">Pulse</option><option value="noise">Noise</option></select></label>'+ranges.map(([p,name,min,max,step])=>'<label>'+name+' <input data-prop="'+p+'" type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+s[p]+'"><output>'+s[p]+'</output></label>').join('');$('voices').append(el);el.querySelector('select').value=s.wave;el.querySelectorAll('[data-prop]').forEach(inp=>inp.addEventListener('input',()=>{s[inp.dataset.prop]=inp.type==='checkbox'?inp.checked:inp.type==='range'?Number(inp.value):inp.value;if(inp.nextElementSibling?.tagName==='OUTPUT')inp.nextElementSibling.textContent=inp.value;}));});
@@ -76,7 +76,7 @@ async function startSid(){
     let resolveReady,rejectReady;
     const ready=new Promise((resolve,reject)=>{resolveReady=resolve;rejectReady=reject});
     const timeout=setTimeout(()=>rejectReady(new Error('SID engine initialization timed out')),12000);
-    const audio=await createReSidFpAudio({model:Number($('chip').value),onStatus:event=>{
+    const audio=await createReSidFpAudio({model:Number($('chip').value),onContext:context=>{sidContext=context},onStatus:event=>{
       if(event.type==='ready'&&event.renderer)resolveReady();
       if(event.type==='error')rejectReady(new Error(event.message));
       if(event.type==='audio-stats'){
@@ -96,13 +96,13 @@ async function startSid(){
     button.hidden=true;button.disabled=false;
     if(audio.context.state==='suspended')status.textContent='SID ready · touch a key to unlock audio.';
     if(audio.context.state==='running')status.textContent='Authentic reSIDfp active · monophonic SID voice. Change chip model by reloading.';
-  }catch(err){status.textContent='Authentic SID unavailable: '+(err.message||err)+'. No audio fallback is available.';button.disabled=false;button.hidden=false}
+  }catch(err){sidContext=null;status.textContent='Authentic SID unavailable: '+(err.message||err)+'. No audio fallback is available.';button.disabled=false;button.hidden=false}
 }
 $('sidStart').addEventListener('click',startSid);
 function unlockSidAudio(){
-  if(!sidAudio||sidAudio.context.state!=='suspended')return;
+  if(!sidContext||sidContext.state!=='suspended')return;
   // Call resume synchronously inside the trusted gesture for iPad Safari.
-  sidAudio.context.resume().then(()=>{$('sidEngineStatus').textContent='Authentic reSIDfp active · monophonic SID voice.'}).catch(err=>{$('sidEngineStatus').textContent='Tap again to enable audio: '+err.message});
+  sidContext.resume().then(()=>{$('sidEngineStatus').textContent='Authentic reSIDfp active · monophonic SID voice.'}).catch(err=>{$('sidEngineStatus').textContent='Tap again to enable audio: '+err.message});
 }
 document.addEventListener('pointerdown',unlockSidAudio,{capture:true});
 document.addEventListener('keydown',unlockSidAudio,{capture:true});
