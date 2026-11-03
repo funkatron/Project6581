@@ -1,6 +1,6 @@
 import {readFileSync,writeFileSync} from 'node:fs';
 const {version}=JSON.parse(readFileSync('package.json','utf8'));
-if(!/^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$/.test(version))throw Error('Invalid semantic version');
+if(!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version))throw Error('Invalid semantic version');
 const builtAt=new Date().toISOString();
 const buildId=version+'+'+builtAt.replace(/[-:.]/g,'');
 let html=readFileSync('index.html','utf8');
