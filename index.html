@@ -90,7 +90,17 @@ for(const [name,id] of [['voice','tabVoice'],['play','tabPlay']]){
 function play(note){if(!sidController)return;if(!settings[0].enabled)return;sidController.noteOn(note,()=>settings[0]);}
 function stop(note){sidController?.noteOff(note)}
 function panic(){gameStop();sidController?.panic()}
-$('panic').addEventListener('click',panic);window.addEventListener('blur',panic);
+$('panic').addEventListener('click',()=>{
+  $('gameArpOn').checked=false;
+  $('arpOn').checked=false;
+  gameStop();
+  if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}
+  arpStopVoice();
+  arp.held.clear();arp.latched.clear();arp.last=null;arp.step=0;
+  game.held=[];game.latched=null;game.step=0;
+  sidController?.panic();
+  $('arpStatus').textContent='Arpeggiators off';
+});window.addEventListener('blur',panic);
 const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 const arp={held:new Set(),latched:new Set(),timer:null,index:0,step:0,last:null};
 const gamePatterns={action:[0,12,7,12,0,7,12,19],adventure:[0,3,7,12,7,3,10,7],arcade:[0,12,0,7,12,7,3,7]};
