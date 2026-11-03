@@ -9,7 +9,12 @@ export function calculateVersion(base,commits){
       ?message.split('\n').map(s=>s.trim()).filter(Boolean).at(-1)??subject
       :subject;
     const breaking=/^[a-z]+(?:\([^)]+\))?!:/i.test(title)||/BREAKING CHANGE:/i.test(message);
-    if(breaking){major++;minor=0;patch=0}
+    if(breaking){
+      // Pre-1.0 development: even breaking changes advance minor only.
+      // A 1.0 release requires an explicit, separate decision.
+      if(major===0){minor++;patch=0}
+      else {major++;minor=0;patch=0}
+    }
     else if(/^feat(?:\([^)]+\))?:/i.test(title)){minor++;patch=0}
     else if(/^(fix|perf|refactor|docs|test|build|ci|chore)(?:\([^)]+\))?:/i.test(title)){patch++}
     else if(!/^Merge branch/i.test(subject)){patch++}
