@@ -5,6 +5,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     super();
     this.exports=null;
     this.queue=[];
+    this.blocks=0;this.lastPeak=0;this.writes=0;
     this.port.onmessage=({data})=>{
       if(data?.type==='load')this.load(data.bytes,data.model??6581);
       else if(data?.type==='write')this.queue.push([data.register,data.value]);
@@ -28,13 +29,24 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     for(const channel of channels)channel.fill(0);
     const e=this.exports;if(!e)return true;
     for(const [reg,value] of this.queue)e.sid_write(reg,value);
+    this.writes+=this.queue.length;
     this.queue.length=0;
     const frames=channels[0].length;
     if(e.sid_render(frames)!==frames)return true;
     const ptr=e.sid_pcm_ptr();
     if(ptr<0 || ptr+frames*2>e.memory.buffer.byteLength){this.port.postMessage({type:'error',message:'Invalid PCM buffer'});this.exports=null;return true}
     const pcm=new Int16Array(e.memory.buffer,ptr,frames);
-    for(let i=0;i<frames;i++)for(const channel of channels)channel[i]=pcm[i]/32768;
+    let peak=0;
+    for(let i=0;i<frames;i++){
+      const value=pcm[i]/32768;
+      peak=Math.max(peak,Math.abs(value));
+      for(const channel of channels)channel[i]=value;
+    }
+    this.lastPeak=Math.max(this.lastPeak,peak);
+    if(++this.blocks%128===0){
+      this.port.postMessage({type:'audio-stats',peak:this.lastPeak,writes:this.writes,frames:frames*128});
+      this.lastPeak=0;this.writes=0;
+    }
     return true;
   }
 }
