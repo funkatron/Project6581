@@ -2,7 +2,9 @@
 
 **Play classic Commodore 64 SID sounds in your browser.**
 
-Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of the original C64 sound chip. It works with a screen keyboard and supports repeating game-style melodies.
+Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of the original C64 sound chip. It works with a touch-friendly screen keyboard, a choice of MOS 6581 or 8580 chip emulation, and two arpeggiator modes.
+
+> **Development status:** The eight-layer unison voice engine and detune controls are being developed in [PR #27](https://github.com/funkatron/Project6581/pull/27). They are not part of the published application until that PR is merged and deployment succeeds.
 
 **[▶ Open the synthesizer](https://funkatron.github.io/Project6581/)**
 
@@ -27,13 +29,15 @@ Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of th
 | **Latch** | Keeps the pattern playing after you lift your finger | Enable **Latch**, then tap a key |
 | **Rate** | How frequently the pattern changes notes | Start at **1/16**; try **1/32** for faster motion |
 | **BPM** | Overall pattern tempo | Move the slider slowly to hear the difference |
-| **Waveform** | The basic tone shape | Compare **Pulse** and **Sawtooth** |
+| **Waveform** | Selects a native SID waveform: Triangle, Sawtooth, Pulse, or Noise | Compare **Pulse** and **Sawtooth** |
+| **Voices** *(PR #27)* | Layers 1–8 SID oscillators on the same note | Try 4 voices with moderate detune |
+| **Detune** *(PR #27)* | Spreads layered oscillator tuning in cents | Start at 12¢ and adjust by ear |
 | **Attack / Decay / Sustain / Release** | How a note begins, changes, holds, and ends | Increase **Release** for a longer tail |
-| **Pulse width** | The character of the pulse waveform | Try **25%**, then **50%** |
+| **Pulse width / PWM** | Pulse shape and modulation settings; shown only when Pulse is selected in PR #27 | Try **25%**, then **50%** |
 | **Filter cutoff** | How much high-frequency sound passes through | Lower it for a darker sound |
 | **Resonance** | Emphasizes frequencies around the filter cutoff | Increase a little while moving cutoff |
 | **Chip character** | Selects **6581** or **8580** SID emulation | Reload after changing the chip selection |
-| **Stop all** | Stops currently playing notes | Use this if a note seems stuck |
+| **Stop all** | Stops notes, disables both arpeggiators, and clears their held/latch state | Use this to silence and reset playback |
 
 **Tip:** Start by changing *one* control at a time. You can learn what each does by listening to the difference.
 
@@ -59,7 +63,8 @@ Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of th
 - **SID:** The three-voice sound chip used in the Commodore 64 computer.
 - **reSIDfp:** The software emulation engine that produces the authentic SID-style audio.
 - **Arpeggiator (arp):** A feature that plays notes in a repeating sequence.
-- **Monophonic:** This interface currently plays **one SID voice at a time**, even though the original chip has three.
+- **Monophonic:** The published interface currently plays one note with one SID oscillator. PR #27 introduces **unison layering**, where up to eight oscillators play the same note; this is not eight-note polyphony.
+- **Unison:** Several oscillators playing one note together. Small pitch offsets (detune) can make the combined sound thicker.
 - **1/128 rate:** A very fast pattern setting. Browser timing can become uneven at extreme rates, particularly on mobile devices.
 
 ## 🛠️ Troubleshooting
@@ -96,7 +101,7 @@ PCM samples → browser audio output
 - **Sound generation:** [libresidfp](https://github.com/libsidplayfp/libresidfp), pinned to **v1.1.2**, is compiled into `dist/residfp.wasm`. It models SID oscillators, envelopes, and filter behavior.
 - **Browser audio:** An `AudioWorklet` renders the emulated audio off the main UI thread. JavaScript handles note input, controls, and arpeggiator scheduling.
 - **Chip selection:** The interface offers MOS **6581** and **8580** models, whose filter characteristics differ.
-- **Current voice model:** The interface exposes one playable voice, although the original SID hardware supports three.
+- **Current published voice model:** One playable SID oscillator. PR #27 introduces up to eight unison oscillators across three emulated SID chips (three oscillators per chip), with their output mixed in the native bridge.
 - **No audio fallback:** If the WebAssembly SID engine cannot initialize, the app reports the failure instead of silently substituting generic oscillators.
 
 ### Building and testing
@@ -113,16 +118,17 @@ That command runs the Node.js test suite. Building the WASM binary separately re
 
 ### Limitations and ongoing work
 
-- The playable interface is currently **monophonic**.
-- Live pulse-width modulation and some parameter changes during sustained notes are not yet fully implemented.
+- The published interface is currently monophonic with one oscillator. The eight-layer unison implementation is pending PR #27 and is still monophonic in note allocation.
+- Live pulse-width modulation and some parameter changes during sustained notes are not yet fully implemented. Showing PWM controls conditionally does not mean PWM modulation is already functional.
+- Three independently assignable LFOs with selectable modulation waveforms are planned in the [roadmap](ROADMAP.md), not yet implemented.
 - Very fast arpeggiator rates depend on browser scheduling and may sound uneven.
 - iPad Safari may require a user gesture to start its audio context.
 - Touch-to-sound latency is an active investigation; see [ROADMAP.md](ROADMAP.md).
 
 ### Preview builds and deployment
 
-The production application is published at **[Project6581](https://funkatron.github.io/Project6581/)**. Same-repository pull requests can publish separate, public previews at `/Project6581/pr-<number>/` once their **Build PR preview** and Pages deployment workflows complete. A successful CI check alone does not establish that the preview URL is live.
+The production application is published at **[Project6581](https://funkatron.github.io/Project6581/)**. PR previews are **opt-in**, not automatically built for every pull request. When explicitly requested, a maintainer can manually run **Build PR preview**, supply the PR number, and select **publish**. Previews are served at `/Project6581/pr-<number>/` after the Pages deployment completes. A successful CI check alone does not establish that the preview URL is live.
 
-Previews are removed when their PR closes. Fork pull requests do not publish previews automatically because publishing requires repository write permissions. Preview assets are maintained on the internal `preview-assets` branch and combined with the production site during Pages deployment.
+Previews are **not automatically removed** when their PR closes; use the workflow's manual **remove** operation. Fork pull requests are not supported for write-capable preview publication. Preview assets are maintained on the internal `preview-assets` branch and combined with the production site during Pages deployment.
 
 **Source and further reading:** [GitHub repository](https://github.com/funkatron/Project6581) · [Development roadmap](ROADMAP.md) · [Actions](https://github.com/funkatron/Project6581/actions)
