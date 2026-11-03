@@ -1,9 +1,18 @@
 name: Build PR preview
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, closed]
-    paths-ignore:
-      - '**/*.md'
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Pull request number'
+        required: true
+        type: number
+      operation:
+        description: 'Publish or remove the preview'
+        required: true
+        type: choice
+        options:
+          - publish
+          - remove
 permissions:
   contents: write
   actions: write
@@ -12,31 +21,41 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    # Do not execute untrusted fork PR code with a write-capable token.
-    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.action == 'closed' && github.event.repository.default_branch || github.event.pull_request.head.sha }}
+          ref: main
           fetch-depth: 0
           persist-credentials: false
+      - name: Validate requested PR and check out its source
+        if: inputs.operation == 'publish'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+        run: |
+          set -euo pipefail
+          head_repo=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRepository --jq '.headRepository.nameWithOwner')
+          test "$head_repo" = "$GITHUB_REPOSITORY" || { echo 'Fork previews are not supported'; exit 1; }
+          head_sha=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq '.headRefOid')
+          git fetch origin "$head_sha"
+          git checkout --detach "$head_sha"
       - name: Restore compiled SID engine
-        if: github.event.action != 'closed'
+        if: inputs.operation == 'publish'
         id: sid-cache
         uses: actions/cache@v4
         with:
           path: dist/residfp.wasm
           key: sid-wasm-emsdk-4.0.15-linux-v1-${{ hashFiles('scripts/build-residfp.sh', 'native/**') }}
       - uses: mymindstorm/setup-emsdk@v14
-        if: github.event.action != 'closed' && steps.sid-cache.outputs.cache-hit != 'true'
+        if: inputs.operation == 'publish' && steps.sid-cache.outputs.cache-hit != 'true'
         with:
           version: '4.0.15'
       - name: Install SID build dependencies
-        if: github.event.action != 'closed' && steps.sid-cache.outputs.cache-hit != 'true'
+        if: inputs.operation == 'publish' && steps.sid-cache.outputs.cache-hit != 'true'
         run: sudo apt-get update && sudo apt-get install -y autoconf automake libtool pkg-config
       - name: Build and test authentic SID
-        if: github.event.action != 'closed'
+        if: inputs.operation == 'publish'
         run: |
           npm test
           if [ '${{ steps.sid-cache.outputs.cache-hit }}' != 'true' ]; then bash scripts/build-residfp.sh; fi
@@ -45,7 +64,7 @@ jobs:
           node scripts/smoke-test-sid.mjs
           node scripts/stamp-build.mjs
       - name: Stage preview content
-        if: github.event.action != 'closed'
+        if: inputs.operation == 'publish'
         run: |
           mkdir -p "$RUNNER_TEMP/pr-content"
           cp index.html "$RUNNER_TEMP/pr-content/"
@@ -54,16 +73,16 @@ jobs:
           import os
           p = Path(os.environ["RUNNER_TEMP"]) / "pr-content" / "index.html"
           s = p.read_text()
-          s = s.replace("<h1>Project6581</h1>", "<h1>Project6581 · PR #${{ github.event.pull_request.number }} preview</h1>", 1)
+          s = s.replace("<h1>Project6581</h1>", "<h1>Project6581 · PR #${{ inputs.pr_number }} preview</h1>", 1)
           p.write_text(s)
           PY
           cp -R src dist "$RUNNER_TEMP/pr-content/"
-          printf '%s\n' 'PR #${{ github.event.pull_request.number }} preview' > "$RUNNER_TEMP/pr-content/PREVIEW.txt"
+          printf '%s\n' 'PR #${{ inputs.pr_number }} preview' > "$RUNNER_TEMP/pr-content/PREVIEW.txt"
       - name: Publish preview to preview-assets branch
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_ACTION: ${{ github.event.action }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          PR_ACTION: ${{ inputs.operation }}
         run: |
           set -euo pipefail
           git config --global user.name "github-actions[bot]"
@@ -82,7 +101,7 @@ jobs:
             touch .nojekyll
           fi
           cd "$RUNNER_TEMP/preview-assets"
-          if [ "$PR_ACTION" = closed ]; then
+          if [ "$PR_ACTION" = remove ]; then
             git rm -r -f "pr-${PR_NUMBER}" 2>/dev/null || true
           else
             rm -rf "pr-${PR_NUMBER}"
