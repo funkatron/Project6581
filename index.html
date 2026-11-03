@@ -2,9 +2,9 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101721"><title>Project6581 | SID Studio</title>
 <style>
 :root{font-family:system-ui,-apple-system,sans-serif;color:#f3f5fa;background:#101721;color-scheme:dark}
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}body{height:100dvh}
 body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
-main{height:100%;height:100dvh;max-width:1400px;margin:auto;padding:clamp(8px,1.5vw,18px);display:grid;grid-template-rows:auto auto minmax(0,1fr) auto auto;gap:8px;overflow:hidden}
+main{height:100%;max-width:1400px;margin:auto;padding:clamp(8px,1.5vw,18px);display:grid;grid-template-rows:auto auto minmax(0,1fr) auto auto;gap:8px;overflow:hidden}
 header{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
 h1{font-size:clamp(18px,2.3vw,28px);margin:0;letter-spacing:-.03em}h2{font-size:15px;margin:0 0 12px}p,small{color:#b6c2d2}
 .subtitle{font-size:11px;margin:2px 0 0}.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -61,11 +61,11 @@ footer p{display:inline;margin:0}footer strong,footer strong~*{display:none}
 <div class="statusbar"><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p></div>
 <div class="tabbar" role="tablist" aria-label="Editor sections"><button id="tabVoice" type="button" role="tab" aria-selected="true" aria-controls="voicePanel">Sound</button><button id="tabPlay" type="button" role="tab" aria-selected="false" aria-controls="playPanel">Arpeggiators</button></div>
 <div class="workspace" id="workspace" data-tab="voice">
-<section class="panel voice-panel" id="voicePanel" aria-label="Sound controls">
+<section class="panel voice-panel" id="voicePanel" role="tabpanel" aria-labelledby="tabVoice" aria-label="Sound controls">
 <h2>Sound</h2><div class="voice-grid"><label>Chip <select id="chip"><option value="6581">MOS 6581</option><option value="8580">MOS 8580</option></select></label><label>Volume <input id="volume" type="range" min="0" max="100" value="55"></label><label>Cutoff <input id="cutoff" type="range" min="50" max="10000" value="7000"></label><label>Resonance <input id="resonance" type="range" min="0" max="100" value="10"></label><label>Filter <select id="mode"><option value="lowpass">Low-pass</option><option value="bandpass">Band-pass</option><option value="highpass">High-pass</option></select></label></div>
 <div class="section-divider"></div><div id="voices" class="voices"></div>
 </section>
-<section class="panel performance-panel" id="playPanel" aria-label="Arpeggiator controls">
+<section class="panel performance-panel" id="playPanel" role="tabpanel" aria-labelledby="tabPlay" aria-label="Arpeggiator controls">
 <h2>Game Arp</h2><div class="controls"><label>Enabled <input id="gameArpOn" type="checkbox" checked></label><label>Style <select id="gameArpStyle"><option value="action">Action</option><option value="adventure">Adventure</option><option value="arcade">Arcade</option></select></label></div>
 <div class="section-divider"></div><h2>Arpeggiator</h2><div class="controls"><label>Arp <input id="arpOn" type="checkbox"></label><label>Latch <input id="arpLatch" type="checkbox"></label><label>Pattern <select id="arpPattern"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label><label>Rate <select id="arpRate"><option value="1">1/4</option><option value="2">1/8</option><option value="4" selected>1/16</option><option value="8">1/32</option><option value="16">1/64</option><option value="32">1/128</option></select></label><label>BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label><button id="arpClear">Clear latch</button></div><small id="arpStatus">Arp off</small>
 </section></div>
