@@ -56,6 +56,8 @@ footer p{display:inline;margin:0}footer strong,footer strong~*{display:none}
 }
 @media(max-height:760px){main{gap:5px;padding:5px}.keyboard-panel{height:clamp(112px,23dvh,180px)}.workspace .panel{padding:6px 9px}label{min-height:28px;font-size:11px}.section-divider{margin:4px 0}h2{margin-bottom:3px}.voice-grid{gap:0 9px}}
 @media(max-width:520px){.voice-grid{gap:0 6px}label{font-size:10px}label>output{min-width:25px}.keyboard-heading small{display:none}.performance-panel .controls{gap:3px 6px}}
+/* Extremely short landscape viewports cannot fit all controls; keep them reachable. */
+@media(max-height:520px){.workspace .panel{overflow-y:auto;overscroll-behavior:contain}.keyboard-panel{height:108px}.keyboard{min-height:64px}.keyboard-heading small{display:none}}
 @media(min-width:901px) and (min-height:621px){.tabbar{display:none!important}.keyboard-panel{height:clamp(150px,28dvh,300px)}}
 @media(prefers-reduced-motion:reduce){.sid-spinner{animation:none}}
 </style></head><body><main>
