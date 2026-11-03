@@ -15,7 +15,7 @@ button.primary{background:#ac682e;border-color:#d08c48}.panel{background:#1b2736
 .statusbar p{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sid-spinner:not([hidden]){display:inline-block;width:17px;height:17px;flex:none;border:3px solid #53657a;border-top-color:#f4b465;border-radius:50%;animation:sid-spin .8s linear infinite}@keyframes sid-spin{to{transform:rotate(360deg)}}
 .workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;min-height:0;overflow:hidden}
-.workspace .panel{overflow:hidden}
+.workspace .panel{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable}
 .voice-panel{grid-column:1}.performance-panel{grid-column:2}
 label{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12px;min-height:32px;margin:0}
 label>input[type=range]{flex:1;min-width:0;max-width:62%;height:26px;accent-color:#eaa75d;touch-action:pan-x}
@@ -26,7 +26,17 @@ input[type=checkbox]{width:22px;height:22px;accent-color:#eaa75d}
 .voice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 12px}
 .voice-grid label{min-width:0}
 .performance-panel .controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 12px}.performance-panel .controls label{margin:0;min-width:0}.performance-panel .controls button{justify-self:start}
-.lfo-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px}.lfo-controls label{min-width:0}.lfo-panel{margin-top:7px}.section-divider{height:1px;background:#34455a;margin:7px 0}
+.lfo-panel{margin-top:4px}
+#lfoControls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.lfo-controls{display:grid;grid-template-columns:minmax(0,1fr);gap:2px;min-width:0;margin:0;padding:4px 5px;border:1px solid #34455a;border-radius:7px}
+.lfo-controls legend{font-size:11px;font-weight:650;padding:0 3px;grid-column:1/-1}
+.lfo-controls label{min-width:0;min-height:24px;font-size:10px;gap:3px}
+.lfo-controls select{min-width:0;max-width:70%;min-height:27px;padding:2px 3px;font-size:11px}
+.lfo-controls input[type=range]{max-width:53%;height:22px;touch-action:auto}
+.lfo-controls output{min-width:24px;font-size:10px}
+.lfo-controls select[aria-label$="Enabled"]{max-width:62px}
+@media(max-width:700px){#lfoControls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){#lfoControls{grid-template-columns:minmax(0,1fr)}.lfo-controls{grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 8px}}.section-divider{height:1px;background:#34455a;margin:7px 0}
 .keyboard-panel{min-height:0;display:flex;flex-direction:column;gap:5px;padding:8px 10px 10px}
 .keyboard-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .keyboard-heading h2{margin:0}.keyboard-heading small{font-size:11px}.octave-controls{display:flex;align-items:center;gap:6px}.octave-controls button{min-height:36px;padding:5px 12px}.octave-controls output{font-size:12px;min-width:45px;text-align:center}
@@ -40,7 +50,7 @@ footer p{display:inline;margin:0}footer strong,footer strong~*{display:none}
 @media(max-width:900px),(max-height:620px){
  main{grid-template-rows:auto auto auto minmax(0,1fr) auto auto;gap:6px;padding:6px}
  .workspace{grid-template-columns:1fr;display:block}
- .workspace .panel{height:100%}
+ .workspace .panel{height:100%;overflow-y:auto;overflow-x:hidden}
  .voice-panel,.performance-panel{display:none}
  .workspace[data-tab="voice"] .voice-panel,.workspace[data-tab="play"] .performance-panel{display:block}
  .tabbar{display:flex!important;gap:6px}
