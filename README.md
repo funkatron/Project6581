@@ -87,3 +87,19 @@ This is a browser application built with JavaScript, an **AudioWorklet**, and a 
 ---
 
 **The shortest path:** [Open Project6581](https://funkatron.github.io/Project6581/) → enable SID if prompted → hold a key → change **Game Arp** style. 🎵
+
+## 🔍 Test a pull request on iPad Safari
+
+Once the preview deployment workflow is merged, each **same-repository** PR build gets a preview at:
+
+`https://funkatron.github.io/Project6581/pr-<number>/`
+
+For example, PR #19 will use `https://funkatron.github.io/Project6581/pr-19/` **after its preview build and Pages deployment succeed**.
+
+1. Open the PR and wait for **Build PR preview** to succeed, followed by the **Deploy SID Studio** workflow.
+2. Open its preview URL in Safari. The heading includes the PR number so it is easy to distinguish from production.
+3. Test the real SID sound, keyboard and controls. Approve or request changes before merging.
+
+The live site remains at [Project6581](https://funkatron.github.io/Project6581/). Previews are publicly accessible, not private. When a PR closes, its preview is removed by the workflow. Fork PRs do not receive automatic previews because preview publishing requires write permissions.
+
+**Maintainer note:** Preview assets live on an internal `preview-assets` branch. The Pages workflow publishes production and all active preview directories together, avoiding the GitHub Pages single-site overwrite problem. If preview publication fails, check Actions logs; do not assume the preview is live.
