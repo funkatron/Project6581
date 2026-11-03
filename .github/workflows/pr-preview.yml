@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.action == 'closed' && github.event.repository.default_branch || github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: false
       - uses: mymindstorm/setup-emsdk@v14
@@ -40,6 +40,14 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/pr-content"
           cp index.html "$RUNNER_TEMP/pr-content/"
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          p = Path(os.environ["RUNNER_TEMP"]) / "pr-content" / "index.html"
+          s = p.read_text()
+          s = s.replace("<h1>Project6581</h1>", "<h1>Project6581 · PR #${{ github.event.pull_request.number }} preview</h1>", 1)
+          p.write_text(s)
+          PY
           cp -R src dist "$RUNNER_TEMP/pr-content/"
           printf '%s\n' 'PR #${{ github.event.pull_request.number }} preview' > "$RUNNER_TEMP/pr-content/PREVIEW.txt"
       - name: Publish preview to preview-assets branch
