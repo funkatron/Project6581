@@ -3,6 +3,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  pull_request:
+    types: [closed]
+    branches: [main]
 permissions:
   contents: read
   pages: write
@@ -12,12 +15,16 @@ concurrency:
   cancel-in-progress: true
 jobs:
   deploy:
+    # Deploy merged PRs as well as direct pushes to main.
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - uses: mymindstorm/setup-emsdk@v14
         with:
           version: '4.0.15'
