@@ -16,5 +16,5 @@ em++ -O2 -std=c++17 -fwasm-exceptions -Ivendor/libresidfp/src \
   -s INITIAL_MEMORY=33554432 -Wl,--no-entry \
   -Wl,--export=sid_init -Wl,--export=sid_write \
   -Wl,--export=sid_render -Wl,--export=sid_pcm_ptr \
-  -Wl,--export=sid_reset -o dist/residfp.wasm
+  -Wl,--export=sid_reset -Wl,--export=sid_init_stage -o dist/residfp.wasm
 echo 'Built dist/residfp.wasm'
