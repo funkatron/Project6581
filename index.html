@@ -29,7 +29,7 @@ input[type=checkbox]{width:22px;height:22px;accent-color:#eaa75d}
 .section-divider{height:1px;background:#34455a;margin:12px 0}
 .keyboard-panel{min-height:0;display:flex;flex-direction:column;gap:5px;padding:8px 10px 10px}
 .keyboard-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.keyboard-heading h2{margin:0}.keyboard-heading small{font-size:11px}.octave-controls{display:none;align-items:center;gap:6px}.octave-controls button{min-height:36px;padding:5px 12px}.octave-controls output{font-size:12px;min-width:45px;text-align:center}
+.keyboard-heading h2{margin:0}.keyboard-heading small{font-size:11px}.octave-controls{display:flex;align-items:center;gap:6px}.octave-controls button{min-height:36px;padding:5px 12px}.octave-controls output{font-size:12px;min-width:45px;text-align:center}
 .keyboard{display:flex;flex:1;min-height:94px;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 .key{position:relative;min-width:0;flex:1 1 0;padding:0 0 9px;border-radius:0 0 6px 6px;background:#eef1f5;color:#18212c;border:1px solid #596679;display:flex;align-items:end;justify-content:center;font-size:clamp(9px,1vw,13px);-webkit-touch-callout:none}
 .key.black{background:#202c3b;color:white;flex:0 0 2.4%;height:61%;min-width:0;margin:0 -1.2%;z-index:2;border:1px solid #75869a;padding-bottom:7px}
@@ -124,20 +124,44 @@ $('arpLatch').addEventListener('change',()=>{arp.latched.clear();if(gameEnabled(
 ['arpPattern','arpRate'].forEach(id=>$(id).addEventListener('change',()=>gameEnabled()?gameRestart():arpRestart()));
 $('arpBpm').addEventListener('input',()=>{$('bpmValue').textContent=$('arpBpm').value;if(gameEnabled())gameRestart();else arpRestart()});
 $('arpClear').addEventListener('click',()=>{arp.latched.clear();arp.held.clear();game.latched=null;game.held=[];gameStop();arpStopVoice();$('arpStatus').textContent='Latch cleared'});
-const keys=new Map();for(let n=48;n<=72;n++){let k=document.createElement('button');k.className='key'+(names[n%12].includes('♯')?' black':'');k.dataset.note=String(n);k.textContent=names[n%12]+(Math.floor(n/12)-1);k.setAttribute('aria-label','Play '+k.textContent);k.addEventListener('pointerdown',e=>{e.preventDefault();k.setPointerCapture(e.pointerId);k.classList.add('down');keyDown(n)});const end=()=>{k.classList.remove('down');keyUp(n)};k.addEventListener('pointerup',end);k.addEventListener('pointercancel',end);k.addEventListener('lostpointercapture',end);$('keyboard').append(k);keys.set(n,k)}
-let compactOctave=48;
-function updateKeyboardOctave(){
-  const compact=matchMedia('(max-width:900px), (max-height:620px)').matches;
-  for(const [note,key] of keys)key.classList.toggle('octave-hidden',compact&&(note<compactOctave||note>compactOctave+12));
-  $('octaveLabel').textContent=compactOctave===48?'C3–C4':'C4–C5';
-  $('octaveDown').disabled=compactOctave===48;
-  $('octaveUp').disabled=compactOctave===60;
+const keys=new Map();
+const MIN_OCTAVE=0,MAX_OCTAVE=7;
+let keyboardOctave=3;
+const compactKeyboard=()=>matchMedia('(max-width:900px), (max-height:620px)').matches;
+function renderKeyboard(){
+  panic();
+  keys.clear();
+  $('keyboard').replaceChildren();
+  const start=(keyboardOctave+1)*12;
+  const count=compactKeyboard()?13:25;
+  for(let i=0;i<count;i++){
+    const note=start+i;
+    const key=document.createElement('button');
+    key.type='button';
+    key.className='key'+(names[note%12].includes('♯')?' black':'');
+    key.dataset.note=String(note);
+    key.textContent=names[note%12]+(Math.floor(note/12)-1);
+    key.setAttribute('aria-label','Play '+key.textContent);
+    key.addEventListener('pointerdown',e=>{e.preventDefault();key.setPointerCapture(e.pointerId);key.classList.add('down');keyDown(note)});
+    const end=()=>{key.classList.remove('down');keyUp(note)};
+    key.addEventListener('pointerup',end);
+    key.addEventListener('pointercancel',end);
+    key.addEventListener('lostpointercapture',end);
+    $('keyboard').append(key);
+    keys.set(note,key);
+  }
+  $('octaveLabel').textContent='C'+keyboardOctave+'–C'+(keyboardOctave+(compactKeyboard()?1:2));
+  $('octaveDown').disabled=keyboardOctave===MIN_OCTAVE;
+  $('octaveUp').disabled=keyboardOctave===MAX_OCTAVE;
 }
-$('octaveDown').addEventListener('click',()=>{compactOctave=48;panic();updateKeyboardOctave()});
-$('octaveUp').addEventListener('click',()=>{compactOctave=60;panic();updateKeyboardOctave()});
-window.addEventListener('resize',updateKeyboardOctave);
-updateKeyboardOctave();
-const layout='awsedftgyhujkolp;';window.addEventListener('keydown',e=>{if(e.repeat||e.target.matches('input,select'))return;let idx=layout.indexOf(e.key.toLowerCase());if(idx>=0&&idx<25){e.preventDefault();let n=48+idx;keys.get(n)?.classList.add('down');keyDown(n)}});window.addEventListener('keyup',e=>{let idx=layout.indexOf(e.key.toLowerCase());if(idx>=0&&idx<25){let n=48+idx;keys.get(n)?.classList.remove('down');keyUp(n)}});
+$('octaveDown').addEventListener('click',()=>{keyboardOctave=Math.max(MIN_OCTAVE,keyboardOctave-1);renderKeyboard()});
+$('octaveUp').addEventListener('click',()=>{keyboardOctave=Math.min(MAX_OCTAVE,keyboardOctave+1);renderKeyboard()});
+let wasCompact=compactKeyboard();
+window.addEventListener('resize',()=>{const compact=compactKeyboard();if(compact!==wasCompact){wasCompact=compact;renderKeyboard()}});
+renderKeyboard();
+const layout='awsedftgyhujkolp;';
+window.addEventListener('keydown',e=>{if(e.repeat||e.target.matches('input,select,button'))return;const idx=layout.indexOf(e.key.toLowerCase());if(idx>=0){const note=(keyboardOctave+1)*12+idx;const key=keys.get(note);if(key){e.preventDefault();key.classList.add('down');keyDown(note)}}});
+window.addEventListener('keyup',e=>{const idx=layout.indexOf(e.key.toLowerCase());if(idx>=0){const note=(keyboardOctave+1)*12+idx;keys.get(note)?.classList.remove('down');keyUp(note)}});
 
 function updateSidFilter(){
   if(!sidController)return;
