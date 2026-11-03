@@ -12,7 +12,7 @@ emmake make -j2
 cd ../..
 em++ -O2 -std=c++17 -fwasm-exceptions -Ivendor/libresidfp/src \
   native/sid_bridge.cpp vendor/libresidfp/src/.libs/libresidfp.a \
-  -s STANDALONE_WASM=1 -s WASM_EXCEPTIONS=1 -s WASM_BIGINT=1 -s ALLOW_MEMORY_GROWTH=0 \
+  -s STANDALONE_WASM=1 -s WASM_BIGINT=1 -s ALLOW_MEMORY_GROWTH=0 \
   -s INITIAL_MEMORY=33554432 -Wl,--no-entry \
   -Wl,--export=sid_init -Wl,--export=sid_write \
   -Wl,--export=sid_render -Wl,--export=sid_pcm_ptr \
