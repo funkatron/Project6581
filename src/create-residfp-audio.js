@@ -1,8 +1,9 @@
 import {createSidWriteBatcher} from './sid-write-batcher.js';
-// Invoke only after a user gesture on Safari (AudioContext unlock).
-export async function createReSidFpAudio({model=6581,onStatus=()=>{}}={}){
+// Preload on page load; unlock audio separately during a trusted user gesture.
+export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=()=>{}}={}){
   const context=new AudioContext({latencyHint:'interactive'});
   try {
+    onContext(context);
     const version=Date.now().toString(36);
     await context.audioWorklet.addModule('./src/residfp-worklet.js?v='+version);
     const response=await fetch('./dist/residfp.wasm?v='+version,{cache:'no-store'});
@@ -15,7 +16,6 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{}}={}){
     node.connect(context.destination);
     node.port.onmessage=({data})=>onStatus(data);
     node.port.postMessage({type:'load',bytes,model},[bytes]);
-    await context.resume();
     const batcher=createSidWriteBatcher(message=>node.port.postMessage(message));
     return {context,node,
       write:(register,value)=>batcher.write(register,value),
