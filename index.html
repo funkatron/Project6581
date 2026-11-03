@@ -282,7 +282,8 @@ function updateModulation(){
  }
  if(!sidController)return;
  updateSidFilter(values);
- if(settings[0].wave==='square'&&lfoState.some(lfo=>lfo.enabled&&lfo.depth>0&&lfo.target==='pulse'))sidController.setPulse(0,values.pulse);
+ // Always write the effective pulse value, including the saved base value after an LFO is disabled or retargeted.
+ if(settings[0].wave==='square')sidController.setPulse(0,values.pulse);
 }
 ['volume','cutoff','resonance','mode'].forEach(id=>$(id).addEventListener('input',updateModulation));
 async function startSid(){
