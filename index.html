@@ -258,7 +258,7 @@ function setModulationThumb(input,value,enabled){
  let thumb=stack.querySelector('.modulation-thumb');
  if(!thumb){
   thumb=document.createElement('input');thumb.type='range';thumb.className='modulation-thumb';
-  thumb.tabIndex=-1;thumb.setAttribute('aria-hidden','true');thumb.disabled=true;
+  thumb.tabIndex=-1;thumb.setAttribute('aria-hidden','true');
   thumb.min=input.min;thumb.max=input.max;thumb.step=input.step||'any';
   stack.append(thumb);
  }
