@@ -10,7 +10,7 @@ export class LiveSidController {
   }
   noteOn(note,settings){
     const {voice,retrigger,stolen}=this.allocator.on(note);
-    if(retrigger){if(stolen!==null)this.registers.noteOff(voice);this.registers.noteOn(voice,note,settings)}
+    if(retrigger){if(stolen!==null)this.registers.noteOff(voice);this.registers.noteOn(voice,note,typeof settings==='function'?settings(voice):settings)}
     return {voice,stolen};
   }
   noteOff(note){const voice=this.allocator.off(note);if(voice!==null)this.registers.noteOff(voice);return voice}
