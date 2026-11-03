@@ -18,7 +18,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       const e=instance.exports;
       if(!e.memory || !e.sid_init || !e.sid_write || !e.sid_render || !e.sid_pcm_ptr)throw Error('Missing required WASM exports');
       e._initialize?.();
-      if(!e.sid_init(model,sampleRate))throw Error('SID initialization failed');
+      if(!e.sid_init(model,sampleRate))throw Error('SID initialization failed at stage '+(e.sid_init_stage?.()??'unknown')+' (sample rate '+sampleRate+' Hz)');
       this.exports=e;
       this.port.postMessage({type:'ready',renderer:true});
     }catch(err){this.port.postMessage({type:'error',message:String(err)})}
