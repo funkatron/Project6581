@@ -19,18 +19,25 @@ jobs:
           ref: ${{ github.event.action == 'closed' && github.event.repository.default_branch || github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: mymindstorm/setup-emsdk@v14
+      - name: Restore compiled SID engine
         if: github.event.action != 'closed'
+        id: sid-cache
+        uses: actions/cache@v4
+        with:
+          path: dist/residfp.wasm
+          key: sid-wasm-emsdk-4.0.15-linux-v1-${{ hashFiles('scripts/build-residfp.sh', 'native/**') }}
+      - uses: mymindstorm/setup-emsdk@v14
+        if: github.event.action != 'closed' && steps.sid-cache.outputs.cache-hit != 'true'
         with:
           version: '4.0.15'
       - name: Install SID build dependencies
-        if: github.event.action != 'closed'
+        if: github.event.action != 'closed' && steps.sid-cache.outputs.cache-hit != 'true'
         run: sudo apt-get update && sudo apt-get install -y autoconf automake libtool pkg-config
       - name: Build and test authentic SID
         if: github.event.action != 'closed'
         run: |
           npm test
-          bash scripts/build-residfp.sh
+          if [ '${{ steps.sid-cache.outputs.cache-hit }}' != 'true' ]; then bash scripts/build-residfp.sh; fi
           test -s dist/residfp.wasm
           node scripts/check-wasm-imports.mjs
           node scripts/smoke-test-sid.mjs
