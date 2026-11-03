@@ -26,6 +26,9 @@ input[type=checkbox]{width:22px;height:22px;accent-color:#eaa75d}
 .voice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 12px}
 .voice-grid label{min-width:0}
 .performance-panel .controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 12px}.performance-panel .controls label{margin:0;min-width:0}.performance-panel .controls button{justify-self:start}
+.modulated-value{display:inline-block;margin-left:4px;font-size:10px;font-variant-numeric:tabular-nums;color:#f3bd78;white-space:nowrap}
+.modulated-value[hidden]{display:none!important}
+.modulated-value::before{content:"↝ ";opacity:.8}
 .lfo-panel{margin-top:4px}
 #lfoControls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
 .lfo-controls{display:grid;grid-template-columns:minmax(0,1fr);gap:2px;min-width:0;margin:0;padding:4px 5px;border:1px solid #34455a;border-radius:7px}
@@ -240,10 +243,20 @@ function updateSidFilter(overrides={}){
     mode:$('mode').value,volume:Math.round(Number(overrides.volume??$('volume').value)*15/100)});
 }
 function updateModulation(){
- if(!sidController)return;
  const base={cutoff:Number($('cutoff').value),resonance:Number($('resonance').value),volume:Number($('volume').value),pulse:settings[0].pulse};
  const active=lfoState.some(lfo=>lfo.enabled&&lfo.depth>0);
  const values=active&&modulation?modulation.modulate(base,lfoState,(performance.now()-lfoStarted)/1000,{pulseActive:settings[0].wave==='square'}):base;
+ for(const target of ['cutoff','resonance','volume','pulse']){
+  const input=target==='pulse'?document.querySelector('[data-prop="pulse"]'):$(target);
+  const label=input?.closest('label');
+  if(!label)continue;
+  let display=label.querySelector('.modulated-value');
+  if(!display){display=document.createElement('output');display.className='modulated-value';display.setAttribute('aria-label',target+' modulated value');label.append(display);}
+  const enabled=active&&lfoState.some(lfo=>lfo.enabled&&lfo.depth>0&&lfo.target===target)&&(target!=='pulse'||settings[0].wave==='square');
+  display.hidden=!enabled;
+  if(enabled)display.textContent=target==='cutoff'?Math.round(values[target])+' Hz':target==='pulse'?values[target].toFixed(1)+'%':values[target].toFixed(1);
+ }
+ if(!sidController)return;
  updateSidFilter(values);
  if(settings[0].wave==='square'&&lfoState.some(lfo=>lfo.enabled&&lfo.depth>0&&lfo.target==='pulse'))sidController.setPulse(0,values.pulse);
 }
