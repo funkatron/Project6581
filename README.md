@@ -73,33 +73,56 @@ Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of th
 | Notes are stuck | Press **Stop all** |
 | Very fast arp sounds uneven | Try **1/32** or **1/16** and lower BPM |
 
-## 👩‍💻 For developers
+## 🔍 Technical details (for the curious)
 
-This is a browser application built with JavaScript, an **AudioWorklet**, and a **WebAssembly** build of reSIDfp. The sound comes from SID emulation, **not** a generic Web Audio oscillator fallback.
+Project6581 is intentionally a small browser application, but its audio engine is a real SID emulator rather than a synthesizer that merely imitates SID sounds.
 
-- **Source:** [GitHub repository](https://github.com/funkatron/Project6581)
-- **Run automated tests:** `npm test` (requires Node.js)
-- **Development roadmap:** [ROADMAP.md](ROADMAP.md)
-- **Build/deployment:** See [GitHub Actions](https://github.com/funkatron/Project6581/actions).
+### How sound reaches the speakers
 
-**Current limitations:** The interface is monophonic. Live pulse-width modulation and some voice changes during a held note are not yet implemented. Safari may require a user gesture before audio plays.
+```text
+Touch / keyboard
+      ↓
+JavaScript note and arpeggiator logic
+      ↓
+SID register writes
+      ↓
+AudioWorklet + WebAssembly
+      ↓
+reSIDfp (6581 / 8580 emulation)
+      ↓
+PCM samples → browser audio output
+```
 
----
+- **Sound generation:** [libresidfp](https://github.com/libsidplayfp/libresidfp), pinned to **v1.1.2**, is compiled into `dist/residfp.wasm`. It models SID oscillators, envelopes, and filter behavior.
+- **Browser audio:** An `AudioWorklet` renders the emulated audio off the main UI thread. JavaScript handles note input, controls, and arpeggiator scheduling.
+- **Chip selection:** The interface offers MOS **6581** and **8580** models, whose filter characteristics differ.
+- **Current voice model:** The interface exposes one playable voice, although the original SID hardware supports three.
+- **No audio fallback:** If the WebAssembly SID engine cannot initialize, the app reports the failure instead of silently substituting generic oscillators.
 
-**The shortest path:** [Open Project6581](https://funkatron.github.io/Project6581/) → enable SID if prompted → hold a key → change **Game Arp** style. 🎵
+### Building and testing
 
-## 🔍 Test a pull request on iPad Safari
+The native bridge is in `native/sid_bridge.cpp`. The build script, `scripts/build-residfp.sh`, uses Emscripten to compile the pinned libresidfp source and exports the SID initialization, register-write, rendering, and reset functions. Its filter-table initialization is adapted to run without native threads in the standalone AudioWorklet environment.
 
-Once the preview deployment workflow is merged, each **same-repository** PR build gets a preview at:
+```sh
+npm test
+```
 
-`https://funkatron.github.io/Project6581/pr-<number>/`
+That command runs the Node.js test suite. Building the WASM binary separately requires an activated Emscripten environment and the native build dependencies; see the build script and [GitHub Actions](https://github.com/funkatron/Project6581/actions) for the exact process.
 
-For example, PR #19 will use `https://funkatron.github.io/Project6581/pr-19/` **after its preview build and Pages deployment succeed**.
+**Build efficiency:** Ordinary README and UI changes should reuse the compiled WASM artifact. Changes to the native bridge, libresidfp build inputs, or toolchain require rebuilding it.
 
-1. Open the PR and wait for **Build PR preview** to succeed, followed by the **Deploy SID Studio** workflow.
-2. Open its preview URL in Safari. The heading includes the PR number so it is easy to distinguish from production.
-3. Test the real SID sound, keyboard and controls. Approve or request changes before merging.
+### Limitations and ongoing work
 
-The live site remains at [Project6581](https://funkatron.github.io/Project6581/). Previews are publicly accessible, not private. When a PR closes, its preview is removed by the workflow. Fork PRs do not receive automatic previews because preview publishing requires write permissions.
+- The playable interface is currently **monophonic**.
+- Live pulse-width modulation and some parameter changes during sustained notes are not yet fully implemented.
+- Very fast arpeggiator rates depend on browser scheduling and may sound uneven.
+- iPad Safari may require a user gesture to start its audio context.
+- Touch-to-sound latency is an active investigation; see [ROADMAP.md](ROADMAP.md).
 
-**Maintainer note:** Preview assets live on an internal `preview-assets` branch. The Pages workflow publishes production and all active preview directories together, avoiding the GitHub Pages single-site overwrite problem. If preview publication fails, check Actions logs; do not assume the preview is live.
+### Preview builds and deployment
+
+The production application is published at **[Project6581](https://funkatron.github.io/Project6581/)**. Same-repository pull requests can publish separate, public previews at `/Project6581/pr-<number>/` once their **Build PR preview** and Pages deployment workflows complete. A successful CI check alone does not establish that the preview URL is live.
+
+Previews are removed when their PR closes. Fork pull requests do not publish previews automatically because publishing requires repository write permissions. Preview assets are maintained on the internal `preview-assets` branch and combined with the production site during Pages deployment.
+
+**Source and further reading:** [GitHub repository](https://github.com/funkatron/Project6581) · [Development roadmap](ROADMAP.md) · [Actions](https://github.com/funkatron/Project6581/actions)
