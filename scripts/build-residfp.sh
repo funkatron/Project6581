@@ -5,6 +5,23 @@ mkdir -p vendor dist
 if [[ ! -d vendor/libresidfp/.git ]]; then
   git clone --depth 1 --branch v1.1.2 https://github.com/libsidplayfp/libresidfp.git vendor/libresidfp
 fi
+# libresidfp launches six threads during 6581 filter table construction.
+# Standalone AudioWorklet WASM cannot create those threads.
+python3 - <<'PY'
+from pathlib import Path
+p = Path('vendor/libresidfp/src/FilterModelConfig6581.cpp')
+s = p.read_text()
+start = s.index('#ifdef HAVE_JTHREADS\n    using sidThread = std::jthread;')
+end = s.index('\n}', start)
+replacement = '''    filterSummer();
+    filterMixer();
+    filterGain();
+    filterResonance();
+    filterVcrVg();
+    filterVcrIds();'''
+s = s[:start] + replacement + s[end:]
+p.write_text(s)
+PY
 cd vendor/libresidfp
 autoreconf -fi
 CXXFLAGS='-O2 -fwasm-exceptions' emconfigure ./configure --host=wasm32-unknown-emscripten --build=x86_64-pc-linux-gnu --disable-shared --enable-static --disable-dependency-tracking
