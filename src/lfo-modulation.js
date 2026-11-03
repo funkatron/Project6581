@@ -9,3 +9,20 @@ export function lfoValue(wave,phase,seed=0){
  if(wave==='sample-hold'){const n=Math.sin((Math.floor(phase)+seed+1)*127.1)*43758.5453;return 2*(n-Math.floor(n))-1;}
  throw new RangeError('Unknown LFO waveform');
 }
+// Add all modulation contributions before clamping. Never mutate base slider values.
+export function modulate(base,lfos,time,{pulseActive=true}={}){
+ const result={...base},offsets={};
+ for(const lfo of lfos){
+  if(!lfo.enabled||!lfo.depth||!Object.hasOwn(LFO_TARGETS,lfo.target))continue;
+  if(!pulseActive&&['pulse','pwmDepth','pwmRate'].includes(lfo.target))continue;
+  const [min,max]=LFO_TARGETS[lfo.target];
+  const depth=Math.max(0,Math.min(1,lfo.depth));
+  const offset=lfoValue(lfo.wave,(lfo.phase??0)+time*lfo.rate,lfo.seed??0)*depth*(max-min)/2;
+  offsets[lfo.target]=(offsets[lfo.target]??0)+offset;
+ }
+ for(const [target,offset] of Object.entries(offsets)){
+  const [min,max]=LFO_TARGETS[target];
+  result[target]=Math.max(min,Math.min(max,Number(base[target]??min)+offset));
+ }
+ return result;
+}
