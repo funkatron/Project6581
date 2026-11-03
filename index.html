@@ -26,6 +26,11 @@ input[type=checkbox]{width:22px;height:22px;accent-color:#eaa75d}
 .voice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 12px}
 .voice-grid label{min-width:0}
 .performance-panel .controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 12px}.performance-panel .controls label{margin:0;min-width:0}.performance-panel .controls button{justify-self:start}
+.slider-stack{position:relative;display:flex;align-items:center;flex:1;min-width:0;max-width:62%}
+.slider-stack>input[type=range]{width:100%;max-width:none;min-width:0;flex:1}
+.slider-stack>.modulation-thumb{position:absolute;inset:0;width:100%;height:100%;margin:0;pointer-events:none;opacity:.95;accent-color:#79d8d0}
+.slider-stack>.modulation-thumb[hidden]{display:none!important}
+.slider-stack.is-modulating>input:not(.modulation-thumb){opacity:.35}
 .modulated-value{display:inline-block;margin-left:4px;font-size:10px;font-variant-numeric:tabular-nums;color:#f3bd78;white-space:nowrap}
 .modulated-value[hidden]{display:none!important}
 .modulated-value::before{content:"↝ ";opacity:.8}
@@ -242,6 +247,24 @@ function updateSidFilter(overrides={}){
   sidController.setFilter({cutoff,resonance:Math.round(Number(overrides.resonance??$('resonance').value)*15/100),
     mode:$('mode').value,volume:Math.round(Number(overrides.volume??$('volume').value)*15/100)});
 }
+// Overlay a noninteractive range thumb: the actual input retains the base value.
+function setModulationThumb(input,value,enabled){
+ if(!input)return;
+ let stack=input.parentElement;
+ if(!stack?.classList.contains('slider-stack')){
+  stack=document.createElement('span');stack.className='slider-stack';
+  input.before(stack);stack.append(input);
+ }
+ let thumb=stack.querySelector('.modulation-thumb');
+ if(!thumb){
+  thumb=document.createElement('input');thumb.type='range';thumb.className='modulation-thumb';
+  thumb.tabIndex=-1;thumb.setAttribute('aria-hidden','true');thumb.disabled=true;
+  thumb.min=input.min;thumb.max=input.max;thumb.step=input.step||'any';
+  stack.append(thumb);
+ }
+ thumb.hidden=!enabled;stack.classList.toggle('is-modulating',enabled);
+ if(enabled)thumb.value=String(value);
+}
 function updateModulation(){
  const base={cutoff:Number($('cutoff').value),resonance:Number($('resonance').value),volume:Number($('volume').value),pulse:settings[0].pulse};
  const active=lfoState.some(lfo=>lfo.enabled&&lfo.depth>0);
@@ -254,6 +277,7 @@ function updateModulation(){
   if(!display){display=document.createElement('output');display.className='modulated-value';display.setAttribute('aria-label',target+' modulated value');label.append(display);}
   const enabled=active&&lfoState.some(lfo=>lfo.enabled&&lfo.depth>0&&lfo.target===target)&&(target!=='pulse'||settings[0].wave==='square');
   display.hidden=!enabled;
+  setModulationThumb(input,values[target],enabled);
   if(enabled)display.textContent=target==='cutoff'?Math.round(values[target])+' Hz':target==='pulse'?values[target].toFixed(1)+'%':values[target].toFixed(1);
  }
  if(!sidController)return;
