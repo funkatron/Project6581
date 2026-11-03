@@ -4,8 +4,8 @@ import {VoiceAllocator} from './voice-allocator.js';
 // Event-driven front end. The sink may be a worklet port or a test recorder.
 // No audio approximation is silently substituted for a missing SID engine.
 export class LiveSidController {
-  constructor(sink,{clock}={}){
-    this.sink=sink;this.allocator=new VoiceAllocator(3);
+  constructor(sink,{clock,voiceCount=3}={}){
+    this.sink=sink;this.allocator=new VoiceAllocator(voiceCount);
     this.registers=new SidRegisters((register,value)=>sink({type:'write',register,value}),clock);
   }
   noteOn(note,settings){
