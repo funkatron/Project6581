@@ -38,7 +38,7 @@ footer{font-size:10px;color:#9fadc1;overflow:hidden;white-space:nowrap;text-over
 footer p{display:inline;margin:0}footer strong,footer strong~*{display:none}
 .diagnostics{display:none}
 @media(max-width:760px),(max-height:620px){
- main{grid-template-rows:auto auto minmax(0,1fr) auto auto;gap:6px;padding:6px}
+ main{grid-template-rows:auto auto auto minmax(0,1fr) auto auto;gap:6px;padding:6px}
  .workspace{grid-template-columns:1fr;display:block}
  .workspace .panel{height:100%}
  .voice-panel,.performance-panel{display:none}
@@ -74,7 +74,7 @@ footer p{display:inline;margin:0}footer strong,footer strong~*{display:none}
 const $=id=>document.getElementById(id);let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;
 const settings=[{wave:'square',attack:0.002,decay:0.12,sustain:0.8,release:0.12,pulse:50,pwmDepth:0,pwmRate:1,enabled:true}];
 const ranges=[['attack','Attack',0,2,.01],['decay','Decay',0,3,.01],['sustain','Sustain',0,1,.01],['release','Release',.01,4,.01],['pulse','Pulse width',5,95,1],['pwmDepth','PWM depth',0,45,1],['pwmRate','PWM rate (Hz)',.1,12,.1]];
-settings.forEach((s,i)=>{const el=document.createElement('section');el.className='panel';el.innerHTML='<h2>SID voice</h2><div class="voice-grid"><label>Enabled <input type="checkbox" data-prop="enabled" checked></label><label>Waveform <select data-prop="wave"><option value="triangle">Triangle</option><option value="sawtooth">Sawtooth</option><option value="square">Pulse</option><option value="noise">Noise</option></select></label>'+ranges.map(([p,name,min,max,step])=>'<label>'+name+' <input data-prop="'+p+'" type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+s[p]+'"><output>'+s[p]+'</output></label>').join('');$('voices').append(el);el.querySelector('select').value=s.wave;el.querySelectorAll('[data-prop]').forEach(inp=>inp.addEventListener('input',()=>{s[inp.dataset.prop]=inp.type==='checkbox'?inp.checked:inp.type==='range'?Number(inp.value):inp.value;if(inp.nextElementSibling?.tagName==='OUTPUT')inp.nextElementSibling.textContent=inp.value;}));});
+settings.forEach((s,i)=>{const el=document.createElement('section');el.className='panel';el.innerHTML='<h2>SID voice</h2><div class="voice-grid"><label>Enabled <input type="checkbox" data-prop="enabled" checked></label><label>Waveform <select data-prop="wave"><option value="triangle">Triangle</option><option value="sawtooth">Sawtooth</option><option value="square">Pulse</option><option value="noise">Noise</option></select></label>'+ranges.map(([p,name,min,max,step])=>'<label>'+name+' <input data-prop="'+p+'" type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+s[p]+'"><output>'+s[p]+'</output></label>').join('')+'</div>';$('voices').append(el);el.querySelector('select').value=s.wave;el.querySelectorAll('[data-prop]').forEach(inp=>inp.addEventListener('input',()=>{s[inp.dataset.prop]=inp.type==='checkbox'?inp.checked:inp.type==='range'?Number(inp.value):inp.value;if(inp.nextElementSibling?.tagName==='OUTPUT')inp.nextElementSibling.textContent=inp.value;}));});
 for(const [name,id] of [['voice','tabVoice'],['play','tabPlay']]){
   $(id).addEventListener('click',()=>{
     $('workspace').dataset.tab=name;
