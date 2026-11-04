@@ -84,7 +84,8 @@ SID playback + highlighted keyboard keys
 - [x] Always show each sound control's editable base value and unit (e.g. Hz, %, seconds, cents), whether or not an LFO is assigned.
 - [x] Treat the physical slider thumb as the **base/center value** that the user edits. LFOs add modulation around that center without shifting the thumb, changing the saved base value, or hijacking pointer input.
 - [x] Show the instantaneous modulated value through a **colored track segment between the stationary thumb and the effective value**, with a neutral fill to the center. The segment handles bipolar movement and clipping at bounds.
-- [x] Keep the editable center's numeric readout visible at all times, and show a separately labeled effective numeric readout when an LFO targets the control. Confirm readability with real iPad Safari layouts.
+- [x] Keep the editable center's numeric readout visible at all times, and show a separately labeled effective numeric readout when an LFO targets the control.
+- [ ] Confirm actual numeric readability and slider behavior on iPad Safari in portrait and landscape; see `docs/ipad-safari-qa.md`.
 - [x] Update appearance as the user changes the center or an LFO's depth/rate/target, and return to the center and ordinary track when modulation is disabled or reassigned.
 - [ ] Finish CI and device-level verification of simultaneous LFO summation, min/max saturation, base edits, keyboard accessibility, iPad Safari touch, and rendering overhead. Pure track-mapping tests are included but cannot establish actual touch behavior.
 - [x] Do not use a second moving slider thumb or create additional SID register writes merely to render the effect.
