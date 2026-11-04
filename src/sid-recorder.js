@@ -31,11 +31,25 @@ export function createSidRecorder(audio,{MediaRecorderClass=globalThis.MediaReco
    if(format==='m4a'&&availableM4a){
     const destination=audio.context.createMediaStreamDestination();
     const chunks=[];
+    // AudioWorklet enforces a 180-second audio-frame limit. Cap encoded chunks
+    // independently in case Safari delays the main-thread stop message.
+    const maxEncodedBytes=16*1024*1024;
+    let encodedBytes=0,overflow=false;
     let recorder,monitorStarted=false;
     try{
      recorder=new MediaRecorderClass(destination.stream,{mimeType:availableM4a});
      audio.node.connect(destination);
-     recorder.ondataavailable=event=>{if(event.data?.size)chunks.push(event.data)};
+     recorder.ondataavailable=event=>{
+      if(!event.data?.size)return;
+      encodedBytes+=event.data.size;
+      if(encodedBytes>maxEncodedBytes){
+       overflow=true;
+       // Do not keep unbounded chunks if a browser delays finalization.
+       if(recorder.state==='recording')recorder.stop();
+       return;
+      }
+      chunks.push(event.data);
+     };
      recorder.start(1000);
      audio.startM4aMonitor();
      monitorStarted=true;
@@ -46,7 +60,7 @@ export function createSidRecorder(audio,{MediaRecorderClass=globalThis.MediaReco
      for(const track of destination.stream.getTracks())track.stop();
      throw error;
     }
-    session={format,recorder,destination,chunks};return;
+    session={format,recorder,destination,chunks,get overflow(){return overflow}};return;
    }
    throw new Error('The selected recording format is unavailable in this browser');
   },
@@ -66,6 +80,10 @@ export function createSidRecorder(audio,{MediaRecorderClass=globalThis.MediaReco
      const recorder=active.recorder;
      recorder.onerror=event=>reject(event.error||new Error('M4A recording failed'));
      recorder.onstop=()=>{
+      if(active.overflow){
+       reject(new Error('M4A recording exceeded the safe file size limit'));
+       return;
+      }
       const mime=recorder.mimeType||availableM4a;
       const data=new Blob(active.chunks,{type:mime});
       data.size?resolve(data):reject(new Error('No M4A audio was captured'));
@@ -76,6 +94,7 @@ export function createSidRecorder(audio,{MediaRecorderClass=globalThis.MediaReco
    }finally{
     if(active.destination){
      audio.stopM4aMonitor();
+     try{if(active.recorder?.state==='recording')active.recorder.stop()}catch{}
      try{audio.node.disconnect(active.destination)}catch{}
      for(const track of active.destination.stream.getTracks())track.stop();
     }
