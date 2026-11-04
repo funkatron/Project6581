@@ -34,7 +34,7 @@ export function formatControlValue(target,value) {
  if(target==='cutoff')return Math.round(n)+' Hz';
  if(target==='pwmRate')return n.toFixed(2)+' Hz';
  if(target==='sustain')return Math.round(n*100)+'%';
- if(target==='detune')return n.toFixed(1).replace(/\\.0$/,'')+'¢';
+ if(target==='detune')return n.toFixed(1).replace(/\.0$/,'')+'¢';
  if(['volume','resonance','pulse','pwmDepth'].includes(target))
   return Math.round(n)+'%';
  return String(n);
