@@ -1,5 +1,97 @@
 # Project6581 roadmap
 
+## Delivery priorities: musical features first
+
+Prioritize features that help people **make, retain, exchange, and perform music**. Keep regression tests proportionate to the feature being shipped; defer extended audio-clock research and large architecture changes unless an observed defect requires them. Work in small, separately reviewable PRs, inspect all Copilot review findings, and verify deployment independently.
+
+**Near-term order:** **1. Factory/user presets and import/export** → **2. Composable Arpeggiator + Game Arp and Western scale lock** → **3. MIDI input/output** → **4. App-like installation and offline access**. WAV/M4A recording and the stationary LFO display are already under development in separate PRs. Independent SID-device support remains **UI-design-first** before modifying the engine.
+
+## Priority 1: factory presets and user preset management
+
+**Goal:** Open Project6581 and immediately select a useful sound, experiment with it, save custom sounds, and move them between devices. This is the highest-priority new feature.
+
+- [ ] Create a small **Factory Presets** browser (e.g. Bass, Lead, Pluck, Pad, Arcade) with meaningful, original settings based on authentic SID waveforms. Show the selected preset name and clearly indicate unsaved edits.
+- [ ] Add a separate **My Presets** collection with **Save**, **Save As**, **Rename**, and **Delete**. Factory presets are read-only and can be used as starting points for user presets.
+- [ ] Restore the entire sound-producing configuration, not just the currently visible sliders: chip model, waveform, ADSR, pulse/PWM, filter, level, unison/polyphony/detune, and all three LFOs. Define whether arpeggiator patterns/rates and global BPM belong to a *performance preset* or remain separately controlled; avoid silent changes to playback state.
+- [ ] Make loading predictable while a note is sounding: stop/reinitialize only when required, leave no stuck notes, refresh every numeric display, and do not start autoplay unexpectedly.
+- [ ] Persist user presets locally (browser storage, with clear error handling if storage is unavailable or full). Do not imply that local presets are automatically synchronized across devices.
+- [ ] **Export** one preset or a whole user bank as a downloadable, human-readable **versioned JSON** file. **Import** either, with schema/version validation, value clamping/rejection, meaningful error messages, duplicate-name handling and an explicit overwrite choice.
+- [ ] Version the preset format from the outset to support future independent SID devices and additional destinations without breaking older user files. Never execute imported content or modify presets until validation succeeds.
+- [ ] Provide a compact, touch-friendly selector usable on iPad. Preserve keyboard visibility; don't require scrolling through a full preset editor before playing.
+- [ ] Verify a bounded set of operations: choose factory → edit → save user → reload → export → import → play. Check that a malformed file does not overwrite a working preset, and changes are faithfully restored after reloading the page.
+
+**Completion checks:** A new user can load a factory sound in one action. A returning user can save, retrieve, export, and import a custom sound without losing its important settings or needing a server account.
+
+## Priority 2a: composable Arpeggiator and Game Arp
+
+**Goal:** Make Game Arp a reusable pattern triggered at a root pitch, while the regular Arpeggiator independently selects and advances that root. The two features should work together rather than being mutually exclusive.
+
+**Signal flow:**
+
+```text
+Held / latched keyboard notes
+           |
+           v
+Arpeggiator (optional)  -> chooses the current root note
+           |
+           v
+Game Arp (optional)     -> applies pattern intervals to that root
+           |
+           v
+SID playback + highlighted keyboard keys
+```
+
+- [ ] Define each mode explicitly: **both off** plays direct notes; **Game Arp only** plays the selected pattern from the held/latched root; **Arpeggiator only** cycles the held/latched notes directly; **both on** cycles roots using the Arpeggiator while Game Arp plays its chosen interval pattern relative to each root.
+- [ ] Give **Arpeggiator** responsibility for note ordering (Up, Down, Up/Down, Random), latch, and the active root. Give **Game Arp** responsibility for the triggered pattern (Action, Adventure, Arcade, etc.) and its internal note offsets. Neither should silently turn the other off.
+- [ ] Keep a clear musical distinction between **root-change rate** and **pattern-step rate**, with coherent BPM synchronization. Define whether a root change preserves the current pattern phase or restarts the pattern; prefer predictable musical timing and verify it for both fast and slow rates.
+- [ ] Make first key press trigger the pattern immediately, without waiting for a timer tick. Handle additional held notes, releases, latch transitions and switching either feature on/off without stuck notes or duplicate gate writes.
+- [ ] Apply existing MIDI range limits and any future scale-lock policy to the **final sounding pitch**, not merely the root, so combined arpeggiation, playback and keyboard illumination agree.
+- [ ] Simplify labels and help text so users can understand **“Arpeggiator chooses the root; Game Arp plays the pattern.”** Ensure the controls remain usable on iPad and avoid redundant current-note text above the keyboard.
+- [ ] Add deterministic tests of the four mode combinations, independent timing, pattern transitions, changing root while playing, stop/panic, note ownership, and keyboard highlighting.
+
+**Completion checks:** Both generators can run simultaneously; Arpeggiator changes the root of the ongoing Game Arp phrase, each feature retains a clear independent purpose, and no combination produces stuck notes or misleading highlights.
+
+## Priority 2b: selectable Western scales and scale-constrained playback
+
+**Goal:** Support conventional 12-tone equal-tempered Western musical scales on the keyboard and in all sounding notes, with predictable, opt-in pitch restrictions.
+
+- [ ] Add a **Key** selector (all 12 pitch classes) and a **Scale** selector: Chromatic (default), Major, Natural Minor, Harmonic Minor, Melodic Minor, major-scale modes, Major/Minor Pentatonic, and Blues. Define interval sets explicitly and test their notes in every key.
+- [ ] Show in-scale versus out-of-scale keys clearly on the touch keyboard, including black keys and octave changes, without removing note labels or reducing touch targets.
+- [ ] Provide an explicit **Scale lock** mode. In Chromatic/off mode all notes remain available; when locked, ensure audible notes belong to the selected scale rather than just changing key colors. Decide and document whether off-scale input is ignored or quantized to the nearest scale tone, with deterministic tie-breaking.
+- [ ] Apply the same policy at the final note-selection boundary for physical keyboard input, touch playing, polyphony, Game Arp, regular Arp, and latch/held-note behavior. Quantize any Game Arp pitch offsets after transposition so the sounding notes and highlighted keys agree.
+- [ ] Preserve intended octaves and note-off ownership: when multiple pressed keys map to one pitch, releasing one must not silence the other or leave a stuck note.
+- [ ] Test all root keys and scale interval sets, negative/positive transpositions, octave crossings, MIDI note boundaries, held/latch transitions, mode switching, and note-highlighting accuracy.
+- [ ] Verify responsive and accessible presentation on iPad Safari, with no avoidable audio latency or extra WASM rebuild.
+
+**Completion checks:** A user can select a conventional key/scale and enable scale lock; all keyboard and arpeggiator output then follows that scale, visibly and audibly. Chromatic/default behavior stays unchanged.
+
+## Priority 3: MIDI input and output
+
+**Goal:** Perform Project6581 from external MIDI controllers and optionally route its generated music into another instrument or DAW.
+
+- [ ] Support **MIDI input** (device/channel choice, note-on/note-off, velocity where musically appropriate, sustain pedal CC64, panic/all-notes-off). Correctly handle disconnects and prevent stuck notes.
+- [ ] Optionally map external MIDI CC messages to selected sliders and LFO destinations. Include **MIDI Learn** with visible mapping, conflict handling and saved mapping preferences.
+- [ ] Support **MIDI output** of played keyboard notes and optionally post-arpeggiator generated notes. Make the distinction explicit; send corresponding note-off messages, including on Stop All and mode changes.
+- [ ] Add separate input/output enable toggles, port selectors and a clear indication of device connection. Avoid MIDI feedback loops when the same instrument or virtual port is selected for both.
+- [ ] Define MIDI timing/clock sync as a follow-on slice. Do not couple initial note input/output to a speculative AudioWorklet scheduling rewrite.
+- [ ] Check platform support and permissions at runtime. Browser MIDI APIs, particularly on mobile Safari, cannot be assumed universally available; provide a clear unsupported state and evaluate a native-app path where needed.
+- [ ] Test note ownership, velocity ranges, disconnection, channel filtering, MIDI output routing, arp/latch changes and Stop All. Validate at least one physical controller when possible.
+
+**Completion checks:** Where supported, an external MIDI keyboard can play the SID synth reliably, and an enabled MIDI output sends deliberate notes with matching note-offs. Unsupported environments clearly explain limitations rather than showing inert controls.
+
+## Priority 4: package Project6581 as an application
+
+**Goal:** Make the synthesizer feel like an installable music application on iPad and desktop while retaining the browser version.
+
+- [ ] Begin with a **Progressive Web App**: manifest, app icon, standalone/home-screen display, clear install guidance, responsive safe-area layout, and an update/version indicator.
+- [ ] Cache the **app shell, JS, and reSIDfp WASM** for genuine offline use after first successful install. Keep cache invalidation and deployment updates predictable; never serve an incompatible cached JS/WASM pair.
+- [ ] Ensure local user presets, imported banks, and saved recordings are easy to find, export and retain. Explain browser storage clearing and backup limitations.
+- [ ] Review app-like interaction details: startup/loading feedback, keyboard always accessible, clear unsaved-preset state, consistent navigation, touch targets and transport controls.
+- [ ] Evaluate **native wrappers** only where they deliver tangible benefits, especially reliable MIDI access on iPad, file import/export, audio sessions and background handling. Compare an iOS shell with desktop packaging before choosing a framework. Do not replace the existing lightweight web deployment by default.
+- [ ] Test offline launch, version upgrades, WAV/M4A sharing, iPad Files import/export and recovery after a suspended/resumed app session.
+
+**Completion checks:** Project6581 can be launched from a home screen or desktop as a focused standalone experience and used offline, while retaining consistent audio, user presets and the existing public web URL.
+
 ## Current regression hardening
 
 - [x] Add register-level tests for independent note allocation across three SID chips, deterministic oldest-voice stealing, Unison transitions, and panic/release.
@@ -48,35 +140,6 @@ The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) identifie
 
 **Completion condition:** Three LFOs can run simultaneously, independently modulate selected sliders, and stop cleanly without changing saved base control values or compromising SID playback.
 
-## Planned: composable Arpeggiator and Game Arp
-
-**Goal:** Make Game Arp a reusable pattern triggered at a root pitch, while the regular Arpeggiator independently selects and advances that root. The two features should work together rather than being mutually exclusive.
-
-**Signal flow:**
-
-```text
-Held / latched keyboard notes
-           |
-           v
-Arpeggiator (optional)  -> chooses the current root note
-           |
-           v
-Game Arp (optional)     -> applies pattern intervals to that root
-           |
-           v
-SID playback + highlighted keyboard keys
-```
-
-- [ ] Define each mode explicitly: **both off** plays direct notes; **Game Arp only** plays the selected pattern from the held/latched root; **Arpeggiator only** cycles the held/latched notes directly; **both on** cycles roots using the Arpeggiator while Game Arp plays its chosen interval pattern relative to each root.
-- [ ] Give **Arpeggiator** responsibility for note ordering (Up, Down, Up/Down, Random), latch, and the active root. Give **Game Arp** responsibility for the triggered pattern (Action, Adventure, Arcade, etc.) and its internal note offsets. Neither should silently turn the other off.
-- [ ] Keep a clear musical distinction between **root-change rate** and **pattern-step rate**, with coherent BPM synchronization. Define whether a root change preserves the current pattern phase or restarts the pattern; prefer predictable musical timing and verify it for both fast and slow rates.
-- [ ] Make first key press trigger the pattern immediately, without waiting for a timer tick. Handle additional held notes, releases, latch transitions and switching either feature on/off without stuck notes or duplicate gate writes.
-- [ ] Apply existing MIDI range limits and any future scale-lock policy to the **final sounding pitch**, not merely the root, so combined arpeggiation, playback and keyboard illumination agree.
-- [ ] Simplify labels and help text so users can understand **“Arpeggiator chooses the root; Game Arp plays the pattern.”** Ensure the controls remain usable on iPad and avoid redundant current-note text above the keyboard.
-- [ ] Add deterministic tests of the four mode combinations, independent timing, pattern transitions, changing root while playing, stop/panic, note ownership, and keyboard highlighting.
-
-**Completion checks:** Both generators can run simultaneously; Arpeggiator changes the root of the ongoing Game Arp phrase, each feature retains a clear independent purpose, and no combination produces stuck notes or misleading highlights.
-
 ## Planned: modulation-center slider presentation
 
 **Goal:** Make modulation immediately readable without moving control thumbs during playback.
@@ -90,20 +153,6 @@ SID playback + highlighted keyboard keys
 - [ ] Do not use a second moving slider thumb or create additional SID register writes merely to render the effect.
 
 **Completion checks:** The thumb remains fixed at the user-selected modulation center, a colored track visualizes the current modulation, and numeric values remain readable. Touch/keyboard edits and authentic SID playback behave as before.
-
-## Planned: selectable Western scales and scale-constrained playback
-
-**Goal:** Support conventional 12-tone equal-tempered Western musical scales on the keyboard and in all sounding notes, with predictable, opt-in pitch restrictions.
-
-- [ ] Add a **Key** selector (all 12 pitch classes) and a **Scale** selector: Chromatic (default), Major, Natural Minor, Harmonic Minor, Melodic Minor, major-scale modes, Major/Minor Pentatonic, and Blues. Define interval sets explicitly and test their notes in every key.
-- [ ] Show in-scale versus out-of-scale keys clearly on the touch keyboard, including black keys and octave changes, without removing note labels or reducing touch targets.
-- [ ] Provide an explicit **Scale lock** mode. In Chromatic/off mode all notes remain available; when locked, ensure audible notes belong to the selected scale rather than just changing key colors. Decide and document whether off-scale input is ignored or quantized to the nearest scale tone, with deterministic tie-breaking.
-- [ ] Apply the same policy at the final note-selection boundary for physical keyboard input, touch playing, polyphony, Game Arp, regular Arp, and latch/held-note behavior. Quantize any Game Arp pitch offsets after transposition so the sounding notes and highlighted keys agree.
-- [ ] Preserve intended octaves and note-off ownership: when multiple pressed keys map to one pitch, releasing one must not silence the other or leave a stuck note.
-- [ ] Test all root keys and scale interval sets, negative/positive transpositions, octave crossings, MIDI note boundaries, held/latch transitions, mode switching, and note-highlighting accuracy.
-- [ ] Verify responsive and accessible presentation on iPad Safari, with no avoidable audio latency or extra WASM rebuild.
-
-**Completion checks:** A user can select a conventional key/scale and enable scale lock; all keyboard and arpeggiator output then follows that scale, visibly and audibly. Chromatic/default behavior stays unchanged.
 
 ## Planned investigation: audio-clock LFO scheduling
 
