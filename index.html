@@ -326,7 +326,7 @@ function setModulationThumb(input,value,enabled){
 function updateModulation(){
  const base={cutoff:Number($('cutoff').value),resonance:Number($('resonance').value),volume:Number($('volume').value),pulse:settings[0].pulse};
  const active=lfoState.some(lfo=>lfo.enabled&&lfo.depth>0);
- const bpm=Number($('masterBpm').value);const effectiveLfos=lfoState.map(lfo=>lfo.sync?{...lfo,rate:(Number.isFinite(bpm)&&bpm>=40&&bpm<=240?bpm:120)/60*4/lfo.syncDivision}:lfo);
+ const bpm=Number($('masterBpm').value);const effectiveLfos=lfoState.map(lfo=>lfo.sync?{...lfo,rate:(Number.isFinite(bpm)&&bpm>=40&&bpm<=240?bpm:120)/60*lfo.syncDivision}:lfo);
  const values=active&&modulation?modulation.modulate(base,effectiveLfos,(performance.now()-lfoStarted)/1000,{pulseActive:settings[0].wave==='square'}):base;
  for(const target of ['cutoff','resonance','volume','pulse']){
   const input=target==='pulse'?document.querySelector('[data-prop="pulse"]'):$(target);
