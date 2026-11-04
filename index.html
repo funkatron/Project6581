@@ -83,6 +83,37 @@ footer p{display:inline;margin:0}footer strong,footer strong~*{display:none}
 @media(max-height:520px){.workspace .panel{overflow-y:auto;overscroll-behavior:contain}.keyboard-panel{height:108px}.keyboard{min-height:64px}.keyboard-heading small{display:none}}
 @media(min-width:901px) and (min-height:621px){.tabbar{display:none!important}.keyboard-panel{height:clamp(150px,28dvh,300px)}}
 @media(prefers-reduced-motion:reduce){.sid-spinner{animation:none}}
+
+/* PETSCII Studio theme: Commodore-inspired framing, using the glyph atlas from
+   PETSCII Graphics Lab. Keep touch targets large and panel scrolling intact. */
+:root{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#e5e5ff;background:#242078;color-scheme:dark}
+body{background:#242078}
+main{max-width:1500px;background:#36329a;border-left:5px solid #7774dc;border-right:5px solid #7774dc}
+header{background:#7774dc;color:#242078;border:3px solid #aaa9ff;padding:5px 10px;box-shadow:inset 0 0 0 2px #36329a}
+h1{font-family:inherit;font-weight:900;letter-spacing:0;text-transform:uppercase;font-size:clamp(18px,2.2vw,26px)}
+h1::before{content:"";display:inline-block;vertical-align:-4px;width:24px;height:24px;margin-right:8px;background-image:url("https://funkatron.github.io/petscii-stencil-lab/assets/c64-glyphs.svg");background-size:384px 768px;background-position:0 0;image-rendering:pixelated;filter:brightness(0) saturate(100%)}
+.subtitle{color:#242078}
+.panel{background:#242078;border:3px solid #7774dc;border-radius:0;box-shadow:inset 0 0 0 2px #36329a}
+h2{color:#c5c4ff;text-transform:uppercase;letter-spacing:.04em}
+button,select,.master-tempo input{font-family:inherit;background:#36329a;border:2px solid #7774dc;border-radius:0;color:#fff;box-shadow:none}
+button.primary,button[aria-selected="true"],.tabbar button[aria-selected="true"]{background:#7774dc;color:#18145f;border-color:#c5c4ff}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #ffcf73;outline-offset:2px}
+.statusbar{background:#242078;padding:3px 7px;border:1px solid #7774dc}
+.statusbar p,small{color:#c5c4ff}
+.section-divider{background:repeating-linear-gradient(90deg,#aaa9ff 0 8px,transparent 8px 16px);height:2px}
+label>input[type=range]{accent-color:#c5c4ff}
+label>output,.modulated-value{color:#ffcf73}
+input[type=checkbox]{border:2px solid #aaa9ff;border-radius:0;background:#36329a}
+input[type=checkbox]::before{border-radius:0;background:#c5c4ff}
+input[type=checkbox]:checked{background:#7774dc;border-color:#ffcf73}
+.lfo-controls{border:2px solid #7774dc;border-radius:0;background:#302b88}
+.lfo-controls legend{color:#ffcf73;text-transform:uppercase}
+.keyboard-panel{background:#242078}
+.key{border-radius:0;background:#dddfff;color:#242078;border:2px solid #7774dc}
+.key.black{background:#17134f;border-color:#aaa9ff;color:#e5e5ff}
+.key.down{background:#ffcf73}
+footer{color:#c5c4ff}
+@media(max-width:900px),(max-height:620px){main{border-width:2px}.tabbar button{min-height:44px}}
 </style></head><body><main>
 <header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="number" min="40" max="240" step="1" value="120" inputmode="numeric"></label><button id="panic">Stop all</button></div></header>
 <div class="statusbar"><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p></div>
