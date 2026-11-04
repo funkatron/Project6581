@@ -35,10 +35,11 @@ Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of th
 | **Voices** | Sets the total available SID oscillators, 1–8, for Unison or independent notes | Try **3** with Unison off for three-note chords |
 | **Unison / Detune** | Unison stacks the voices on one note; turning it off enables polyphony. Detune applies to Unison only. | Try 4 voices, Unison on, and 12¢ detune |
 | **Attack / Decay / Sustain / Release** | How a note begins, changes, holds, and ends | Increase **Release** for a longer tail |
-| **Pulse width / PWM** | Pulse-specific controls are shown only for the Pulse waveform; PWM implementation is still incomplete | Try **25%**, then **50%** |
+| **Pulse width / PWM** | Pulse width sets the center of the Pulse waveform; PWM depth and rate now sweep that width continuously | Select Pulse, set depth to 20%, and vary PWM rate |
 | **Filter cutoff** | How much high-frequency sound passes through | Lower it for a darker sound |
 | **Resonance** | Emphasizes frequencies around the filter cutoff | Increase a little while moving cutoff |
 | **Chip character** | Selects **6581** or **8580** SID emulation | Reload after changing the chip selection |
+| **LFO 1–3** | Modulate cutoff, resonance, volume, Pulse width, Unison detune, ADSR, and PWM depth/rate; multiple LFOs may share a target | Route a slow LFO to Attack or PWM depth |
 | **Stop all** | Stops notes, disables both arpeggiators, and clears their held/latch state | Use this to silence and reset playback |
 
 **Tip:** Start by changing *one* control at a time. You can learn what each does by listening to the difference.
@@ -121,8 +122,8 @@ That command runs the Node.js test suite. Building the WASM binary separately re
 ### Limitations and ongoing work
 
 - Polyphony and Unison are available, but different SID chips cannot yet be configured independently. Switching between Unison and polyphony releases previous notes to prevent stuck voices.
-- Live pulse-width modulation and some parameter changes during sustained notes are not yet fully implemented. Showing PWM controls conditionally does not mean PWM modulation is already functional.
-- Three LFOs with selectable modulation waveforms, limited parameter routing, and synchronized musical divisions are available. More targets and audio-clock scheduling remain [roadmap](ROADMAP.md) items. The main-thread 60 Hz scheduler can introduce timing jitter, particularly on busy mobile browsers.
+- Pulse-width modulation and live ADSR/Unison detune are implemented through SID register updates without retriggering held notes. SID envelope rates and levels are quantized to hardware-supported register values.
+- Three LFOs can route to 11 continuous sound parameters and use synchronized musical divisions. Discrete controls such as oscillator count, waveform and chip model are not modulation targets. Tempo modulation, stationary-center slider visuals, and audio-clock scheduling remain [roadmap](ROADMAP.md) items. The main-thread 60 Hz scheduler can introduce timing jitter, particularly on busy mobile browsers.
 - Very fast arpeggiator rates depend on browser scheduling and may sound uneven.
 - iPad Safari may require a user gesture to start its audio context.
 - Touch-to-sound latency is an active investigation; see [ROADMAP.md](ROADMAP.md).
