@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090d22"><title>Project6581 | SID Studio</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#d6cfbd"><title>Project6581 | SID Studio</title>
 <style>
 :root{font-family:system-ui,-apple-system,sans-serif;color:#f3f5fa;background:#101721;color-scheme:dark}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}
@@ -84,40 +84,7 @@ footer p{display:inline;margin:0}footer strong,footer strong~*{display:none}
 @media(min-width:901px) and (min-height:621px){.tabbar{display:none!important}.keyboard-panel{height:clamp(150px,28dvh,300px)}}
 @media(prefers-reduced-motion:reduce){.sid-spinner{animation:none}}
 
-/* PETSCII Studio theme: Commodore-inspired framing, using the glyph atlas from
-   PETSCII Graphics Lab. Keep touch targets large and panel scrolling intact. */
-:root{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#e5e5ff;background:#242078;color-scheme:dark}
-body{background:#242078}
-main{max-width:1500px;background:#36329a;border-left:5px solid #7774dc;border-right:5px solid #7774dc}
-header{background:#7774dc;color:#242078;border:3px solid #aaa9ff;padding:5px 10px;box-shadow:inset 0 0 0 2px #36329a}
-h1{font-family:inherit;font-weight:900;letter-spacing:0;text-transform:uppercase;font-size:clamp(18px,2.2vw,26px)}
-h2::before{content:"";display:inline-block;vertical-align:-2px;width:16px;height:16px;margin-right:7px;background:url("./assets/petscii-section.svg") center/contain no-repeat;image-rendering:pixelated}
-.lfo-controls legend::before{content:"";display:inline-block;width:12px;height:12px;margin-right:5px;background:url("./assets/petscii-lfo.svg") center/contain no-repeat;image-rendering:pixelated}
-h1::before{content:"";display:inline-block;vertical-align:-4px;width:24px;height:24px;margin-right:8px;background:url("./assets/petscii-heading.svg") center/contain no-repeat;image-rendering:pixelated}
-.subtitle{color:#242078}
-.panel{background:#242078;border:3px solid #7774dc;border-radius:0;box-shadow:inset 0 0 0 2px #36329a}
-h2{color:#c5c4ff;text-transform:uppercase;letter-spacing:.04em}
-button,select,.master-tempo input{font-family:inherit;background:#36329a;border:2px solid #7774dc;border-radius:0;color:#fff;box-shadow:none}
-button.primary,button[aria-selected="true"],.tabbar button[aria-selected="true"]{background:#7774dc;color:#18145f;border-color:#c5c4ff}
-button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #ffcf73;outline-offset:2px}
-.statusbar{background:#242078;padding:3px 7px;border:1px solid #7774dc}
-.statusbar p,small{color:#c5c4ff}
-.section-divider{background:repeating-linear-gradient(90deg,#aaa9ff 0 8px,transparent 8px 16px);height:2px}
-label>input[type=range]{accent-color:#c5c4ff}
-label>output,.modulated-value{color:#ffcf73}
-input[type=checkbox]{border:2px solid #aaa9ff;border-radius:0;background:#36329a}
-input[type=checkbox]::before{border-radius:0;background:#c5c4ff}
-input[type=checkbox]:checked{background:#7774dc;border-color:#ffcf73}
-.lfo-controls{border:2px solid #7774dc;border-radius:0;background:#302b88}
-.lfo-controls legend{color:#ffcf73;text-transform:uppercase}
-.keyboard-panel{background:#242078}
-.key{border-radius:0;background:#dddfff;color:#242078;border:2px solid #7774dc}
-.key.black{background:#17134f;border-color:#aaa9ff;color:#e5e5ff}
-.key.down{background:#ffcf73}
-footer{color:#c5c4ff}
-@media(max-width:900px),(max-height:620px){main{border-width:2px}.tabbar button{min-height:44px}}
-
-/* High-contrast PETSCII palette. Keep the pixel geometry and touch layout. */
+/* Earlier high-contrast palette, superseded by the 64C enclosure styling below. */
 :root{color:#fff;background:#090d22}
 body{background:#090d22}
 main{background:#111934;border-color:#7ee8ff}
@@ -170,13 +137,61 @@ button:active{background:#d4cbb7;color:#10172d}
 #lfoControls{grid-template-columns:repeat(auto-fit,minmax(min(100%,165px),1fr));gap:8px}
 .lfo-controls{min-width:0}
 @media(max-width:420px){.performance-panel .controls{gap:5px 8px}.performance-panel .controls label{min-width:min(100%,105px)}#lfoControls{grid-template-columns:repeat(auto-fit,minmax(min(100%,145px),1fr))}.lfo-controls{grid-template-columns:minmax(0,1fr)}}
+
+/* Commodore 64C enclosure: warm molded-plastic shell, graphite keys and
+   recessed charcoal instrument panels. Deliberately replaces the navy palette. */
+:root{color:#242724;background:#bdb6a6;color-scheme:light}
+body{background:#bdb6a6}
+main{background:#d6cfbd;border:6px solid #a69d8b;box-shadow:inset 0 0 0 3px #eee9dc}
+header{background:#e9e4d8;color:#222724;border:3px solid #a69d8b;border-top:6px solid #f5f0e5;border-bottom:4px solid #9d9689;box-shadow:inset 0 0 0 2px #d4cbb7}
+h1,h2{color:#252923}
+.subtitle{color:#414941}
+.panel,.keyboard-panel{background:#e9e4d8;border:3px solid #a69d8b;border-top-color:#f5f0e5;box-shadow:inset 0 0 0 2px #d6cfbd}
+button,select,.master-tempo input{background:#575b58;color:#fff;border:2px solid #343a39;box-shadow:inset 0 2px 0 #888e89}
+button.primary,button[aria-selected="true"],.tabbar button[aria-selected="true"]{background:#343b39;color:#fff;border-color:#151b19;box-shadow:inset 0 2px 0 #707772}
+button:active{background:#262d2b;color:#fff}
+button:focus-visible,input:focus-visible,select:focus-visible{outline-color:#145d9d}
+.statusbar{background:#d6cfbd;border-color:#9b9384}
+.statusbar p,small,p,footer{color:#3d453e}
+.section-divider{background:repeating-linear-gradient(90deg,#8b8b80 0 8px,transparent 8px 16px)}
+label>input[type=range]{accent-color:#3e5550}
+label>output,.modulated-value{color:#71470c}
+.slider-stack>.modulation-thumb{accent-color:#145d9d}
+input[type=checkbox]{background:#6c736e;border-color:#333b36}
+input[type=checkbox]::before{background:#fff}
+input[type=checkbox]:checked{background:#236b58;border-color:#173b31}
+.lfo-controls{background:#d6cfbd;border:2px solid #9b9384}
+.lfo-controls legend{color:#303b35}
+.key{background:#f5f0e5;color:#202622;border:2px solid #8e918a;border-bottom:4px solid #a5a7a0}
+.key.black{background:#454b49;color:#fff;border-color:#252c29;border-bottom:4px solid #222927}
+.key.down{background:#d8b76b;color:#242724;border-bottom-color:#96743a}
+.sid-spinner:not([hidden]){border-color:#7d857e;border-top-color:#244f49}
+/* Hardware-inspired sans-serif labeling rather than C64 screen typography. */
+:root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+h1{font-size:clamp(18px,2.2vw,26px);font-weight:800;letter-spacing:.045em;text-transform:uppercase}
+h2{font-weight:750;letter-spacing:.025em;text-transform:uppercase}
+.lfo-controls legend{font-weight:750;text-transform:uppercase}
+button,select,.master-tempo input{font-family:inherit}
+/* Recessed hardware power lamp: dark when off, amber while loading/ready,
+   illuminated green only when the SID audio context is running. */
+.sid-led{display:inline-block;flex:none;width:14px;height:14px;border-radius:50%;border:2px solid #555b54;background:#454a45;box-shadow:inset 0 2px 3px #1d221f,0 1px 0 #fff}
+.sid-led[data-state="loading"],.sid-led[data-state="ready"]{background:#e5a43b;border-color:#85612d;box-shadow:inset 0 1px 2px #fff2bd,0 0 5px #d9a64e}
+.sid-led[data-state="on"]{background:#43ed77;border-color:#237b45;box-shadow:inset 0 1px 2px #d3ffe0,0 0 7px #42e978,0 0 2px #247c46}
+/* Hardware-style unison switch; preserve voices selection in both modes. */
+#unisonOn{cursor:pointer}
+#detune:disabled{opacity:.45;cursor:not-allowed}
+/* Compact hardware fader for master tempo with always-visible BPM readout. */
+.master-tempo{display:flex;align-items:center;gap:5px;white-space:nowrap;font-size:11px}
+.master-tempo input[type=range]{width:clamp(72px,8vw,110px);max-width:none;min-width:65px;height:28px;padding:0;border:0;background:transparent;box-shadow:none;accent-color:#454b49;touch-action:pan-x}
+.master-tempo output{min-width:28px;text-align:right;font-variant-numeric:tabular-nums;color:#343b39;font-weight:700}
+@media(max-width:520px){.master-tempo input[type=range]{width:72px}}
 </style></head><body><main>
-<header><div><h1>Project6581 · PR #36 preview</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="number" min="40" max="240" step="1" value="120" inputmode="numeric"></label><button id="panic">Stop all</button></div></header>
-<div class="statusbar"><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p></div>
+<header><div><h1>Project6581 · PR #36 preview</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="range" min="40" max="240" step="1" value="120" aria-label="Master tempo in beats per minute"><output id="masterBpmValue" for="masterBpm">120</output></label><button id="panic">Stop all</button></div></header>
+<div class="statusbar"><span id="sidLed" class="sid-led" data-state="off" role="img" aria-label="SID engine off"></span><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p></div>
 <div class="tabbar" role="tablist" aria-label="Editor sections"><button id="tabVoice" type="button" role="tab" aria-selected="true" aria-controls="voicePanel">Sound</button><button id="tabPlay" type="button" role="tab" aria-selected="false" aria-controls="playPanel">Arpeggiator &amp; LFOs</button></div>
 <div class="workspace" id="workspace" data-tab="voice">
 <section class="panel voice-panel" id="voicePanel" role="tabpanel" aria-labelledby="tabVoice" aria-label="Sound controls">
-<h2>Sound</h2><div class="voice-grid"><label>Chip <select id="chip"><option value="6581">MOS 6581</option><option value="8580">MOS 8580</option></select></label><label>Voices <select id="voiceCount"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label><label>Detune <input id="detune" type="range" min="0" max="100" value="12" step="1"><output id="detuneValue">12¢</output></label><label>Volume <input id="volume" type="range" min="0" max="100" value="55"></label><label>Cutoff <input id="cutoff" type="range" min="50" max="10000" value="7000"></label><label>Resonance <input id="resonance" type="range" min="0" max="100" value="10"></label><label>Filter <select id="mode"><option value="lowpass">Low-pass</option><option value="bandpass">Band-pass</option><option value="highpass">High-pass</option></select></label></div>
+<h2>Sound</h2><div class="voice-grid"><label>Chip <select id="chip"><option value="6581">MOS 6581</option><option value="8580">MOS 8580</option></select></label><label>Unison <input id="unisonOn" type="checkbox" checked></label><label>Voices <select id="voiceCount"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label><label>Detune <input id="detune" type="range" min="0" max="100" value="12" step="1"><output id="detuneValue">12¢</output></label><label>Volume <input id="volume" type="range" min="0" max="100" value="55"></label><label>Cutoff <input id="cutoff" type="range" min="50" max="10000" value="7000"></label><label>Resonance <input id="resonance" type="range" min="0" max="100" value="10"></label><label>Filter <select id="mode"><option value="lowpass">Low-pass</option><option value="bandpass">Band-pass</option><option value="highpass">High-pass</option></select></label></div>
 <div class="section-divider"></div><div id="voices" class="voices"></div>
 </section>
 <section class="panel performance-panel" id="playPanel" role="tabpanel" aria-labelledby="tabPlay" aria-label="Arpeggiator controls">
@@ -184,7 +199,7 @@ button:active{background:#d4cbb7;color:#10172d}
 <div class="section-divider"></div><h2>Arpeggiator</h2><div class="controls"><label>Arp <input id="arpOn" type="checkbox"></label><label>Latch <input id="arpLatch" type="checkbox"></label><label>Pattern <select id="arpPattern"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label><label>Rate <select id="arpRate"><option value="0.25">1/1</option><option value="0.5">1/2</option><option value="1">1/4</option><option value="2">1/8</option><option value="4" selected>1/16</option><option value="8">1/32</option><option value="16">1/64</option><option value="32">1/128</option></select></label><label>Sync tempo <input id="arpSync" type="checkbox" checked></label><label class="arp-local-bpm" hidden>Arp BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label><button id="arpClear">Clear latch</button></div><small id="arpStatus">Arp off</small><div class="section-divider"></div><section class="lfo-panel" aria-label="Low frequency oscillators"><h2>Modulation · LFOs</h2><div id="lfoControls"></div></section>
 </section></div>
 <section class="panel keyboard-panel" aria-label="Keyboard"><div class="keyboard-heading"><h2>Keyboard</h2><div class="octave-controls"><button id="octaveDown" type="button" aria-label="Previous octave">−</button><output id="octaveLabel">C3–C4</output><button id="octaveUp" type="button" aria-label="Next octave">+</button></div><small>Touch and hold · layered unison</small></div><div id="keyboard" class="keyboard"></div></section>
-<footer><p id="buildInfo">Project6581 v0.1.24 · Built 2026-11-04T01:21:32.813Z (UTC)</p><span class="diagnostics" id="sidLatencyStatus">Browser audio latency: not yet available.</span><span class="diagnostics" id="sidPlaybackStatus" role="status" aria-live="off">SID playback diagnostics appear here after enabling authentic SID.</span></footer>
+<footer><p id="buildInfo">Project6581 v0.1.31 · Built 2026-11-04T01:34:23.843Z (UTC)</p><span class="diagnostics" id="sidLatencyStatus">Browser audio latency: not yet available.</span><span class="diagnostics" id="sidPlaybackStatus" role="status" aria-live="off">SID playback diagnostics appear here after enabling authentic SID.</span></footer>
 </main><script>
 
 const $=id=>document.getElementById(id);let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();
@@ -256,8 +271,8 @@ for(const [name,id] of [['voice','tabVoice'],['play','tabPlay']]){
   });
 }
 function play(note){if(!sidController)return;if(!settings[0].enabled)return;sidController.noteOn(note,()=>settings[0]);}
-function updateUnison(){sidController?.configure({voiceCount:Number($('voiceCount').value),detune:Number($('detune').value)});$('detuneValue').textContent=$('detune').value+'¢';}
-['voiceCount','detune'].forEach(id=>$(id).addEventListener('input',updateUnison));
+function updateUnison(){const unison=$('unisonOn').checked;sidController?.configure({voiceCount:Number($('voiceCount').value),detune:Number($('detune').value),unison});$('detune').disabled=!unison;$('detuneValue').textContent=unison?$('detune').value+'¢':'Off';}
+['voiceCount','detune','unisonOn'].forEach(id=>$(id).addEventListener('input',updateUnison));updateUnison();
 function stop(note){sidController?.noteOff(note)}
 function panic(){gameStop();sidController?.panic()}
 $('panic').addEventListener('click',()=>{
@@ -398,19 +413,25 @@ function updateModulation(){
  // Always write the effective pulse value, including the saved base value after an LFO is disabled or retargeted.
  if(settings[0].wave==='square')sidController.setPulse(0,values.pulse);
 }
-$('masterBpm').addEventListener('input',()=>{const n=Number($('masterBpm').value);if(!Number.isFinite(n)||n<40||n>240)return;updateModulation();if($('arpSync').checked){if(gameEnabled())gameRestart();else arpRestart();}});
+$('masterBpm').addEventListener('input',()=>{const n=Number($('masterBpm').value);if(!Number.isFinite(n)||n<40||n>240)return;$('masterBpmValue').textContent=String(n);updateModulation();if($('arpSync').checked){if(gameEnabled())gameRestart();else arpRestart();}});
 $('arpSync').addEventListener('change',()=>{document.querySelector('.arp-local-bpm').hidden=$('arpSync').checked;if(gameEnabled())gameRestart();else arpRestart();});
 ['volume','cutoff','resonance','mode'].forEach(id=>$(id).addEventListener('input',updateModulation));
+function updateSidLed(){
+  const led=$('sidLed');
+  const state=sidAudio?(sidContext?.state==='running'?'on':'ready'):(sidStarting?'loading':'off');
+  led.dataset.state=state;
+  led.setAttribute('aria-label',state==='on'?'SID engine on':state==='ready'?'SID engine ready, audio suspended':state==='loading'?'SID engine loading':'SID engine off');
+}
 async function startSid(){
   const button=$('sidStart'),status=$('sidEngineStatus');
   if(sidAudio||sidStarting)return;
-  sidStarting=true;button.disabled=true;$('sidSpinner').hidden=false;
+  sidStarting=true;button.disabled=true;$('sidSpinner').hidden=false;updateSidLed();
   status.textContent='Loading authentic reSIDfp…';
   try{
     status.textContent='Loading SID JavaScript modules…';
     let moduleTimeout;
     const modules=Promise.all([
-      import('./src/create-residfp-audio.js?v=0.1.24+20261104T012132813Z'),import('./src/unison-sid-controller.js?v=0.1.24+20261104T012132813Z'),import('./src/lfo-modulation.js?v=0.1.24+20261104T012132813Z')]);
+      import('./src/create-residfp-audio.js?v=0.1.31+20261104T013423843Z'),import('./src/unison-sid-controller.js?v=0.1.31+20261104T013423843Z'),import('./src/lfo-modulation.js?v=0.1.31+20261104T013423843Z')]);
     const [{createReSidFpAudio},{UnisonSidController},lfoModule]=await Promise.race([
       modules,
       new Promise((_,reject)=>{moduleTimeout=setTimeout(()=>reject(new Error('SID JavaScript module loading timed out after 15 seconds')),15000)})
@@ -430,8 +451,8 @@ async function startSid(){
     }});
     timeout=setTimeout(()=>rejectReady(new Error('SID engine initialization timed out')),12000);
     try{await ready}catch(err){await audio.close();throw err}finally{clearTimeout(timeout)}
-    panic();sidAudio=audio;sidKeys=0;modulation=lfoModule;
-    sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:Number($('voiceCount').value),detune:Number($('detune').value)});
+    panic();sidAudio=audio;sidKeys=0;modulation=lfoModule;updateSidLed();
+    sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:Number($('voiceCount').value),detune:Number($('detune').value),unison:$('unisonOn').checked});
     updateModulation();
     if(lfoTimer===null)lfoTimer=setInterval(()=>{if(lfoState.some(lfo=>lfo.enabled&&lfo.depth>0))updateModulation()},25);
     const base=audio.context.baseLatency,output=audio.context.outputLatency;
@@ -443,13 +464,13 @@ async function startSid(){
     if(audio.context.state==='suspended')status.textContent='SID ready · touch a key to unlock audio.';
     if(audio.context.state==='running')status.textContent='Authentic reSIDfp active · up to eight SID unison voices. Change chip model by reloading.';
   }catch(err){sidContext=null;status.textContent='Authentic SID unavailable: '+(err.message||err)+'. No audio fallback is available.';button.disabled=false;button.hidden=false}
-  finally{sidStarting=false;$('sidSpinner').hidden=true}
+  finally{sidStarting=false;$('sidSpinner').hidden=true;updateSidLed()}
 }
 $('sidStart').addEventListener('click',startSid);
 function unlockSidAudio(){
   if(!sidContext||sidContext.state!=='suspended')return;
   // Call resume synchronously inside the trusted gesture for iPad Safari.
-  sidContext.resume().then(()=>{if(sidAudio)$('sidEngineStatus').textContent='Authentic reSIDfp active · SID unison voices.'}).catch(err=>{$('sidEngineStatus').textContent='Tap again to enable audio: '+err.message});
+  sidContext.resume().then(()=>{if(sidAudio)$('sidEngineStatus').textContent='Authentic reSIDfp active · SID unison voices.';updateSidLed()}).catch(err=>{$('sidEngineStatus').textContent='Tap again to enable audio: '+err.message;updateSidLed()});
 }
 document.addEventListener('pointerdown',unlockSidAudio,{capture:true});
 document.addEventListener('keydown',unlockSidAudio,{capture:true});
