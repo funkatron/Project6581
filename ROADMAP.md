@@ -5,7 +5,7 @@
 - [x] Add register-level tests for independent note allocation across three SID chips, deterministic oldest-voice stealing, Unison transitions, and panic/release.
 - [x] Correct whole-note synchronized LFO rate conversion; 4/1, 2/1, and 1/1 correspond to 16, 8, and 4 beats per cycle.
 - [x] Improve iPad panel-width-responsive LFO controls and suppress duplicate key release after pointer capture ends.
-- [ ] Run CI on the regression PR and resolve any failures.
+- [x] Run CI on the regression PR: 35 tests passed, zero failures (2026-11-04).
 - [ ] Complete real iPad Safari audio/layout verification using [the device checklist](docs/ipad-safari-qa.md); a code review alone cannot complete this step.
 - [ ] Confirm a new Pages deployment separately **after** an authorized squash merge.
 
