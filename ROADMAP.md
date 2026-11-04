@@ -48,6 +48,20 @@ The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) identifie
 
 **Completion condition:** Three LFOs can run simultaneously, independently modulate selected sliders, and stop cleanly without changing saved base control values or compromising SID playback.
 
+## Planned: modulation-center slider presentation
+
+**Goal:** Make modulation immediately readable without moving control thumbs during playback.
+
+- [ ] Always show each continuous control's current numeric value and unit (e.g. Hz, %, seconds, cents), whether or not an LFO is assigned.
+- [ ] Treat the physical slider thumb as the **base/center value** that the user edits. LFOs add modulation around that center without shifting the thumb, changing the saved base value, or hijacking pointer input.
+- [ ] Show the instantaneous modulated value through the **colored track fill beneath the stationary thumb**, keeping the base position identifiable. Ensure bipolar movement is understandable above and below the center, including clipping at slider bounds.
+- [ ] Preserve an accessible numeric readout of the effective value while retaining the editable center value; choose concise labels so both are understandable without crowded panels.
+- [ ] Update appearance as the user changes the center or an LFO's depth/rate/target, and return to the center and ordinary track when modulation is disabled or reassigned.
+- [ ] Test simultaneous LFO summation, min/max saturation, changes to base values during modulation, keyboard accessibility, iPad Safari touch controls, and rendering overhead at the current modulation update cadence.
+- [ ] Do not use a second moving slider thumb or create additional SID register writes merely to render the effect.
+
+**Completion checks:** The thumb remains fixed at the user-selected modulation center, a colored track visualizes the current modulation, and numeric values remain readable. Touch/keyboard edits and authentic SID playback behave as before.
+
 ## Planned: selectable Western scales and scale-constrained playback
 
 **Goal:** Support conventional 12-tone equal-tempered Western musical scales on the keyboard and in all sounding notes, with predictable, opt-in pitch restrictions.
