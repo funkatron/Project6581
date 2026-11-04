@@ -47,6 +47,8 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
         if(typeof onChunk!=='function')throw new TypeError('Expected PCM callback');
         capture=onChunk;node.port.postMessage({type:'record-start'});
       },
+      startM4aMonitor(){node.port.postMessage({type:'record-monitor-start'})},
+      stopM4aMonitor(){node.port.postMessage({type:'record-monitor-stop'})},
       stopWavCapture(){
         if(!capture)return Promise.reject(new Error('WAV capture was not started'));
         if(stopResolve)return Promise.reject(new Error('WAV capture is already stopping'));
