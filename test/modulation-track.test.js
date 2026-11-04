@@ -40,7 +40,7 @@ test('all eleven continuous controls have legible persistent base and effective 
  assert.equal(formatControlValue('resonance',10),'10%');
  assert.equal(formatControlValue('detune',12),'12¢');
  assert.equal(formatControlValue('detune',12.5),'12.5¢');
- assert.equal(formatControlValue('attack',.002),'0.00 s');
+ assert.equal(formatControlValue('attack',.002),'0.002 s');
  assert.equal(formatControlValue('decay',.12),'0.12 s');
  assert.equal(formatControlValue('sustain',.8),'80%');
  assert.equal(formatControlValue('release',.12),'0.12 s');
