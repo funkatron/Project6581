@@ -81,6 +81,28 @@ test('refresh rebinds highlight on keyboard re-render or octave change',()=>{
  assert.equal(visual.note,60);
 });
 
+test('repeated notes at fast rates avoid unnecessary keyboard repaints',()=>{
+ const {keys,labels,visual}=fixture();
+ visual.show(60);
+ const count=labels.length;
+ visual.show(60);
+ visual.show(60);
+ assert.equal(labels.length,count);
+ assert.equal(keys.get(60).classList.contains('arp-playing'),true);
+
+ // A changed keyboard mapping must still be repainted on a repeated note.
+ const old=keys.get(60);
+ keys.set(60,key());
+ visual.show(60);
+ assert.equal(labels.length,count+1);
+ assert.equal(old.classList.contains('arp-playing'),false);
+ assert.equal(keys.get(60).classList.contains('arp-playing'),true);
+ visual.clear();
+ const stopped=labels.length;
+ visual.clear();
+ assert.equal(labels.length,stopped);
+});
+
 test('invalid note values are rejected without corrupting the active highlight',()=>{
  const {keys,visual}=fixture();
  visual.show(60);
