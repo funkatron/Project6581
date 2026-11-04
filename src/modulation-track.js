@@ -30,7 +30,7 @@ export function modulationTrack(base, effective, min, max, active=false) {
 export function formatControlValue(target,value) {
  const n=Number(value);
  if(!Number.isFinite(n))return '—';
- if(['attack','decay','release'].includes(target))return n.toFixed(2)+' s';
+ if(['attack','decay','release'].includes(target))return n.toFixed(Math.abs(n)>0&&Math.abs(n)<0.01?3:2)+' s';
  if(target==='cutoff')return Math.round(n)+' Hz';
  if(target==='pwmRate')return n.toFixed(2)+' Hz';
  if(target==='sustain')return Math.round(n*100)+'%';
