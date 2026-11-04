@@ -31,14 +31,20 @@ input[type=checkbox]:checked::before{transform:translateX(17px)}
 .voice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 12px}
 .voice-grid label{min-width:0}
 .performance-panel .controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 12px}.performance-panel .controls label{margin:0;min-width:0}.performance-panel .controls button{justify-self:start}
-.slider-stack{position:relative;display:flex;align-items:center;flex:1;min-width:0;max-width:62%}
-.slider-stack>input[type=range]{width:100%;max-width:none;min-width:0;flex:1}
-.slider-stack>.modulation-thumb{position:absolute;inset:0;width:100%;height:100%;margin:0;pointer-events:none;opacity:.95;accent-color:#79d8d0}
-.slider-stack>.modulation-thumb[hidden]{display:none!important}
-.slider-stack.is-modulating>input:not(.modulation-thumb){opacity:.35}
-.modulated-value{display:inline-block;margin-left:4px;font-size:10px;font-variant-numeric:tabular-nums;color:#f3bd78;white-space:nowrap}
+/* Editable slider thumbs stay at their saved base/center value. */
+.slider-stack{position:relative;display:flex;align-items:center;flex:1;min-width:0;max-width:62%;height:36px;isolation:isolate}
+.slider-stack::before{content:"";position:absolute;left:9px;right:9px;top:50%;height:8px;transform:translateY(-50%);border-radius:5px;background:linear-gradient(90deg,#849688 0 var(--center,0%),#d0cbbc var(--center,0%) 100%);pointer-events:none}
+.modulation-band{position:absolute;left:9px;right:9px;top:50%;height:8px;transform:translateY(-50%);border-radius:5px;background:linear-gradient(90deg,transparent 0 var(--band-start,0%),#20836a var(--band-start,0%) var(--band-end,0%),transparent var(--band-end,0%) 100%);pointer-events:none}
+.modulation-band[hidden]{display:none!important}
+.slider-stack>input[type=range]{-webkit-appearance:none;appearance:none;position:relative;z-index:2;flex:1;width:100%;min-width:0;max-width:none;height:36px;margin:0;padding:0;border:0;box-shadow:none;background:transparent;touch-action:pan-x;cursor:pointer}
+.slider-stack>input[type=range]::-webkit-slider-runnable-track{height:8px;background:transparent;border:0}
+.slider-stack>input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:22px;margin-top:-7px;border:2px solid #323c35;border-radius:5px;background:#f1eadd;box-shadow:0 1px 2px #0005}
+.slider-stack>input[type=range]::-moz-range-track{height:8px;background:transparent;border:0}
+.slider-stack>input[type=range]::-moz-range-thumb{width:16px;height:20px;border:2px solid #323c35;border-radius:5px;background:#f1eadd}
+.base-value,.modulated-value{font-size:10px;font-variant-numeric:tabular-nums;white-space:nowrap;flex:none}
+.modulated-value{color:#236b58;font-weight:700}
 .modulated-value[hidden]{display:none!important}
-.modulated-value::before{content:"↝ ";opacity:.8}
+.modulated-value::before{content:"→ ";opacity:.8}
 .lfo-panel{margin-top:4px}
 #lfoControls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
 .lfo-controls{display:grid;grid-template-columns:minmax(0,1fr);gap:2px;min-width:0;margin:0;padding:4px 5px;border:1px solid #34455a;border-radius:7px}
@@ -100,7 +106,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline-color:#ffd
 .section-divider{background:repeating-linear-gradient(90deg,#7ee8ff 0 8px,transparent 8px 16px)}
 label>input[type=range]{accent-color:#7ee8ff}
 label>output,.modulated-value{color:#ffdf70}
-.slider-stack>.modulation-thumb{accent-color:#ffdf70}
+
 input[type=checkbox]{background:#1a2b49;border-color:#c5e9ff}
 input[type=checkbox]::before{background:#fff}
 input[type=checkbox]:checked{background:#00b8ce;border-color:#fff}
@@ -156,7 +162,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline-color:#145
 .section-divider{background:repeating-linear-gradient(90deg,#8b8b80 0 8px,transparent 8px 16px)}
 label>input[type=range]{accent-color:#3e5550}
 label>output,.modulated-value{color:#71470c}
-.slider-stack>.modulation-thumb{accent-color:#145d9d}
+
 input[type=checkbox]{background:#6c736e;border-color:#333b36}
 input[type=checkbox]::before{background:#fff}
 input[type=checkbox]:checked{background:#236b58;border-color:#173b31}
@@ -213,13 +219,17 @@ header{padding:8px 12px;min-width:0}
 /* Fix octave-navigation position independent of currently sounding notes. */
 .keyboard-heading{display:grid;grid-template-columns:minmax(0,1fr) max-content max-content;min-width:0}
 .keyboard-heading .octave-controls{min-width:max-content;white-space:nowrap;justify-self:end}
+/* Active modulation is green, the editable base number stays neutral. */
+label>.base-value{color:#424b43;font-size:10px;min-width:max-content;text-align:right}
+label>.modulated-value{color:#236b58;font-size:10px;font-weight:700;min-width:max-content;text-align:right}
+label:has(.slider-stack){gap:4px}
 </style></head><body><main>
 <header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="range" min="40" max="240" step="1" value="120" aria-label="Master tempo in beats per minute"><output id="masterBpmValue" for="masterBpm">120</output></label><button id="panic">Stop all</button></div></header>
 <div class="statusbar"><span id="sidLed" class="sid-led" data-state="off" role="img" aria-label="SID engine off"></span><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p></div>
 <div class="tabbar" role="tablist" aria-label="Editor sections"><button id="tabVoice" type="button" role="tab" aria-selected="true" aria-controls="voicePanel">Sound</button><button id="tabPlay" type="button" role="tab" aria-selected="false" aria-controls="playPanel">Arpeggiator &amp; LFOs</button></div>
 <div class="workspace" id="workspace" data-tab="voice">
 <section class="panel voice-panel" id="voicePanel" role="tabpanel" aria-labelledby="tabVoice" aria-label="Sound controls">
-<h2>Sound</h2><div class="voice-grid"><label>Chip <select id="chip"><option value="6581">MOS 6581</option><option value="8580">MOS 8580</option></select></label><label>Unison <input id="unisonOn" type="checkbox" checked></label><label>Voices <select id="voiceCount"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label><label>Detune <input id="detune" type="range" min="0" max="100" value="12" step="1"><output id="detuneValue">12¢</output></label><label>Volume <input id="volume" type="range" min="0" max="100" value="55"></label><label>Cutoff <input id="cutoff" type="range" min="50" max="10000" value="7000"></label><label>Resonance <input id="resonance" type="range" min="0" max="100" value="10"></label><label>Filter <select id="mode"><option value="lowpass">Low-pass</option><option value="bandpass">Band-pass</option><option value="highpass">High-pass</option></select></label></div>
+<h2>Sound</h2><div class="voice-grid"><label>Chip <select id="chip"><option value="6581">MOS 6581</option><option value="8580">MOS 8580</option></select></label><label>Unison <input id="unisonOn" type="checkbox" checked></label><label>Voices <select id="voiceCount"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label><label>Detune <input id="detune" type="range" min="0" max="100" value="12" step="1"><output id="detuneValue" class="base-value">12¢</output></label><label>Volume <input id="volume" type="range" min="0" max="100" value="55"><output class="base-value">55%</output></label><label>Cutoff <input id="cutoff" type="range" min="50" max="10000" value="7000"><output class="base-value">7000 Hz</output></label><label>Resonance <input id="resonance" type="range" min="0" max="100" value="10"><output class="base-value">10%</output></label><label>Filter <select id="mode"><option value="lowpass">Low-pass</option><option value="bandpass">Band-pass</option><option value="highpass">High-pass</option></select></label></div>
 <div class="section-divider"></div><div id="voices" class="voices"></div>
 </section>
 <section class="panel performance-panel" id="playPanel" role="tabpanel" aria-labelledby="tabPlay" aria-label="Arpeggiator controls">
@@ -230,6 +240,7 @@ header{padding:8px 12px;min-width:0}
 <footer><p id="buildInfo">Project6581 v__BUILD_VERSION__ · Built __BUILD_TIMESTAMP__ (UTC)</p><span class="diagnostics" id="sidLatencyStatus">Browser audio latency: not yet available.</span><span class="diagnostics" id="sidPlaybackStatus" role="status" aria-live="off">SID playback diagnostics appear here after enabling authentic SID.</span></footer>
 </main><script type="module">
 import {createArpKeyVisual} from "./src/arp-key-visual.js?v=__BUILD_ID__";
+import {modulationTrack,formatControlValue,SLIDER_TARGETS} from "./src/modulation-track.js?v=__BUILD_ID__";
 
 const $=id=>document.getElementById(id);let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();
 const settings=[{wave:'square',attack:0.002,decay:0.12,sustain:0.8,release:0.12,pulse:50,pwmDepth:0,pwmRate:1,enabled:true}];
@@ -238,7 +249,7 @@ const ranges=[['attack','Attack',0,2,.01],['decay','Decay',0,3,.01],['sustain','
 function renderVoiceControls(){
   const s=settings[0],el=document.createElement('section');
   el.className='panel';
-  el.innerHTML='<h2>SID voice</h2><div class="voice-grid"><label>Enabled <input type="checkbox" data-prop="enabled"></label><label>Waveform <select data-prop="wave"><option value="triangle">Triangle</option><option value="sawtooth">Sawtooth</option><option value="square">Pulse</option><option value="noise">Noise</option></select></label>'+ranges.map(([p,name,min,max,step])=>'<label data-control="'+p+'">'+name+' <input data-prop="'+p+'" type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+s[p]+'"><output>'+s[p]+'</output></label>').join('')+'</div>';
+  el.innerHTML='<h2>SID voice</h2><div class="voice-grid"><label>Enabled <input type="checkbox" data-prop="enabled"></label><label>Waveform <select data-prop="wave"><option value="triangle">Triangle</option><option value="sawtooth">Sawtooth</option><option value="square">Pulse</option><option value="noise">Noise</option></select></label>'+ranges.map(([p,name,min,max,step])=>'<label data-control="'+p+'">'+name+' <input data-prop="'+p+'" type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+s[p]+'"><output class="base-value">'+formatControlValue(p,s[p])+'</output></label>').join('')+'</div>';
   $('voices').replaceChildren(el);
   el.querySelector('[data-prop="enabled"]').checked=s.enabled;
   el.querySelector('[data-prop="wave"]').value=s.wave;
@@ -246,7 +257,7 @@ function renderVoiceControls(){
   el.querySelectorAll('[data-prop]').forEach(inp=>inp.addEventListener('input',()=>{
     s[inp.dataset.prop]=inp.type==='checkbox'?inp.checked:inp.type==='range'?Number(inp.value):inp.value;
     const baseOutput=inp.closest('label')?.querySelector('output:not(.modulated-value)');
-    if(baseOutput)baseOutput.textContent=inp.value;
+    if(baseOutput)baseOutput.textContent=formatControlValue(inp.dataset.prop,Number(inp.value));
     if(inp.dataset.prop==='wave')updatePulse();
     // Always restore the base settings immediately when a waveform or slider changes.
     updateModulation();
@@ -307,7 +318,7 @@ for(const [name,id] of [['voice','tabVoice'],['play','tabPlay']]){
   });
 }
 function play(note){if(!sidController)return;if(!settings[0].enabled)return;sidController.noteOn(note,()=>currentSidSettings);}
-function updateUnison(){const unison=$('unisonOn').checked;sidController?.configure({voiceCount:Number($('voiceCount').value),detune:Number($('detune').value),unison});$('detune').disabled=!unison;$('detuneValue').textContent=unison?$('detune').value+'¢':'Off';updateModulation();}
+function updateUnison(){const unison=$('unisonOn').checked;sidController?.configure({voiceCount:Number($('voiceCount').value),detune:Number($('detune').value),unison});$('detune').disabled=!unison;$('detuneValue').textContent=formatControlValue('detune',Number($('detune').value));updateModulation();}
 ['voiceCount','detune','unisonOn'].forEach(id=>$(id).addEventListener('input',updateUnison));updateUnison();
 function stop(note){sidController?.noteOff(note)}
 function panic(){gameStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arp.last=null;arpKeyVisual.clear();sidController?.panic()}
