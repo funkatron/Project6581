@@ -206,6 +206,12 @@ header{padding:8px 12px;min-width:0}
 .lfo-controls input[type=range]{height:40px;touch-action:pan-x}
 .lfo-controls output{font-size:11px}
 @media(max-width:520px){header{display:grid;grid-template-columns:minmax(0,1fr);gap:5px}header .controls{justify-content:space-between}}
+/* Arp-generated note: separate from the gold physical-press state. */
+.key.arp-playing:not(.down){background:#7bcabb;color:#16362d;border-bottom-color:#2d7465;box-shadow:inset 0 0 0 3px #236858}
+.key.black.arp-playing:not(.down){background:#388c79;color:#fff;border-bottom-color:#22584c;box-shadow:inset 0 0 0 3px #a1eedf}
+.key.down.arp-playing{box-shadow:inset 0 0 0 3px #236858}
+.arp-visual-note{font-size:11px;font-weight:700;color:#24594a;min-width:0;max-width:38%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:520px){.arp-visual-note{font-size:10px;max-width:32%}}
 </style></head><body><main>
 <header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="range" min="40" max="240" step="1" value="120" aria-label="Master tempo in beats per minute"><output id="masterBpmValue" for="masterBpm">120</output></label><button id="panic">Stop all</button></div></header>
 <div class="statusbar"><span id="sidLed" class="sid-led" data-state="off" role="img" aria-label="SID engine off"></span><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p></div>
@@ -219,9 +225,10 @@ header{padding:8px 12px;min-width:0}
 <h2>Game Arp</h2><div class="controls"><label>Enabled <input id="gameArpOn" type="checkbox" checked></label><label>Style <select id="gameArpStyle"><option value="action">Action</option><option value="adventure">Adventure</option><option value="arcade">Arcade</option></select></label></div>
 <div class="section-divider"></div><h2>Arpeggiator</h2><div class="controls"><label>Arp <input id="arpOn" type="checkbox"></label><label>Latch <input id="arpLatch" type="checkbox"></label><label>Pattern <select id="arpPattern"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label><label>Rate <select id="arpRate"><option value="0.25">1/1</option><option value="0.5">1/2</option><option value="1">1/4</option><option value="2">1/8</option><option value="4" selected>1/16</option><option value="8">1/32</option><option value="16">1/64</option><option value="32">1/128</option></select></label><label>Sync tempo <input id="arpSync" type="checkbox" checked></label><label class="arp-local-bpm" hidden>Arp BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label><button id="arpClear">Clear latch</button></div><small id="arpStatus">Arp off</small><div class="section-divider"></div><section class="lfo-panel" aria-label="Low frequency oscillators"><h2>Modulation · LFOs</h2><div id="lfoControls"></div></section>
 </section></div>
-<section class="panel keyboard-panel" aria-label="Keyboard"><div class="keyboard-heading"><h2>Keyboard</h2><div class="octave-controls"><button id="octaveDown" type="button" aria-label="Previous octave">−</button><output id="octaveLabel">C3–C4</output><button id="octaveUp" type="button" aria-label="Next octave">+</button></div><small>Touch and hold · layered unison</small></div><div id="keyboard" class="keyboard"></div></section>
+<section class="panel keyboard-panel" aria-label="Keyboard"><div class="keyboard-heading"><h2>Keyboard</h2><output id="arpVisualNote" class="arp-visual-note" aria-label="Arpeggiator note" aria-live="off"></output><div class="octave-controls"><button id="octaveDown" type="button" aria-label="Previous octave">−</button><output id="octaveLabel">C3–C4</output><button id="octaveUp" type="button" aria-label="Next octave">+</button></div><small>Touch and hold · layered unison</small></div><div id="keyboard" class="keyboard"></div></section>
 <footer><p id="buildInfo">Project6581 v__BUILD_VERSION__ · Built __BUILD_TIMESTAMP__ (UTC)</p><span class="diagnostics" id="sidLatencyStatus">Browser audio latency: not yet available.</span><span class="diagnostics" id="sidPlaybackStatus" role="status" aria-live="off">SID playback diagnostics appear here after enabling authentic SID.</span></footer>
-</main><script>
+</main><script type="module">
+import {createArpKeyVisual} from "./src/arp-key-visual.js?v=__BUILD_ID__";
 
 const $=id=>document.getElementById(id);let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();
 const settings=[{wave:'square',attack:0.002,decay:0.12,sustain:0.8,release:0.12,pulse:50,pwmDepth:0,pwmRate:1,enabled:true}];
@@ -295,7 +302,7 @@ function play(note){if(!sidController)return;if(!settings[0].enabled)return;sidC
 function updateUnison(){const unison=$('unisonOn').checked;sidController?.configure({voiceCount:Number($('voiceCount').value),detune:Number($('detune').value),unison});$('detune').disabled=!unison;$('detuneValue').textContent=unison?$('detune').value+'¢':'Off';}
 ['voiceCount','detune','unisonOn'].forEach(id=>$(id).addEventListener('input',updateUnison));updateUnison();
 function stop(note){sidController?.noteOff(note)}
-function panic(){gameStop();sidController?.panic()}
+function panic(){gameStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arp.last=null;arpKeyVisual.clear();sidController?.panic()}
 $('panic').addEventListener('click',()=>{
   $('gameArpOn').checked=false;
   $('arpOn').checked=false;
@@ -315,7 +322,7 @@ const arp={held:new Set(),latched:new Set(),timer:null,index:0,step:0,last:null}
 const gamePatterns={action:[0,12,7,12,0,7,12,19],adventure:[0,3,7,12,7,3,10,7],arcade:[0,12,0,7,12,7,3,7]};
 const game={held:[],latched:null,timer:null,last:null,step:0};
 const gameEnabled=()=>$('gameArpOn').checked;
-function gameStop(){if(game.timer!==null){clearInterval(game.timer);game.timer=null}if(game.last!==null){stop(game.last);game.last=null}}
+function gameStop(){if(game.timer!==null){clearInterval(game.timer);game.timer=null}if(game.last!==null){stop(game.last);game.last=null}arpKeyVisual.clear()}
 function gameRoot(){return game.held.length?game.held[game.held.length-1]:$('arpLatch').checked?game.latched:null}
 function gameTick(){
   const root=gameRoot();if(root===null){gameStop();$('arpStatus').textContent='No notes held';return}
@@ -323,6 +330,7 @@ function gameTick(){
   const pattern=gamePatterns[$('gameArpStyle').value]??gamePatterns.action;
   game.last=Math.min(127,root+pattern[game.step++%pattern.length]);
   play(game.last);
+  arpKeyVisual.show(game.last);
   $('arpStatus').textContent='Game Arp · '+$('gameArpStyle').selectedOptions[0].text+' · '+names[root%12]+(Math.floor(root/12)-1);
 }
 function gameRestart(){
@@ -335,8 +343,8 @@ function gameRestart(){
 }
 const arpEnabled=()=>$('arpOn').checked;
 function arpNotes(){return [...($('arpLatch').checked?arp.latched:arp.held)].sort((a,b)=>a-b)}
-function arpStopVoice(){if(arp.last!==null){stop(arp.last);arp.last=null}}
-function arpTick(){const notes=arpNotes();arpStopVoice();if(!notes.length){$('arpStatus').textContent='No notes held';return}let pattern=$('arpPattern').value,seq=pattern==='down'?[...notes].reverse():pattern==='updown'&&notes.length>1?[...notes,...notes.slice(1,-1).reverse()]:notes;let note=pattern==='random'?notes[Math.floor(Math.random()*notes.length)]:seq[arp.step++%seq.length];arp.last=note;play(note);$('arpStatus').textContent='Playing '+names[note%12]+(Math.floor(note/12)-1)+' · '+notes.length+' notes';}
+function arpStopVoice(){if(arp.last!==null){stop(arp.last);arp.last=null}arpKeyVisual.clear()}
+function arpTick(){const notes=arpNotes();arpStopVoice();if(!notes.length){$('arpStatus').textContent='No notes held';return}let pattern=$('arpPattern').value,seq=pattern==='down'?[...notes].reverse():pattern==='updown'&&notes.length>1?[...notes,...notes.slice(1,-1).reverse()]:notes;let note=pattern==='random'?notes[Math.floor(Math.random()*notes.length)]:seq[arp.step++%seq.length];arp.last=note;play(note);arpKeyVisual.show(note);$('arpStatus').textContent='Playing '+names[note%12]+(Math.floor(note/12)-1)+' · '+notes.length+' notes';}
 function arpRestart(){if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.step=0;if(arpEnabled()&&!gameEnabled()){panic();arpTick();const ms=60000/Number($('arpSync').checked?$('masterBpm').value:$('arpBpm').value)/Number($('arpRate').value);arp.timer=setInterval(arpTick,ms)}else{$('arpStatus').textContent='Arp off';arp.latched.clear();}}
 function keyDown(note){if(sidController){sidKeys++;$('sidPlaybackStatus').textContent='SID key presses: '+sidKeys+' · waiting for audio samples…'}if(gameEnabled()){if(!game.held.includes(note))game.held.push(note);game.latched=note;gameRestart();return}if(!arpEnabled()){play(note);return}if(!arp.held.has(note)){if($('arpLatch').checked){if(arp.held.size===0)arp.latched.clear();arp.latched.add(note)}arp.held.add(note)}if(arp.timer===null)arpRestart();}
 function keyUp(note){if(gameEnabled()){game.held=game.held.filter(n=>n!==note);gameRestart();return}if(!arpEnabled()){stop(note);return}arp.held.delete(note);if(!$('arpLatch').checked&&arp.held.size===0){arpStopVoice();$('arpStatus').textContent='No notes held';}}
@@ -346,8 +354,13 @@ $('arpOn').addEventListener('change',()=>{arp.held.clear();arp.latched.clear();a
 $('arpLatch').addEventListener('change',()=>{arp.latched.clear();if(gameEnabled()){gameRestart();return}if($('arpLatch').checked)arp.held.forEach(n=>arp.latched.add(n));arpRestart()});
 ['arpPattern','arpRate'].forEach(id=>$(id).addEventListener('change',()=>gameEnabled()?gameRestart():arpRestart()));
 $('arpBpm').addEventListener('input',()=>{$('bpmValue').textContent=$('arpBpm').value;if(gameEnabled())gameRestart();else arpRestart()});
-$('arpClear').addEventListener('click',()=>{arp.latched.clear();arp.held.clear();game.latched=null;game.held=[];gameStop();arpStopVoice();$('arpStatus').textContent='Latch cleared'});
+$('arpClear').addEventListener('click',()=>{arp.latched.clear();arp.held.clear();game.latched=null;game.held=[];gameStop();arpStopVoice();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}$('arpStatus').textContent='Latch cleared'});
 const keys=new Map();
+const arpKeyVisual=createArpKeyVisual({
+ getKey:note=>keys.get(note),
+ noteName:note=>names[note%12]+(Math.floor(note/12)-1),
+ showLabel:text=>{$('arpVisualNote').textContent=text}
+});
 const MIN_OCTAVE=0,MAX_OCTAVE=7;
 let keyboardOctave=3;
 const compactKeyboard=()=>matchMedia('(max-width:900px), (max-height:620px)').matches;

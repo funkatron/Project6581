@@ -18,6 +18,8 @@ Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of th
 
 **Want one sustained note instead?** Turn **Game Arp → Enabled** off. You can now play notes directly.
 
+**Follow the melody:** During Game Arp or regular Arp playback, the keyboard highlights each generated note in **teal**. Keys you physically press remain **gold**. If a generated note is outside the visible octaves, its name appears beside **Keyboard** instead of lighting the wrong key. The highlight clears when you stop playback.
+
 > 🔈 **No sound?** Turn up your device volume, check the **Engine status** message, and try touching a key again. If initialization fails, reload the page and retry. There is no substitute audio engine.
 
 ## 🎛️ The controls, in plain language

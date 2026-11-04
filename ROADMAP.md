@@ -7,7 +7,7 @@
 - [x] Improve iPad panel-width-responsive LFO controls and suppress duplicate key release after pointer capture ends.
 - [x] Run CI on the regression PR: 35 tests passed, zero failures (2026-11-04).
 - [ ] Complete real iPad Safari audio/layout verification using [the device checklist](docs/ipad-safari-qa.md); a code review alone cannot complete this step.
-- [ ] Confirm a new Pages deployment separately **after** an authorized squash merge.
+- [x] Confirm the GitHub Pages deployment of PRs #39 and #40 (commit `ec25e9c`, November 4, 2026).
 
 The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) identifies current scheduling risks and a bounded measurement/prototype plan. No replacement of the current LFO timer is authorized by regression tests alone. Spectrum analyzer, oscilloscope, spectrogram, and independently configurable SID chips remain separate roadmap items.
 
