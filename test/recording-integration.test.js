@@ -23,8 +23,8 @@ test('WAV capture transfers SID renderer PCM, not microphone or synthesis impost
  const syntax=spawnSync(process.execPath,['--check'],{input:worklet,encoding:'utf8'});
  assert.equal(syntax.status,0,syntax.stderr);
  assert.match(worklet,/this\.port\.onmessage/);
- assert.match(worklet,/type:'record-start'/);
- assert.match(worklet,/type:'record-stop'/);
+ assert.match(worklet,/data\?\.type==='record-start'/);
+ assert.match(worklet,/data\?\.type==='record-stop'/);
  assert.match(worklet,/this\.recordSamples\.set\(pcm\.subarray/);
  assert.match(worklet,/type:'record-chunk',samples/);
  assert.match(worklet,/type:'record-stopped'/);
