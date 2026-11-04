@@ -48,3 +48,17 @@
 - [ ] Add deterministic timing tests and device-level audio checks before replacing the current 60 Hz fallback.
 
 **Completion checks:** Documented measurements and a bounded implementation plan; no architectural migration until benefits and multi-SID implications are understood.
+
+## Planned: audio visualization instruments
+
+**Goal:** Provide optional, low-overhead visual feedback for authentic SID output, using a recessed hardware-instrument display consistent with the Commodore 64C-inspired interface.
+
+- [ ] Prototype a real-time spectrum analyzer using Web Audio `AnalyserNode` on the existing SID audio output; display frequency versus magnitude, with readable frequency markers and sensible dB scaling.
+- [ ] Evaluate a time-domain oscilloscope for examining SID waveforms, pulse-width changes, and envelopes.
+- [ ] Explore a scrolling spectrogram for viewing harmonics, filter sweeps, and LFO modulation over time.
+- [ ] Keep visualization optional and pause rendering when hidden, backgrounded, or disabled; avoid adding audio latency or disturbing playback.
+- [ ] Measure rendering overhead on iPad Safari and desktop, including multi-SID configurations; choose FFT size, refresh rate, and display resolution based on evidence.
+- [ ] Consider whether combined output and per-SID views are useful once independent SID chips are supported.
+- [ ] Ensure the display is responsive, accessible, and styled as a recessed instrument panel without consuming essential control space.
+
+**Completion checks:** Spectrum visualization accurately follows SID audio, can be disabled without affecting synthesis, and meets device-level performance and usability checks. Oscilloscope and spectrogram are follow-on options, not prerequisites.
