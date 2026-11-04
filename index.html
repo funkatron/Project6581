@@ -128,7 +128,7 @@ function renderLfos(){
  lfoState.forEach((lfo,index)=>{
   const group=document.createElement('fieldset');group.className='lfo-controls';
   const legend=document.createElement('legend');legend.textContent='LFO '+(index+1);group.append(legend);
-  const fields=[['enabled','Enabled',null],['sync','Tempo sync',null],['wave','Waveform',['sine','triangle','sawtooth','square','sample-hold']],['target','Destination',lfoTargets],['rate','Rate (Hz)',null],['depth','Depth (%)',null]];
+  const fields=[['enabled','Enabled',null],['sync','Tempo sync',null],['wave','Waveform',['sine','triangle','sawtooth','square','sample-hold']],['target','Destination',lfoTargets],['rate','Rate (Hz / cycles per beat)',null],['depth','Depth (%)',null]];
   for(const [prop,label,options] of fields){
    const row=document.createElement('label');row.textContent=label+' ';
    const isSwitch=prop==='enabled'||prop==='sync';
@@ -275,7 +275,7 @@ function setModulationThumb(input,value,enabled){
 function updateModulation(){
  const base={cutoff:Number($('cutoff').value),resonance:Number($('resonance').value),volume:Number($('volume').value),pulse:settings[0].pulse};
  const active=lfoState.some(lfo=>lfo.enabled&&lfo.depth>0);
- const effectiveLfos=lfoState.map(lfo=>lfo.sync?{...lfo,rate:Number($('masterBpm').value)/60*lfo.rate}:lfo);
+ const bpm=Number($('masterBpm').value);const effectiveLfos=lfoState.map(lfo=>lfo.sync?{...lfo,rate:(Number.isFinite(bpm)&&bpm>=40&&bpm<=240?bpm:120)/60*lfo.rate}:lfo);
  const values=active&&modulation?modulation.modulate(base,effectiveLfos,(performance.now()-lfoStarted)/1000,{pulseActive:settings[0].wave==='square'}):base;
  for(const target of ['cutoff','resonance','volume','pulse']){
   const input=target==='pulse'?document.querySelector('[data-prop="pulse"]'):$(target);
@@ -293,8 +293,8 @@ function updateModulation(){
  // Always write the effective pulse value, including the saved base value after an LFO is disabled or retargeted.
  if(settings[0].wave==='square')sidController.setPulse(0,values.pulse);
 }
-$('masterBpm').addEventListener('input',()=>{const n=Number($('masterBpm').value);if(!Number.isFinite(n)||n<40||n>240)return;updateModulation();if($('arpSync').checked){gameRestart();arpRestart();}});
-$('arpSync').addEventListener('change',()=>{document.querySelector('.arp-local-bpm').hidden=$('arpSync').checked;gameRestart();arpRestart();});
+$('masterBpm').addEventListener('input',()=>{const n=Number($('masterBpm').value);if(!Number.isFinite(n)||n<40||n>240)return;updateModulation();if($('arpSync').checked){if(gameEnabled())gameRestart();else arpRestart();}});
+$('arpSync').addEventListener('change',()=>{document.querySelector('.arp-local-bpm').hidden=$('arpSync').checked;if(gameEnabled())gameRestart();else arpRestart();});
 ['volume','cutoff','resonance','mode'].forEach(id=>$(id).addEventListener('input',updateModulation));
 async function startSid(){
   const button=$('sidStart'),status=$('sidEngineStatus');
