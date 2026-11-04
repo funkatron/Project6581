@@ -51,6 +51,15 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 - [ ] Compare 1, 2, and 3 simultaneous LFOs; observe any audible stepping or UI stutter.
 - [ ] Move Safari to the background and back; record whether timing drifts or audio stops.
 
+## Arpeggiator keyboard visuals (issue #41, pending device verification)
+
+- [ ] Game Arp illuminates each generated pitch, not just the physically held root key.
+- [ ] Regular Arp illuminates steps in Up, Down, Up/Down and Random patterns.
+- [ ] Gold physical touches remain distinguishable from teal generated notes, including when they overlap.
+- [ ] A generated note outside the visible octave shows its note name without highlighting the wrong key.
+- [ ] Clear latch, Stop all, mode changes, and Safari blur remove a stale generated-note highlight.
+- [ ] At high rates, the UI remains responsive without flashing or additional audio events.
+
 ## Recording results
 
 Capture: iPad model, iPadOS/Safari version, orientation, displayed build ID, repro steps, expected versus actual result, and any audio or layout screenshot/video. Mark each item only after an actual device check.
