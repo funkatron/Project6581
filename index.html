@@ -21,7 +21,12 @@ label{display:flex;align-items:center;justify-content:space-between;gap:6px;font
 label>input[type=range]{flex:1;min-width:0;max-width:62%;height:26px;accent-color:#eaa75d;touch-action:pan-x}
 label[hidden]{display:none!important}label>output{min-width:38px;text-align:right;font-variant-numeric:tabular-nums;color:#f3bd78}
 label>select{max-width:65%;min-width:0;min-height:34px;padding:4px 6px}
-input[type=checkbox]{width:22px;height:22px;accent-color:#eaa75d}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;width:42px;height:25px;flex:none;border:1px solid #6b819c;border-radius:20px;background:#34455a;cursor:pointer;transition:background .12s}
+input[type=checkbox]::before{content:"";position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:#f3f5fa;transition:transform .12s}
+input[type=checkbox]:checked{background:#ac682e;border-color:#f3bd78}
+input[type=checkbox]:checked::before{transform:translateX(17px)}
+.master-tempo{gap:6px;font-size:12px}.master-tempo input{width:67px;min-height:38px;padding:4px 7px;border-radius:6px;border:1px solid #52647d;background:#29384b;color:#f3f5fa;font:inherit}
+.arp-local-bpm[hidden]{display:none!important}
 .voices .panel{border:0;background:none;padding:0;overflow:visible}.voices h2{display:none}
 .voice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 12px}
 .voice-grid label{min-width:0}
@@ -79,17 +84,17 @@ footer p{display:inline;margin:0}footer strong,footer strong~*{display:none}
 @media(min-width:901px) and (min-height:621px){.tabbar{display:none!important}.keyboard-panel{height:clamp(150px,28dvh,300px)}}
 @media(prefers-reduced-motion:reduce){.sid-spinner{animation:none}}
 </style></head><body><main>
-<header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><button id="panic">Stop all</button></div></header>
+<header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="number" min="40" max="240" step="1" value="120" inputmode="numeric"></label><button id="panic">Stop all</button></div></header>
 <div class="statusbar"><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p></div>
-<div class="tabbar" role="tablist" aria-label="Editor sections"><button id="tabVoice" type="button" role="tab" aria-selected="true" aria-controls="voicePanel">Sound</button><button id="tabPlay" type="button" role="tab" aria-selected="false" aria-controls="playPanel">Arpeggiators</button></div>
+<div class="tabbar" role="tablist" aria-label="Editor sections"><button id="tabVoice" type="button" role="tab" aria-selected="true" aria-controls="voicePanel">Sound</button><button id="tabPlay" type="button" role="tab" aria-selected="false" aria-controls="playPanel">Arpeggiator &amp; LFOs</button></div>
 <div class="workspace" id="workspace" data-tab="voice">
 <section class="panel voice-panel" id="voicePanel" role="tabpanel" aria-labelledby="tabVoice" aria-label="Sound controls">
 <h2>Sound</h2><div class="voice-grid"><label>Chip <select id="chip"><option value="6581">MOS 6581</option><option value="8580">MOS 8580</option></select></label><label>Voices <select id="voiceCount"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label><label>Detune <input id="detune" type="range" min="0" max="100" value="12" step="1"><output id="detuneValue">12¢</output></label><label>Volume <input id="volume" type="range" min="0" max="100" value="55"></label><label>Cutoff <input id="cutoff" type="range" min="50" max="10000" value="7000"></label><label>Resonance <input id="resonance" type="range" min="0" max="100" value="10"></label><label>Filter <select id="mode"><option value="lowpass">Low-pass</option><option value="bandpass">Band-pass</option><option value="highpass">High-pass</option></select></label></div>
-<div class="section-divider"></div><div id="voices" class="voices"></div><div class="section-divider"></div><section class="lfo-panel" aria-label="Low frequency oscillators"><h2>Modulation · LFOs</h2><div id="lfoControls"></div></section>
+<div class="section-divider"></div><div id="voices" class="voices"></div>
 </section>
 <section class="panel performance-panel" id="playPanel" role="tabpanel" aria-labelledby="tabPlay" aria-label="Arpeggiator controls">
 <h2>Game Arp</h2><div class="controls"><label>Enabled <input id="gameArpOn" type="checkbox" checked></label><label>Style <select id="gameArpStyle"><option value="action">Action</option><option value="adventure">Adventure</option><option value="arcade">Arcade</option></select></label></div>
-<div class="section-divider"></div><h2>Arpeggiator</h2><div class="controls"><label>Arp <input id="arpOn" type="checkbox"></label><label>Latch <input id="arpLatch" type="checkbox"></label><label>Pattern <select id="arpPattern"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label><label>Rate <select id="arpRate"><option value="1">1/4</option><option value="2">1/8</option><option value="4" selected>1/16</option><option value="8">1/32</option><option value="16">1/64</option><option value="32">1/128</option></select></label><label>BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label><button id="arpClear">Clear latch</button></div><small id="arpStatus">Arp off</small>
+<div class="section-divider"></div><h2>Arpeggiator</h2><div class="controls"><label>Arp <input id="arpOn" type="checkbox"></label><label>Latch <input id="arpLatch" type="checkbox"></label><label>Pattern <select id="arpPattern"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label><label>Rate <select id="arpRate"><option value="1">1/4</option><option value="2">1/8</option><option value="4" selected>1/16</option><option value="8">1/32</option><option value="16">1/64</option><option value="32">1/128</option></select></label><label>Sync tempo <input id="arpSync" type="checkbox" checked></label><label class="arp-local-bpm" hidden>Arp BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label><button id="arpClear">Clear latch</button></div><small id="arpStatus">Arp off</small><div class="section-divider"></div><section class="lfo-panel" aria-label="Low frequency oscillators"><h2>Modulation · LFOs</h2><div id="lfoControls"></div></section>
 </section></div>
 <section class="panel keyboard-panel" aria-label="Keyboard"><div class="keyboard-heading"><h2>Keyboard</h2><div class="octave-controls"><button id="octaveDown" type="button" aria-label="Previous octave">−</button><output id="octaveLabel">C3–C4</output><button id="octaveUp" type="button" aria-label="Next octave">+</button></div><small>Touch and hold · layered unison</small></div><div id="keyboard" class="keyboard"></div></section>
 <footer><p id="buildInfo">Project6581 v__BUILD_VERSION__ · Built __BUILD_TIMESTAMP__ (UTC)</p><span class="diagnostics" id="sidLatencyStatus">Browser audio latency: not yet available.</span><span class="diagnostics" id="sidPlaybackStatus" role="status" aria-live="off">SID playback diagnostics appear here after enabling authentic SID.</span></footer>
@@ -116,23 +121,25 @@ function renderVoiceControls(){
   updatePulse();
 }
 renderVoiceControls();
-const lfoState=Array.from({length:3},(_,i)=>({enabled:false,wave:'sine',rate:1,depth:0,target:'cutoff',phase:0,seed:i}));
+const lfoState=Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,depth:0,target:'cutoff',phase:0,seed:i}));
 const lfoTargets=['cutoff','resonance','volume','pulse'];
 function renderLfos(){
  const root=$('lfoControls');root.replaceChildren();
  lfoState.forEach((lfo,index)=>{
   const group=document.createElement('fieldset');group.className='lfo-controls';
   const legend=document.createElement('legend');legend.textContent='LFO '+(index+1);group.append(legend);
-  const fields=[['enabled','Enabled',['Off','On']],['wave','Waveform',['sine','triangle','sawtooth','square','sample-hold']],['target','Destination',lfoTargets],['rate','Rate (Hz)',null],['depth','Depth (%)',null]];
+  const fields=[['enabled','Enabled',null],['sync','Tempo sync',null],['wave','Waveform',['sine','triangle','sawtooth','square','sample-hold']],['target','Destination',lfoTargets],['rate','Rate (Hz / cycles per beat)',null],['depth','Depth (%)',null]];
   for(const [prop,label,options] of fields){
    const row=document.createElement('label');row.textContent=label+' ';
+   const isSwitch=prop==='enabled'||prop==='sync';
    const input=document.createElement(options?'select':'input');
-   if(options){options.forEach((value,i)=>{const opt=document.createElement('option');opt.value=prop==='enabled'?String(i===1):value;opt.textContent=value;input.append(opt)});input.value=String(lfo[prop]);}
+   if(isSwitch){input.type='checkbox';input.checked=Boolean(lfo[prop]);}
+   else if(options){options.forEach((value,i)=>{const opt=document.createElement('option');opt.value=prop==='enabled'?String(i===1):value;opt.textContent=value;input.append(opt)});input.value=String(lfo[prop]);}
    else{input.type='range';input.min=prop==='rate'?'0.05':'0';input.max=prop==='rate'?'20':'100';input.step=prop==='rate'?'0.05':'1';input.value=prop==='rate'?lfo.rate:lfo.depth*100;}
    input.setAttribute('aria-label','LFO '+(index+1)+' '+label);
-   const output=options?null:document.createElement('output');
+   const output=options||isSwitch?null:document.createElement('output');
    if(output)output.textContent=input.value;
-   input.addEventListener(options?'change':'input',()=>{lfo[prop]=prop==='enabled'?input.value==='true':prop==='depth'?Number(input.value)/100:options?input.value:Number(input.value);if(output)output.textContent=input.value;updateModulation();});
+   input.addEventListener(options||isSwitch?'change':'input',()=>{lfo[prop]=isSwitch?input.checked:prop==='depth'?Number(input.value)/100:options?input.value:Number(input.value);if(output)output.textContent=input.value;updateModulation();});
    row.append(input);if(output)row.append(output);group.append(row);
   }
   root.append(group);
@@ -182,14 +189,14 @@ function gameRestart(){
   if(!gameEnabled())return;
   if(gameRoot()===null){$('arpStatus').textContent='Game Arp ready';return}
   gameTick();
-  const ms=60000/Number($('arpBpm').value)/Number($('arpRate').value);
+  const ms=60000/Number($('arpSync').checked?$('masterBpm').value:$('arpBpm').value)/Number($('arpRate').value);
   game.timer=setInterval(gameTick,ms);
 }
 const arpEnabled=()=>$('arpOn').checked;
 function arpNotes(){return [...($('arpLatch').checked?arp.latched:arp.held)].sort((a,b)=>a-b)}
 function arpStopVoice(){if(arp.last!==null){stop(arp.last);arp.last=null}}
 function arpTick(){const notes=arpNotes();arpStopVoice();if(!notes.length){$('arpStatus').textContent='No notes held';return}let pattern=$('arpPattern').value,seq=pattern==='down'?[...notes].reverse():pattern==='updown'&&notes.length>1?[...notes,...notes.slice(1,-1).reverse()]:notes;let note=pattern==='random'?notes[Math.floor(Math.random()*notes.length)]:seq[arp.step++%seq.length];arp.last=note;play(note);$('arpStatus').textContent='Playing '+names[note%12]+(Math.floor(note/12)-1)+' · '+notes.length+' notes';}
-function arpRestart(){if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.step=0;if(arpEnabled()&&!gameEnabled()){panic();arpTick();const ms=60000/Number($('arpBpm').value)/Number($('arpRate').value);arp.timer=setInterval(arpTick,ms)}else{$('arpStatus').textContent='Arp off';arp.latched.clear();}}
+function arpRestart(){if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.step=0;if(arpEnabled()&&!gameEnabled()){panic();arpTick();const ms=60000/Number($('arpSync').checked?$('masterBpm').value:$('arpBpm').value)/Number($('arpRate').value);arp.timer=setInterval(arpTick,ms)}else{$('arpStatus').textContent='Arp off';arp.latched.clear();}}
 function keyDown(note){if(sidController){sidKeys++;$('sidPlaybackStatus').textContent='SID key presses: '+sidKeys+' · waiting for audio samples…'}if(gameEnabled()){if(!game.held.includes(note))game.held.push(note);game.latched=note;gameRestart();return}if(!arpEnabled()){play(note);return}if(!arp.held.has(note)){if($('arpLatch').checked){if(arp.held.size===0)arp.latched.clear();arp.latched.add(note)}arp.held.add(note)}if(arp.timer===null)arpRestart();}
 function keyUp(note){if(gameEnabled()){game.held=game.held.filter(n=>n!==note);gameRestart();return}if(!arpEnabled()){stop(note);return}arp.held.delete(note);if(!$('arpLatch').checked&&arp.held.size===0){arpStopVoice();$('arpStatus').textContent='No notes held';}}
 $('gameArpOn').addEventListener('change',()=>{game.held=[];game.latched=null;gameStop();arpRestart();$('arpStatus').textContent=gameEnabled()?'Game Arp ready':'Game Arp off'});
@@ -268,7 +275,8 @@ function setModulationThumb(input,value,enabled){
 function updateModulation(){
  const base={cutoff:Number($('cutoff').value),resonance:Number($('resonance').value),volume:Number($('volume').value),pulse:settings[0].pulse};
  const active=lfoState.some(lfo=>lfo.enabled&&lfo.depth>0);
- const values=active&&modulation?modulation.modulate(base,lfoState,(performance.now()-lfoStarted)/1000,{pulseActive:settings[0].wave==='square'}):base;
+ const bpm=Number($('masterBpm').value);const effectiveLfos=lfoState.map(lfo=>lfo.sync?{...lfo,rate:(Number.isFinite(bpm)&&bpm>=40&&bpm<=240?bpm:120)/60*lfo.rate}:lfo);
+ const values=active&&modulation?modulation.modulate(base,effectiveLfos,(performance.now()-lfoStarted)/1000,{pulseActive:settings[0].wave==='square'}):base;
  for(const target of ['cutoff','resonance','volume','pulse']){
   const input=target==='pulse'?document.querySelector('[data-prop="pulse"]'):$(target);
   const label=input?.closest('label');
@@ -285,6 +293,8 @@ function updateModulation(){
  // Always write the effective pulse value, including the saved base value after an LFO is disabled or retargeted.
  if(settings[0].wave==='square')sidController.setPulse(0,values.pulse);
 }
+$('masterBpm').addEventListener('input',()=>{const n=Number($('masterBpm').value);if(!Number.isFinite(n)||n<40||n>240)return;updateModulation();if($('arpSync').checked){if(gameEnabled())gameRestart();else arpRestart();}});
+$('arpSync').addEventListener('change',()=>{document.querySelector('.arp-local-bpm').hidden=$('arpSync').checked;if(gameEnabled())gameRestart();else arpRestart();});
 ['volume','cutoff','resonance','mode'].forEach(id=>$(id).addEventListener('input',updateModulation));
 async function startSid(){
   const button=$('sidStart'),status=$('sidEngineStatus');
