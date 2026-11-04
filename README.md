@@ -42,6 +42,8 @@ Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of th
 | **LFO 1–3** | Modulate cutoff, resonance, volume, Pulse width, Unison detune, ADSR, and PWM depth/rate; multiple LFOs may share a target | Route a slow LFO to Attack or PWM depth |
 | **Stop all** | Stops notes, disables both arpeggiators, and clears their held/latch state | Use this to silence and reset playback |
 
+**LFO display:** A slider's thumb and neutral number show the base value you set. When an LFO changes that parameter, a green track segment shows how far its effective value moves from the base, and a second green number shows the current value. The thumb stays put unless you move it.
+
 **Tip:** Start by changing *one* control at a time. You can learn what each does by listening to the difference.
 
 ## 🎮 Three things to try
