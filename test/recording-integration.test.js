@@ -30,3 +30,18 @@ test('WAV capture transfers SID renderer PCM, not microphone or synthesis impost
  assert.match(worklet,/type:'record-stopped'/);
  assert.doesNotMatch(html,/getUserMedia\(/);
 });
+
+test('audio frame counter bounds WAV and M4A capture even if browser timers are throttled',()=>{
+ assert.match(worklet,/this\.recordMaxFrames=Math\.floor\(sampleRate\*180\)/);
+ assert.match(worklet,/const allowed=Math\.min\(frames,Math\.max\(0,this\.recordMaxFrames-this\.recordFrames\)\)/);
+ assert.match(worklet,/if\(this\.recordFrames>=this\.recordMaxFrames\)/);
+ assert.match(worklet,/type:'record-limit'/);
+ assert.match(script,/if\(event\.type==='record-limit'\)/);
+ assert.match(script,/document\.addEventListener\('visibilitychange'/);
+});
+
+test('recording availability, Safari downloads and bfcache handling are explicit',()=>{
+ assert.match(script,/if\(!sidRecorder\.supportsM4a\)\$\('recordFormat'\)\.value='wav'/);
+ assert.match(script,/if\(!event\.persisted&&recordDownloadUrl\)/);
+ assert.match(html,/id="recordDownload" hidden/);
+});
