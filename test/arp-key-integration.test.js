@@ -30,3 +30,9 @@ test('visual style remains independent from pressed keys and contains no animati
  assert.match(html,/id="arpVisualNote"/);
  assert.doesNotMatch(html,/\.key\.arp-playing[^\{]*\{[^}]*animation\s*:/);
 });
+
+test('changing note text cannot move the keyboard octave controls',()=>{
+ assert.match(html,/\.keyboard-heading\s*\{[^}]*display:grid;grid-template-columns:max-content minmax\(0,1fr\) max-content max-content/);
+ assert.match(html,/\.keyboard-heading \.octave-controls\s*\{[^}]*min-width:max-content/);
+ assert.match(html,/\.arp-visual-note\s*\{[^}]*min-width:0;width:100%;max-width:none;[^}]*text-overflow:ellipsis/);
+});
