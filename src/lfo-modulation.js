@@ -10,11 +10,12 @@ export function lfoValue(wave,phase,seed=0){
  throw new RangeError('Unknown LFO waveform');
 }
 // Add all modulation contributions before clamping. Never mutate base slider values.
-export function modulate(base,lfos,time,{pulseActive=true}={}){
+export function modulate(base,lfos,time,{pulseActive=true,unisonActive=true}={}){
  const result={...base},offsets={};
  for(const lfo of lfos){
   if(!lfo.enabled||!lfo.depth||!Object.hasOwn(LFO_TARGETS,lfo.target))continue;
   if(!pulseActive&&['pulse','pwmDepth','pwmRate'].includes(lfo.target))continue;
+  if(!unisonActive&&lfo.target==='detune')continue;
   const [min,max]=LFO_TARGETS[lfo.target];
   const depth=Math.max(0,Math.min(1,lfo.depth));
   const offset=lfoValue(lfo.wave,(lfo.phase??0)+time*lfo.rate,lfo.seed??0)*depth*(max-min)/2;
