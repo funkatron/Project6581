@@ -48,6 +48,20 @@ The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) identifie
 
 **Completion condition:** Three LFOs can run simultaneously, independently modulate selected sliders, and stop cleanly without changing saved base control values or compromising SID playback.
 
+## In development: record the SID output (WAV and M4A)
+
+**Goal:** Let musicians record what they actually hear from the emulated SID and export a useful audio file without a microphone or external software.
+
+- [x] Add Record / Stop & save with a persistent downloadable file link.
+- [x] Capture true reSIDfp PCM in bounded AudioWorklet chunks and encode 16-bit mono WAV using the actual AudioContext sample rate.
+- [x] Offer M4A (native browser AAC in an MP4 container) only where supported; do not mislabel WebM or AAC as MP3.
+- [x] Limit recording to three minutes and preserve playback and existing LFO/arp behavior.
+- [ ] Confirm recording and downloading on iPad Safari, including alternate-app return, short captures, and memory use.
+- [ ] Consider optional MP3 conversion only after core WAV/M4A operation is validated. Avoid a large encoder dependency for the initial recording feature.
+- [ ] Export matched before/after PWM recordings and use their spectra and waveforms to diagnose [the reported weak PWM effect](https://github.com/funkatron/Project6581/issues/45).
+
+**Completion checks:** A user can record and download a valid WAV, and an M4A where native browser support exists. CI success alone is not an iPad audio verification.
+
 ## Planned: composable Arpeggiator and Game Arp
 
 **Goal:** Make Game Arp a reusable pattern triggered at a root pitch, while the regular Arpeggiator independently selects and advances that root. The two features should work together rather than being mutually exclusive.
