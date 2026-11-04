@@ -48,6 +48,35 @@ The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) identifie
 
 **Completion condition:** Three LFOs can run simultaneously, independently modulate selected sliders, and stop cleanly without changing saved base control values or compromising SID playback.
 
+## Planned: composable Arpeggiator and Game Arp
+
+**Goal:** Make Game Arp a reusable pattern triggered at a root pitch, while the regular Arpeggiator independently selects and advances that root. The two features should work together rather than being mutually exclusive.
+
+**Signal flow:**
+
+```text
+Held / latched keyboard notes
+           |
+           v
+Arpeggiator (optional)  -> chooses the current root note
+           |
+           v
+Game Arp (optional)     -> applies pattern intervals to that root
+           |
+           v
+SID playback + highlighted keyboard keys
+```
+
+- [ ] Define each mode explicitly: **both off** plays direct notes; **Game Arp only** plays the selected pattern from the held/latched root; **Arpeggiator only** cycles the held/latched notes directly; **both on** cycles roots using the Arpeggiator while Game Arp plays its chosen interval pattern relative to each root.
+- [ ] Give **Arpeggiator** responsibility for note ordering (Up, Down, Up/Down, Random), latch, and the active root. Give **Game Arp** responsibility for the triggered pattern (Action, Adventure, Arcade, etc.) and its internal note offsets. Neither should silently turn the other off.
+- [ ] Keep a clear musical distinction between **root-change rate** and **pattern-step rate**, with coherent BPM synchronization. Define whether a root change preserves the current pattern phase or restarts the pattern; prefer predictable musical timing and verify it for both fast and slow rates.
+- [ ] Make first key press trigger the pattern immediately, without waiting for a timer tick. Handle additional held notes, releases, latch transitions and switching either feature on/off without stuck notes or duplicate gate writes.
+- [ ] Apply existing MIDI range limits and any future scale-lock policy to the **final sounding pitch**, not merely the root, so combined arpeggiation, playback and keyboard illumination agree.
+- [ ] Simplify labels and help text so users can understand **“Arpeggiator chooses the root; Game Arp plays the pattern.”** Ensure the controls remain usable on iPad and avoid redundant current-note text above the keyboard.
+- [ ] Add deterministic tests of the four mode combinations, independent timing, pattern transitions, changing root while playing, stop/panic, note ownership, and keyboard highlighting.
+
+**Completion checks:** Both generators can run simultaneously; Arpeggiator changes the root of the ongoing Game Arp phrase, each feature retains a clear independent purpose, and no combination produces stuck notes or misleading highlights.
+
 ## Planned: modulation-center slider presentation
 
 **Goal:** Make modulation immediately readable without moving control thumbs during playback.
