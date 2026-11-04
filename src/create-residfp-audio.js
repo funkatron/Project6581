@@ -26,11 +26,39 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
     onProgress('Initializing SID audio processor…');
     const node=new AudioWorkletNode(context,'residfp-processor',{outputChannelCount:[2]});
     node.connect(context.destination);
-    node.port.onmessage=({data})=>onStatus(data);
+    let capture=null,stopResolve=null,stopReject=null;
+    node.port.onmessage=({data})=>{
+      if(data?.type==='record-chunk'){
+        capture?.(data.samples);return;
+      }
+      if(data?.type==='record-stopped'){
+        capture=null;const done=stopResolve;stopResolve=null;stopReject=null;
+        done?.();return;
+      }
+      if(data?.type==='record-started')return;
+      onStatus(data);
+    };
     node.port.postMessage({type:'load',bytes,model},[bytes]);
     const batcher=createSidWriteBatcher(message=>node.port.postMessage(message));
     return {context,node,
       write:(register,value)=>batcher.write(register,value),
-      close:async()=>{batcher.close();node.disconnect();await context.close()}};
+      startWavCapture(onChunk){
+        if(capture||stopResolve)throw new Error('A WAV capture is already active');
+        if(typeof onChunk!=='function')throw new TypeError('Expected PCM callback');
+        capture=onChunk;node.port.postMessage({type:'record-start'});
+      },
+      stopWavCapture(){
+        if(!capture)return Promise.reject(new Error('WAV capture was not started'));
+        if(stopResolve)return Promise.reject(new Error('WAV capture is already stopping'));
+        return new Promise((resolve,reject)=>{
+          stopResolve=resolve;stopReject=reject;
+          node.port.postMessage({type:'record-stop'});
+        });
+      },
+      close:async()=>{
+        const reject=stopReject;capture=null;stopResolve=null;stopReject=null;
+        reject?.(new Error('SID audio closed during WAV capture'));
+        batcher.close();node.disconnect();await context.close()
+      }};
   } catch(err){await context.close();throw err}
 }
