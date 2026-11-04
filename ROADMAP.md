@@ -39,12 +39,12 @@ The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) identifie
 - [x] Provide **LFO 1**, **LFO 2**, and **LFO 3**, each with independent enable, rate, depth, and waveform controls (initial live filter/pulse routing; pending CI and device verification).
 - [x] Implement and test the pure waveform evaluation and modulation-routing core (PR in progress; not connected to audio/UI).
 - [ ] Offer selectable modulation waveforms: sine, triangle, sawtooth, square, and sample-and-hold/random. These are modulation shapes, not additional SID audio oscillator waveforms.
-- [ ] Allow each LFO to target any applicable continuous slider parameter. Initial UI routes cutoff, resonance, volume, and pulse width; detune, ADSR, PWM depth/rate, and safe live register updates remain pending.
+- [x] Route three LFOs to 11 continuous sound parameters: cutoff, resonance, volume, pulse width, Unison detune, ADSR, PWM depth and PWM rate. Implement live SID register updates and preserve the base values. Exclude discrete waveform, chip, Unison mode, and voice-count controls.
 - [ ] Permit multiple LFOs to target the same parameter with predictable summation, clamping, and clear display of the base value versus modulation.
 - [ ] Ensure modulation updates do not permanently overwrite manually selected slider values.
 - [ ] Respect waveform-dependent controls: pulse-related modulation should have no audible effect unless the Pulse waveform is active.
 - [ ] Keep the interface usable on iPad, with compact routing controls and no unnecessary panel scrolling.
-- [ ] Test LFO waveform shapes, timing, routing, combined modulation, and stop/reset behavior; evaluate AudioWorklet-rate scheduling where browser timers would introduce audible stepping.
+- [ ] Complete final CI and iPad Safari validation of live ADSR/detune/PWM modulation, including simultaneous modulation, register-write frequency, voice releases, stop/reset and high-rate performance. Pure waveforms, timing and register-level paths have automated tests; evaluate AudioWorklet-rate scheduling where browser timers introduce audible stepping.
 
 **Completion condition:** Three LFOs can run simultaneously, independently modulate selected sliders, and stop cleanly without changing saved base control values or compromising SID playback.
 
