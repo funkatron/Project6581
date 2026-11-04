@@ -302,7 +302,7 @@ function play(note){if(!sidController)return;if(!settings[0].enabled)return;sidC
 function updateUnison(){const unison=$('unisonOn').checked;sidController?.configure({voiceCount:Number($('voiceCount').value),detune:Number($('detune').value),unison});$('detune').disabled=!unison;$('detuneValue').textContent=unison?$('detune').value+'¢':'Off';}
 ['voiceCount','detune','unisonOn'].forEach(id=>$(id).addEventListener('input',updateUnison));updateUnison();
 function stop(note){sidController?.noteOff(note)}
-function panic(){gameStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();sidController?.panic()}
+function panic(){gameStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arp.last=null;arpKeyVisual.clear();sidController?.panic()}
 $('panic').addEventListener('click',()=>{
   $('gameArpOn').checked=false;
   $('arpOn').checked=false;
