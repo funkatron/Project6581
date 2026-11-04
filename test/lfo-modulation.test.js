@@ -57,18 +57,18 @@ test('disabling or retargeting an LFO restores every former target to its base v
 test('synchronized LFO rates correspond to musical note lengths',()=>{
  assert.deepEqual(SYNCED_LFO_DIVISIONS,[0.25,0.5,1,2,4,8,16,32]);
  // 120 BPM = two beats per second; a whole note spans four beats.
- assert.equal(syncedLfoHz(120,0.25),0.5); // 4/1
- assert.equal(syncedLfoHz(120,0.5),1);    // 2/1
- assert.equal(syncedLfoHz(120,1),2);      // 1/1
- assert.equal(syncedLfoHz(120,4),8);      // 1/4
- assert.equal(syncedLfoHz(120,32),64);    // 1/32 (requires faster scheduling)
+ assert.equal(syncedLfoHz(120,0.25),0.125); // 4/1
+ assert.equal(syncedLfoHz(120,0.5),0.25);    // 2/1
+ assert.equal(syncedLfoHz(120,1),0.5);      // 1/1
+ assert.equal(syncedLfoHz(120,4),2);      // 1/4
+ assert.equal(syncedLfoHz(120,32),16);    // 1/32
 });
 
 test('synchronized rates track master tempo with safe invalid-tempo handling',()=>{
- assert.equal(syncedLfoHz(60,0.25),0.25);
- assert.equal(syncedLfoHz(240,0.5),2);
- assert.equal(syncedLfoHz(NaN,0.5),1);
- assert.equal(syncedLfoHz(999,0.25),0.5);
+ assert.equal(syncedLfoHz(60,0.25),0.0625);
+ assert.equal(syncedLfoHz(240,0.5),0.5);
+ assert.equal(syncedLfoHz(NaN,0.5),0.25);
+ assert.equal(syncedLfoHz(999,0.25),0.125);
  assert.throws(()=>syncedLfoHz(120,0),RangeError);
  assert.throws(()=>syncedLfoHz(120,0.123),RangeError);
 });
