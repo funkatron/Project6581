@@ -24,10 +24,13 @@ export function createArpKeyVisual({getKey, noteName, showLabel}) {
    if (!Number.isInteger(nextNote) || nextNote < 0 || nextNote > 127) {
     throw new RangeError('Expected a MIDI note from 0 to 127');
    }
+   // Avoid repainting the same key on fast or repeated arp steps.
+   if (note === nextNote && highlightedKey === (getKey(nextNote) ?? null)) return;
    note = nextNote;
    render();
   },
   clear() {
+   if (note === null && highlightedKey === null) return;
    note = null;
    render();
   },
