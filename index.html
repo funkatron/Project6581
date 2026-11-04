@@ -487,13 +487,15 @@ function updateModulation(){
    display=document.createElement('output');display.className='modulated-value';
    display.setAttribute('aria-label',target+' effective value');label.append(display);
   }
-  const targetEnabled=active&&lfoState.some(lfo=>lfo.enabled&&lfo.depth>0&&lfo.target===target)
+  const targetEnabled=((active&&lfoState.some(lfo=>lfo.enabled&&lfo.depth>0&&lfo.target===target))
+    ||(target==='pulse'&&pulseActive&&values.pwmDepth>0))
    &&(!['pulse','pwmDepth','pwmRate'].includes(target)||pulseActive)
    &&(target!=='detune'||unisonActive);
+  const effectiveValue=target==='pulse'?livePulse:values[target];
   display.hidden=!targetEnabled;
-  setModulationTrack(input,base[target],values[target],targetEnabled);
+  setModulationTrack(input,base[target],effectiveValue,targetEnabled);
   if(targetEnabled){
-   const effectiveText=formatControlValue(target,values[target]);
+   const effectiveText=formatControlValue(target,effectiveValue);
    if(display.textContent!==effectiveText)display.textContent=effectiveText;
   }
  }
