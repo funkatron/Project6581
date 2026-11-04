@@ -40,6 +40,6 @@ test('base and effective readouts are both retained when a target is modulated',
  assert.match(script,/label\.querySelector\('output:not\(\.modulated-value\)'\)/);
  assert.match(script,/label\.querySelector\('\.modulated-value'\)/);
  assert.match(script,/display\.hidden=!targetEnabled/);
- assert.match(script,/formatControlValue\(target,values\[target\]\)/);
+ assert.match(script,/formatControlValue\(target,effectiveValue\)/);
  assert.match(script,/SLIDER_TARGETS/);
 });
