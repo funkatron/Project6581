@@ -125,7 +125,7 @@ That command runs the Node.js test suite. Building the WASM binary separately re
 
 - Polyphony and Unison are available, but different SID chips cannot yet be configured independently. Switching between Unison and polyphony releases previous notes to prevent stuck voices.
 - Pulse-width modulation and live ADSR/Unison detune are implemented through SID register updates without retriggering held notes. SID envelope rates and levels are quantized to hardware-supported register values.
-- Three LFOs can route to 11 continuous sound parameters and use synchronized musical divisions. Discrete controls such as oscillator count, waveform and chip model are not modulation targets. Tempo modulation, stationary-center slider visuals, and audio-clock scheduling remain [roadmap](ROADMAP.md) items. The main-thread 60 Hz scheduler can introduce timing jitter, particularly on busy mobile browsers.
+- Three LFOs can route to 11 continuous sound parameters and use synchronized musical divisions. Discrete controls such as oscillator count, waveform and chip model are not modulation targets. Tempo modulation and audio-clock scheduling remain [roadmap](ROADMAP.md) items. The centered-thumb LFO display is available, but iPad Safari visual and touch validation is still pending. The main-thread 60 Hz scheduler can introduce timing jitter, particularly on busy mobile browsers.
 - Very fast arpeggiator rates depend on browser scheduling and may sound uneven.
 - iPad Safari may require a user gesture to start its audio context.
 - Touch-to-sound latency is an active investigation; see [ROADMAP.md](ROADMAP.md).
