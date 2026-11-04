@@ -328,7 +328,7 @@ $('panic').addEventListener('click',()=>{
  panic();arp.held.clear();arp.latched.clear();arp.step=0;game.step=0;
  sidController?.panic();
  $('arpStatus').textContent='Arps and LFOs off';
-});window.addEventListener('blur',panic);
+});window.addEventListener('blur',()=>{panic();arp.held.clear()});
 const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 const arp={held:new Set(),latched:new Set(),timer:null,step:0,root:null,last:null};
 const game={timer:null,last:null,step:0};
@@ -441,6 +441,8 @@ let keyboardOctave=3;
 const compactKeyboard=()=>matchMedia('(max-width:900px), (max-height:620px)').matches;
 function renderKeyboard(){
   panic();
+  arp.held.clear(); // Pointer capture cannot survive keyboard reconstruction.
+  if(!$('arpLatch').checked)arp.latched.clear();
   keys.clear();
   $('keyboard').replaceChildren();
   const start=(keyboardOctave+1)*12;
