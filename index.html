@@ -432,25 +432,55 @@ function setModulationThumb(input,value,enabled){
  if(enabled)thumb.value=String(value);
 }
 function updateModulation(){
- const base={cutoff:Number($('cutoff').value),resonance:Number($('resonance').value),volume:Number($('volume').value),pulse:settings[0].pulse};
+ const sound=settings[0],pulseActive=sound.wave==='square',unisonActive=$('unisonOn').checked;
+ // Preserve the actual slider positions as the editable base/center values.
+ const base={
+  cutoff:Number($('cutoff').value),resonance:Number($('resonance').value),volume:Number($('volume').value),
+  pulse:sound.pulse,detune:Number($('detune').value),
+  attack:sound.attack,decay:sound.decay,sustain:sound.sustain,release:sound.release,
+  pwmDepth:sound.pwmDepth,pwmRate:sound.pwmRate
+ };
  const active=lfoState.some(lfo=>lfo.enabled&&lfo.depth>0);
- const bpm=Number($('masterBpm').value);const effectiveLfos=lfoState.map(lfo=>lfo.sync&&modulation?{...lfo,rate:modulation.syncedLfoHz(bpm,lfo.syncDivision)}:lfo);
- const values=active&&modulation?modulation.modulate(base,effectiveLfos,(performance.now()-lfoStarted)/1000,{pulseActive:settings[0].wave==='square'}):base;
- for(const target of ['cutoff','resonance','volume','pulse']){
-  const input=target==='pulse'?document.querySelector('[data-prop="pulse"]'):$(target);
+ const bpm=Number($('masterBpm').value);
+ const effectiveLfos=lfoState.map(lfo=>lfo.sync&&modulation
+  ?{...lfo,rate:modulation.syncedLfoHz(bpm,lfo.syncDivision)}:lfo);
+ const time=(performance.now()-lfoStarted)/1000;
+ const values=active&&modulation
+  ?modulation.modulate(base,effectiveLfos,time,{pulseActive,unisonActive}):base;
+ // PWM depth/rate are now audible: apply their LFO-controlled settings to
+ // the pulse width only while the hardware Pulse waveform is selected.
+ const livePulse=pulseActive&&modulation
+  ?modulation.pulseWithPwm(values.pulse,values.pwmDepth,values.pwmRate,time):values.pulse;
+ currentSidSettings={...sound,
+  pulse:livePulse,attack:values.attack,decay:values.decay,
+  sustain:values.sustain,release:values.release};
+ for(const target of lfoTargets){
+  const input=['cutoff','resonance','volume','detune'].includes(target)
+   ?$(target):document.querySelector('[data-prop="'+target+'"]');
   const label=input?.closest('label');
   if(!label)continue;
   let display=label.querySelector('.modulated-value');
   if(!display){display=document.createElement('output');display.className='modulated-value';display.setAttribute('aria-label',target+' modulated value');label.append(display);}
-  const enabled=active&&lfoState.some(lfo=>lfo.enabled&&lfo.depth>0&&lfo.target===target)&&(target!=='pulse'||settings[0].wave==='square');
-  display.hidden=!enabled;
-  setModulationThumb(input,values[target],enabled);
-  if(enabled)display.textContent=target==='cutoff'?Math.round(values[target])+' Hz':target==='pulse'?values[target].toFixed(1)+'%':values[target].toFixed(1);
+  const targetEnabled=active&&lfoState.some(lfo=>lfo.enabled&&lfo.depth>0&&lfo.target===target)
+   &&(!['pulse','pwmDepth','pwmRate'].includes(target)||pulseActive)
+   &&(target!=='detune'||unisonActive);
+  display.hidden=!targetEnabled;
+  setModulationThumb(input,values[target],targetEnabled);
+  if(targetEnabled){
+   const val=values[target];
+   display.textContent=target==='cutoff'?Math.round(val)+' Hz'
+    :target==='pwmRate'?val.toFixed(2)+' Hz'
+    :['attack','decay','release'].includes(target)?val.toFixed(2)+' s'
+    :target==='sustain'?val.toFixed(2)
+    :target==='detune'?val.toFixed(1)+'¢'
+    :val.toFixed(1)+'%';
+  }
  }
  if(!sidController)return;
  updateSidFilter(values);
- // Always write the effective pulse value, including the saved base value after an LFO is disabled or retargeted.
- if(settings[0].wave==='square')sidController.setPulse(0,values.pulse);
+ sidController.setLiveDetune(values.detune);
+ sidController.setEnvelope(currentSidSettings);
+ if(pulseActive)sidController.setPulse(0,livePulse);
 }
 $('masterBpm').addEventListener('input',()=>{const n=Number($('masterBpm').value);if(!Number.isFinite(n)||n<40||n>240)return;$('masterBpmValue').textContent=String(n);updateModulation();if($('arpSync').checked){if(gameEnabled())gameRestart();else arpRestart();}});
 $('arpSync').addEventListener('change',()=>{document.querySelector('.arp-local-bpm').hidden=$('arpSync').checked;if(gameEnabled())gameRestart();else arpRestart();});
