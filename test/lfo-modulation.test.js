@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {lfoValue,modulate,LFO_WAVES,LFO_TARGETS} from '../src/lfo-modulation.js';
+import {lfoValue,modulate,LFO_WAVES,LFO_TARGETS,syncedLfoHz,SYNCED_LFO_DIVISIONS} from '../src/lfo-modulation.js';
 
 test('all modulation waveforms produce bounded values',()=>{
  for(const wave of LFO_WAVES)for(const phase of [0,.1,.25,.5,.75,1,3.3]){
@@ -51,4 +51,24 @@ test('disabling or retargeting an LFO restores every former target to its base v
  assert.equal(modulate(base,[lfo],0).resonance,base.resonance);
  lfo.enabled=false;
  assert.deepEqual(modulate(base,[lfo],0),base);
+});
+
+
+test('synchronized LFO rates correspond to musical note lengths',()=>{
+ assert.deepEqual(SYNCED_LFO_DIVISIONS,[0.25,0.5,1,2,4,8,16,32]);
+ // 120 BPM = two beats per second; a whole note spans four beats.
+ assert.equal(syncedLfoHz(120,0.25),0.5); // 4/1
+ assert.equal(syncedLfoHz(120,0.5),1);    // 2/1
+ assert.equal(syncedLfoHz(120,1),2);      // 1/1
+ assert.equal(syncedLfoHz(120,4),8);      // 1/4
+ assert.equal(syncedLfoHz(120,32),64);    // 1/32 (requires faster scheduling)
+});
+
+test('synchronized rates track master tempo with safe invalid-tempo handling',()=>{
+ assert.equal(syncedLfoHz(60,0.25),0.25);
+ assert.equal(syncedLfoHz(240,0.5),2);
+ assert.equal(syncedLfoHz(NaN,0.5),1);
+ assert.equal(syncedLfoHz(999,0.25),0.5);
+ assert.throws(()=>syncedLfoHz(120,0),RangeError);
+ assert.throws(()=>syncedLfoHz(120,0.123),RangeError);
 });
