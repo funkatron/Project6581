@@ -210,12 +210,9 @@ header{padding:8px 12px;min-width:0}
 .key.arp-playing:not(.down){background:#7bcabb;color:#16362d;border-bottom-color:#2d7465;box-shadow:inset 0 0 0 3px #236858}
 .key.black.arp-playing:not(.down){background:#388c79;color:#fff;border-bottom-color:#22584c;box-shadow:inset 0 0 0 3px #a1eedf}
 .key.down.arp-playing{box-shadow:inset 0 0 0 3px #236858}
-/* Keep octave navigation in a fixed grid track as the playing-note label changes.
-   Only the middle readout column may shrink or truncate. */
-.keyboard-heading{display:grid;grid-template-columns:max-content minmax(0,1fr) max-content max-content;min-width:0}
+/* Fix octave-navigation position independent of currently sounding notes. */
+.keyboard-heading{display:grid;grid-template-columns:minmax(0,1fr) max-content max-content;min-width:0}
 .keyboard-heading .octave-controls{min-width:max-content;white-space:nowrap;justify-self:end}
-.arp-visual-note{font-size:11px;font-weight:700;color:#24594a;min-width:0;width:100%;max-width:none;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@media(max-width:520px){.arp-visual-note{font-size:10px}}
 </style></head><body><main>
 <header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="range" min="40" max="240" step="1" value="120" aria-label="Master tempo in beats per minute"><output id="masterBpmValue" for="masterBpm">120</output></label><button id="panic">Stop all</button></div></header>
 <div class="statusbar"><span id="sidLed" class="sid-led" data-state="off" role="img" aria-label="SID engine off"></span><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p></div>
@@ -229,7 +226,7 @@ header{padding:8px 12px;min-width:0}
 <h2>Game Arp</h2><div class="controls"><label>Enabled <input id="gameArpOn" type="checkbox" checked></label><label>Style <select id="gameArpStyle"><option value="action">Action</option><option value="adventure">Adventure</option><option value="arcade">Arcade</option></select></label></div>
 <div class="section-divider"></div><h2>Arpeggiator</h2><div class="controls"><label>Arp <input id="arpOn" type="checkbox"></label><label>Latch <input id="arpLatch" type="checkbox"></label><label>Pattern <select id="arpPattern"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label><label>Rate <select id="arpRate"><option value="0.25">1/1</option><option value="0.5">1/2</option><option value="1">1/4</option><option value="2">1/8</option><option value="4" selected>1/16</option><option value="8">1/32</option><option value="16">1/64</option><option value="32">1/128</option></select></label><label>Sync tempo <input id="arpSync" type="checkbox" checked></label><label class="arp-local-bpm" hidden>Arp BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label><button id="arpClear">Clear latch</button></div><small id="arpStatus">Arp off</small><div class="section-divider"></div><section class="lfo-panel" aria-label="Low frequency oscillators"><h2>Modulation · LFOs</h2><div id="lfoControls"></div></section>
 </section></div>
-<section class="panel keyboard-panel" aria-label="Keyboard"><div class="keyboard-heading"><h2>Keyboard</h2><output id="arpVisualNote" class="arp-visual-note" aria-label="Arpeggiator note" aria-live="off"></output><div class="octave-controls"><button id="octaveDown" type="button" aria-label="Previous octave">−</button><output id="octaveLabel">C3–C4</output><button id="octaveUp" type="button" aria-label="Next octave">+</button></div><small>Touch and hold · layered unison</small></div><div id="keyboard" class="keyboard"></div></section>
+<section class="panel keyboard-panel" aria-label="Keyboard"><div class="keyboard-heading"><h2>Keyboard</h2><div class="octave-controls"><button id="octaveDown" type="button" aria-label="Previous octave">−</button><output id="octaveLabel">C3–C4</output><button id="octaveUp" type="button" aria-label="Next octave">+</button></div><small>Touch and hold · layered unison</small></div><div id="keyboard" class="keyboard"></div></section>
 <footer><p id="buildInfo">Project6581 v__BUILD_VERSION__ · Built __BUILD_TIMESTAMP__ (UTC)</p><span class="diagnostics" id="sidLatencyStatus">Browser audio latency: not yet available.</span><span class="diagnostics" id="sidPlaybackStatus" role="status" aria-live="off">SID playback diagnostics appear here after enabling authentic SID.</span></footer>
 </main><script type="module">
 import {createArpKeyVisual} from "./src/arp-key-visual.js?v=__BUILD_ID__";
@@ -360,11 +357,7 @@ $('arpLatch').addEventListener('change',()=>{arp.latched.clear();if(gameEnabled(
 $('arpBpm').addEventListener('input',()=>{$('bpmValue').textContent=$('arpBpm').value;if(gameEnabled())gameRestart();else arpRestart()});
 $('arpClear').addEventListener('click',()=>{arp.latched.clear();arp.held.clear();game.latched=null;game.held=[];gameStop();arpStopVoice();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}$('arpStatus').textContent='Latch cleared'});
 const keys=new Map();
-const arpKeyVisual=createArpKeyVisual({
- getKey:note=>keys.get(note),
- noteName:note=>names[note%12]+(Math.floor(note/12)-1),
- showLabel:text=>{$('arpVisualNote').textContent=text}
-});
+const arpKeyVisual=createArpKeyVisual({getKey:note=>keys.get(note)});
 const MIN_OCTAVE=0,MAX_OCTAVE=7;
 let keyboardOctave=3;
 const compactKeyboard=()=>matchMedia('(max-width:900px), (max-height:620px)').matches;
