@@ -177,13 +177,16 @@ button,select,.master-tempo input{font-family:inherit}
 .sid-led{display:inline-block;flex:none;width:14px;height:14px;border-radius:50%;border:2px solid #555b54;background:#454a45;box-shadow:inset 0 2px 3px #1d221f,0 1px 0 #fff}
 .sid-led[data-state="loading"],.sid-led[data-state="ready"]{background:#e5a43b;border-color:#85612d;box-shadow:inset 0 1px 2px #fff2bd,0 0 5px #d9a64e}
 .sid-led[data-state="on"]{background:#43ed77;border-color:#237b45;box-shadow:inset 0 1px 2px #d3ffe0,0 0 7px #42e978,0 0 2px #247c46}
+/* Hardware-style unison switch; preserve voices selection in both modes. */
+#unisonOn{cursor:pointer}
+#detune:disabled{opacity:.45;cursor:not-allowed}
 </style></head><body><main>
 <header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="number" min="40" max="240" step="1" value="120" inputmode="numeric"></label><button id="panic">Stop all</button></div></header>
 <div class="statusbar"><span id="sidLed" class="sid-led" data-state="off" role="img" aria-label="SID engine off"></span><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p></div>
 <div class="tabbar" role="tablist" aria-label="Editor sections"><button id="tabVoice" type="button" role="tab" aria-selected="true" aria-controls="voicePanel">Sound</button><button id="tabPlay" type="button" role="tab" aria-selected="false" aria-controls="playPanel">Arpeggiator &amp; LFOs</button></div>
 <div class="workspace" id="workspace" data-tab="voice">
 <section class="panel voice-panel" id="voicePanel" role="tabpanel" aria-labelledby="tabVoice" aria-label="Sound controls">
-<h2>Sound</h2><div class="voice-grid"><label>Chip <select id="chip"><option value="6581">MOS 6581</option><option value="8580">MOS 8580</option></select></label><label>Voices <select id="voiceCount"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label><label>Detune <input id="detune" type="range" min="0" max="100" value="12" step="1"><output id="detuneValue">12¢</output></label><label>Volume <input id="volume" type="range" min="0" max="100" value="55"></label><label>Cutoff <input id="cutoff" type="range" min="50" max="10000" value="7000"></label><label>Resonance <input id="resonance" type="range" min="0" max="100" value="10"></label><label>Filter <select id="mode"><option value="lowpass">Low-pass</option><option value="bandpass">Band-pass</option><option value="highpass">High-pass</option></select></label></div>
+<h2>Sound</h2><div class="voice-grid"><label>Chip <select id="chip"><option value="6581">MOS 6581</option><option value="8580">MOS 8580</option></select></label><label>Unison <input id="unisonOn" type="checkbox" checked></label><label>Voices <select id="voiceCount"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label><label>Detune <input id="detune" type="range" min="0" max="100" value="12" step="1"><output id="detuneValue">12¢</output></label><label>Volume <input id="volume" type="range" min="0" max="100" value="55"></label><label>Cutoff <input id="cutoff" type="range" min="50" max="10000" value="7000"></label><label>Resonance <input id="resonance" type="range" min="0" max="100" value="10"></label><label>Filter <select id="mode"><option value="lowpass">Low-pass</option><option value="bandpass">Band-pass</option><option value="highpass">High-pass</option></select></label></div>
 <div class="section-divider"></div><div id="voices" class="voices"></div>
 </section>
 <section class="panel performance-panel" id="playPanel" role="tabpanel" aria-labelledby="tabPlay" aria-label="Arpeggiator controls">
@@ -263,8 +266,8 @@ for(const [name,id] of [['voice','tabVoice'],['play','tabPlay']]){
   });
 }
 function play(note){if(!sidController)return;if(!settings[0].enabled)return;sidController.noteOn(note,()=>settings[0]);}
-function updateUnison(){sidController?.configure({voiceCount:Number($('voiceCount').value),detune:Number($('detune').value)});$('detuneValue').textContent=$('detune').value+'¢';}
-['voiceCount','detune'].forEach(id=>$(id).addEventListener('input',updateUnison));
+function updateUnison(){const unison=$('unisonOn').checked;sidController?.configure({voiceCount:Number($('voiceCount').value),detune:Number($('detune').value),unison});$('detune').disabled=!unison;$('detuneValue').textContent=unison?$('detune').value+'¢':'Off';}
+['voiceCount','detune','unisonOn'].forEach(id=>$(id).addEventListener('input',updateUnison));updateUnison();
 function stop(note){sidController?.noteOff(note)}
 function panic(){gameStop();sidController?.panic()}
 $('panic').addEventListener('click',()=>{
@@ -444,7 +447,7 @@ async function startSid(){
     timeout=setTimeout(()=>rejectReady(new Error('SID engine initialization timed out')),12000);
     try{await ready}catch(err){await audio.close();throw err}finally{clearTimeout(timeout)}
     panic();sidAudio=audio;sidKeys=0;modulation=lfoModule;updateSidLed();
-    sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:Number($('voiceCount').value),detune:Number($('detune').value)});
+    sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:Number($('voiceCount').value),detune:Number($('detune').value),unison:$('unisonOn').checked});
     updateModulation();
     if(lfoTimer===null)lfoTimer=setInterval(()=>{if(lfoState.some(lfo=>lfo.enabled&&lfo.depth>0))updateModulation()},25);
     const base=audio.context.baseLatency,output=audio.context.outputLatency;
