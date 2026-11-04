@@ -97,7 +97,7 @@ The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) identifie
 
 **Completion condition:** Three LFOs can run simultaneously, independently modulate selected sliders, and stop cleanly without changing saved base control values or compromising SID playback.
 
-## Planned: composable Arpeggiator and Game Arp
+## Priority 2a: composable Arpeggiator and Game Arp
 
 **Goal:** Make Game Arp a reusable pattern triggered at a root pitch, while the regular Arpeggiator independently selects and advances that root. The two features should work together rather than being mutually exclusive.
 
@@ -140,7 +140,7 @@ SID playback + highlighted keyboard keys
 
 **Completion checks:** The thumb remains fixed at the user-selected modulation center, a colored track visualizes the current modulation, and numeric values remain readable. Touch/keyboard edits and authentic SID playback behave as before.
 
-## Planned: selectable Western scales and scale-constrained playback
+## Priority 2b: selectable Western scales and scale-constrained playback
 
 **Goal:** Support conventional 12-tone equal-tempered Western musical scales on the keyboard and in all sounding notes, with predictable, opt-in pitch restrictions.
 
