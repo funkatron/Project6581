@@ -10,8 +10,16 @@ export class UnisonSidController {
   configure({voiceCount=this.voiceCount,detune=this.detune,unison=this.unison}={}){
     const count=Math.max(1,Math.min(8,Math.round(Number(voiceCount)||1)));
     const cents=Math.max(0,Math.min(100,Number(detune)||0));
-    if(count===this.voiceCount&&cents===this.detune&&Boolean(unison)===this.unison)return;
-    this.panic();this.voiceCount=count;this.detune=cents;this.liveDetune=cents;this.unison=Boolean(unison);
+    const mode=Boolean(unison);
+    if(count===this.voiceCount&&mode===this.unison){
+      // Changing detune is a continuous pitch control, not a voice allocation change.
+      // Re-tune live without clearing held keys or restarting SID envelopes.
+      const changed=cents!==this.detune;
+      this.detune=cents;
+      if(changed)this.setLiveDetune(cents);
+      return;
+    }
+    this.panic();this.voiceCount=count;this.detune=cents;this.liveDetune=cents;this.unison=mode;
   }
   noteOn(note,settings){
     if(!this.unison){
