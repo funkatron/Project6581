@@ -51,6 +51,16 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 - [ ] Compare 1, 2, and 3 simultaneous LFOs; observe any audible stepping or UI stutter.
 - [ ] Move Safari to the background and back; record whether timing drifts or audio stops.
 
+## Audio recording and download (pending device verification)
+
+- [ ] With SID active, record a short sustained note as WAV; stop and verify a playable, nonempty file in iPad Files.
+- [ ] Confirm M4A appears only if iPad Safari reports supported native audio/mp4 recording; try the same note in M4A and verify it plays.
+- [ ] If an automatic download does not open on iPad, use the persistent Download WAV / Download M4A link.
+- [ ] Verify selecting a format, pressing Record, playing, and Stop & save do not interrupt normal playback.
+- [ ] Record a silence-to-note transition and check the audio does not rely on microphone permission.
+- [ ] Try three minutes of recording and verify automatic stop, export, reasonable memory consumption and responsive keyboard/controls.
+- [ ] Compare Pulse note WAV captures with PWM depth 0% and 40%, rates 1 Hz and 5 Hz, to assess the reported weak sound change.
+
 ## Expanded LFO routing (pending device verification)
 
 - [ ] All 11 target names appear in each LFO's Target selector, with touch-friendly selection in portrait and landscape.

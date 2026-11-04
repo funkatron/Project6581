@@ -42,6 +42,14 @@ Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of th
 | **LFO 1–3** | Modulate cutoff, resonance, volume, Pulse width, Unison detune, ADSR, and PWM depth/rate; multiple LFOs may share a target | Route a slow LFO to Attack or PWM depth |
 | **Stop all** | Stops notes, disables both arpeggiators, and clears their held/latch state | Use this to silence and reset playback |
 
+### Record and export audio
+
+Use **Record** in the top bar to capture the actual SID synthesizer output. Choose **WAV** for lossless recording and analysis, or **M4A** for a smaller AAC-compressed recording when the browser offers native M4A recording. **MP3 is not yet supported.**
+
+Press **Stop & save** to finalize a file. The browser attempts a download and keeps a **Download WAV / M4A** link available for iPad Safari if you need to tap it yourself. Recordings stop automatically after three minutes to limit memory consumption. You can keep playing normally while recording.
+
+The WAV contains 16-bit mono PCM from the reSIDfp render path (the app plays this same mono signal through both output channels). No microphone permissions, server uploads, or external recording services are needed. To compare PWM behavior, record the same sustained Pulse note with depth 0%, then 40%, and upload the WAV recordings for analysis.
+
 **Tip:** Start by changing *one* control at a time. You can learn what each does by listening to the difference.
 
 ## 🎮 Three things to try

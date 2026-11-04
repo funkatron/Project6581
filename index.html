@@ -213,9 +213,18 @@ header{padding:8px 12px;min-width:0}
 /* Fix octave-navigation position independent of currently sounding notes. */
 .keyboard-heading{display:grid;grid-template-columns:minmax(0,1fr) max-content max-content;min-width:0}
 .keyboard-heading .octave-controls{min-width:max-content;white-space:nowrap;justify-self:end}
+/* Compact recording transport, always accessible from either tab. */
+.record-format{font-size:11px;gap:4px;white-space:nowrap}
+.record-format select{min-height:36px;padding:5px 7px;font-size:11px}
+#recordToggle{min-height:38px;white-space:nowrap;padding:6px 10px}
+#recordToggle[data-recording="true"]{background:#a74330;color:#fff;border-color:#9c392c}
+#recordStatus{font-size:11px;min-width:0;max-width:32%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#b6c2d2}
+#recordDownload{font-size:11px;font-weight:700;color:#b8edda;white-space:nowrap}
+#recordDownload[hidden]{display:none!important}
+@media(max-width:520px){#recordStatus{max-width:35%}.record-format select{min-height:36px}}
 </style></head><body><main>
-<header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="range" min="40" max="240" step="1" value="120" aria-label="Master tempo in beats per minute"><output id="masterBpmValue" for="masterBpm">120</output></label><button id="panic">Stop all</button></div></header>
-<div class="statusbar"><span id="sidLed" class="sid-led" data-state="off" role="img" aria-label="SID engine off"></span><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p></div>
+<header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="range" min="40" max="240" step="1" value="120" aria-label="Master tempo in beats per minute"><output id="masterBpmValue" for="masterBpm">120</output></label><label class="record-format">Format <select id="recordFormat" aria-label="Recording format"><option value="wav">WAV</option><option value="m4a">M4A</option></select></label><button id="recordToggle" type="button" disabled>● Record</button><button id="panic">Stop all</button></div></header>
+<div class="statusbar"><span id="sidLed" class="sid-led" data-state="off" role="img" aria-label="SID engine off"></span><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p><output id="recordStatus" role="status" aria-live="polite"></output><a id="recordDownload" hidden>Download recording</a></div>
 <div class="tabbar" role="tablist" aria-label="Editor sections"><button id="tabVoice" type="button" role="tab" aria-selected="true" aria-controls="voicePanel">Sound</button><button id="tabPlay" type="button" role="tab" aria-selected="false" aria-controls="playPanel">Arpeggiator &amp; LFOs</button></div>
 <div class="workspace" id="workspace" data-tab="voice">
 <section class="panel voice-panel" id="voicePanel" role="tabpanel" aria-labelledby="tabVoice" aria-label="Sound controls">
@@ -230,8 +239,9 @@ header{padding:8px 12px;min-width:0}
 <footer><p id="buildInfo">Project6581 v__BUILD_VERSION__ · Built __BUILD_TIMESTAMP__ (UTC)</p><span class="diagnostics" id="sidLatencyStatus">Browser audio latency: not yet available.</span><span class="diagnostics" id="sidPlaybackStatus" role="status" aria-live="off">SID playback diagnostics appear here after enabling authentic SID.</span></footer>
 </main><script type="module">
 import {createArpKeyVisual} from "./src/arp-key-visual.js?v=__BUILD_ID__";
+import {createSidRecorder,prepareRecordingDownload} from "./src/sid-recorder.js?v=__BUILD_ID__";
 
-const $=id=>document.getElementById(id);let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();
+const $=id=>document.getElementById(id);let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null;
 const settings=[{wave:'square',attack:0.002,decay:0.12,sustain:0.8,release:0.12,pulse:50,pwmDepth:0,pwmRate:1,enabled:true}];
 let currentSidSettings={...settings[0]};
 const ranges=[['attack','Attack',0,2,.01],['decay','Decay',0,3,.01],['sustain','Sustain',0,1,.01],['release','Release',.01,4,.01],['pulse','Pulse width',5,95,1],['pwmDepth','PWM depth',0,45,1],['pwmRate','PWM rate (Hz)',.1,12,.1]];
@@ -513,6 +523,7 @@ async function startSid(){
     const audio=await createReSidFpAudio({model:Number($('chip').value),onContext:context=>{sidContext=context},onProgress:message=>{status.textContent=message},onStatus:event=>{
       if(event.type==='ready'&&event.renderer)resolveReady();
       if(event.type==='error')rejectReady(new Error(event.message));
+      if(event.type==='record-limit'){void stopAndSaveRecording();return}
       if(event.type==='audio-stats'){
         const peak=(event.peak*100).toFixed(2);
         $('sidPlaybackStatus').textContent='SID key presses: '+sidKeys+' · register writes (recent): '+event.writes+' · audio peak: '+peak+'%';
@@ -521,6 +532,11 @@ async function startSid(){
     timeout=setTimeout(()=>rejectReady(new Error('SID engine initialization timed out')),12000);
     try{await ready}catch(err){await audio.close();throw err}finally{clearTimeout(timeout)}
     panic();sidAudio=audio;sidKeys=0;modulation=lfoModule;updateSidLed();
+    sidRecorder=createSidRecorder(audio);
+    $('recordFormat').querySelector('[value="m4a"]').disabled=!sidRecorder.supportsM4a;
+    if(!sidRecorder.supportsM4a)$('recordFormat').value='wav';
+    $('recordToggle').disabled=false;
+    $('recordStatus').textContent=sidRecorder.supportsM4a?'WAV / M4A ready':'WAV ready';
     sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:Number($('voiceCount').value),detune:Number($('detune').value),unison:$('unisonOn').checked});
     updateModulation();
     if(lfoTimer===null)lfoTimer=setInterval(()=>{if(lfoState.some(lfo=>lfo.enabled&&lfo.depth>0)||(settings[0].wave==='square'&&settings[0].pwmDepth>0))updateModulation()},1000/60);
@@ -535,6 +551,48 @@ async function startSid(){
   }catch(err){sidContext=null;status.textContent='Authentic SID unavailable: '+(err.message||err)+'. No audio fallback is available.';button.disabled=false;button.hidden=false}
   finally{sidStarting=false;$('sidSpinner').hidden=true;updateSidLed()}
 }
+async function stopAndSaveRecording(){
+ if(!sidRecorder?.recording||recordBusy)return;
+ recordBusy=true;
+ $('recordToggle').disabled=true;
+ if(recordTimer!==null){clearTimeout(recordTimer);recordTimer=null}
+ try{
+  $('recordStatus').textContent='Finalizing recording…';
+  const {blob,extension}=await sidRecorder.stop();
+  if(recordDownloadUrl)URL.revokeObjectURL(recordDownloadUrl);
+  const {url,filename}=prepareRecordingDownload(blob,extension,$('recordDownload'));
+  recordDownloadUrl=url;
+  $('recordStatus').textContent='Recording ready: '+filename;
+ }catch(error){
+  $('recordStatus').textContent='Recording failed: '+(error.message||error);
+ }finally{
+  recordBusy=false;
+  $('recordToggle').disabled=false;
+  $('recordToggle').dataset.recording='false';
+  $('recordToggle').textContent='● Record';
+  $('recordFormat').disabled=false;
+ }
+}
+$('recordToggle').addEventListener('click',async()=>{
+ if(recordBusy||!sidRecorder)return;
+ if(sidRecorder.recording){await stopAndSaveRecording();return}
+ recordBusy=true;$('recordToggle').disabled=true;
+ try{
+  const format=$('recordFormat').value;
+  $('recordDownload').hidden=true;
+  await sidRecorder.start(format);
+  $('recordFormat').disabled=true;
+  $('recordStatus').textContent='Recording '+format.toUpperCase()+' · max 3 min';
+  $('recordToggle').dataset.recording='true';
+  $('recordToggle').textContent='■ Stop & save';
+  // Bound memory on iPad. This timer is for ending capture, not musical events.
+  recordTimer=setTimeout(()=>{void stopAndSaveRecording()},3*60*1000);
+ }catch(error){
+  $('recordStatus').textContent='Recording unavailable: '+(error.message||error);
+ }finally{
+  recordBusy=false;$('recordToggle').disabled=false;
+ }
+});
 $('sidStart').addEventListener('click',startSid);
 function unlockSidAudio(){
   if(!sidContext||sidContext.state!=='suspended')return;
@@ -543,5 +601,13 @@ function unlockSidAudio(){
 }
 document.addEventListener('pointerdown',unlockSidAudio,{capture:true});
 document.addEventListener('keydown',unlockSidAudio,{capture:true});
+// Stop capture before Safari suspends background page timers.
+document.addEventListener('visibilitychange',()=>{
+ if(document.hidden&&sidRecorder?.recording&&!recordBusy)void stopAndSaveRecording();
+});
+// Retain blob URLs when iPad Safari moves this page into the back-forward cache.
+window.addEventListener('pagehide',event=>{
+ if(!event.persisted&&recordDownloadUrl)URL.revokeObjectURL(recordDownloadUrl);
+});
 startSid();
 </script></body></html>
