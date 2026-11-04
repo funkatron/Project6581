@@ -4,7 +4,7 @@
 
 Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of the original C64 sound chip. It works with a touch-friendly screen keyboard, a choice of MOS 6581 or 8580 chip emulation, and two arpeggiator modes.
 
-> **Development status:** The eight-layer unison voice engine and detune controls are being developed in [PR #27](https://github.com/funkatron/Project6581/pull/27). They are not part of the published application until that PR is merged and deployment succeeds.
+> **Current voice model:** Up to eight emulated SID oscillators can play either together in **Unison** or as independent notes when Unison is off. All voices use the authentic reSIDfp engine.
 
 **[▶ Open the synthesizer](https://funkatron.github.io/Project6581/)**
 
@@ -30,10 +30,10 @@ Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of th
 | **Rate** | How frequently the pattern changes notes | Start at **1/16**; try **1/32** for faster motion |
 | **BPM** | Overall pattern tempo | Move the slider slowly to hear the difference |
 | **Waveform** | Selects a native SID waveform: Triangle, Sawtooth, Pulse, or Noise | Compare **Pulse** and **Sawtooth** |
-| **Voices** *(PR #27)* | Layers 1–8 SID oscillators on the same note | Try 4 voices with moderate detune |
-| **Detune** *(PR #27)* | Spreads layered oscillator tuning in cents | Start at 12¢ and adjust by ear |
+| **Voices** | Sets the total available SID oscillators, 1–8, for Unison or independent notes | Try **3** with Unison off for three-note chords |
+| **Unison / Detune** | Unison stacks the voices on one note; turning it off enables polyphony. Detune applies to Unison only. | Try 4 voices, Unison on, and 12¢ detune |
 | **Attack / Decay / Sustain / Release** | How a note begins, changes, holds, and ends | Increase **Release** for a longer tail |
-| **Pulse width / PWM** | Pulse shape and modulation settings; shown only when Pulse is selected in PR #27 | Try **25%**, then **50%** |
+| **Pulse width / PWM** | Pulse-specific controls are shown only for the Pulse waveform; PWM implementation is still incomplete | Try **25%**, then **50%** |
 | **Filter cutoff** | How much high-frequency sound passes through | Lower it for a darker sound |
 | **Resonance** | Emphasizes frequencies around the filter cutoff | Increase a little while moving cutoff |
 | **Chip character** | Selects **6581** or **8580** SID emulation | Reload after changing the chip selection |
@@ -63,7 +63,7 @@ Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of th
 - **SID:** The three-voice sound chip used in the Commodore 64 computer.
 - **reSIDfp:** The software emulation engine that produces the authentic SID-style audio.
 - **Arpeggiator (arp):** A feature that plays notes in a repeating sequence.
-- **Monophonic:** The published interface currently plays one note with one SID oscillator. PR #27 introduces **unison layering**, where up to eight oscillators play the same note; this is not eight-note polyphony.
+- **Polyphonic:** With Unison off, independent keys can sound at the same time, up to the selected Voices limit. When all slots are occupied, the oldest note is replaced. **Unison** instead layers the selected oscillators on the most recently pressed note.
 - **Unison:** Several oscillators playing one note together. Small pitch offsets (detune) can make the combined sound thicker.
 - **1/128 rate:** A very fast pattern setting. Browser timing can become uneven at extreme rates, particularly on mobile devices.
 
@@ -101,7 +101,7 @@ PCM samples → browser audio output
 - **Sound generation:** [libresidfp](https://github.com/libsidplayfp/libresidfp), pinned to **v1.1.2**, is compiled into `dist/residfp.wasm`. It models SID oscillators, envelopes, and filter behavior.
 - **Browser audio:** An `AudioWorklet` renders the emulated audio off the main UI thread. JavaScript handles note input, controls, and arpeggiator scheduling.
 - **Chip selection:** The interface offers MOS **6581** and **8580** models, whose filter characteristics differ.
-- **Current published voice model:** One playable SID oscillator. PR #27 introduces up to eight unison oscillators across three emulated SID chips (three oscillators per chip), with their output mixed in the native bridge.
+- **Voice model:** Up to eight active oscillators across three emulated SID chips (three oscillators per chip), with their output mixed in the native bridge. Unison and independent-note polyphony share the Voices control.
 - **No audio fallback:** If the WebAssembly SID engine cannot initialize, the app reports the failure instead of silently substituting generic oscillators.
 
 ### Building and testing
@@ -118,9 +118,9 @@ That command runs the Node.js test suite. Building the WASM binary separately re
 
 ### Limitations and ongoing work
 
-- The published interface is currently monophonic with one oscillator. The eight-layer unison implementation is pending PR #27 and is still monophonic in note allocation.
+- Polyphony and Unison are available, but different SID chips cannot yet be configured independently. Switching between Unison and polyphony releases previous notes to prevent stuck voices.
 - Live pulse-width modulation and some parameter changes during sustained notes are not yet fully implemented. Showing PWM controls conditionally does not mean PWM modulation is already functional.
-- Three independently assignable LFOs with selectable modulation waveforms are planned in the [roadmap](ROADMAP.md), not yet implemented.
+- Three LFOs with selectable modulation waveforms, limited parameter routing, and synchronized musical divisions are available. More targets and audio-clock scheduling remain [roadmap](ROADMAP.md) items. The main-thread 60 Hz scheduler can introduce timing jitter, particularly on busy mobile browsers.
 - Very fast arpeggiator rates depend on browser scheduling and may sound uneven.
 - iPad Safari may require a user gesture to start its audio context.
 - Touch-to-sound latency is an active investigation; see [ROADMAP.md](ROADMAP.md).
@@ -132,3 +132,7 @@ The production application is published at **[Project6581](https://funkatron.git
 Previews are **not automatically removed** when their PR closes; use the workflow's manual **remove** operation. Fork pull requests are not supported for write-capable preview publication. Preview assets are maintained on the internal `preview-assets` branch and combined with the production site during Pages deployment.
 
 **Source and further reading:** [GitHub repository](https://github.com/funkatron/Project6581) · [Development roadmap](ROADMAP.md) · [Actions](https://github.com/funkatron/Project6581/actions)
+
+## 📱 iPad Safari verification
+
+The current device QA steps are documented in [docs/ipad-safari-qa.md](docs/ipad-safari-qa.md). CI tests note allocation and musical LFO rates, but does not itself verify touch latency, iOS audio-unlock behavior, or playback through iPad speakers. PR previews are not built automatically.
