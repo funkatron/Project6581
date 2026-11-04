@@ -219,10 +219,12 @@ header{padding:8px 12px;min-width:0}
 #recordToggle{min-height:38px;white-space:nowrap;padding:6px 10px}
 #recordToggle[data-recording="true"]{background:#a74330;color:#fff;border-color:#9c392c}
 #recordStatus{font-size:11px;min-width:0;max-width:32%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#b6c2d2}
+#recordDownload{font-size:11px;font-weight:700;color:#b8edda;white-space:nowrap}
+#recordDownload[hidden]{display:none!important}
 @media(max-width:520px){#recordStatus{max-width:35%}.record-format select{min-height:36px}}
 </style></head><body><main>
 <header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="range" min="40" max="240" step="1" value="120" aria-label="Master tempo in beats per minute"><output id="masterBpmValue" for="masterBpm">120</output></label><label class="record-format">Format <select id="recordFormat" aria-label="Recording format"><option value="wav">WAV</option><option value="m4a">M4A</option></select></label><button id="recordToggle" type="button" disabled>● Record</button><button id="panic">Stop all</button></div></header>
-<div class="statusbar"><span id="sidLed" class="sid-led" data-state="off" role="img" aria-label="SID engine off"></span><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p><output id="recordStatus" role="status" aria-live="polite"></output></div>
+<div class="statusbar"><span id="sidLed" class="sid-led" data-state="off" role="img" aria-label="SID engine off"></span><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p><output id="recordStatus" role="status" aria-live="polite"></output><a id="recordDownload" hidden>Download recording</a></div>
 <div class="tabbar" role="tablist" aria-label="Editor sections"><button id="tabVoice" type="button" role="tab" aria-selected="true" aria-controls="voicePanel">Sound</button><button id="tabPlay" type="button" role="tab" aria-selected="false" aria-controls="playPanel">Arpeggiator &amp; LFOs</button></div>
 <div class="workspace" id="workspace" data-tab="voice">
 <section class="panel voice-panel" id="voicePanel" role="tabpanel" aria-labelledby="tabVoice" aria-label="Sound controls">
@@ -237,9 +239,9 @@ header{padding:8px 12px;min-width:0}
 <footer><p id="buildInfo">Project6581 v__BUILD_VERSION__ · Built __BUILD_TIMESTAMP__ (UTC)</p><span class="diagnostics" id="sidLatencyStatus">Browser audio latency: not yet available.</span><span class="diagnostics" id="sidPlaybackStatus" role="status" aria-live="off">SID playback diagnostics appear here after enabling authentic SID.</span></footer>
 </main><script type="module">
 import {createArpKeyVisual} from "./src/arp-key-visual.js?v=__BUILD_ID__";
-import {createSidRecorder,downloadRecording} from "./src/sid-recorder.js?v=__BUILD_ID__";
+import {createSidRecorder,prepareRecordingDownload} from "./src/sid-recorder.js?v=__BUILD_ID__";
 
-const $=id=>document.getElementById(id);let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false;
+const $=id=>document.getElementById(id);let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null;
 const settings=[{wave:'square',attack:0.002,decay:0.12,sustain:0.8,release:0.12,pulse:50,pwmDepth:0,pwmRate:1,enabled:true}];
 let currentSidSettings={...settings[0]};
 const ranges=[['attack','Attack',0,2,.01],['decay','Decay',0,3,.01],['sustain','Sustain',0,1,.01],['release','Release',.01,4,.01],['pulse','Pulse width',5,95,1],['pwmDepth','PWM depth',0,45,1],['pwmRate','PWM rate (Hz)',.1,12,.1]];
@@ -555,8 +557,10 @@ async function stopAndSaveRecording(){
  try{
   $('recordStatus').textContent='Finalizing recording…';
   const {blob,extension}=await sidRecorder.stop();
-  const name=downloadRecording(blob,extension);
-  $('recordStatus').textContent='Download started: '+name;
+  if(recordDownloadUrl)URL.revokeObjectURL(recordDownloadUrl);
+  const {url,filename}=prepareRecordingDownload(blob,extension,$('recordDownload'));
+  recordDownloadUrl=url;
+  $('recordStatus').textContent='Recording ready: '+filename;
  }catch(error){
   $('recordStatus').textContent='Recording failed: '+(error.message||error);
  }finally{
@@ -573,6 +577,7 @@ $('recordToggle').addEventListener('click',async()=>{
  recordBusy=true;$('recordToggle').disabled=true;
  try{
   const format=$('recordFormat').value;
+  $('recordDownload').hidden=true;
   await sidRecorder.start(format);
   $('recordFormat').disabled=true;
   $('recordStatus').textContent='Recording '+format.toUpperCase()+' · max 3 min';
@@ -594,5 +599,6 @@ function unlockSidAudio(){
 }
 document.addEventListener('pointerdown',unlockSidAudio,{capture:true});
 document.addEventListener('keydown',unlockSidAudio,{capture:true});
+window.addEventListener('pagehide',()=>{if(recordDownloadUrl)URL.revokeObjectURL(recordDownloadUrl)});
 startSid();
 </script></body></html>
