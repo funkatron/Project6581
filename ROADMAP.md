@@ -105,6 +105,44 @@ SID playback + highlighted keyboard keys
 
 **Completion checks:** A user can select a conventional key/scale and enable scale lock; all keyboard and arpeggiator output then follows that scale, visibly and audibly. Chromatic/default behavior stays unchanged.
 
+## Planned: up to three independently configurable SID devices (UI design first)
+
+**Goal:** Allow a session to use **one, two, or three separate SID sound devices**, each with independent sound settings, while keeping a single-device experience simple and touch-friendly.
+
+**Current architecture:** The engine already emulates three SID chips to make eight Unison or polyphonic oscillators available. However, the interface exposes them as one shared instrument with common chip, filter, waveform, envelope, and modulation settings. This milestone concerns **independent instrument/device identities and control**, not simply adding three more copies of the existing engine. Before implementation, document how today's eight-oscillator behavior maps to each physical three-voice SID and preserve the intended musical capabilities.
+
+### Gate 1: design and validate the interface (required before audio changes)
+
+- [ ] Draft a compact iPad-first **SID device switcher** with **SID 1**, **SID 2**, **SID 3** tabs/cards, a clear active-device indication, and an explicit **Add SID** action (disabled at three). Start with one visible device and never require users to scroll past three full copies of every control.
+- [ ] Design two distinct control scopes: **Master** (keyboard, global tempo, stop all, overall output and transport) versus **selected SID** (enable/mute, 6581/8580 model, waveform/three hardware voices, ADSR, pulse width/PWM, filter, local output level and optional stereo pan). Visually label the scope of every editable control.
+- [ ] Design clear routing from **keyboard and both arpeggiators** to one or more SIDs. Explore selectable layers versus separate MIDI/keyboard channels, with a simple default that plays the selected device. Specify how voice assignment, Unison, held keys, latch, and per-SID note-off ownership work.
+- [ ] Decide how the three LFOs are allocated: globally routed to named device parameters, three per device, or a hybrid. Define the target selector wording (for example, **SID 2 · Cutoff**) and show the destination clearly while editing a different SID.
+- [ ] Show each device's active/muted state, model, voice activity and volume at a glance; make **remove/reset SID** actions deliberate and protect against accidental loss of a configured device.
+- [ ] Produce a **low-fidelity annotated wireframe** and a compact interaction specification for iPad portrait, iPad landscape, and desktop. Review accessibility (labels, touch targets, keyboard navigation), control density, and tab switching while notes are held.
+- [ ] Define the migration/default for the existing eight-voice Unison/polyphony experience. Do **not** silently reduce it to three voices or reinterpret existing sound settings without an explicit compatibility decision.
+- [ ] Review and approve the UI specification *before* changing SID allocation, native/WASM mixing, or oscillator assignment. No implementation or new chip controls should be considered ready until this gate is complete.
+
+**Illustrative information architecture, not a final layout:**
+
+```text
+ MASTER: BPM   Keyboard   Arpeggiators   Stop all   Output
+ SID DEVICES: [SID 1 ●] [SID 2] [ + Add SID (max 3) ]
+ SELECTED:    SID 1  |  MOS 6581  |  Enabled  |  Volume  |  Pan
+              Wave/voices  |  ADSR  |  Pulse/PWM  |  Filter
+ MODULATION:  LFO 1–3  |  Target: SID 1 · Cutoff
+```
+
+### Gate 2: implementation and evidence (only after UI approval)
+
+- [ ] Create an explicit device model with a hard maximum of **three** independent SID instances and device-specific settings, voice ownership, filters, and output state.
+- [ ] Route note-on/note-off and arpeggiator output deterministically to the chosen devices, including simultaneous layered playback, changing selection, panic and mute behavior.
+- [ ] Support independent SID chip model configuration only after verifying whether live 6581/8580 switching is possible without resetting other devices; otherwise expose a clear reload/reinitialization requirement.
+- [ ] Test all 1/2/3-device combinations, per-device registers and LFO destinations, voice limits, unison/polyphony, touch keyboard, clipping and output gain, plus CPU/audio load in iPad Safari.
+- [ ] Avoid unnecessary native/WASM rebuilds for UI-only changes. Verify native mixer capacity before claiming three fully independent stereo or pan paths.
+- [ ] Confirm CI, actual-device audio checks, and GitHub Pages deployment separately.
+
+**Completion checks:** An approved, readable multi-device UI exists **first**. Afterwards, users can configure and play one to three independent SID devices, identify which controls affect each device, and stop/reset playback predictably without compromising the existing sound engine.
+
 ## Planned investigation: audio-clock LFO scheduling
 
 **Goal:** Replace main-thread timer-driven SID modulation with timing derived from the audio engine, without increasing audible latency or undermining future multi-SID operation.
