@@ -56,7 +56,7 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 - [ ] Game Arp illuminates each generated pitch, not just the physically held root key.
 - [ ] Regular Arp illuminates steps in Up, Down, Up/Down and Random patterns.
 - [ ] Gold physical touches remain distinguishable from teal generated notes, including when they overlap.
-- [ ] A generated note outside the visible octave shows its note name without highlighting the wrong key.
+- [ ] A generated note outside the visible octave shows **no misleading key highlight** and no extra note text.
 - [ ] Clear latch, Stop all, mode changes, and Safari blur remove a stale generated-note highlight.
 - [ ] At high rates, the UI remains responsive without flashing or additional audio events.
 
