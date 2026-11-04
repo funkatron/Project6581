@@ -80,11 +80,14 @@ export function createSidRecorder(audio,{MediaRecorderClass=globalThis.MediaReco
  };
 }
 
-export function downloadRecording(blob,extension){
+export function prepareRecordingDownload(blob,extension,link){
+ if(!link || typeof link.click!=='function')throw new TypeError('Expected a download link');
  const filename='project6581-'+new Date().toISOString().replace(/[:.]/g,'-')+'.'+extension;
- const url=URL.createObjectURL(blob),a=document.createElement('a');
- a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();
- // iPad Safari may defer processing the tapped download until after click returns.
- setTimeout(()=>URL.revokeObjectURL(url),60000);
- return filename;
+ const url=URL.createObjectURL(blob);
+ link.href=url;link.download=filename;link.hidden=false;
+ link.textContent='Download '+extension.toUpperCase();
+ // The persistent link is particularly useful on iPad Safari if the browser
+ // declines an automatic download after async audio encoder finalization.
+ link.click();
+ return {filename,url};
 }
