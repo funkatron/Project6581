@@ -12,35 +12,31 @@ function key() {
   }
  };
 }
-
 function fixture() {
  const keys = new Map([[60,key()],[61,key()],[64,key()],[67,key()]]);
- const labels = [];
- const visual = createArpKeyVisual({
-  getKey: note => keys.get(note),
-  noteName: note => ({60:'C4',61:'C♯4',64:'E4',67:'G4',84:'C6'})[note] || String(note),
-  showLabel: text => labels.push(text)
- });
- return {keys,labels,visual};
+ const visual = createArpKeyVisual({getKey: note => keys.get(note)});
+ return {keys,visual};
 }
 
-test('regular arp stepping moves its highlight across visible white and black keys',()=>{
- const {keys,labels,visual}=fixture();
- for(const note of [60,64,67,61,60]) {
+test('regular arp stepping highlights only the generated white or black key',()=>{
+ const {keys,visual}=fixture();
+ for(const note of [60,64,67,61,60]){
   visual.show(note);
   assert.equal(visual.note,note);
-  for(const [candidate,element] of keys)assert.equal(element.classList.contains('arp-playing'),candidate===note);
+  for(const [candidate,element] of keys)
+   assert.equal(element.classList.contains('arp-playing'),candidate===note);
  }
- assert.equal(labels.at(-1),'C4');
 });
 
-test('Game Arp notes outside visible octave show the exact note, not a false key',()=>{
- const {keys,labels,visual}=fixture();
+test('out-of-range Game Arp notes are silent in the UI, with no false highlight',()=>{
+ const {keys,visual}=fixture();
  visual.show(60);
  visual.show(84);
- for(const element of keys.values())assert.equal(element.classList.contains('arp-playing'),false);
- assert.equal(labels.at(-1),'C6 · outside keyboard');
  assert.equal(visual.note,84);
+ for(const element of keys.values())
+  assert.equal(element.classList.contains('arp-playing'),false);
+ // There is deliberately no note-label callback or status text.
+ assert.equal('showLabel' in visual,false);
 });
 
 test('visual highlights never disturb independently held physical keys',()=>{
@@ -56,19 +52,19 @@ test('visual highlights never disturb independently held physical keys',()=>{
  assert.equal(keys.get(64).classList.contains('arp-playing'),false);
 });
 
-test('clear works after stopping, clearing latch, changing modes, or panic',()=>{
- const {keys,labels,visual}=fixture();
- for(const note of [60,64,67]) {
+test('clear removes the indicator on stop, latch clearing, mode switch and panic',()=>{
+ const {keys,visual}=fixture();
+ for(const note of [60,64,67]){
   visual.show(note);
   visual.clear();
   assert.equal(visual.note,null);
-  assert.equal(labels.at(-1),'');
-  for(const element of keys.values())assert.equal(element.classList.contains('arp-playing'),false);
+  for(const element of keys.values())
+   assert.equal(element.classList.contains('arp-playing'),false);
  }
 });
 
-test('refresh rebinds highlight on keyboard re-render or octave change',()=>{
- const {keys,visual,labels}=fixture();
+test('refresh updates key bindings across octave changes without labels',()=>{
+ const {keys,visual}=fixture();
  visual.show(60);
  const old=keys.get(60);
  keys.set(60,key());
@@ -77,36 +73,35 @@ test('refresh rebinds highlight on keyboard re-render or octave change',()=>{
  assert.equal(keys.get(60).classList.contains('arp-playing'),true);
  keys.delete(60);
  visual.refresh();
- assert.equal(labels.at(-1),'C4 · outside keyboard');
  assert.equal(visual.note,60);
+ for(const element of keys.values())
+  assert.equal(element.classList.contains('arp-playing'),false);
 });
 
-test('repeated notes at fast rates avoid unnecessary keyboard repaints',()=>{
- const {keys,labels,visual}=fixture();
+test('repeated fast arp notes avoid unnecessary keyboard repaints',()=>{
+ const {keys,visual}=fixture();
+ let additions=0;
+ const first=keys.get(60);
+ const original=first.classList.add;
+ first.classList.add=(...args)=>{additions++;original(...args)};
  visual.show(60);
- const count=labels.length;
  visual.show(60);
  visual.show(60);
- assert.equal(labels.length,count);
- assert.equal(keys.get(60).classList.contains('arp-playing'),true);
-
- // A changed keyboard mapping must still be repainted on a repeated note.
- const old=keys.get(60);
+ assert.equal(additions,1);
  keys.set(60,key());
  visual.show(60);
- assert.equal(labels.length,count+1);
- assert.equal(old.classList.contains('arp-playing'),false);
+ assert.equal(first.classList.contains('arp-playing'),false);
  assert.equal(keys.get(60).classList.contains('arp-playing'),true);
  visual.clear();
- const stopped=labels.length;
  visual.clear();
- assert.equal(labels.length,stopped);
+ assert.equal(visual.note,null);
 });
 
-test('invalid note values are rejected without corrupting the active highlight',()=>{
+test('invalid notes cannot corrupt the current highlight',()=>{
  const {keys,visual}=fixture();
  visual.show(60);
- for(const note of [-1,128,1.5,NaN,null,undefined])assert.throws(()=>visual.show(note),RangeError);
+ for(const note of [-1,128,1.5,NaN,null,undefined])
+  assert.throws(()=>visual.show(note),RangeError);
  assert.equal(visual.note,60);
  assert.equal(keys.get(60).classList.contains('arp-playing'),true);
 });
