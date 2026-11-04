@@ -160,6 +160,16 @@ button:active{background:#d4cbb7;color:#10172d}
 /* Compact utility action: retain a 44px touch target without stretching across the grid. */
 #arpClear{justify-self:start;width:max-content;max-width:100%;min-height:44px;padding:6px 10px;font-size:11px;line-height:1.15}
 .sid-spinner:not([hidden]){border-color:#94b8d2;border-top-color:#ffdf70}
+
+/* Use available horizontal space within each control section, wrapping naturally. */
+.performance-panel .controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:6px 12px}
+.performance-panel .controls label{flex:0 1 auto;min-width:110px;max-width:100%;gap:8px}
+.performance-panel .controls label:has(input[type=range]){flex:1 1 190px}
+.performance-panel .controls label>select{max-width:none;min-width:70px}
+.performance-panel .controls #arpClear{flex:none;align-self:center}
+#lfoControls{grid-template-columns:repeat(auto-fit,minmax(min(100%,165px),1fr));gap:8px}
+.lfo-controls{min-width:0}
+@media(max-width:420px){.performance-panel .controls{gap:5px 8px}.performance-panel .controls label{min-width:min(100%,105px)}#lfoControls{grid-template-columns:repeat(auto-fit,minmax(min(100%,145px),1fr))}.lfo-controls{grid-template-columns:minmax(0,1fr)}}
 </style></head><body><main>
 <header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="number" min="40" max="240" step="1" value="120" inputmode="numeric"></label><button id="panic">Stop all</button></div></header>
 <div class="statusbar"><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p></div>
