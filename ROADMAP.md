@@ -36,3 +36,15 @@
 - [ ] Test LFO waveform shapes, timing, routing, combined modulation, and stop/reset behavior; evaluate AudioWorklet-rate scheduling where browser timers would introduce audible stepping.
 
 **Completion condition:** Three LFOs can run simultaneously, independently modulate selected sliders, and stop cleanly without changing saved base control values or compromising SID playback.
+
+## Planned investigation: audio-clock LFO scheduling
+
+**Goal:** Replace main-thread timer-driven SID modulation with timing derived from the audio engine, without increasing audible latency or undermining future multi-SID operation.
+
+- [ ] Measure actual LFO callback jitter, missed updates, and parameter stepping at 60 Hz on iPad Safari and desktop, including under UI load and background/foreground transitions.
+- [ ] Inspect AudioWorklet-to-reSIDfp register scheduling and identify the smallest viable audio-thread modulation prototype.
+- [ ] Compare CPU load, timing accuracy, audible artifacts, and message overhead for main-thread timers versus audio-clock scheduling across 1–3 SID chips.
+- [ ] Define how BPM synchronization, phase continuity, sample-and-hold, multiple modulation targets, and stop/reset work across the thread boundary.
+- [ ] Add deterministic timing tests and device-level audio checks before replacing the current 60 Hz fallback.
+
+**Completion checks:** Documented measurements and a bounded implementation plan; no architectural migration until benefits and multi-SID implications are understood.
