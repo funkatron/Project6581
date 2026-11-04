@@ -27,13 +27,13 @@ export function modulate(base,lfos,time,{pulseActive=true}={}){
  return result;
 }
 
-// Synced values represent complete LFO cycles per quarter-note beat.
-// 4/1 and 2/1 take four and two whole notes respectively (16 and 8 beats).
+// Synced divisions are expressed as a multiple of one whole note (four beats).
+// 4/1 = one cycle per 16 beats; 2/1 = one cycle per eight beats.
 export const SYNCED_LFO_DIVISIONS = [0.25, 0.5, 1, 2, 4, 8, 16, 32];
 export function syncedLfoHz(bpm, cyclesPerBeat) {
  const division = Number(cyclesPerBeat);
  if (!SYNCED_LFO_DIVISIONS.includes(division)) throw new RangeError('Invalid synchronized LFO division');
  const tempo = Number(bpm);
  const safeTempo = Number.isFinite(tempo) && tempo >= 40 && tempo <= 240 ? tempo : 120;
- return safeTempo / 60 * division;
+ return safeTempo / 240 * division;
 }
