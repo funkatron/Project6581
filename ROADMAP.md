@@ -1,5 +1,54 @@
 # Project6581 roadmap
 
+## Delivery priorities: musical features first
+
+Prioritize features that help people **make, retain, exchange, and perform music**. Keep regression tests proportionate to the feature being shipped; defer extended audio-clock research and large architecture changes unless an observed defect requires them. Work in small, separately reviewable PRs, inspect all Copilot review findings, and verify deployment independently.
+
+**Near-term order:** **1. Factory/user presets and import/export** → **2. Composable Arpeggiator + Game Arp and Western scale lock** → **3. MIDI input/output** → **4. App-like installation and offline access**. WAV/M4A recording and the stationary LFO display are already under development in separate PRs. Independent SID-device support remains **UI-design-first** before modifying the engine.
+
+## Priority 1: factory presets and user preset management
+
+**Goal:** Open Project6581 and immediately select a useful sound, experiment with it, save custom sounds, and move them between devices. This is the highest-priority new feature.
+
+- [ ] Create a small **Factory Presets** browser (e.g. Bass, Lead, Pluck, Pad, Arcade) with meaningful, original settings based on authentic SID waveforms. Show the selected preset name and clearly indicate unsaved edits.
+- [ ] Add a separate **My Presets** collection with **Save**, **Save As**, **Rename**, and **Delete**. Factory presets are read-only and can be used as starting points for user presets.
+- [ ] Restore the entire sound-producing configuration, not just the currently visible sliders: chip model, waveform, ADSR, pulse/PWM, filter, level, unison/polyphony/detune, and all three LFOs. Define whether arpeggiator patterns/rates and global BPM belong to a *performance preset* or remain separately controlled; avoid silent changes to playback state.
+- [ ] Make loading predictable while a note is sounding: stop/reinitialize only when required, leave no stuck notes, refresh every numeric display, and do not start autoplay unexpectedly.
+- [ ] Persist user presets locally (browser storage, with clear error handling if storage is unavailable or full). Do not imply that local presets are automatically synchronized across devices.
+- [ ] **Export** one preset or a whole user bank as a downloadable, human-readable **versioned JSON** file. **Import** either, with schema/version validation, value clamping/rejection, meaningful error messages, duplicate-name handling and an explicit overwrite choice.
+- [ ] Version the preset format from the outset to support future independent SID devices and additional destinations without breaking older user files. Never execute imported content or modify presets until validation succeeds.
+- [ ] Provide a compact, touch-friendly selector usable on iPad. Preserve keyboard visibility; don't require scrolling through a full preset editor before playing.
+- [ ] Verify a bounded set of operations: choose factory → edit → save user → reload → export → import → play. Check that a malformed file does not overwrite a working preset, and changes are faithfully restored after reloading the page.
+
+**Completion checks:** A new user can load a factory sound in one action. A returning user can save, retrieve, export, and import a custom sound without losing its important settings or needing a server account.
+
+## Priority 3: MIDI input and output
+
+**Goal:** Perform Project6581 from external MIDI controllers and optionally route its generated music into another instrument or DAW.
+
+- [ ] Support **MIDI input** (device/channel choice, note-on/note-off, velocity where musically appropriate, sustain pedal CC64, panic/all-notes-off). Correctly handle disconnects and prevent stuck notes.
+- [ ] Optionally map external MIDI CC messages to selected sliders and LFO destinations. Include **MIDI Learn** with visible mapping, conflict handling and saved mapping preferences.
+- [ ] Support **MIDI output** of played keyboard notes and optionally post-arpeggiator generated notes. Make the distinction explicit; send corresponding note-off messages, including on Stop All and mode changes.
+- [ ] Add separate input/output enable toggles, port selectors and a clear indication of device connection. Avoid MIDI feedback loops when the same instrument or virtual port is selected for both.
+- [ ] Define MIDI timing/clock sync as a follow-on slice. Do not couple initial note input/output to a speculative AudioWorklet scheduling rewrite.
+- [ ] Check platform support and permissions at runtime. Browser MIDI APIs, particularly on mobile Safari, cannot be assumed universally available; provide a clear unsupported state and evaluate a native-app path where needed.
+- [ ] Test note ownership, velocity ranges, disconnection, channel filtering, MIDI output routing, arp/latch changes and Stop All. Validate at least one physical controller when possible.
+
+**Completion checks:** Where supported, an external MIDI keyboard can play the SID synth reliably, and an enabled MIDI output sends deliberate notes with matching note-offs. Unsupported environments clearly explain limitations rather than showing inert controls.
+
+## Priority 4: package Project6581 as an application
+
+**Goal:** Make the synthesizer feel like an installable music application on iPad and desktop while retaining the browser version.
+
+- [ ] Begin with a **Progressive Web App**: manifest, app icon, standalone/home-screen display, clear install guidance, responsive safe-area layout, and an update/version indicator.
+- [ ] Cache the **app shell, JS, and reSIDfp WASM** for genuine offline use after first successful install. Keep cache invalidation and deployment updates predictable; never serve an incompatible cached JS/WASM pair.
+- [ ] Ensure local user presets, imported banks, and saved recordings are easy to find, export and retain. Explain browser storage clearing and backup limitations.
+- [ ] Review app-like interaction details: startup/loading feedback, keyboard always accessible, clear unsaved-preset state, consistent navigation, touch targets and transport controls.
+- [ ] Evaluate **native wrappers** only where they deliver tangible benefits, especially reliable MIDI access on iPad, file import/export, audio sessions and background handling. Compare an iOS shell with desktop packaging before choosing a framework. Do not replace the existing lightweight web deployment by default.
+- [ ] Test offline launch, version upgrades, WAV/M4A sharing, iPad Files import/export and recovery after a suspended/resumed app session.
+
+**Completion checks:** Project6581 can be launched from a home screen or desktop as a focused standalone experience and used offline, while retaining consistent audio, user presets and the existing public web URL.
+
 ## Current regression hardening
 
 - [x] Add register-level tests for independent note allocation across three SID chips, deterministic oldest-voice stealing, Unison transitions, and panic/release.
