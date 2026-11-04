@@ -222,12 +222,33 @@ header{padding:8px 12px;min-width:0}
 #recordDownload{font-size:11px;font-weight:700;color:#b8edda;white-space:nowrap}
 #recordDownload[hidden]{display:none!important}
 @media(max-width:520px){#recordStatus{max-width:35%}.record-format select{min-height:36px}}
+/* Compact sound bank UI, scoped to the Sound tab to preserve piano space. */
+.preset-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 0 9px;border-bottom:1px solid #53657a;margin-bottom:9px}
+.preset-toolbar label{flex:1 1 160px;min-width:0}
+.preset-toolbar select{max-width:none;min-width:0;flex:1}
+.preset-toolbar button{min-height:36px;padding:5px 8px;font-size:11px}
+#presetStatus{font-size:11px;color:#b6c2d2;max-width:100%;white-space:normal}
+#presetExportLink:not([hidden]){font-size:11px;color:#b8edda}
+.preset-toolbar button:disabled{opacity:.48}
 </style></head><body><main>
 <header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="range" min="40" max="240" step="1" value="120" aria-label="Master tempo in beats per minute"><output id="masterBpmValue" for="masterBpm">120</output></label><label class="record-format">Format <select id="recordFormat" aria-label="Recording format"><option value="wav">WAV</option><option value="m4a">M4A</option></select></label><button id="recordToggle" type="button" disabled>● Record</button><button id="panic">Stop all</button></div></header>
 <div class="statusbar"><span id="sidLed" class="sid-led" data-state="off" role="img" aria-label="SID engine off"></span><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p><output id="recordStatus" role="status" aria-live="polite"></output><a id="recordDownload" hidden>Download recording</a></div>
 <div class="tabbar" role="tablist" aria-label="Editor sections"><button id="tabVoice" type="button" role="tab" aria-selected="true" aria-controls="voicePanel">Sound</button><button id="tabPlay" type="button" role="tab" aria-selected="false" aria-controls="playPanel">Arpeggiator &amp; LFOs</button></div>
 <div class="workspace" id="workspace" data-tab="voice">
 <section class="panel voice-panel" id="voicePanel" role="tabpanel" aria-labelledby="tabVoice" aria-label="Sound controls">
+<div class="preset-toolbar" aria-label="Sound presets">
+ <label>Preset <select id="presetPicker" aria-label="Choose a factory or user preset"></select></label>
+ <button id="presetSave" type="button" disabled>Save</button>
+ <button id="presetSaveAs" type="button">Save as…</button>
+ <button id="presetRename" type="button" disabled>Rename</button>
+ <button id="presetDelete" type="button" disabled>Delete</button>
+ <button id="presetExport" type="button">Export</button>
+ <button id="presetExportBank" type="button">Export bank</button>
+ <button id="presetImport" type="button">Import…</button>
+ <input id="presetFile" type="file" accept=".json,application/json" hidden>
+ <output id="presetStatus" role="status" aria-live="polite">Choose a factory sound or save your own.</output>
+ <a id="presetExportLink" hidden>Download preset</a>
+</div>
 <h2>Sound</h2><div class="voice-grid"><label>Chip <select id="chip"><option value="6581">MOS 6581</option><option value="8580">MOS 8580</option></select></label><label>Unison <input id="unisonOn" type="checkbox" checked></label><label>Voices <select id="voiceCount"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label><label>Detune <input id="detune" type="range" min="0" max="100" value="12" step="1"><output id="detuneValue">12¢</output></label><label>Volume <input id="volume" type="range" min="0" max="100" value="55"></label><label>Cutoff <input id="cutoff" type="range" min="50" max="10000" value="7000"></label><label>Resonance <input id="resonance" type="range" min="0" max="100" value="10"></label><label>Filter <select id="mode"><option value="lowpass">Low-pass</option><option value="bandpass">Band-pass</option><option value="highpass">High-pass</option></select></label></div>
 <div class="section-divider"></div><div id="voices" class="voices"></div>
 </section>
@@ -240,8 +261,9 @@ header{padding:8px 12px;min-width:0}
 </main><script type="module">
 import {createArpKeyVisual} from "./src/arp-key-visual.js?v=__BUILD_ID__";
 import {createSidRecorder,prepareRecordingDownload} from "./src/sid-recorder.js?v=__BUILD_ID__";
+import {FACTORY_PRESETS,PRESET_VERSION,cleanPresetName,validatePresetSettings,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,importPresetFile} from "./src/preset-library.js?v=__BUILD_ID__";
 
-const $=id=>document.getElementById(id);let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null;
+const $=id=>document.getElementById(id);let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null,activeSidModel=null;
 const settings=[{wave:'square',attack:0.002,decay:0.12,sustain:0.8,release:0.12,pulse:50,pwmDepth:0,pwmRate:1,enabled:true}];
 let currentSidSettings={...settings[0]};
 const ranges=[['attack','Attack',0,2,.01],['decay','Decay',0,3,.01],['sustain','Sustain',0,1,.01],['release','Release',.01,4,.01],['pulse','Pulse width',5,95,1],['pwmDepth','PWM depth',0,45,1],['pwmRate','PWM rate (Hz)',.1,12,.1]];
@@ -538,6 +560,7 @@ async function startSid(){
     $('recordToggle').disabled=false;
     $('recordStatus').textContent=sidRecorder.supportsM4a?'WAV / M4A ready':'WAV ready';
     sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:Number($('voiceCount').value),detune:Number($('detune').value),unison:$('unisonOn').checked});
+    activeSidModel=Number($('chip').value);
     updateModulation();
     if(lfoTimer===null)lfoTimer=setInterval(()=>{if(lfoState.some(lfo=>lfo.enabled&&lfo.depth>0)||(settings[0].wave==='square'&&settings[0].pwmDepth>0))updateModulation()},1000/60);
     const base=audio.context.baseLatency,output=audio.context.outputLatency;
