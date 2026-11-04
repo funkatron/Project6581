@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101721"><title>Project6581 | SID Studio</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090d22"><title>Project6581 | SID Studio</title>
 <style>
 :root{font-family:system-ui,-apple-system,sans-serif;color:#f3f5fa;background:#101721;color-scheme:dark}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}
@@ -116,6 +116,33 @@ input[type=checkbox]:checked{background:#7774dc;border-color:#ffcf73}
 .key.down{background:#ffcf73}
 footer{color:#c5c4ff}
 @media(max-width:900px),(max-height:620px){main{border-width:2px}.tabbar button{min-height:44px}}
+
+/* High-contrast PETSCII palette. Keep the pixel geometry and touch layout. */
+:root{color:#fff;background:#090d22}
+body{background:#090d22}
+main{background:#111934;border-color:#7ee8ff}
+header{background:#07142c;color:#fff;border-color:#7ee8ff;box-shadow:inset 0 0 0 2px #23375a}
+.subtitle{color:#e5f4ff}
+.panel,.keyboard-panel{background:#0b1530;border-color:#7ee8ff;box-shadow:inset 0 0 0 2px #1a3052}
+h2{color:#fff}
+button,select,.master-tempo input{background:#172b4a;color:#fff;border-color:#b1d9f2}
+button.primary,button[aria-selected="true"],.tabbar button[aria-selected="true"]{background:#ffdf70;color:#10172d;border-color:#fff}
+button:focus-visible,input:focus-visible,select:focus-visible{outline-color:#ffdf70}
+.statusbar{background:#101d38;border-color:#7ee8ff}
+.statusbar p,small,p{color:#e0eaf7}
+.section-divider{background:repeating-linear-gradient(90deg,#7ee8ff 0 8px,transparent 8px 16px)}
+label>input[type=range]{accent-color:#7ee8ff}
+label>output,.modulated-value{color:#ffdf70}
+.slider-stack>.modulation-thumb{accent-color:#ffdf70}
+input[type=checkbox]{background:#1a2b49;border-color:#c5e9ff}
+input[type=checkbox]::before{background:#fff}
+input[type=checkbox]:checked{background:#00b8ce;border-color:#fff}
+.lfo-controls{background:#142441;border-color:#8bdaf2}
+.lfo-controls legend{color:#ffdf70}
+.key{background:#f6f8ff;color:#0b1530;border-color:#567b9f}
+.key.black{background:#071126;color:#fff;border-color:#b5dcf3}
+.key.down{background:#ffdf70;color:#0b1530}
+footer{color:#e0eaf7}
 </style></head><body><main>
 <header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="number" min="40" max="240" step="1" value="120" inputmode="numeric"></label><button id="panic">Stop all</button></div></header>
 <div class="statusbar"><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p></div>
