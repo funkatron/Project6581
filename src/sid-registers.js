@@ -9,12 +9,12 @@ export const closestRate = seconds => ADSR_MS.reduce((best,ms,i)=>Math.abs(ms-se
 export const sustainNibble = value => Math.max(0,Math.min(15,Math.round(value*15)));
 export const pulseRegister = percent => Math.max(1,Math.min(4094,Math.round(percent/100*4095)));
 export class SidRegisters {
-  constructor(write,clock=PAL_CLOCK){this.write=write;this.clock=clock;this.controls=[0,0,0];this.frequencies=[null,null,null];this.envelopes=[null,null,null];}
+  constructor(write,clock=PAL_CLOCK){this.write=write;this.clock=clock;this.controls=[0,0,0];this.frequencies=[null,null,null];this.envelopes=[null,null,null];this.pulses=[null,null,null];this.filterRegisters=new Map();}
   reg(voice,offset,value){if(!Number.isInteger(voice)||voice<0||voice>2)throw new RangeError('voice');this.write(voice*7+offset,value&255)}
   noteOn(voice,note,settings){
     const freq=freqRegister(midiHz(note),this.clock),pw=pulseRegister(settings.pulse??50);
     this.reg(voice,0,freq);this.reg(voice,1,freq>>8);this.frequencies[voice]=freq;
-    this.reg(voice,2,pw);this.reg(voice,3,pw>>8);
+    this.reg(voice,2,pw);this.reg(voice,3,pw>>8);this.pulses[voice]=pw;
     const attack=closestRate(settings.attack??0.01),decay=closestRate(settings.decay??0.18);
     const sustain=sustainNibble(settings.sustain??.65),release=closestRate(settings.release??.22);
     const ad=attack<<4|decay,sr=sustain<<4|release;
@@ -38,12 +38,21 @@ export class SidRegisters {
     if(!previous||previous[1]!==sr)this.reg(voice,6,sr);
     this.envelopes[voice]=[ad,sr];
   }
-  setPulse(voice,percent){const pw=pulseRegister(percent);this.reg(voice,2,pw);this.reg(voice,3,pw>>8);}
+  setPulse(voice,percent){
+    if(!Number.isInteger(voice)||voice<0||voice>2)throw new RangeError('voice');
+    const pw=pulseRegister(percent);
+    if(this.pulses[voice]===pw)return;
+    this.reg(voice,2,pw);this.reg(voice,3,pw>>8);this.pulses[voice]=pw;
+  }
   setFilter({cutoff=1024,resonance=0,routing=7,mode='lowpass',volume=15}={}){
     const fc=Math.max(0,Math.min(2047,Math.round(cutoff)));
-    this.write(0x15,fc&7);this.write(0x16,fc>>3);
-    this.write(0x17,(Math.max(0,Math.min(15,resonance))<<4)|(routing&15));
     const modes={lowpass:0x10,bandpass:0x20,highpass:0x40};
-    this.write(0x18,(modes[mode]??0x10)|(volume&15));
+    const values=[[0x15,fc&7],[0x16,fc>>3],
+      [0x17,(Math.max(0,Math.min(15,resonance))<<4)|(routing&15)],
+      [0x18,(modes[mode]??0x10)|(volume&15)]];
+    for(const [register,value] of values){
+      if(this.filterRegisters.get(register)===value)continue;
+      this.write(register,value);this.filterRegisters.set(register,value);
+    }
   }
 }
