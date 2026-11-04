@@ -38,3 +38,14 @@ export function syncedLfoHz(bpm, cyclesPerWholeNote) {
  const safeTempo = Number.isFinite(tempo) && tempo >= 40 && tempo <= 240 ? tempo : 120;
  return safeTempo / 240 * division;
 }
+
+/** Apply an audible, bipolar pulse-width sweep without mutating the base setting.
+ * This is only called for the SID pulse waveform; `depth` is percentage points.
+ */
+export function pulseWithPwm(pulse, depth, rate, time) {
+ const center = Math.max(5, Math.min(95, Number(pulse)));
+ const amount = Math.max(0, Math.min(45, Number(depth) || 0));
+ const hz = Math.max(0.1, Math.min(12, Number(rate) || 1));
+ const offset = Math.sin(2 * Math.PI * hz * Number(time || 0)) * amount;
+ return Math.max(5, Math.min(95, center + offset));
+}
