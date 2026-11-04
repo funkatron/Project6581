@@ -180,6 +180,16 @@ button,select,.master-tempo input{font-family:inherit}
 /* Hardware-style unison switch; preserve voices selection in both modes. */
 #unisonOn{cursor:pointer}
 #detune:disabled{opacity:.45;cursor:not-allowed}
+/* Keep labels and status text clear of recessed panel edges, including
+   compact landscape layouts where the original padding becomes very small. */
+header{padding:8px 12px;min-width:0}
+.statusbar{padding:3px 10px;min-width:0}
+.workspace .panel{padding:clamp(10px,1.25vw,16px)}
+.lfo-controls{padding:8px 10px 9px;min-width:0}
+.lfo-controls legend{padding:0 5px;margin-left:2px}
+.keyboard-panel{padding:9px 12px 12px}
+@media(max-height:760px){.workspace .panel{padding:9px 11px}.lfo-controls{padding:7px 8px 8px}}
+@media(max-width:520px){header{padding:7px 9px}.statusbar{padding:3px 8px}.workspace .panel{padding:9px 10px}.lfo-controls{padding:7px 8px 8px}}
 /* Compact hardware fader for master tempo with always-visible BPM readout. */
 .master-tempo{display:flex;align-items:center;gap:5px;white-space:nowrap;font-size:11px}
 .master-tempo input[type=range]{width:clamp(72px,8vw,110px);max-width:none;min-width:65px;height:28px;padding:0;border:0;background:transparent;box-shadow:none;accent-color:#454b49;touch-action:pan-x}
