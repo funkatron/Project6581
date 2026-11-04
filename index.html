@@ -180,8 +180,13 @@ button,select,.master-tempo input{font-family:inherit}
 /* Hardware-style unison switch; preserve voices selection in both modes. */
 #unisonOn{cursor:pointer}
 #detune:disabled{opacity:.45;cursor:not-allowed}
+/* Compact hardware fader for master tempo with always-visible BPM readout. */
+.master-tempo{display:flex;align-items:center;gap:7px;white-space:nowrap}
+.master-tempo input[type=range]{width:clamp(90px,12vw,160px);max-width:none;min-width:75px;height:32px;padding:0;border:0;background:transparent;box-shadow:none;accent-color:#454b49;touch-action:pan-x}
+.master-tempo output{min-width:35px;text-align:right;font-variant-numeric:tabular-nums;color:#343b39;font-weight:700}
+@media(max-width:520px){.master-tempo input[type=range]{width:90px}}
 </style></head><body><main>
-<header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="number" min="40" max="240" step="1" value="120" inputmode="numeric"></label><button id="panic">Stop all</button></div></header>
+<header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="range" min="40" max="240" step="1" value="120" aria-label="Master tempo in beats per minute"><output id="masterBpmValue" for="masterBpm">120</output></label><button id="panic">Stop all</button></div></header>
 <div class="statusbar"><span id="sidLed" class="sid-led" data-state="off" role="img" aria-label="SID engine off"></span><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p></div>
 <div class="tabbar" role="tablist" aria-label="Editor sections"><button id="tabVoice" type="button" role="tab" aria-selected="true" aria-controls="voicePanel">Sound</button><button id="tabPlay" type="button" role="tab" aria-selected="false" aria-controls="playPanel">Arpeggiator &amp; LFOs</button></div>
 <div class="workspace" id="workspace" data-tab="voice">
@@ -408,7 +413,7 @@ function updateModulation(){
  // Always write the effective pulse value, including the saved base value after an LFO is disabled or retargeted.
  if(settings[0].wave==='square')sidController.setPulse(0,values.pulse);
 }
-$('masterBpm').addEventListener('input',()=>{const n=Number($('masterBpm').value);if(!Number.isFinite(n)||n<40||n>240)return;updateModulation();if($('arpSync').checked){if(gameEnabled())gameRestart();else arpRestart();}});
+$('masterBpm').addEventListener('input',()=>{const n=Number($('masterBpm').value);if(!Number.isFinite(n)||n<40||n>240)return;$('masterBpmValue').textContent=String(n);updateModulation();if($('arpSync').checked){if(gameEnabled())gameRestart();else arpRestart();}});
 $('arpSync').addEventListener('change',()=>{document.querySelector('.arp-local-bpm').hidden=$('arpSync').checked;if(gameEnabled())gameRestart();else arpRestart();});
 ['volume','cutoff','resonance','mode'].forEach(id=>$(id).addEventListener('input',updateModulation));
 function updateSidLed(){
