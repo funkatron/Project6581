@@ -143,6 +143,19 @@ input[type=checkbox]:checked{background:#00b8ce;border-color:#fff}
 .key.black{background:#071126;color:#fff;border-color:#b5dcf3}
 .key.down{background:#ffdf70;color:#0b1530}
 footer{color:#e0eaf7}
+
+/* 64C / 128D industrial details: warm enclosure trim, graphite keycaps,
+   crisp case seams and restrained hardware-style typography. */
+main{border-left-color:#d4cbb7;border-right-color:#d4cbb7}
+header{border-top:5px solid #d4cbb7;border-bottom:3px solid #7ee8ff}
+h1{letter-spacing:.055em}
+.panel{border-top-color:#d4cbb7}
+button,select,.master-tempo input{font-weight:600;letter-spacing:.01em}
+button:active{background:#d4cbb7;color:#10172d}
+.key{border-bottom:4px solid #a5a7a8}
+.key.black{border-bottom:4px solid #536275}
+.key.down{border-bottom-color:#c89b37}
+.keyboard-panel{border-top-color:#d4cbb7}
 </style></head><body><main>
 <header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="number" min="40" max="240" step="1" value="120" inputmode="numeric"></label><button id="panic">Stop all</button></div></header>
 <div class="statusbar"><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p></div>
