@@ -156,6 +156,10 @@ button:active{background:#d4cbb7;color:#10172d}
 .key.black{border-bottom:4px solid #536275}
 .key.down{border-bottom-color:#c89b37}
 .keyboard-panel{border-top-color:#d4cbb7}
+
+/* Compact utility action: retain a 44px touch target without stretching across the grid. */
+#arpClear{justify-self:start;width:max-content;max-width:100%;min-height:44px;padding:6px 10px;font-size:11px;line-height:1.15}
+.sid-spinner:not([hidden]){border-color:#94b8d2;border-top-color:#ffdf70}
 </style></head><body><main>
 <header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="number" min="40" max="240" step="1" value="120" inputmode="numeric"></label><button id="panic">Stop all</button></div></header>
 <div class="statusbar"><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p></div>
