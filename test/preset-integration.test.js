@@ -29,5 +29,10 @@ test('preset loading restores performance settings without stored notes or autop
  assert.match(script,/panic\(\);arp\.held\.clear\(\);arp\.latched\.clear\(\)/);
  assert.match(script,/game\.held=\[\];game\.latched=null/);
  assert.match(script,/renderVoiceControls\(\);renderLfos\(\);updateUnison\(\);updateModulation\(\)/);
- assert.match(script,/if\(sidAudio&&activeSidModel!==next\.sound\.model\)/);
+ assert.match(script,/await ensureSidModel\(next\.sound\.model\)/);
+ assert.match(script,/if\(pendingSidStartup\)await pendingSidStartup/);
+ assert.match(script,/activeSidModel=requestedModel/);
+ assert.match(script,/await ensureSidModel\(previous\.sound\.model\)/);
+ assert.match(script,/\$\('presetPicker'\)\.disabled=true/);
+ assert.match(script,/presetDirty=Boolean\(selected\)&&JSON\.stringify\(snapshotPresetSettings\(\)\)/);
 });
