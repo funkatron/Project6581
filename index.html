@@ -523,6 +523,7 @@ async function startSid(){
     const audio=await createReSidFpAudio({model:Number($('chip').value),onContext:context=>{sidContext=context},onProgress:message=>{status.textContent=message},onStatus:event=>{
       if(event.type==='ready'&&event.renderer)resolveReady();
       if(event.type==='error')rejectReady(new Error(event.message));
+      if(event.type==='record-limit'){void stopAndSaveRecording();return}
       if(event.type==='audio-stats'){
         const peak=(event.peak*100).toFixed(2);
         $('sidPlaybackStatus').textContent='SID key presses: '+sidKeys+' · register writes (recent): '+event.writes+' · audio peak: '+peak+'%';
@@ -533,6 +534,7 @@ async function startSid(){
     panic();sidAudio=audio;sidKeys=0;modulation=lfoModule;updateSidLed();
     sidRecorder=createSidRecorder(audio);
     $('recordFormat').querySelector('[value="m4a"]').disabled=!sidRecorder.supportsM4a;
+    if(!sidRecorder.supportsM4a)$('recordFormat').value='wav';
     $('recordToggle').disabled=false;
     $('recordStatus').textContent=sidRecorder.supportsM4a?'WAV / M4A ready':'WAV ready';
     sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:Number($('voiceCount').value),detune:Number($('detune').value),unison:$('unisonOn').checked});
@@ -599,6 +601,13 @@ function unlockSidAudio(){
 }
 document.addEventListener('pointerdown',unlockSidAudio,{capture:true});
 document.addEventListener('keydown',unlockSidAudio,{capture:true});
-window.addEventListener('pagehide',()=>{if(recordDownloadUrl)URL.revokeObjectURL(recordDownloadUrl)});
+// Stop capture before Safari suspends background page timers.
+document.addEventListener('visibilitychange',()=>{
+ if(document.hidden&&sidRecorder?.recording&&!recordBusy)void stopAndSaveRecording();
+});
+// Retain blob URLs when iPad Safari moves this page into the back-forward cache.
+window.addEventListener('pagehide',event=>{
+ if(!event.persisted&&recordDownloadUrl)URL.revokeObjectURL(recordDownloadUrl);
+});
 startSid();
 </script></body></html>
