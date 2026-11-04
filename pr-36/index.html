@@ -156,6 +156,20 @@ button:active{background:#d4cbb7;color:#10172d}
 .key.black{border-bottom:4px solid #536275}
 .key.down{border-bottom-color:#c89b37}
 .keyboard-panel{border-top-color:#d4cbb7}
+
+/* Compact utility action: retain a 44px touch target without stretching across the grid. */
+#arpClear{justify-self:start;width:max-content;max-width:100%;min-height:44px;padding:6px 10px;font-size:11px;line-height:1.15}
+.sid-spinner:not([hidden]){border-color:#94b8d2;border-top-color:#ffdf70}
+
+/* Use available horizontal space within each control section, wrapping naturally. */
+.performance-panel .controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:6px 12px}
+.performance-panel .controls label{flex:0 1 auto;min-width:110px;max-width:100%;gap:8px}
+.performance-panel .controls label:has(input[type=range]){flex:1 1 190px}
+.performance-panel .controls label>select{max-width:none;min-width:70px}
+.performance-panel .controls #arpClear{flex:none;align-self:center}
+#lfoControls{grid-template-columns:repeat(auto-fit,minmax(min(100%,165px),1fr));gap:8px}
+.lfo-controls{min-width:0}
+@media(max-width:420px){.performance-panel .controls{gap:5px 8px}.performance-panel .controls label{min-width:min(100%,105px)}#lfoControls{grid-template-columns:repeat(auto-fit,minmax(min(100%,145px),1fr))}.lfo-controls{grid-template-columns:minmax(0,1fr)}}
 </style></head><body><main>
 <header><div><h1>Project6581 · PR #36 preview</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="number" min="40" max="240" step="1" value="120" inputmode="numeric"></label><button id="panic">Stop all</button></div></header>
 <div class="statusbar"><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p></div>
@@ -170,7 +184,7 @@ button:active{background:#d4cbb7;color:#10172d}
 <div class="section-divider"></div><h2>Arpeggiator</h2><div class="controls"><label>Arp <input id="arpOn" type="checkbox"></label><label>Latch <input id="arpLatch" type="checkbox"></label><label>Pattern <select id="arpPattern"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label><label>Rate <select id="arpRate"><option value="0.25">1/1</option><option value="0.5">1/2</option><option value="1">1/4</option><option value="2">1/8</option><option value="4" selected>1/16</option><option value="8">1/32</option><option value="16">1/64</option><option value="32">1/128</option></select></label><label>Sync tempo <input id="arpSync" type="checkbox" checked></label><label class="arp-local-bpm" hidden>Arp BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label><button id="arpClear">Clear latch</button></div><small id="arpStatus">Arp off</small><div class="section-divider"></div><section class="lfo-panel" aria-label="Low frequency oscillators"><h2>Modulation · LFOs</h2><div id="lfoControls"></div></section>
 </section></div>
 <section class="panel keyboard-panel" aria-label="Keyboard"><div class="keyboard-heading"><h2>Keyboard</h2><div class="octave-controls"><button id="octaveDown" type="button" aria-label="Previous octave">−</button><output id="octaveLabel">C3–C4</output><button id="octaveUp" type="button" aria-label="Next octave">+</button></div><small>Touch and hold · layered unison</small></div><div id="keyboard" class="keyboard"></div></section>
-<footer><p id="buildInfo">Project6581 v0.1.22 · Built 2026-11-04T01:12:59.151Z (UTC)</p><span class="diagnostics" id="sidLatencyStatus">Browser audio latency: not yet available.</span><span class="diagnostics" id="sidPlaybackStatus" role="status" aria-live="off">SID playback diagnostics appear here after enabling authentic SID.</span></footer>
+<footer><p id="buildInfo">Project6581 v0.1.24 · Built 2026-11-04T01:21:32.813Z (UTC)</p><span class="diagnostics" id="sidLatencyStatus">Browser audio latency: not yet available.</span><span class="diagnostics" id="sidPlaybackStatus" role="status" aria-live="off">SID playback diagnostics appear here after enabling authentic SID.</span></footer>
 </main><script>
 
 const $=id=>document.getElementById(id);let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();
@@ -396,7 +410,7 @@ async function startSid(){
     status.textContent='Loading SID JavaScript modules…';
     let moduleTimeout;
     const modules=Promise.all([
-      import('./src/create-residfp-audio.js?v=0.1.22+20261104T011259151Z'),import('./src/unison-sid-controller.js?v=0.1.22+20261104T011259151Z'),import('./src/lfo-modulation.js?v=0.1.22+20261104T011259151Z')]);
+      import('./src/create-residfp-audio.js?v=0.1.24+20261104T012132813Z'),import('./src/unison-sid-controller.js?v=0.1.24+20261104T012132813Z'),import('./src/lfo-modulation.js?v=0.1.24+20261104T012132813Z')]);
     const [{createReSidFpAudio},{UnisonSidController},lfoModule]=await Promise.race([
       modules,
       new Promise((_,reject)=>{moduleTimeout=setTimeout(()=>reject(new Error('SID JavaScript module loading timed out after 15 seconds')),15000)})
