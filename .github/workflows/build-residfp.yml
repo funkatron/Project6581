@@ -1,11 +1,13 @@
 name: Build authentic SID WASM
 on:
   push:
+    branches: [main]
     paths:
       - 'native/**'
       - 'scripts/build-residfp.sh'
       - '.github/workflows/build-residfp.yml'
   pull_request:
+    branches: [main]
     paths:
       - 'native/**'
       - 'scripts/build-residfp.sh'
