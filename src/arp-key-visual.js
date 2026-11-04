@@ -1,22 +1,18 @@
 // DOM-only presentation state for arpeggiator notes. Physical key presses use
 // a separate CSS class; this never sends SID register writes or schedules audio.
-export function createArpKeyVisual({getKey, noteName, showLabel}) {
+export function createArpKeyVisual({getKey}) {
  let note = null;
  let highlightedKey = null;
 
  function render() {
   highlightedKey?.classList.remove('arp-playing');
   highlightedKey = null;
-  if (note === null) {
-   showLabel('');
-   return;
-  }
+  if (note === null) return;
   const key = getKey(note);
   if (key) {
    key.classList.add('arp-playing');
    highlightedKey = key;
   }
-  showLabel(noteName(note) + (key ? '' : ' · outside keyboard'));
  }
 
  return {

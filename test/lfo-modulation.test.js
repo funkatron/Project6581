@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {lfoValue,modulate,LFO_WAVES,LFO_TARGETS,syncedLfoHz,SYNCED_LFO_DIVISIONS} from '../src/lfo-modulation.js';
+import {lfoValue,modulate,LFO_WAVES,LFO_TARGETS,syncedLfoHz,SYNCED_LFO_DIVISIONS,pulseWithPwm} from '../src/lfo-modulation.js';
 
 test('all modulation waveforms produce bounded values',()=>{
  for(const wave of LFO_WAVES)for(const phase of [0,.1,.25,.5,.75,1,3.3]){
@@ -71,4 +71,26 @@ test('synchronized rates track master tempo with safe invalid-tempo handling',()
  assert.equal(syncedLfoHz(999,0.25),0.125);
  assert.throws(()=>syncedLfoHz(120,0),RangeError);
  assert.throws(()=>syncedLfoHz(120,0.123),RangeError);
+});
+
+test('detune modulation is disabled outside Unison without changing other targets',()=>{
+ const base={detune:25,cutoff:5000};
+ const lfos=[
+  {enabled:true,depth:1,wave:'square',rate:1,target:'detune'},
+  {enabled:true,depth:.5,wave:'square',rate:1,target:'cutoff'}
+ ];
+ const result=modulate(base,lfos,0,{unisonActive:false});
+ assert.equal(result.detune,25);
+ assert.notEqual(result.cutoff,5000);
+ assert.notEqual(modulate(base,lfos,0,{unisonActive:true}).detune,25);
+});
+
+test('audible PWM sweeps around the pulse center and clips safely',()=>{
+ assert.equal(pulseWithPwm(50,20,1,0),50);
+ assert.equal(pulseWithPwm(50,20,1,0.25),70);
+ assert.equal(pulseWithPwm(50,20,1,0.75),30);
+ assert.equal(pulseWithPwm(94,45,1,0.25),95);
+ assert.equal(pulseWithPwm(6,45,1,0.75),5);
+ assert.equal(pulseWithPwm(42,0,2,0.25),42);
+ assert.equal(pulseWithPwm(50,20,1,0),50);
 });

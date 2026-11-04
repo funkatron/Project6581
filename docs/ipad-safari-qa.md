@@ -51,12 +51,21 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 - [ ] Compare 1, 2, and 3 simultaneous LFOs; observe any audible stepping or UI stutter.
 - [ ] Move Safari to the background and back; record whether timing drifts or audio stops.
 
+## Expanded LFO routing (pending device verification)
+
+- [ ] All 11 target names appear in each LFO's Target selector, with touch-friendly selection in portrait and landscape.
+- [ ] ADSR modulation audibly changes held Unison and polyphonic notes without breaking note release or causing stuck gates.
+- [ ] Unison detune moves pitch spread smoothly; independent polyphonic notes remain unaffected by detune modulation.
+- [ ] PWM depth/rate audibly change Pulse movement, without changing Triangle/Sawtooth/Noise output.
+- [ ] Turning off or retargeting an LFO restores the saved base setting; two LFOs on one target combine predictably and clip at bounds.
+- [ ] Check fast modulation CPU use, UI responsiveness, register-write load, and audible stepping at 60 Hz. These are not established by Node tests.
+
 ## Arpeggiator keyboard visuals (issue #41, pending device verification)
 
 - [ ] Game Arp illuminates each generated pitch, not just the physically held root key.
 - [ ] Regular Arp illuminates steps in Up, Down, Up/Down and Random patterns.
 - [ ] Gold physical touches remain distinguishable from teal generated notes, including when they overlap.
-- [ ] A generated note outside the visible octave shows its note name without highlighting the wrong key.
+- [ ] A generated note outside the visible octave shows **no misleading key highlight** and no extra note text.
 - [ ] Clear latch, Stop all, mode changes, and Safari blur remove a stale generated-note highlight.
 - [ ] At high rates, the UI remains responsive without flashing or additional audio events.
 

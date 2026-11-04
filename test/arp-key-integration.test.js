@@ -27,6 +27,13 @@ test('all arpeggiator release paths remove the visual highlight',()=>{
 test('visual style remains independent from pressed keys and contains no animation',()=>{
  assert.match(html,/\.key\.arp-playing:not\(\.down\)/);
  assert.match(html,/\.key\.down\.arp-playing/);
- assert.match(html,/id="arpVisualNote"/);
+ assert.doesNotMatch(html,/id="arpVisualNote"|class="arp-visual-note"/);
+ assert.doesNotMatch(script,/showLabel:|noteName:|arpVisualNote/);
  assert.doesNotMatch(html,/\.key\.arp-playing[^\{]*\{[^}]*animation\s*:/);
+});
+
+test('changing note text cannot move the keyboard octave controls',()=>{
+ assert.match(html,/\.keyboard-heading\s*\{[^}]*display:grid;grid-template-columns:minmax\(0,1fr\) max-content max-content/);
+ assert.match(html,/\.keyboard-heading \.octave-controls\s*\{[^}]*min-width:max-content/);
+ assert.doesNotMatch(html,/\.arp-visual-note\s*\{/);
 });

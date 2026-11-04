@@ -39,14 +39,71 @@ The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) identifie
 - [x] Provide **LFO 1**, **LFO 2**, and **LFO 3**, each with independent enable, rate, depth, and waveform controls (initial live filter/pulse routing; pending CI and device verification).
 - [x] Implement and test the pure waveform evaluation and modulation-routing core (PR in progress; not connected to audio/UI).
 - [ ] Offer selectable modulation waveforms: sine, triangle, sawtooth, square, and sample-and-hold/random. These are modulation shapes, not additional SID audio oscillator waveforms.
-- [ ] Allow each LFO to target any applicable continuous slider parameter. Initial UI routes cutoff, resonance, volume, and pulse width; detune, ADSR, PWM depth/rate, and safe live register updates remain pending.
+- [x] Route three LFOs to 11 continuous sound parameters: cutoff, resonance, volume, pulse width, Unison detune, ADSR, PWM depth and PWM rate. Implement live SID register updates and preserve the base values. Exclude discrete waveform, chip, Unison mode, and voice-count controls.
 - [ ] Permit multiple LFOs to target the same parameter with predictable summation, clamping, and clear display of the base value versus modulation.
 - [ ] Ensure modulation updates do not permanently overwrite manually selected slider values.
 - [ ] Respect waveform-dependent controls: pulse-related modulation should have no audible effect unless the Pulse waveform is active.
 - [ ] Keep the interface usable on iPad, with compact routing controls and no unnecessary panel scrolling.
-- [ ] Test LFO waveform shapes, timing, routing, combined modulation, and stop/reset behavior; evaluate AudioWorklet-rate scheduling where browser timers would introduce audible stepping.
+- [ ] Complete final CI and iPad Safari validation of live ADSR/detune/PWM modulation, including simultaneous modulation, register-write frequency, voice releases, stop/reset and high-rate performance. Pure waveforms, timing and register-level paths have automated tests; evaluate AudioWorklet-rate scheduling where browser timers introduce audible stepping.
 
 **Completion condition:** Three LFOs can run simultaneously, independently modulate selected sliders, and stop cleanly without changing saved base control values or compromising SID playback.
+
+## Planned: composable Arpeggiator and Game Arp
+
+**Goal:** Make Game Arp a reusable pattern triggered at a root pitch, while the regular Arpeggiator independently selects and advances that root. The two features should work together rather than being mutually exclusive.
+
+**Signal flow:**
+
+```text
+Held / latched keyboard notes
+           |
+           v
+Arpeggiator (optional)  -> chooses the current root note
+           |
+           v
+Game Arp (optional)     -> applies pattern intervals to that root
+           |
+           v
+SID playback + highlighted keyboard keys
+```
+
+- [ ] Define each mode explicitly: **both off** plays direct notes; **Game Arp only** plays the selected pattern from the held/latched root; **Arpeggiator only** cycles the held/latched notes directly; **both on** cycles roots using the Arpeggiator while Game Arp plays its chosen interval pattern relative to each root.
+- [ ] Give **Arpeggiator** responsibility for note ordering (Up, Down, Up/Down, Random), latch, and the active root. Give **Game Arp** responsibility for the triggered pattern (Action, Adventure, Arcade, etc.) and its internal note offsets. Neither should silently turn the other off.
+- [ ] Keep a clear musical distinction between **root-change rate** and **pattern-step rate**, with coherent BPM synchronization. Define whether a root change preserves the current pattern phase or restarts the pattern; prefer predictable musical timing and verify it for both fast and slow rates.
+- [ ] Make first key press trigger the pattern immediately, without waiting for a timer tick. Handle additional held notes, releases, latch transitions and switching either feature on/off without stuck notes or duplicate gate writes.
+- [ ] Apply existing MIDI range limits and any future scale-lock policy to the **final sounding pitch**, not merely the root, so combined arpeggiation, playback and keyboard illumination agree.
+- [ ] Simplify labels and help text so users can understand **“Arpeggiator chooses the root; Game Arp plays the pattern.”** Ensure the controls remain usable on iPad and avoid redundant current-note text above the keyboard.
+- [ ] Add deterministic tests of the four mode combinations, independent timing, pattern transitions, changing root while playing, stop/panic, note ownership, and keyboard highlighting.
+
+**Completion checks:** Both generators can run simultaneously; Arpeggiator changes the root of the ongoing Game Arp phrase, each feature retains a clear independent purpose, and no combination produces stuck notes or misleading highlights.
+
+## Planned: modulation-center slider presentation
+
+**Goal:** Make modulation immediately readable without moving control thumbs during playback.
+
+- [ ] Always show each continuous control's current numeric value and unit (e.g. Hz, %, seconds, cents), whether or not an LFO is assigned.
+- [ ] Treat the physical slider thumb as the **base/center value** that the user edits. LFOs add modulation around that center without shifting the thumb, changing the saved base value, or hijacking pointer input.
+- [ ] Show the instantaneous modulated value through the **colored track fill beneath the stationary thumb**, keeping the base position identifiable. Ensure bipolar movement is understandable above and below the center, including clipping at slider bounds.
+- [ ] Preserve an accessible numeric readout of the effective value while retaining the editable center value; choose concise labels so both are understandable without crowded panels.
+- [ ] Update appearance as the user changes the center or an LFO's depth/rate/target, and return to the center and ordinary track when modulation is disabled or reassigned.
+- [ ] Test simultaneous LFO summation, min/max saturation, changes to base values during modulation, keyboard accessibility, iPad Safari touch controls, and rendering overhead at the current modulation update cadence.
+- [ ] Do not use a second moving slider thumb or create additional SID register writes merely to render the effect.
+
+**Completion checks:** The thumb remains fixed at the user-selected modulation center, a colored track visualizes the current modulation, and numeric values remain readable. Touch/keyboard edits and authentic SID playback behave as before.
+
+## Planned: selectable Western scales and scale-constrained playback
+
+**Goal:** Support conventional 12-tone equal-tempered Western musical scales on the keyboard and in all sounding notes, with predictable, opt-in pitch restrictions.
+
+- [ ] Add a **Key** selector (all 12 pitch classes) and a **Scale** selector: Chromatic (default), Major, Natural Minor, Harmonic Minor, Melodic Minor, major-scale modes, Major/Minor Pentatonic, and Blues. Define interval sets explicitly and test their notes in every key.
+- [ ] Show in-scale versus out-of-scale keys clearly on the touch keyboard, including black keys and octave changes, without removing note labels or reducing touch targets.
+- [ ] Provide an explicit **Scale lock** mode. In Chromatic/off mode all notes remain available; when locked, ensure audible notes belong to the selected scale rather than just changing key colors. Decide and document whether off-scale input is ignored or quantized to the nearest scale tone, with deterministic tie-breaking.
+- [ ] Apply the same policy at the final note-selection boundary for physical keyboard input, touch playing, polyphony, Game Arp, regular Arp, and latch/held-note behavior. Quantize any Game Arp pitch offsets after transposition so the sounding notes and highlighted keys agree.
+- [ ] Preserve intended octaves and note-off ownership: when multiple pressed keys map to one pitch, releasing one must not silence the other or leave a stuck note.
+- [ ] Test all root keys and scale interval sets, negative/positive transpositions, octave crossings, MIDI note boundaries, held/latch transitions, mode switching, and note-highlighting accuracy.
+- [ ] Verify responsive and accessible presentation on iPad Safari, with no avoidable audio latency or extra WASM rebuild.
+
+**Completion checks:** A user can select a conventional key/scale and enable scale lock; all keyboard and arpeggiator output then follows that scale, visibly and audibly. Chromatic/default behavior stays unchanged.
 
 ## Planned investigation: audio-clock LFO scheduling
 
