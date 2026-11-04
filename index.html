@@ -127,7 +127,7 @@ footer{color:#c5c4ff}
 </section>
 <section class="panel performance-panel" id="playPanel" role="tabpanel" aria-labelledby="tabPlay" aria-label="Arpeggiator controls">
 <h2>Game Arp</h2><div class="controls"><label>Enabled <input id="gameArpOn" type="checkbox" checked></label><label>Style <select id="gameArpStyle"><option value="action">Action</option><option value="adventure">Adventure</option><option value="arcade">Arcade</option></select></label></div>
-<div class="section-divider"></div><h2>Arpeggiator</h2><div class="controls"><label>Arp <input id="arpOn" type="checkbox"></label><label>Latch <input id="arpLatch" type="checkbox"></label><label>Pattern <select id="arpPattern"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label><label>Rate <select id="arpRate"><option value="1">1/4</option><option value="2">1/8</option><option value="4" selected>1/16</option><option value="8">1/32</option><option value="16">1/64</option><option value="32">1/128</option></select></label><label>Sync tempo <input id="arpSync" type="checkbox" checked></label><label class="arp-local-bpm" hidden>Arp BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label><button id="arpClear">Clear latch</button></div><small id="arpStatus">Arp off</small><div class="section-divider"></div><section class="lfo-panel" aria-label="Low frequency oscillators"><h2>Modulation · LFOs</h2><div id="lfoControls"></div></section>
+<div class="section-divider"></div><h2>Arpeggiator</h2><div class="controls"><label>Arp <input id="arpOn" type="checkbox"></label><label>Latch <input id="arpLatch" type="checkbox"></label><label>Pattern <select id="arpPattern"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label><label>Rate <select id="arpRate"><option value="0.25">1/1</option><option value="0.5">1/2</option><option value="1">1/4</option><option value="2">1/8</option><option value="4" selected>1/16</option><option value="8">1/32</option><option value="16">1/64</option><option value="32">1/128</option></select></label><label>Sync tempo <input id="arpSync" type="checkbox" checked></label><label class="arp-local-bpm" hidden>Arp BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label><button id="arpClear">Clear latch</button></div><small id="arpStatus">Arp off</small><div class="section-divider"></div><section class="lfo-panel" aria-label="Low frequency oscillators"><h2>Modulation · LFOs</h2><div id="lfoControls"></div></section>
 </section></div>
 <section class="panel keyboard-panel" aria-label="Keyboard"><div class="keyboard-heading"><h2>Keyboard</h2><div class="octave-controls"><button id="octaveDown" type="button" aria-label="Previous octave">−</button><output id="octaveLabel">C3–C4</output><button id="octaveUp" type="button" aria-label="Next octave">+</button></div><small>Touch and hold · layered unison</small></div><div id="keyboard" class="keyboard"></div></section>
 <footer><p id="buildInfo">Project6581 v__BUILD_VERSION__ · Built __BUILD_TIMESTAMP__ (UTC)</p><span class="diagnostics" id="sidLatencyStatus">Browser audio latency: not yet available.</span><span class="diagnostics" id="sidPlaybackStatus" role="status" aria-live="off">SID playback diagnostics appear here after enabling authentic SID.</span></footer>
@@ -154,25 +154,40 @@ function renderVoiceControls(){
   updatePulse();
 }
 renderVoiceControls();
-const lfoState=Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,depth:0,target:'cutoff',phase:0,seed:i}));
+const lfoState=Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',phase:0,seed:i}));
 const lfoTargets=['cutoff','resonance','volume','pulse'];
+const syncedRates=[1,2,4,8,16,32,64,128];
 function renderLfos(){
  const root=$('lfoControls');root.replaceChildren();
  lfoState.forEach((lfo,index)=>{
   const group=document.createElement('fieldset');group.className='lfo-controls';
   const legend=document.createElement('legend');legend.textContent='LFO '+(index+1);group.append(legend);
-  const fields=[['enabled','Enabled',null],['sync','Tempo sync',null],['wave','Waveform',['sine','triangle','sawtooth','square','sample-hold']],['target','Destination',lfoTargets],['rate','Rate (Hz / cycles per beat)',null],['depth','Depth (%)',null]];
-  for(const [prop,label,options] of fields){
+  const fields=[['enabled','On'],['sync','Sync'],['wave','Wave'],['target','Target'],['rate','Rate'],['depth','Depth']];
+  for(const [prop,label] of fields){
    const row=document.createElement('label');row.textContent=label+' ';
    const isSwitch=prop==='enabled'||prop==='sync';
-   const input=document.createElement(options?'select':'input');
+   const isSelect=prop==='wave'||prop==='target'||(prop==='rate'&&lfo.sync);
+   const input=document.createElement(isSelect?'select':'input');
    if(isSwitch){input.type='checkbox';input.checked=Boolean(lfo[prop]);}
-   else if(options){options.forEach((value,i)=>{const opt=document.createElement('option');opt.value=prop==='enabled'?String(i===1):value;opt.textContent=value;input.append(opt)});input.value=String(lfo[prop]);}
-   else{input.type='range';input.min=prop==='rate'?'0.05':'0';input.max=prop==='rate'?'20':'100';input.step=prop==='rate'?'0.05':'1';input.value=prop==='rate'?lfo.rate:lfo.depth*100;}
-   input.setAttribute('aria-label','LFO '+(index+1)+' '+label);
-   const output=options||isSwitch?null:document.createElement('output');
-   if(output)output.textContent=input.value;
-   input.addEventListener(options||isSwitch?'change':'input',()=>{lfo[prop]=isSwitch?input.checked:prop==='depth'?Number(input.value)/100:options?input.value:Number(input.value);if(output)output.textContent=input.value;updateModulation();});
+   else if(isSelect){
+    const choices=prop==='wave'?['sine','triangle','sawtooth','square','sample-hold']:prop==='target'?lfoTargets:syncedRates;
+    choices.forEach(value=>{const option=document.createElement('option');option.value=String(value);option.textContent=prop==='rate'?'1/'+value:value;input.append(option)});
+    input.value=String(prop==='rate'?lfo.syncDivision:lfo[prop]);
+   }else{
+    input.type='range';input.min=prop==='rate'?'0.05':'0';input.max=prop==='rate'?'20':'100';input.step=prop==='rate'?'0.05':'1';input.value=prop==='rate'?lfo.rate:lfo.depth*100;
+   }
+   input.setAttribute('aria-label','LFO '+(index+1)+' '+label+(prop==='rate'?(lfo.sync?' division':' Hz'):''));
+   const output=isSwitch||isSelect?null:document.createElement('output');
+   if(output)output.textContent=prop==='rate'?Number(input.value).toFixed(2)+' Hz':input.value+'%';
+   input.addEventListener(isSwitch||isSelect?'change':'input',()=>{
+    if(isSwitch)lfo[prop]=input.checked;
+    else if(prop==='rate'&&lfo.sync)lfo.syncDivision=Number(input.value);
+    else if(prop==='depth')lfo.depth=Number(input.value)/100;
+    else lfo[prop]=isSelect?input.value:Number(input.value);
+    if(output)output.textContent=prop==='rate'?Number(input.value).toFixed(2)+' Hz':input.value+'%';
+    if(prop==='sync'){renderLfos();}
+    updateModulation();
+   });
    row.append(input);if(output)row.append(output);group.append(row);
   }
   root.append(group);
@@ -194,13 +209,16 @@ function panic(){gameStop();sidController?.panic()}
 $('panic').addEventListener('click',()=>{
   $('gameArpOn').checked=false;
   $('arpOn').checked=false;
+  lfoState.forEach(lfo=>{lfo.enabled=false});
+  renderLfos();
+  updateModulation();
   gameStop();
   if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}
   arpStopVoice();
   arp.held.clear();arp.latched.clear();arp.last=null;arp.step=0;
   game.held=[];game.latched=null;game.step=0;
   sidController?.panic();
-  $('arpStatus').textContent='Arpeggiators off';
+  $('arpStatus').textContent='Arps and LFOs off';
 });window.addEventListener('blur',panic);
 const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 const arp={held:new Set(),latched:new Set(),timer:null,index:0,step:0,last:null};
@@ -308,7 +326,7 @@ function setModulationThumb(input,value,enabled){
 function updateModulation(){
  const base={cutoff:Number($('cutoff').value),resonance:Number($('resonance').value),volume:Number($('volume').value),pulse:settings[0].pulse};
  const active=lfoState.some(lfo=>lfo.enabled&&lfo.depth>0);
- const bpm=Number($('masterBpm').value);const effectiveLfos=lfoState.map(lfo=>lfo.sync?{...lfo,rate:(Number.isFinite(bpm)&&bpm>=40&&bpm<=240?bpm:120)/60*lfo.rate}:lfo);
+ const bpm=Number($('masterBpm').value);const effectiveLfos=lfoState.map(lfo=>lfo.sync?{...lfo,rate:(Number.isFinite(bpm)&&bpm>=40&&bpm<=240?bpm:120)/60*4/lfo.syncDivision}:lfo);
  const values=active&&modulation?modulation.modulate(base,effectiveLfos,(performance.now()-lfoStarted)/1000,{pulseActive:settings[0].wave==='square'}):base;
  for(const target of ['cutoff','resonance','volume','pulse']){
   const input=target==='pulse'?document.querySelector('[data-prop="pulse"]'):$(target);
