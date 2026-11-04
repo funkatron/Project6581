@@ -20,7 +20,7 @@ test('Game Arp and regular Arp follow their generated note, not the physical roo
 test('all arpeggiator release paths remove the visual highlight',()=>{
  assert.match(script,/function gameStop\(\)[^\n]*?arpKeyVisual\.clear\(\)/);
  assert.match(script,/function arpStopVoice\(\)[^\n]*?arpKeyVisual\.clear\(\)/);
- assert.match(script,/function panic\(\)[^\n]*?arpStopVoice\(\)/);
+ assert.match(script,/function panic\(\)[^\n]*?arpKeyVisual\.clear\(\)/);
  assert.match(script,/\$\('arpClear'\)\.addEventListener\('click'/);
 });
 
