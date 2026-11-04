@@ -22,6 +22,18 @@ Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of th
 
 > 🔈 **No sound?** Turn up your device volume, check the **Engine status** message, and try touching a key again. If initialization fails, reload the page and retry. There is no substitute audio engine.
 
+## 💾 Factory sounds and user presets
+
+Open **Sound → Preset** to select one of six factory sounds, including bass, lead, pluck, pad and filter effects. Factory sounds cannot be overwritten.
+
+To keep a sound you've changed, select **Save as…** and give it a name. Your new sound appears under **My presets**. Select it later to restore it, and use **Save**, **Rename** or **Delete** as needed. The app marks a loaded sound when you make unsaved changes.
+
+Use **Export** to download the current sound as JSON, or **Export bank** to back up all your user presets. **Import…** loads either file type, validates its settings, and asks before overwriting a user preset with the same name. Downloads can be copied between your iPad and Mac.
+
+A preset includes the SID model, sound and filter controls, all three LFOs, master BPM, and both arpeggiators' settings. Loading a preset stops any current notes but **does not automatically start playing**. Held keys and the notes stored in latches are not saved.
+
+**Storage note:** My presets are stored locally in this browser. They are not automatically shared between devices, and clearing browser data may erase them. **Export bank** provides a backup. The preset JSON format is currently version 1; older versions are not supported while the format is being developed.
+
 ## 🎛️ The controls, in plain language
 
 | Control | What it changes | Try this |
