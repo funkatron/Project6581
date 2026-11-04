@@ -54,3 +54,70 @@ test('WAV recorder rejects unsupported M4A on browsers without an AAC recorder',
  const recorder=createSidRecorder({context:{state:'running'}},{MediaRecorderClass:{isTypeSupported:()=>false}});
  await assert.rejects(()=>recorder.start('m4a'),/unavailable/);
 });
+
+test('native M4A captures SID stream, finalizes data, and releases destination',async()=>{
+ const calls=[],tracks=[{stop(){calls.push('track-stop')}}];
+ const stream={getTracks:()=>tracks};
+ const destination={stream};
+ const audio={
+  context:{state:'running',createMediaStreamDestination(){calls.push('destination');return destination}},
+  node:{
+   connect(dest){assert.equal(dest,destination);calls.push('connect')},
+   disconnect(dest){assert.equal(dest,destination);calls.push('disconnect')}
+  },
+  startM4aMonitor(){calls.push('monitor-start')},
+  stopM4aMonitor(){calls.push('monitor-stop')}
+ };
+ class FakeMediaRecorder {
+  static isTypeSupported(mime){return mime==='audio/mp4;codecs=mp4a.40.2'}
+  constructor(incoming,options){
+   assert.equal(incoming,stream);
+   assert.equal(options.mimeType,'audio/mp4;codecs=mp4a.40.2');
+   this.mimeType=options.mimeType;this.state='inactive';
+   calls.push('construct');
+  }
+  start(period){assert.equal(period,1000);this.state='recording';calls.push('start')}
+  stop(){
+   this.state='inactive';calls.push('stop');
+   this.ondataavailable({data:new Blob([new Uint8Array([0,1,2])],{type:this.mimeType})});
+   this.ondataavailable({data:new Blob([new Uint8Array([3,4])],{type:this.mimeType})});
+   this.onstop();
+  }
+ }
+ const recorder=createSidRecorder(audio,{MediaRecorderClass:FakeMediaRecorder});
+ assert.equal(recorder.supportsM4a,true);
+ await recorder.start('m4a');
+ assert.equal(recorder.recording,true);
+ const saved=await recorder.stop();
+ assert.equal(saved.extension,'m4a');
+ assert.equal(saved.blob.type,'audio/mp4;codecs=mp4a.40.2');
+ assert.deepEqual([...new Uint8Array(await saved.blob.arrayBuffer())],[0,1,2,3,4]);
+ assert.equal(recorder.recording,false);
+ assert.deepEqual(calls,['destination','construct','connect','start','monitor-start',
+   'stop','monitor-stop','disconnect','track-stop']);
+});
+
+test('native M4A cleans up audio routing after recording fails',async()=>{
+ const calls=[],stream={getTracks:()=>[{stop(){calls.push('track-stop')}}]};
+ const destination={stream};
+ const audio={
+  context:{state:'running',createMediaStreamDestination(){return destination}},
+  node:{connect(){calls.push('connect')},disconnect(){calls.push('disconnect')}},
+  startM4aMonitor(){calls.push('monitor-start')},
+  stopM4aMonitor(){calls.push('monitor-stop')}
+ };
+ class BadRecorder{
+  static isTypeSupported(mime){return mime==='audio/mp4'}
+  constructor(){this.state='inactive';this.mimeType='audio/mp4'}
+  start(){this.state='recording'}
+  stop(){
+   this.state='inactive';
+   this.onerror({error:new Error('Encoder stopped')});
+  }
+ }
+ const recorder=createSidRecorder(audio,{MediaRecorderClass:BadRecorder});
+ await recorder.start('m4a');
+ await assert.rejects(()=>recorder.stop(),/Encoder stopped/);
+ assert.equal(recorder.recording,false);
+ assert.deepEqual(calls,['connect','monitor-start','monitor-stop','disconnect','track-stop']);
+});
