@@ -51,6 +51,15 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 - [ ] Compare 1, 2, and 3 simultaneous LFOs; observe any audible stepping or UI stutter.
 - [ ] Move Safari to the background and back; record whether timing drifts or audio stops.
 
+## Stationary-center slider visuals (pending device verification)
+
+- [ ] With no LFO assigned, all 11 continuous sound controls show their numeric base value and appropriate unit.
+- [ ] Assign LFOs above and below the center. The thumb remains fixed at the user-selected base position; a green segment moves between center and effective value.
+- [ ] Check both values remain readable on iPad portrait and landscape, including short landscape viewports and narrow phone widths.
+- [ ] Edit the slider while modulation runs; the thumb updates the base while audio follows the resulting effective value.
+- [ ] Retarget, disable or reset LFOs and ensure the moving segment disappears while the base value remains visible.
+- [ ] Verify touchscreen drag, VoiceOver/keyboard range editing and 60 Hz updates do not block inputs or cause audible timing problems.
+
 ## Expanded LFO routing (pending device verification)
 
 - [ ] All 11 target names appear in each LFO's Target selector, with touch-friendly selection in portrait and landscape.
