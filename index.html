@@ -711,9 +711,7 @@ function refreshPresetDirty(){
  const changed=Boolean(preset)&&JSON.stringify(snapshotPresetSettings())!==JSON.stringify(preset.settings);
  if(changed!==presetDirty){presetDirty=changed;renderPresetPicker();}
 }
-async function applyPresetSettings(value){
- if(sidRecorder?.recording||recordBusy)throw new Error('Finish recording before loading a preset');
- const next=validatePresetSettings(value);
+function applyPresetControls(next){
  // Silence old voices and clear transient notes, but retain the saved arp switches.
  panic();arp.held.clear();arp.latched.clear();arp.step=0;
  game.held=[];game.latched=null;game.step=0;
@@ -740,13 +738,24 @@ async function applyPresetSettings(value){
  $('gameArpStyle').value=next.performance.game.style;
  renderVoiceControls();renderLfos();updateUnison();updateModulation();
  $('arpStatus').textContent='Preset ready · press a key';
- // Changing SID model requires a fresh reSIDfp instance, not just a selector change.
- if(sidAudio&&activeSidModel!==next.sound.model){
-  $('recordToggle').disabled=true;
-  await sidAudio.close();
-  sidAudio=null;sidContext=null;sidController=null;sidRecorder=null;activeSidModel=null;
-  updateSidLed();
-  await startSid();
+}
+async function applyPresetSettings(value){
+ if(sidRecorder?.recording||recordBusy)throw new Error('Finish recording before loading a preset');
+ const next=validatePresetSettings(value);
+ const previous=snapshotPresetSettings();
+ applyPresetControls(next);
+ try{
+  await ensureSidModel(next.sound.model);
+  if(activeSidModel!==next.sound.model)throw new Error('SID chip model does not match the selected preset');
+ }catch(error){
+  // Loading is transactional even if a device fails to initialize.
+  applyPresetControls(previous);
+  try{await ensureSidModel(previous.sound.model)}
+  catch(recoveryError){
+    throw new Error('Could not load preset: '+error.message+
+      '. Previous controls restored, but audio recovery failed: '+recoveryError.message);
+  }
+  throw new Error('Could not load preset: '+error.message+'. Previous sound restored.');
  }
 }
 function newPresetId(){
@@ -771,6 +780,7 @@ function guardPresetAction(work){
  try{return work()}catch(error){presetMessage('Preset error: '+(error.message||error));return null}
 }
 $('presetPicker').addEventListener('change',async()=>{
+ if($('presetPicker').disabled)return;
  const value=$('presetPicker').value;
  const previous=selectedPreset?selectedPreset.kind+':'+selectedPreset.id:'scratch';
  if(presetDirty&&!window.confirm('Discard unsaved changes to this preset?')){
@@ -782,12 +792,15 @@ $('presetPicker').addEventListener('change',async()=>{
  const [kind,id]=value.split(':');
  const preset=(kind==='factory'?FACTORY_PRESETS:userPresets).find(p=>p.id===id);
  if(!preset){renderPresetPicker('Preset not found');return;}
+ $('presetPicker').disabled=true;
  try{
   await applyPresetSettings(preset.settings);
   selectedPreset={kind,id};presetDirty=false;renderPresetPicker();
  }catch(error){
   $('presetPicker').value=previous;
-  presetMessage('Could not load preset: '+(error.message||error));
+  presetMessage(error.message||String(error));
+ }finally{
+  $('presetPicker').disabled=false;
  }
 });
 $('presetSave').addEventListener('click',()=>guardPresetAction(()=>{
@@ -852,7 +865,12 @@ $('presetFile').addEventListener('change',async()=>{
    existing.set(p.name.toLowerCase(),{id:prior?.id??newPresetId(),...p});
   }
   savePresetList([...existing.values()]);
-  renderPresetPicker('Imported '+imported.length+' preset(s). Choose one from My presets.');
+  const selected=currentPreset();
+  presetDirty=Boolean(selected)&&JSON.stringify(snapshotPresetSettings())!==JSON.stringify(selected.settings);
+  const importedMessage='Imported '+imported.length+' preset(s).'+
+   (presetDirty?' Selected preset has unsaved changes; Save will replace the imported settings.':
+    ' Choose one from My presets.');
+  renderPresetPicker(importedMessage);
  }catch(error){presetMessage('Import failed: '+(error.message||error))}
  finally{input.value=''}
 });
