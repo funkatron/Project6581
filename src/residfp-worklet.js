@@ -7,16 +7,21 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     this.queue=[];
     this.blocks=0;this.lastPeak=0;this.writes=0;
     this.recording=false;this.recordSamples=new Int16Array(4096);this.recordLength=0;
+    // Audio-rendered frames, rather than throttled page timers, cap capture.
+    this.monitorRecording=false;this.recordFrames=0;this.recordMaxFrames=0;
     this.port.onmessage=({data})=>{
       if(data?.type==='load')this.load(data.bytes,data.model??6581);
       else if(data?.type==='write')this.queue.push([data.register,data.value]);
       else if(data?.type==='writes'&&Array.isArray(data.writes))this.queue.push(...data.writes);
       else if(data?.type==='reset')this.exports?.sid_reset();
-      else if(data?.type==='record-start'){
-        this.recordLength=0;this.recording=true;
+      else if(data?.type==='record-start'||data?.type==='record-monitor-start'){
+        this.recordLength=0;
+        this.recording=data.type==='record-start';
+        this.monitorRecording=true;this.recordFrames=0;
+        this.recordMaxFrames=Math.floor(sampleRate*180);
         this.port.postMessage({type:'record-started'});
-      }else if(data?.type==='record-stop'){
-        this.recording=false;this.flushRecording();
+      }else if(data?.type==='record-stop'||data?.type==='record-monitor-stop'){
+        this.recording=false;this.monitorRecording=false;this.flushRecording();
         this.port.postMessage({type:'record-stopped'});
       }
     };
@@ -52,13 +57,21 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     const ptr=e.sid_pcm_ptr();
     if(ptr<0 || ptr+frames*2>e.memory.buffer.byteLength){this.port.postMessage({type:'error',message:'Invalid PCM buffer'});this.exports=null;return true}
     const pcm=new Int16Array(e.memory.buffer,ptr,frames);
-    if(this.recording){
-      let consumed=0;
-      while(consumed<frames){
-        const copy=Math.min(frames-consumed,this.recordSamples.length-this.recordLength);
-        this.recordSamples.set(pcm.subarray(consumed,consumed+copy),this.recordLength);
-        this.recordLength+=copy;consumed+=copy;
-        if(this.recordLength===this.recordSamples.length)this.flushRecording();
+    if(this.monitorRecording){
+      const allowed=Math.min(frames,Math.max(0,this.recordMaxFrames-this.recordFrames));
+      if(this.recording){
+        let consumed=0;
+        while(consumed<allowed){
+          const copy=Math.min(allowed-consumed,this.recordSamples.length-this.recordLength);
+          this.recordSamples.set(pcm.subarray(consumed,consumed+copy),this.recordLength);
+          this.recordLength+=copy;consumed+=copy;
+          if(this.recordLength===this.recordSamples.length)this.flushRecording();
+        }
+      }
+      this.recordFrames+=allowed;
+      if(this.recordFrames>=this.recordMaxFrames){
+        this.recording=false;this.monitorRecording=false;this.flushRecording();
+        this.port.postMessage({type:'record-limit'});
       }
     }
     let peak=0;
