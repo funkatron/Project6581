@@ -81,13 +81,13 @@ SID playback + highlighted keyboard keys
 
 **Goal:** Make modulation immediately readable without moving control thumbs during playback.
 
-- [ ] Always show each continuous control's current numeric value and unit (e.g. Hz, %, seconds, cents), whether or not an LFO is assigned.
-- [ ] Treat the physical slider thumb as the **base/center value** that the user edits. LFOs add modulation around that center without shifting the thumb, changing the saved base value, or hijacking pointer input.
-- [ ] Show the instantaneous modulated value through the **colored track fill beneath the stationary thumb**, keeping the base position identifiable. Ensure bipolar movement is understandable above and below the center, including clipping at slider bounds.
-- [ ] Preserve an accessible numeric readout of the effective value while retaining the editable center value; choose concise labels so both are understandable without crowded panels.
-- [ ] Update appearance as the user changes the center or an LFO's depth/rate/target, and return to the center and ordinary track when modulation is disabled or reassigned.
-- [ ] Test simultaneous LFO summation, min/max saturation, changes to base values during modulation, keyboard accessibility, iPad Safari touch controls, and rendering overhead at the current modulation update cadence.
-- [ ] Do not use a second moving slider thumb or create additional SID register writes merely to render the effect.
+- [x] Always show each sound control's editable base value and unit (e.g. Hz, %, seconds, cents), whether or not an LFO is assigned.
+- [x] Treat the physical slider thumb as the **base/center value** that the user edits. LFOs add modulation around that center without shifting the thumb, changing the saved base value, or hijacking pointer input.
+- [x] Show the instantaneous modulated value through a **colored track segment between the stationary thumb and the effective value**, with a neutral fill to the center. The segment handles bipolar movement and clipping at bounds.
+- [x] Keep the editable center's numeric readout visible at all times, and show a separately labeled effective numeric readout when an LFO targets the control. Confirm readability with real iPad Safari layouts.
+- [x] Update appearance as the user changes the center or an LFO's depth/rate/target, and return to the center and ordinary track when modulation is disabled or reassigned.
+- [ ] Finish CI and device-level verification of simultaneous LFO summation, min/max saturation, base edits, keyboard accessibility, iPad Safari touch, and rendering overhead. Pure track-mapping tests are included but cannot establish actual touch behavior.
+- [x] Do not use a second moving slider thumb or create additional SID register writes merely to render the effect.
 
 **Completion checks:** The thumb remains fixed at the user-selected modulation center, a colored track visualizes the current modulation, and numeric values remain readable. Touch/keyboard edits and authentic SID playback behave as before.
 
