@@ -31,13 +31,17 @@ export function createSidRecorder(audio,{MediaRecorderClass=globalThis.MediaReco
    if(format==='m4a'&&availableM4a){
     const destination=audio.context.createMediaStreamDestination();
     const chunks=[];
-    let recorder;
+    let recorder,monitorStarted=false;
     try{
      recorder=new MediaRecorderClass(destination.stream,{mimeType:availableM4a});
      audio.node.connect(destination);
      recorder.ondataavailable=event=>{if(event.data?.size)chunks.push(event.data)};
      recorder.start(1000);
+     audio.startM4aMonitor();
+     monitorStarted=true;
     }catch(error){
+     if(monitorStarted)audio.stopM4aMonitor();
+     try{if(recorder?.state==='recording')recorder.stop()}catch{}
      try{audio.node.disconnect(destination)}catch{}
      for(const track of destination.stream.getTracks())track.stop();
      throw error;
@@ -71,6 +75,7 @@ export function createSidRecorder(audio,{MediaRecorderClass=globalThis.MediaReco
     return {blob,extension:'m4a'};
    }finally{
     if(active.destination){
+     audio.stopM4aMonitor();
      try{audio.node.disconnect(active.destination)}catch{}
      for(const track of active.destination.stream.getTracks())track.stop();
     }
