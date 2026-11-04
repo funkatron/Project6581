@@ -172,9 +172,14 @@ h1{font-size:clamp(18px,2.2vw,26px);font-weight:800;letter-spacing:.045em;text-t
 h2{font-weight:750;letter-spacing:.025em;text-transform:uppercase}
 .lfo-controls legend{font-weight:750;text-transform:uppercase}
 button,select,.master-tempo input{font-family:inherit}
+/* Recessed hardware power lamp: dark when off, amber while loading/ready,
+   illuminated green only when the SID audio context is running. */
+.sid-led{display:inline-block;flex:none;width:14px;height:14px;border-radius:50%;border:2px solid #555b54;background:#454a45;box-shadow:inset 0 2px 3px #1d221f,0 1px 0 #fff}
+.sid-led[data-state="loading"],.sid-led[data-state="ready"]{background:#e5a43b;border-color:#85612d;box-shadow:inset 0 1px 2px #fff2bd,0 0 5px #d9a64e}
+.sid-led[data-state="on"]{background:#43ed77;border-color:#237b45;box-shadow:inset 0 1px 2px #d3ffe0,0 0 7px #42e978,0 0 2px #247c46}
 </style></head><body><main>
 <header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="number" min="40" max="240" step="1" value="120" inputmode="numeric"></label><button id="panic">Stop all</button></div></header>
-<div class="statusbar"><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p></div>
+<div class="statusbar"><span id="sidLed" class="sid-led" data-state="off" role="img" aria-label="SID engine off"></span><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p></div>
 <div class="tabbar" role="tablist" aria-label="Editor sections"><button id="tabVoice" type="button" role="tab" aria-selected="true" aria-controls="voicePanel">Sound</button><button id="tabPlay" type="button" role="tab" aria-selected="false" aria-controls="playPanel">Arpeggiator &amp; LFOs</button></div>
 <div class="workspace" id="workspace" data-tab="voice">
 <section class="panel voice-panel" id="voicePanel" role="tabpanel" aria-labelledby="tabVoice" aria-label="Sound controls">
@@ -403,10 +408,16 @@ function updateModulation(){
 $('masterBpm').addEventListener('input',()=>{const n=Number($('masterBpm').value);if(!Number.isFinite(n)||n<40||n>240)return;updateModulation();if($('arpSync').checked){if(gameEnabled())gameRestart();else arpRestart();}});
 $('arpSync').addEventListener('change',()=>{document.querySelector('.arp-local-bpm').hidden=$('arpSync').checked;if(gameEnabled())gameRestart();else arpRestart();});
 ['volume','cutoff','resonance','mode'].forEach(id=>$(id).addEventListener('input',updateModulation));
+function updateSidLed(){
+  const led=$('sidLed');
+  const state=sidAudio?(sidContext?.state==='running'?'on':'ready'):(sidStarting?'loading':'off');
+  led.dataset.state=state;
+  led.setAttribute('aria-label',state==='on'?'SID engine on':state==='ready'?'SID engine ready, audio suspended':state==='loading'?'SID engine loading':'SID engine off');
+}
 async function startSid(){
   const button=$('sidStart'),status=$('sidEngineStatus');
   if(sidAudio||sidStarting)return;
-  sidStarting=true;button.disabled=true;$('sidSpinner').hidden=false;
+  sidStarting=true;button.disabled=true;$('sidSpinner').hidden=false;updateSidLed();
   status.textContent='Loading authentic reSIDfp…';
   try{
     status.textContent='Loading SID JavaScript modules…';
@@ -432,7 +443,7 @@ async function startSid(){
     }});
     timeout=setTimeout(()=>rejectReady(new Error('SID engine initialization timed out')),12000);
     try{await ready}catch(err){await audio.close();throw err}finally{clearTimeout(timeout)}
-    panic();sidAudio=audio;sidKeys=0;modulation=lfoModule;
+    panic();sidAudio=audio;sidKeys=0;modulation=lfoModule;updateSidLed();
     sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:Number($('voiceCount').value),detune:Number($('detune').value)});
     updateModulation();
     if(lfoTimer===null)lfoTimer=setInterval(()=>{if(lfoState.some(lfo=>lfo.enabled&&lfo.depth>0))updateModulation()},25);
@@ -445,13 +456,13 @@ async function startSid(){
     if(audio.context.state==='suspended')status.textContent='SID ready · touch a key to unlock audio.';
     if(audio.context.state==='running')status.textContent='Authentic reSIDfp active · up to eight SID unison voices. Change chip model by reloading.';
   }catch(err){sidContext=null;status.textContent='Authentic SID unavailable: '+(err.message||err)+'. No audio fallback is available.';button.disabled=false;button.hidden=false}
-  finally{sidStarting=false;$('sidSpinner').hidden=true}
+  finally{sidStarting=false;$('sidSpinner').hidden=true;updateSidLed()}
 }
 $('sidStart').addEventListener('click',startSid);
 function unlockSidAudio(){
   if(!sidContext||sidContext.state!=='suspended')return;
   // Call resume synchronously inside the trusted gesture for iPad Safari.
-  sidContext.resume().then(()=>{if(sidAudio)$('sidEngineStatus').textContent='Authentic reSIDfp active · SID unison voices.'}).catch(err=>{$('sidEngineStatus').textContent='Tap again to enable audio: '+err.message});
+  sidContext.resume().then(()=>{if(sidAudio)$('sidEngineStatus').textContent='Authentic reSIDfp active · SID unison voices.';updateSidLed()}).catch(err=>{$('sidEngineStatus').textContent='Tap again to enable audio: '+err.message;updateSidLed()});
 }
 document.addEventListener('pointerdown',unlockSidAudio,{capture:true});
 document.addEventListener('keydown',unlockSidAudio,{capture:true});
