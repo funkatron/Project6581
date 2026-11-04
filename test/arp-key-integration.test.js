@@ -12,14 +12,23 @@ test('inline keyboard application remains valid JavaScript after adding the visu
  assert.equal(result.status,0,result.stderr);
 });
 
-test('Game Arp and regular Arp follow their generated note, not the physical root',()=>{
- assert.match(script,/function gameTick\(\)[\s\S]*?play\(game\.last\);\s*arpKeyVisual\.show\(game\.last\);/);
- assert.match(script,/function arpTick\(\)[^\n]*?play\(note\);arpKeyVisual\.show\(note\);/);
+test('Game Arp voices its pattern, while regular Arp owns the selected root',()=>{
+ assert.match(script,/function gameTick\(\)[\s\S]*?patternPitch\(root,\$\('gameArpStyle'\)\.value,game\.step\+\+\)/);
+ assert.match(script,/play\(game\.last\);arpKeyVisual\.show\(game\.last\)/);
+ assert.match(script,/function arpTick\(\)[\s\S]*?selectRoot\(notes,\$\('arpPattern'\)\.value,arp\.step\+\+\)/);
+ assert.match(script,/arp\.last=note;play\(note\);arpKeyVisual\.show\(note\)/);
+ assert.match(script,/if\(gameEnabled\(\)\)return;/);
+});
+test('both arpeggiators have independent rate selectors and timers',()=>{
+ assert.match(html,/id="gameRate"/);
+ assert.match(html,/id="arpRate"/);
+ assert.match(script,/arp\.timer=setInterval\(arpTick,stepMilliseconds\(bpm,\$\('arpRate'\)\.value\)\)/);
+ assert.match(script,/game\.timer=setInterval\(gameTick,stepMilliseconds\(bpm,\$\('gameRate'\)\.value\)\)/);
 });
 
 test('all arpeggiator release paths remove the visual highlight',()=>{
- assert.match(script,/function gameStop\(\)[^\n]*?arpKeyVisual\.clear\(\)/);
- assert.match(script,/function arpStopVoice\(\)[^\n]*?arpKeyVisual\.clear\(\)/);
+ assert.match(script,/function gameStop\(\)[\s\S]*?arpKeyVisual\.clear\(\)/);
+ assert.match(script,/function arpStopVoice\(\)[\s\S]*?arpKeyVisual\.clear\(\)/);
  assert.match(script,/function panic\(\)[^\n]*?arpKeyVisual\.clear\(\)/);
  assert.match(script,/\$\('arpClear'\)\.addEventListener\('click'/);
 });
