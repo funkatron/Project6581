@@ -1,5 +1,16 @@
 # Project6581 roadmap
 
+## Current regression hardening
+
+- [x] Add register-level tests for independent note allocation across three SID chips, deterministic oldest-voice stealing, Unison transitions, and panic/release.
+- [x] Correct whole-note synchronized LFO rate conversion; 4/1, 2/1, and 1/1 correspond to 16, 8, and 4 beats per cycle.
+- [x] Improve iPad panel-width-responsive LFO controls and suppress duplicate key release after pointer capture ends.
+- [x] Run CI on the regression PR: 35 tests passed, zero failures (2026-11-04).
+- [ ] Complete real iPad Safari audio/layout verification using [the device checklist](docs/ipad-safari-qa.md); a code review alone cannot complete this step.
+- [ ] Confirm a new Pages deployment separately **after** an authorized squash merge.
+
+The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) identifies current scheduling risks and a bounded measurement/prototype plan. No replacement of the current LFO timer is authorized by regression tests alone. Spectrum analyzer, oscilloscope, spectrogram, and independently configurable SID chips remain separate roadmap items.
+
 ## Priority: reduce keyboard-to-audio latency
 
 **Goal:** Minimize the delay between touch/keyboard press and the first audible SID sample on iPad Safari and desktop browsers. Preserve authentic reSIDfp rendering, without falling back to prototype audio.

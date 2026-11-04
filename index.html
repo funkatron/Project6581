@@ -195,6 +195,17 @@ header{padding:8px 12px;min-width:0}
 .master-tempo input[type=range]{width:clamp(72px,8vw,110px);max-width:none;min-width:65px;height:28px;padding:0;border:0;background:transparent;box-shadow:none;accent-color:#454b49;touch-action:pan-x}
 .master-tempo output{min-width:28px;text-align:right;font-variant-numeric:tabular-nums;color:#343b39;font-weight:700}
 @media(max-width:520px){.master-tempo input[type=range]{width:72px}}
+/* Size the LFO grid to the actual panel instead of the viewport:
+   an iPad landscape control panel occupies approximately half the width. */
+.performance-panel{container-type:inline-size}
+#lfoControls{grid-template-columns:minmax(0,1fr)}
+@container (min-width:480px){#lfoControls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container (min-width:800px){#lfoControls{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.lfo-controls label{min-height:44px;font-size:12px;gap:7px}
+.lfo-controls select{min-height:40px;font-size:12px;max-width:72%}
+.lfo-controls input[type=range]{height:40px;touch-action:pan-x}
+.lfo-controls output{font-size:11px}
+@media(max-width:520px){header{display:grid;grid-template-columns:minmax(0,1fr);gap:5px}header .controls{justify-content:space-between}}
 </style></head><body><main>
 <header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="range" min="40" max="240" step="1" value="120" aria-label="Master tempo in beats per minute"><output id="masterBpmValue" for="masterBpm">120</output></label><button id="panic">Stop all</button></div></header>
 <div class="statusbar"><span id="sidLed" class="sid-led" data-state="off" role="img" aria-label="SID engine off"></span><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p></div>
@@ -354,8 +365,9 @@ function renderKeyboard(){
     key.dataset.note=String(note);
     key.textContent=names[note%12]+(Math.floor(note/12)-1);
     key.setAttribute('aria-label','Play '+key.textContent);
-    key.addEventListener('pointerdown',e=>{e.preventDefault();key.setPointerCapture(e.pointerId);key.classList.add('down');keyDown(note)});
-    const end=()=>{key.classList.remove('down');keyUp(note)};
+    let activePointer=null;
+    key.addEventListener('pointerdown',e=>{if(activePointer!==null)return;e.preventDefault();activePointer=e.pointerId;key.setPointerCapture(e.pointerId);key.classList.add('down');keyDown(note)});
+    const end=e=>{if(activePointer!==e.pointerId)return;activePointer=null;key.classList.remove('down');keyUp(note)};
     key.addEventListener('pointerup',end);
     key.addEventListener('pointercancel',end);
     key.addEventListener('lostpointercapture',end);
@@ -405,7 +417,7 @@ function setModulationThumb(input,value,enabled){
 function updateModulation(){
  const base={cutoff:Number($('cutoff').value),resonance:Number($('resonance').value),volume:Number($('volume').value),pulse:settings[0].pulse};
  const active=lfoState.some(lfo=>lfo.enabled&&lfo.depth>0);
- const bpm=Number($('masterBpm').value);const effectiveLfos=lfoState.map(lfo=>lfo.sync?{...lfo,rate:(Number.isFinite(bpm)&&bpm>=40&&bpm<=240?bpm:120)/60*lfo.syncDivision}:lfo);
+ const bpm=Number($('masterBpm').value);const effectiveLfos=lfoState.map(lfo=>lfo.sync&&modulation?{...lfo,rate:modulation.syncedLfoHz(bpm,lfo.syncDivision)}:lfo);
  const values=active&&modulation?modulation.modulate(base,effectiveLfos,(performance.now()-lfoStarted)/1000,{pulseActive:settings[0].wave==='square'}):base;
  for(const target of ['cutoff','resonance','volume','pulse']){
   const input=target==='pulse'?document.querySelector('[data-prop="pulse"]'):$(target);
