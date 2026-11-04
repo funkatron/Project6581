@@ -135,4 +135,4 @@ Previews are **not automatically removed** when their PR closes; use the workflo
 
 ## 📱 iPad Safari verification
 
-The current device QA steps are documented in [docs/ipad-safari-qa.md](docs/ipad-safari-qa.md). CI tests note allocation and musical LFO rates, but does not itself verify touch latency, iOS audio-unlock behavior, or playback through iPad speakers. PR previews are not built automatically.
+The current device QA steps are documented in [docs/ipad-safari-qa.md](docs/ipad-safari-qa.md). CI tests note allocation and musical LFO rates, but do not themselves verify touch latency, iOS audio-unlock behavior, or playback through iPad speakers. PR previews are not built automatically.
