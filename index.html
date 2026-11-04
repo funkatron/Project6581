@@ -454,7 +454,7 @@ async function startSid(){
     panic();sidAudio=audio;sidKeys=0;modulation=lfoModule;updateSidLed();
     sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:Number($('voiceCount').value),detune:Number($('detune').value),unison:$('unisonOn').checked});
     updateModulation();
-    if(lfoTimer===null)lfoTimer=setInterval(()=>{if(lfoState.some(lfo=>lfo.enabled&&lfo.depth>0))updateModulation()},25);
+    if(lfoTimer===null)lfoTimer=setInterval(()=>{if(lfoState.some(lfo=>lfo.enabled&&lfo.depth>0))updateModulation()},1000/60);
     const base=audio.context.baseLatency,output=audio.context.outputLatency;
     const parts=[];
     if(Number.isFinite(base))parts.push('base '+(base*1000).toFixed(1)+' ms');
