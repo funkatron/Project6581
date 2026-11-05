@@ -51,6 +51,18 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 - [ ] Compare 1, 2, and 3 simultaneous LFOs; observe any audible stepping or UI stutter.
 - [ ] Move Safari to the background and back; record whether timing drifts or audio stops.
 
+## Factory/user presets (pending iPad device verification)
+
+- [ ] Choose each factory sound, hold a note, and verify the audible waveform, filter and envelope change.
+- [ ] Modify a factory preset, see the unsaved indicator, then Save as… and reload the user preset.
+- [ ] Modify an existing user preset, Save, Rename, and Delete it; factory presets remain read-only.
+- [ ] Confirm master BPM, Game Arp style/enable, Arp sync/latch/rate and all three LFOs restore from the same preset.
+- [ ] Loading a preset while a note is held clears active notes but does not trigger new playback or leave hanging notes.
+- [ ] Select a preset using the other SID chip model; check audio reinitializes and Safari allows sound after a key gesture.
+- [ ] Export one preset and a full user bank to Files, import again, and confirm duplicate-name replacement requires permission.
+- [ ] Import malformed JSON and an out-of-range parameter; confirm existing user presets remain unchanged.
+- [ ] Refresh the app and verify saved user presets remain available, without assuming cloud sync.
+
 ## Composable Game Arp and Arpeggiator (pending device verification)
 
 - [ ] Both off: keys play directly, with no pattern timers running.
