@@ -354,6 +354,10 @@ function updateAudioTimingReport(){
  ].join('\n');
 }
 updateAudioTimingReport();
+$('audioTimingDetails').addEventListener('toggle',()=>{
+ sidAudio?.setTimingEnabled?.($('audioTimingDetails').open);
+ if($('audioTimingDetails').open)updateAudioTimingReport();
+});
 let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null,activeSidModel=null;
 const settings=[{wave:'square',attack:0.002,decay:0.12,sustain:0.8,release:0.12,pulse:50,pwmDepth:0,pwmRate:1,enabled:true}];
 let currentSidSettings={...settings[0]};
@@ -915,7 +919,7 @@ async function startSid(){
         audioTiming.renderAvgMs=event.renderAvgMs;
         audioTiming.renderMaxMs=event.renderMaxMs;
         audioTiming.renderBudgetMs=event.renderBudgetMs;
-        updateAudioTimingReport();
+        if($('audioTimingDetails').open)updateAudioTimingReport();
         const peak=(event.peak*100).toFixed(2);
         $('sidPlaybackStatus').textContent='SID key presses: '+sidKeys+' · register writes (recent): '+event.writes+' · audio peak: '+peak+'%';
       }
@@ -923,6 +927,7 @@ async function startSid(){
     timeout=setTimeout(()=>rejectReady(new Error('SID engine initialization timed out')),12000);
     try{await ready}catch(err){await audio.close();throw err}finally{clearTimeout(timeout)}
     panic();sidAudio=audio;sidKeys=0;modulation=lfoModule;updateSidLed();
+    audio.setTimingEnabled($('audioTimingDetails').open);
     sidRecorder=createSidRecorder(audio);
     $('recordFormat').querySelector('[value="m4a"]').disabled=!sidRecorder.supportsM4a;
     if(!sidRecorder.supportsM4a)$('recordFormat').value='wav';
