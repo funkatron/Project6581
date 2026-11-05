@@ -49,7 +49,7 @@ test('preset loading restores performance settings without stored notes or autop
  assert.match(script,/if\(pendingSidStartup\)await pendingSidStartup/);
  assert.match(script,/activeSidModel=requestedModel/);
  assert.match(script,/await ensureSidModel\(previous\.sound\.model\)/);
- assert.match(script,/presetLoading=true/);
+ assert.match(script,/setPresetLoading\(true\)/);
  assert.match(script,/\$\('presetDialog'\)\.close\(\)/);
  assert.match(script,/if\(presetDirty&&!window\.confirm\('Discard unsaved changes to this preset\?'\)\)return/);
  assert.match(script,/presetDirty=Boolean\(selected\)&&JSON\.stringify\(snapshotPresetSettings\(\)\)/);
