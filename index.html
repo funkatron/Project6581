@@ -346,7 +346,7 @@ const audioTiming={source:null,roundTripMs:null,renderAvgMs:null,renderMaxMs:nul
 function updateAudioTimingReport(){
  const show=value=>Number.isFinite(value)?value.toFixed(1)+' ms':'not reported';
  $('audioTimingReport').textContent=[
-  'Input → AudioWorklet acknowledgment: '+show(audioTiming.roundTripMs)+(audioTiming.source?' ('+audioTiming.source+')':''),
+  'Note dispatch → AudioWorklet acknowledgment: '+show(audioTiming.roundTripMs)+(audioTiming.source?' ('+audioTiming.source+')':''),
   'WASM render per block: '+show(audioTiming.renderAvgMs)+' average / '+show(audioTiming.renderMaxMs)+' max',
   'Audio render block budget: '+show(audioTiming.renderBudgetMs),
   'Browser base/output latency: '+show(audioTiming.baseMs)+' / '+show(audioTiming.outputMs),
