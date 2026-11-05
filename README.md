@@ -62,6 +62,8 @@ Press **Stop & save** to finalize a file. The browser attempts a download and ke
 
 The WAV contains 16-bit mono PCM from the reSIDfp render path (the app plays this same mono signal through both output channels). No microphone permissions, server uploads, or external recording services are needed. To compare PWM behavior, record the same sustained Pulse note with depth 0%, then 40%, and upload the WAV recordings for analysis.
 
+**LFO display:** A slider's thumb and neutral number show the base value you set. When an LFO changes that parameter, a green track segment shows how far its effective value moves from the base, and a second green number shows the current value. The thumb stays put unless you move it.
+
 **Tip:** Start by changing *one* control at a time. You can learn what each does by listening to the difference.
 
 ## 🎮 Three things to try
@@ -143,7 +145,7 @@ That command runs the Node.js test suite. Building the WASM binary separately re
 
 - Voice Assign, Voices, Unison layers and Detune are available, but the three underlying SID chips still cannot be configured independently. Changing the allocation safely releases currently sounding notes.
 - Pulse-width modulation and live ADSR/detune update active stacks through SID registers without retriggering their envelopes. SID envelope rates and levels are quantized to hardware values. Legato pitch changes also avoid retriggering.
-- Three LFOs can route to 11 continuous sound parameters and use synchronized musical divisions. Discrete controls such as oscillator count, waveform and chip model are not modulation targets. Tempo modulation, stationary-center slider visuals, and audio-clock scheduling remain [roadmap](ROADMAP.md) items. The main-thread 60 Hz scheduler can introduce timing jitter, particularly on busy mobile browsers.
+- Three LFOs can route to 11 continuous sound parameters and use synchronized musical divisions. Discrete controls such as oscillator count, waveform and chip model are not modulation targets. Tempo modulation and audio-clock scheduling remain [roadmap](ROADMAP.md) items. Stationary-thumb LFO visualization is implemented; iPad Safari visual and touch verification remains pending. The main-thread 60 Hz scheduler can introduce timing jitter, particularly on busy mobile browsers.
 - Very fast arpeggiator rates depend on browser scheduling and may sound uneven.
 - iPad Safari may require a user gesture to start its audio context.
 - Touch-to-sound latency is an active investigation; see [ROADMAP.md](ROADMAP.md).

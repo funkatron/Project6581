@@ -83,6 +83,15 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 - [ ] Try three minutes of recording and verify automatic stop, export, reasonable memory consumption and responsive keyboard/controls.
 - [ ] Compare Pulse note WAV captures with PWM depth 0% and 40%, rates 1 Hz and 5 Hz, to assess the reported weak sound change.
 
+## Stationary-center slider visuals (pending device verification)
+
+- [ ] With no LFO assigned, all 11 continuous sound controls show their numeric base value and appropriate unit.
+- [ ] Assign LFOs above and below the center. The thumb remains fixed at the user-selected base position; a green segment moves between center and effective value.
+- [ ] Check both values remain readable on iPad portrait and landscape, including short landscape viewports and narrow phone widths.
+- [ ] Edit the slider while modulation runs; the thumb updates the base while audio follows the resulting effective value.
+- [ ] Retarget, disable or reset LFOs and ensure the moving segment disappears while the base value remains visible.
+- [ ] Verify touchscreen drag, VoiceOver/keyboard range editing and 60 Hz updates do not block inputs or cause audible timing problems.
+
 ## Expanded LFO routing (pending device verification)
 
 - [ ] All 11 target names appear in each LFO's Target selector, with touch-friendly selection in portrait and landscape.

@@ -171,15 +171,54 @@ The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) identifie
 
 **Goal:** Make modulation immediately readable without moving control thumbs during playback.
 
-- [ ] Always show each continuous control's current numeric value and unit (e.g. Hz, %, seconds, cents), whether or not an LFO is assigned.
-- [ ] Treat the physical slider thumb as the **base/center value** that the user edits. LFOs add modulation around that center without shifting the thumb, changing the saved base value, or hijacking pointer input.
-- [ ] Show the instantaneous modulated value through the **colored track fill beneath the stationary thumb**, keeping the base position identifiable. Ensure bipolar movement is understandable above and below the center, including clipping at slider bounds.
-- [ ] Preserve an accessible numeric readout of the effective value while retaining the editable center value; choose concise labels so both are understandable without crowded panels.
-- [ ] Update appearance as the user changes the center or an LFO's depth/rate/target, and return to the center and ordinary track when modulation is disabled or reassigned.
-- [ ] Test simultaneous LFO summation, min/max saturation, changes to base values during modulation, keyboard accessibility, iPad Safari touch controls, and rendering overhead at the current modulation update cadence.
-- [ ] Do not use a second moving slider thumb or create additional SID register writes merely to render the effect.
+- [x] Always show each sound control's editable base value and unit (e.g. Hz, %, seconds, cents), whether or not an LFO is assigned.
+- [x] Treat the physical slider thumb as the **base/center value** that the user edits. LFOs add modulation around that center without shifting the thumb, changing the saved base value, or hijacking pointer input.
+- [x] Show the instantaneous modulated value through a **colored track segment between the stationary thumb and the effective value**, with a neutral fill to the center. The segment handles bipolar movement and clipping at bounds.
+- [x] Keep the editable center's numeric readout visible at all times, and show a separately labeled effective numeric readout when an LFO targets the control.
+- [ ] Confirm actual numeric readability and slider behavior on iPad Safari in portrait and landscape; see `docs/ipad-safari-qa.md`.
+- [x] Update appearance as the user changes the center or an LFO's depth/rate/target, and return to the center and ordinary track when modulation is disabled or reassigned.
+- [ ] Finish CI and device-level verification of simultaneous LFO summation, min/max saturation, base edits, keyboard accessibility, iPad Safari touch, and rendering overhead. Pure track-mapping tests are included but cannot establish actual touch behavior.
+- [x] Do not use a second moving slider thumb or create additional SID register writes merely to render the effect.
 
 **Completion checks:** The thumb remains fixed at the user-selected modulation center, a colored track visualizes the current modulation, and numeric values remain readable. Touch/keyboard edits and authentic SID playback behave as before.
+
+## Planned: up to three independently configurable SID devices (UI design first)
+
+**Goal:** Allow a session to use **one, two, or three separate SID sound devices**, each with independent sound settings, while keeping a single-device experience simple and touch-friendly.
+
+**Current architecture:** The engine already emulates three SID chips to make eight Unison or polyphonic oscillators available. However, the interface exposes them as one shared instrument with common chip, filter, waveform, envelope, and modulation settings. This milestone concerns **independent instrument/device identities and control**, not simply adding three more copies of the existing engine. Before implementation, document how today's eight-oscillator behavior maps to each physical three-voice SID and preserve the intended musical capabilities.
+
+### Gate 1: design and validate the interface (required before audio changes)
+
+- [ ] Draft a compact iPad-first **SID device switcher** with **SID 1**, **SID 2**, **SID 3** tabs/cards, a clear active-device indication, and an explicit **Add SID** action (disabled at three). Start with one visible device and never require users to scroll past three full copies of every control.
+- [ ] Design two distinct control scopes: **Master** (keyboard, global tempo, stop all, overall output and transport) versus **selected SID** (enable/mute, 6581/8580 model, waveform/three hardware voices, ADSR, pulse width/PWM, filter, local output level and optional stereo pan). Visually label the scope of every editable control.
+- [ ] Design clear routing from **keyboard and both arpeggiators** to one or more SIDs. Explore selectable layers versus separate MIDI/keyboard channels, with a simple default that plays the selected device. Specify how voice assignment, Unison, held keys, latch, and per-SID note-off ownership work.
+- [ ] Decide how the three LFOs are allocated: globally routed to named device parameters, three per device, or a hybrid. Define the target selector wording (for example, **SID 2 · Cutoff**) and show the destination clearly while editing a different SID.
+- [ ] Show each device's active/muted state, model, voice activity and volume at a glance; make **remove/reset SID** actions deliberate and protect against accidental loss of a configured device.
+- [ ] Produce a **low-fidelity annotated wireframe** and a compact interaction specification for iPad portrait, iPad landscape, and desktop. Review accessibility (labels, touch targets, keyboard navigation), control density, and tab switching while notes are held.
+- [ ] Define the migration/default for the existing eight-voice Unison/polyphony experience. Do **not** silently reduce it to three voices or reinterpret existing sound settings without an explicit compatibility decision.
+- [ ] Review and approve the UI specification *before* changing SID allocation, native/WASM mixing, or oscillator assignment. No implementation or new chip controls should be considered ready until this gate is complete.
+
+**Illustrative information architecture, not a final layout:**
+
+```text
+ MASTER: BPM   Keyboard   Arpeggiators   Stop all   Output
+ SID DEVICES: [SID 1 ●] [SID 2] [ + Add SID (max 3) ]
+ SELECTED:    SID 1  |  MOS 6581  |  Enabled  |  Volume  |  Pan
+              Wave/voices  |  ADSR  |  Pulse/PWM  |  Filter
+ MODULATION:  LFO 1–3  |  Target: SID 1 · Cutoff
+```
+
+### Gate 2: implementation and evidence (only after UI approval)
+
+- [ ] Create an explicit device model with a hard maximum of **three** independent SID instances and device-specific settings, voice ownership, filters, and output state.
+- [ ] Route note-on/note-off and arpeggiator output deterministically to the chosen devices, including simultaneous layered playback, changing selection, panic and mute behavior.
+- [ ] Support independent SID chip model configuration only after verifying whether live 6581/8580 switching is possible without resetting other devices; otherwise expose a clear reload/reinitialization requirement.
+- [ ] Test all 1/2/3-device combinations, per-device registers and LFO destinations, voice limits, unison/polyphony, touch keyboard, clipping and output gain, plus CPU/audio load in iPad Safari.
+- [ ] Avoid unnecessary native/WASM rebuilds for UI-only changes. Verify native mixer capacity before claiming three fully independent stereo or pan paths.
+- [ ] Confirm CI, actual-device audio checks, and GitHub Pages deployment separately.
+
+**Completion checks:** An approved, readable multi-device UI exists **first**. Afterwards, users can configure and play one to three independent SID devices, identify which controls affect each device, and stop/reset playback predictably without compromising the existing sound engine.
 
 ## Planned investigation: audio-clock LFO scheduling
 
