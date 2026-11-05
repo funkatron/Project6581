@@ -222,12 +222,33 @@ header{padding:8px 12px;min-width:0}
 #recordDownload{font-size:11px;font-weight:700;color:#b8edda;white-space:nowrap}
 #recordDownload[hidden]{display:none!important}
 @media(max-width:520px){#recordStatus{max-width:35%}.record-format select{min-height:36px}}
+/* Compact sound bank UI, scoped to the Sound tab to preserve piano space. */
+.preset-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 0 9px;border-bottom:1px solid #53657a;margin-bottom:9px}
+.preset-toolbar label{flex:1 1 160px;min-width:0}
+.preset-toolbar select{max-width:none;min-width:0;flex:1}
+.preset-toolbar button{min-height:36px;padding:5px 8px;font-size:11px}
+#presetStatus{font-size:11px;color:#b6c2d2;max-width:100%;white-space:normal}
+#presetExportLink:not([hidden]){font-size:11px;color:#b8edda}
+.preset-toolbar button:disabled{opacity:.48}
 </style></head><body><main>
 <header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="range" min="40" max="240" step="1" value="120" aria-label="Master tempo in beats per minute"><output id="masterBpmValue" for="masterBpm">120</output></label><label class="record-format">Format <select id="recordFormat" aria-label="Recording format"><option value="wav">WAV</option><option value="m4a">M4A</option></select></label><button id="recordToggle" type="button" disabled>● Record</button><button id="panic">Stop all</button></div></header>
 <div class="statusbar"><span id="sidLed" class="sid-led" data-state="off" role="img" aria-label="SID engine off"></span><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p><output id="recordStatus" role="status" aria-live="polite"></output><a id="recordDownload" hidden>Download recording</a></div>
 <div class="tabbar" role="tablist" aria-label="Editor sections"><button id="tabVoice" type="button" role="tab" aria-selected="true" aria-controls="voicePanel">Sound</button><button id="tabPlay" type="button" role="tab" aria-selected="false" aria-controls="playPanel">Arpeggiator &amp; LFOs</button></div>
 <div class="workspace" id="workspace" data-tab="voice">
 <section class="panel voice-panel" id="voicePanel" role="tabpanel" aria-labelledby="tabVoice" aria-label="Sound controls">
+<div class="preset-toolbar" aria-label="Sound presets">
+ <label>Preset <select id="presetPicker" aria-label="Choose a factory or user preset"></select></label>
+ <button id="presetSave" type="button" disabled>Save</button>
+ <button id="presetSaveAs" type="button">Save as…</button>
+ <button id="presetRename" type="button" disabled>Rename</button>
+ <button id="presetDelete" type="button" disabled>Delete</button>
+ <button id="presetExport" type="button">Export</button>
+ <button id="presetExportBank" type="button">Export bank</button>
+ <button id="presetImport" type="button">Import…</button>
+ <input id="presetFile" type="file" accept=".json,application/json" hidden>
+ <output id="presetStatus" role="status" aria-live="polite">Choose a factory sound or save your own.</output>
+ <a id="presetExportLink" hidden>Download preset</a>
+</div>
 <h2>Sound</h2><div class="voice-grid"><label>Chip <select id="chip"><option value="6581">MOS 6581</option><option value="8580">MOS 8580</option></select></label><label>Unison <input id="unisonOn" type="checkbox" checked></label><label>Voices <select id="voiceCount"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label><label>Detune <input id="detune" type="range" min="0" max="100" value="12" step="1"><output id="detuneValue">12¢</output></label><label>Volume <input id="volume" type="range" min="0" max="100" value="55"></label><label>Cutoff <input id="cutoff" type="range" min="50" max="10000" value="7000"></label><label>Resonance <input id="resonance" type="range" min="0" max="100" value="10"></label><label>Filter <select id="mode"><option value="lowpass">Low-pass</option><option value="bandpass">Band-pass</option><option value="highpass">High-pass</option></select></label></div>
 <div class="section-divider"></div><div id="voices" class="voices"></div>
 </section>
@@ -240,8 +261,9 @@ header{padding:8px 12px;min-width:0}
 </main><script type="module">
 import {createArpKeyVisual} from "./src/arp-key-visual.js?v=__BUILD_ID__";
 import {createSidRecorder,prepareRecordingDownload} from "./src/sid-recorder.js?v=__BUILD_ID__";
+import {FACTORY_PRESETS,PRESET_VERSION,cleanPresetName,validatePresetSettings,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,importPresetFile} from "./src/preset-library.js?v=__BUILD_ID__";
 
-const $=id=>document.getElementById(id);let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null;
+const $=id=>document.getElementById(id);let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null,activeSidModel=null;
 const settings=[{wave:'square',attack:0.002,decay:0.12,sustain:0.8,release:0.12,pulse:50,pwmDepth:0,pwmRate:1,enabled:true}];
 let currentSidSettings={...settings[0]};
 const ranges=[['attack','Attack',0,2,.01],['decay','Decay',0,3,.01],['sustain','Sustain',0,1,.01],['release','Release',.01,4,.01],['pulse','Pulse width',5,95,1],['pwmDepth','PWM depth',0,45,1],['pwmRate','PWM rate (Hz)',.1,12,.1]];
@@ -501,9 +523,12 @@ function updateSidLed(){
   led.dataset.state=state;
   led.setAttribute('aria-label',state==='on'?'SID engine on':state==='ready'?'SID engine ready, audio suspended':state==='loading'?'SID engine loading':'SID engine off');
 }
+let pendingSidStartup=null;
 async function startSid(){
+  if(pendingSidStartup)return pendingSidStartup;
+  if(sidAudio)return;
+  const load=async()=>{
   const button=$('sidStart'),status=$('sidEngineStatus');
-  if(sidAudio||sidStarting)return;
   sidStarting=true;button.disabled=true;$('sidSpinner').hidden=false;updateSidLed();
   status.textContent='Loading authentic reSIDfp…';
   try{
@@ -520,7 +545,8 @@ async function startSid(){
     // Attach a rejection handler immediately, including WASM-fetch failures.
     void ready.catch(()=>{});
     let timeout;
-    const audio=await createReSidFpAudio({model:Number($('chip').value),onContext:context=>{sidContext=context},onProgress:message=>{status.textContent=message},onStatus:event=>{
+    const requestedModel=Number($('chip').value);
+    const audio=await createReSidFpAudio({model:requestedModel,onContext:context=>{sidContext=context},onProgress:message=>{status.textContent=message},onStatus:event=>{
       if(event.type==='ready'&&event.renderer)resolveReady();
       if(event.type==='error')rejectReady(new Error(event.message));
       if(event.type==='record-limit'){void stopAndSaveRecording();return}
@@ -538,6 +564,7 @@ async function startSid(){
     $('recordToggle').disabled=false;
     $('recordStatus').textContent=sidRecorder.supportsM4a?'WAV / M4A ready':'WAV ready';
     sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:Number($('voiceCount').value),detune:Number($('detune').value),unison:$('unisonOn').checked});
+    activeSidModel=requestedModel;
     updateModulation();
     if(lfoTimer===null)lfoTimer=setInterval(()=>{if(lfoState.some(lfo=>lfo.enabled&&lfo.depth>0)||(settings[0].wave==='square'&&settings[0].pwmDepth>0))updateModulation()},1000/60);
     const base=audio.context.baseLatency,output=audio.context.outputLatency;
@@ -547,9 +574,28 @@ async function startSid(){
     $('sidLatencyStatus').textContent=parts.length?'Browser audio latency: '+parts.join(' / ')+' (not total key-to-sound latency)':'Browser audio latency: not reported.';
     button.hidden=true;button.disabled=false;
     if(audio.context.state==='suspended')status.textContent='SID ready · touch a key to unlock audio.';
-    if(audio.context.state==='running')status.textContent='Authentic reSIDfp active · up to eight SID unison voices. Change chip model by reloading.';
+    if(audio.context.state==='running')status.textContent='Authentic reSIDfp active · up to eight SID voices.';
   }catch(err){sidContext=null;status.textContent='Authentic SID unavailable: '+(err.message||err)+'. No audio fallback is available.';button.disabled=false;button.hidden=false}
   finally{sidStarting=false;$('sidSpinner').hidden=true;updateSidLed()}
+  };
+  pendingSidStartup=load();
+  try{return await pendingSidStartup}
+  finally{pendingSidStartup=null}
+}
+async function ensureSidModel(model){
+  // Serialize audio reinitialization with pending initial page startup.
+  if(pendingSidStartup)await pendingSidStartup;
+  if(Number($('chip').value)!==model)return; // Another preset was selected meanwhile.
+  if(sidAudio&&activeSidModel===model)return;
+  if(sidAudio){
+    $('recordToggle').disabled=true;
+    await sidAudio.close();
+    sidAudio=null;sidContext=null;sidController=null;sidRecorder=null;activeSidModel=null;
+    updateSidLed();
+  }
+  await startSid();
+  if(!sidAudio||activeSidModel!==model)
+    throw new Error('Unable to start the '+model+' SID engine. Previous preset settings will be restored.');
 }
 async function stopAndSaveRecording(){
  if(!sidRecorder?.recording||recordBusy)return;
@@ -609,5 +655,238 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('pagehide',event=>{
  if(!event.persisted&&recordDownloadUrl)URL.revokeObjectURL(recordDownloadUrl);
 });
+// Sound + performance presets. Held/latching notes are intentionally not serialized.
+let userPresets=[],selectedPreset=null,presetDirty=false,presetStorageError=null,presetDownloadUrl=null;
+try{userPresets=readUserPresets(window.localStorage)}
+catch(error){presetStorageError=error.message||String(error)}
+function snapshotPresetSettings(){
+ return validatePresetSettings({
+  sound:{
+   model:Number($('chip').value),
+   voice:{...settings[0]},
+   instrument:{voiceCount:Number($('voiceCount').value),unison:$('unisonOn').checked,detune:Number($('detune').value)},
+   filter:{cutoff:Number($('cutoff').value),resonance:Number($('resonance').value),
+    volume:Number($('volume').value),mode:$('mode').value},
+   lfos:lfoState.map(lfo=>({...lfo}))
+  },
+  performance:{
+   masterBpm:Number($('masterBpm').value),
+   arp:{enabled:$('arpOn').checked,latch:$('arpLatch').checked,pattern:$('arpPattern').value,
+    rate:Number($('arpRate').value),sync:$('arpSync').checked,localBpm:Number($('arpBpm').value)},
+   game:{enabled:$('gameArpOn').checked,style:$('gameArpStyle').value}
+  }
+ });
+}
+function currentPreset(){
+ return selectedPreset?.kind==='factory'?FACTORY_PRESETS.find(p=>p.id===selectedPreset.id)
+  :selectedPreset?.kind==='user'?userPresets.find(p=>p.id===selectedPreset.id):null;
+}
+function presetMessage(message){
+ $('presetStatus').textContent=message;
+}
+function renderPresetPicker(message=null){
+ const picker=$('presetPicker');
+ picker.replaceChildren(new Option('Current sound','scratch'));
+ for(const [label,kind,list] of [
+  ['Factory presets','factory',FACTORY_PRESETS],
+  ['My presets','user',userPresets]
+ ]){
+  const group=document.createElement('optgroup');group.label=label;
+  for(const preset of list)group.append(new Option(preset.name,kind+':'+preset.id));
+  picker.append(group);
+ }
+ const value=selectedPreset?selectedPreset.kind+':'+selectedPreset.id:'scratch';
+ picker.value=value;
+ if(!picker.value)picker.value='scratch';
+ const editable=selectedPreset?.kind==='user';
+ $('presetSave').disabled=!editable;
+ $('presetRename').disabled=!editable;
+ $('presetDelete').disabled=!editable;
+ const p=currentPreset();
+ const description=p?p.name+(presetDirty?' · unsaved changes':''):'Current sound';
+ presetMessage(message??(presetStorageError?'Local preset storage unavailable: '+presetStorageError:description));
+}
+function refreshPresetDirty(){
+ const preset=currentPreset();
+ const changed=Boolean(preset)&&JSON.stringify(snapshotPresetSettings())!==JSON.stringify(preset.settings);
+ if(changed!==presetDirty){presetDirty=changed;renderPresetPicker();}
+}
+function applyPresetControls(next){
+ // Silence old voices and clear transient notes, but retain the saved arp switches.
+ panic();arp.held.clear();arp.latched.clear();arp.step=0;
+ game.held=[];game.latched=null;game.step=0;
+ for(const key of keys.values())key.classList.remove('down');
+ Object.assign(settings[0],next.sound.voice);
+ $('chip').value=String(next.sound.model);
+ $('voiceCount').value=String(next.sound.instrument.voiceCount);
+ $('unisonOn').checked=next.sound.instrument.unison;
+ $('detune').value=String(next.sound.instrument.detune);
+ for(const key of ['cutoff','resonance','volume'])$(key).value=String(next.sound.filter[key]);
+ $('mode').value=next.sound.filter.mode;
+ next.sound.lfos.forEach((lfo,i)=>Object.assign(lfoState[i],lfo));
+ $('masterBpm').value=String(next.performance.masterBpm);
+ $('masterBpmValue').textContent=String(next.performance.masterBpm);
+ $('arpOn').checked=next.performance.arp.enabled;
+ $('arpLatch').checked=next.performance.arp.latch;
+ $('arpPattern').value=next.performance.arp.pattern;
+ $('arpRate').value=String(next.performance.arp.rate);
+ $('arpSync').checked=next.performance.arp.sync;
+ $('arpBpm').value=String(next.performance.arp.localBpm);
+ $('bpmValue').textContent=String(next.performance.arp.localBpm);
+ document.querySelector('.arp-local-bpm').hidden=next.performance.arp.sync;
+ $('gameArpOn').checked=next.performance.game.enabled;
+ $('gameArpStyle').value=next.performance.game.style;
+ renderVoiceControls();renderLfos();updateUnison();updateModulation();
+ $('arpStatus').textContent='Preset ready · press a key';
+}
+async function applyPresetSettings(value){
+ if(sidRecorder?.recording||recordBusy)throw new Error('Finish recording before loading a preset');
+ const next=validatePresetSettings(value);
+ const previous=snapshotPresetSettings();
+ applyPresetControls(next);
+ try{
+  await ensureSidModel(next.sound.model);
+  if(activeSidModel!==next.sound.model)throw new Error('SID chip model does not match the selected preset');
+ }catch(error){
+  // Loading is transactional even if a device fails to initialize.
+  applyPresetControls(previous);
+  try{await ensureSidModel(previous.sound.model)}
+  catch(recoveryError){
+    throw new Error('Could not load preset: '+error.message+
+      '. Previous controls restored, but audio recovery failed: '+recoveryError.message);
+  }
+  throw new Error('Could not load preset: '+error.message+'. Previous sound restored.');
+ }
+}
+function newPresetId(){
+ return typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function'
+  ?crypto.randomUUID():'local-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+}
+function savePresetList(next){
+ if(presetStorageError)throw new Error('Local storage is unavailable. Export your sound as JSON instead.');
+ userPresets=writeUserPresets(window.localStorage,next);
+}
+function exportPresetFile(json,filename){
+ if(presetDownloadUrl)URL.revokeObjectURL(presetDownloadUrl);
+ const blob=new Blob([json],{type:'application/json'});
+ presetDownloadUrl=URL.createObjectURL(blob);
+ const anchor=$('presetExportLink');
+ anchor.href=presetDownloadUrl;anchor.download=filename;anchor.hidden=false;
+ anchor.textContent='Download JSON';
+ anchor.click();
+ presetMessage('File ready · tap Download JSON if it did not download');
+}
+function guardPresetAction(work){
+ try{return work()}catch(error){presetMessage('Preset error: '+(error.message||error));return null}
+}
+$('presetPicker').addEventListener('change',async()=>{
+ if($('presetPicker').disabled)return;
+ const value=$('presetPicker').value;
+ const previous=selectedPreset?selectedPreset.kind+':'+selectedPreset.id:'scratch';
+ if(presetDirty&&!window.confirm('Discard unsaved changes to this preset?')){
+  $('presetPicker').value=previous;return;
+ }
+ if(value==='scratch'){
+  selectedPreset=null;presetDirty=false;renderPresetPicker('Current sound remains loaded');return;
+ }
+ const [kind,id]=value.split(':');
+ const preset=(kind==='factory'?FACTORY_PRESETS:userPresets).find(p=>p.id===id);
+ if(!preset){renderPresetPicker('Preset not found');return;}
+ $('presetPicker').disabled=true;
+ try{
+  await applyPresetSettings(preset.settings);
+  selectedPreset={kind,id};presetDirty=false;renderPresetPicker();
+ }catch(error){
+  $('presetPicker').value=previous;
+  presetMessage(error.message||String(error));
+ }finally{
+  $('presetPicker').disabled=false;
+ }
+});
+$('presetSave').addEventListener('click',()=>guardPresetAction(()=>{
+ if(selectedPreset?.kind!=='user')return;
+ const index=userPresets.findIndex(p=>p.id===selectedPreset.id);
+ if(index<0)throw new Error('User preset not found');
+ const next=userPresets.slice();
+ next[index]={...next[index],settings:snapshotPresetSettings()};
+ savePresetList(next);presetDirty=false;renderPresetPicker('Saved '+next[index].name);
+}));
+$('presetSaveAs').addEventListener('click',()=>guardPresetAction(()=>{
+ const suggested=currentPreset()?.name||'My SID Sound';
+ const answer=window.prompt('Name your preset',suggested);
+ if(answer===null)return;
+ const name=cleanPresetName(answer);
+ if(userPresets.some(p=>p.name.toLowerCase()===name.toLowerCase()))
+  throw new Error('That name already exists. Choose a different name or use Save.');
+ const preset={id:newPresetId(),name,settings:snapshotPresetSettings()};
+ savePresetList([...userPresets,preset]);
+ selectedPreset={kind:'user',id:preset.id};presetDirty=false;renderPresetPicker('Saved '+name);
+}));
+$('presetRename').addEventListener('click',()=>guardPresetAction(()=>{
+ if(selectedPreset?.kind!=='user')return;
+ const preset=currentPreset();if(!preset)return;
+ const answer=window.prompt('Rename user preset',preset.name);
+ if(answer===null)return;
+ const name=cleanPresetName(answer);
+ if(userPresets.some(p=>p.id!==preset.id&&p.name.toLowerCase()===name.toLowerCase()))
+  throw new Error('A preset already uses that name');
+ savePresetList(userPresets.map(p=>p.id===preset.id?{...p,name}:p));
+ renderPresetPicker('Renamed '+name);
+}));
+$('presetDelete').addEventListener('click',()=>guardPresetAction(()=>{
+ if(selectedPreset?.kind!=='user')return;
+ const preset=currentPreset();if(!preset||!window.confirm('Delete '+preset.name+'? This cannot be undone.'))return;
+ savePresetList(userPresets.filter(p=>p.id!==preset.id));
+ selectedPreset=null;presetDirty=false;renderPresetPicker('Deleted preset; current sound remains loaded');
+}));
+$('presetExport').addEventListener('click',()=>guardPresetAction(()=>{
+ const name=currentPreset()?.name||'Current sound';
+ const data=exportPreset({name,settings:snapshotPresetSettings()});
+ exportPresetFile(data,'project6581-'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'.json');
+}));
+$('presetExportBank').addEventListener('click',()=>guardPresetAction(()=>{
+ if(!userPresets.length)throw new Error('Save a user preset before exporting a bank');
+ exportPresetFile(exportPresetBank(userPresets),'project6581-preset-bank.json');
+}));
+$('presetImport').addEventListener('click',()=>$('presetFile').click());
+$('presetFile').addEventListener('change',async()=>{
+ const input=$('presetFile'),file=input.files?.[0];
+ if(!file)return;
+ try{
+  if(file.size>2*1024*1024)throw new Error('Preset file is larger than 2 MB');
+  const imported=importPresetFile(await file.text());
+  const existing=new Map(userPresets.map(p=>[p.name.toLowerCase(),p]));
+  const conflicts=imported.filter(p=>existing.has(p.name.toLowerCase()));
+  if(conflicts.length&&!window.confirm('Replace '+conflicts.length+' existing user preset(s) with matching names?')){
+   presetMessage('Import canceled');return;
+  }
+  for(const p of imported){
+   const prior=existing.get(p.name.toLowerCase());
+   existing.set(p.name.toLowerCase(),{id:prior?.id??newPresetId(),...p});
+  }
+  savePresetList([...existing.values()]);
+  const selected=currentPreset();
+  presetDirty=Boolean(selected)&&JSON.stringify(snapshotPresetSettings())!==JSON.stringify(selected.settings);
+  const importedMessage='Imported '+imported.length+' preset(s).'+
+   (presetDirty?' Selected preset has unsaved changes; Save will replace the imported settings.':
+    ' Choose one from My presets.');
+  renderPresetPicker(importedMessage);
+ }catch(error){presetMessage('Import failed: '+(error.message||error))}
+ finally{input.value=''}
+});
+document.addEventListener('input',event=>{
+ if(event.target.id==='presetPicker'||event.target.id==='presetFile')return;
+ if(event.target.closest('#voicePanel')||event.target.closest('#playPanel')||event.target.id==='masterBpm')
+  refreshPresetDirty();
+});
+document.addEventListener('change',event=>{
+ if(event.target.id==='presetPicker'||event.target.id==='presetFile')return;
+ if(event.target.closest('#voicePanel')||event.target.closest('#playPanel')||event.target.id==='masterBpm')
+  refreshPresetDirty();
+});
+window.addEventListener('pagehide',event=>{
+ if(!event.persisted&&presetDownloadUrl)URL.revokeObjectURL(presetDownloadUrl);
+});
+renderPresetPicker();
 startSid();
 </script></body></html>

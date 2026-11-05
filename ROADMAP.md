@@ -10,15 +10,15 @@ Prioritize features that help people **make, retain, exchange, and perform music
 
 **Goal:** Open Project6581 and immediately select a useful sound, experiment with it, save custom sounds, and move them between devices. This is the highest-priority new feature.
 
-- [ ] Create a small **Factory Presets** browser (e.g. Bass, Lead, Pluck, Pad, Arcade) with meaningful, original settings based on authentic SID waveforms. Show the selected preset name and clearly indicate unsaved edits.
-- [ ] Add a separate **My Presets** collection with **Save**, **Save As**, **Rename**, and **Delete**. Factory presets are read-only and can be used as starting points for user presets.
-- [ ] Restore the entire sound-producing configuration, not just the currently visible sliders: chip model, waveform, ADSR, pulse/PWM, filter, level, unison/polyphony/detune, and all three LFOs. Define whether arpeggiator patterns/rates and global BPM belong to a *performance preset* or remain separately controlled; avoid silent changes to playback state.
+- [x] Create a small **Factory Presets** browser (Bass, Lead, Pluck, Pad and FX) with six original settings. Display unsaved edits clearly.
+- [x] Add a separate **My Presets** collection with **Save**, **Save As**, **Rename**, and **Delete**. Factory presets remain read-only.
+- [x] Save and restore **all sound and performance settings**: SID model, waveform, ADSR, pulse/PWM, filter, level, unison/polyphony/detune, all three LFOs, master BPM, regular Arp and Game Arp settings. Presets never contain held notes or latches' active note contents, and loading never automatically plays a note.
 - [ ] Make loading predictable while a note is sounding: stop/reinitialize only when required, leave no stuck notes, refresh every numeric display, and do not start autoplay unexpectedly.
-- [ ] Persist user presets locally (browser storage, with clear error handling if storage is unavailable or full). Do not imply that local presets are automatically synchronized across devices.
-- [ ] **Export** one preset or a whole user bank as a downloadable, human-readable **versioned JSON** file. **Import** either, with schema/version validation, value clamping/rejection, meaningful error messages, duplicate-name handling and an explicit overwrite choice.
-- [ ] Version the preset format from the outset to support future independent SID devices and additional destinations without breaking older user files. Never execute imported content or modify presets until validation succeeds.
-- [ ] Provide a compact, touch-friendly selector usable on iPad. Preserve keyboard visibility; don't require scrolling through a full preset editor before playing.
-- [ ] Verify a bounded set of operations: choose factory → edit → save user → reload → export → import → play. Check that a malformed file does not overwrite a working preset, and changes are faithfully restored after reloading the page.
+- [x] Persist user presets locally in browser storage with error reporting. Presets are **not** synchronized across devices.
+- [x] **Export** individual presets or a user bank as readable versioned JSON; **import** either with schema/range validation, actionable errors, and confirmation before replacing duplicate names.
+- [x] Use a simple **version 1** preset format without compatibility migrations for older files; validate all imported content before modifying storage. Revise this format freely while the app has a single user.
+- [x] Put preset actions at the top of the Sound tab, preserving keyboard access and avoiding an additional full-size editor.
+- [ ] Complete iPad Safari device verification for choose factory → edit → save → reload → export → import → play, including loading a different SID chip model. Unit tests cover validation, persistence, and JSON roundtrips.
 
 **Completion checks:** A new user can load a factory sound in one action. A returning user can save, retrieve, export, and import a custom sound without losing its important settings or needing a server account.
 
