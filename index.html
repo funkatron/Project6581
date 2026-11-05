@@ -236,38 +236,54 @@ header{padding:8px 12px;min-width:0}
 #recordDownload{font-size:11px;font-weight:700;color:#b8edda;white-space:nowrap}
 #recordDownload[hidden]{display:none!important}
 @media(max-width:520px){#recordStatus{max-width:35%}.record-format select{min-height:36px}}
-/* Compact sound bank UI, scoped to the Sound tab to preserve piano space. */
-.preset-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 0 9px;border-bottom:1px solid #53657a;margin-bottom:9px}
-.preset-toolbar label{flex:1 1 160px;min-width:0}
-.preset-toolbar select{max-width:none;min-width:0;flex:1}
-.preset-toolbar button{min-height:36px;padding:5px 8px;font-size:11px}
-#presetStatus{font-size:11px;color:#b6c2d2;max-width:100%;white-space:normal}
-#presetExportLink:not([hidden]){font-size:11px;color:#b8edda}
-.preset-toolbar button:disabled{opacity:.48}
+/* Preset dialog reuses the existing Sound palette and controls. */
+#presetOpen{max-width:175px;min-height:38px;padding:6px 10px;display:inline-flex;align-items:center;gap:6px}
+#presetCurrent{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:140px}
+#presetDialog{width:min(760px,calc(100vw - 24px));max-width:100%;max-height:calc(100dvh - 32px);margin:auto;padding:clamp(12px,2vw,20px);color:#f3f5fa;background:#1b2736;border:1px solid #52647d;border-radius:13px;box-shadow:0 20px 65px #0009;overflow-y:auto;overscroll-behavior:contain}
+#presetDialog:not([open]){display:none}
+#presetDialog::backdrop{background:#090f18c9}
+.preset-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.preset-dialog-header h2{margin:0;font-size:16px}
+#presetClose{min-height:40px;padding:5px 12px;flex:none}
+.preset-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-height:0}
+.preset-group{min-width:0;border:1px solid #34455a;background:#162232;border-radius:9px;padding:10px}
+.preset-group h3{font-size:13px;margin:0 0 4px}
+.preset-group small{display:block;font-size:11px;margin-bottom:8px}
+.preset-list{display:flex;flex-direction:column;gap:4px;max-height:min(39dvh,330px);min-height:70px;overflow-y:auto;overscroll-behavior:contain}
+.preset-item{width:100%;min-height:40px;padding:8px 10px;text-align:left;border-radius:7px;white-space:normal;overflow-wrap:anywhere;font-size:12px}
+.preset-item[aria-current="true"]{border-color:#f3bd78;background:#80522e}
+.preset-item-category{display:block;color:#b6c2d2;font-size:10px;margin-top:2px}
+.preset-empty{font-size:11px;padding:8px;color:#b6c2d2}
+.preset-actions{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 8px}
+.preset-actions button{min-height:40px;padding:7px 9px;font-size:12px}
+.preset-actions button:disabled{opacity:.48}
+#presetStatus{font-size:11px;color:#b6c2d2;display:block;line-height:1.4;margin:7px 0}
+#presetExportLink:not([hidden]){display:inline-block;color:#b8edda;font-size:12px;margin:4px 0}
+@media(max-width:560px){.preset-columns{grid-template-columns:minmax(0,1fr)}.preset-list{max-height:26dvh}#presetOpen{max-width:130px}#presetCurrent{max-width:98px}}
 /* Active modulation is green, the editable base number stays neutral. */
 label>.base-value{color:#424b43;font-size:10px;min-width:max-content;text-align:right}
 label>.modulated-value{color:#236b58;font-size:10px;font-weight:700;min-width:max-content;text-align:right}
 label:has(.slider-stack){gap:4px}
 .allocation-detune .slider-stack{max-width:none}
 </style></head><body><main>
-<header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="range" min="40" max="240" step="1" value="120" aria-label="Master tempo in beats per minute"><output id="masterBpmValue" for="masterBpm">120</output></label><label class="record-format">Format <select id="recordFormat" aria-label="Recording format"><option value="wav">WAV</option><option value="m4a">M4A</option></select></label><button id="recordToggle" type="button" disabled>● Record</button><button id="panic">Stop all</button></div></header>
+<header><div><h1>Project6581</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="presetOpen" type="button" aria-haspopup="dialog" aria-controls="presetDialog" aria-label="Open preset library"><span id="presetCurrent">Current sound</span><span aria-hidden="true">▾</span></button><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="range" min="40" max="240" step="1" value="120" aria-label="Master tempo in beats per minute"><output id="masterBpmValue" for="masterBpm">120</output></label><label class="record-format">Format <select id="recordFormat" aria-label="Recording format"><option value="wav">WAV</option><option value="m4a">M4A</option></select></label><button id="recordToggle" type="button" disabled>● Record</button><button id="panic">Stop all</button></div></header>
+<dialog id="presetDialog" aria-labelledby="presetDialogTitle">
+ <div class="preset-dialog-header"><h2 id="presetDialogTitle">Preset library</h2><button id="presetClose" type="button" aria-label="Close preset library">Close</button></div>
+ <div class="preset-columns">
+  <section class="preset-group" aria-labelledby="factoryPresetsTitle"><h3 id="factoryPresetsTitle">Factory presets</h3><small>Built-in sounds · read-only</small><div id="factoryPresetList" class="preset-list" aria-label="Factory presets"></div></section>
+  <section class="preset-group" aria-labelledby="userPresetsTitle"><h3 id="userPresetsTitle">My presets</h3><small>Saved locally in this browser</small><div id="userPresetList" class="preset-list" aria-label="My presets"></div></section>
+ </div>
+ <div class="preset-actions" aria-label="Preset actions">
+  <button id="presetSave" type="button" disabled>Save</button><button id="presetSaveAs" type="button">Save as…</button><button id="presetRename" type="button" disabled>Rename</button><button id="presetDelete" type="button" disabled>Delete</button>
+  <button id="presetExport" type="button">Export</button><button id="presetExportBank" type="button">Export bank</button><button id="presetImport" type="button">Import…</button>
+ </div>
+ <input id="presetFile" type="file" accept=".json,application/json" hidden>
+ <output id="presetStatus" role="status" aria-live="polite">Choose a factory sound or save your own.</output><a id="presetExportLink" hidden>Download preset</a>
+</dialog>
 <div class="statusbar"><span id="sidLed" class="sid-led" data-state="off" role="img" aria-label="SID engine off"></span><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p><output id="recordStatus" role="status" aria-live="polite"></output><a id="recordDownload" hidden>Download recording</a></div>
 <div class="tabbar" role="tablist" aria-label="Editor sections"><button id="tabVoice" type="button" role="tab" aria-selected="true" aria-controls="voicePanel">Sound</button><button id="tabPlay" type="button" role="tab" aria-selected="false" aria-controls="playPanel">Arpeggiator &amp; LFOs</button></div>
 <div class="workspace" id="workspace" data-tab="voice">
 <section class="panel voice-panel" id="voicePanel" role="tabpanel" aria-labelledby="tabVoice" aria-label="Sound controls">
-<div class="preset-toolbar" aria-label="Sound presets">
- <label>Preset <select id="presetPicker" aria-label="Choose a factory or user preset"></select></label>
- <button id="presetSave" type="button" disabled>Save</button>
- <button id="presetSaveAs" type="button">Save as…</button>
- <button id="presetRename" type="button" disabled>Rename</button>
- <button id="presetDelete" type="button" disabled>Delete</button>
- <button id="presetExport" type="button">Export</button>
- <button id="presetExportBank" type="button">Export bank</button>
- <button id="presetImport" type="button">Import…</button>
- <input id="presetFile" type="file" accept=".json,application/json" hidden>
- <output id="presetStatus" role="status" aria-live="polite">Choose a factory sound or save your own.</output>
- <a id="presetExportLink" hidden>Download preset</a>
-</div>
 <h2>Sound</h2>
 <div class="voice-allocation" aria-label="Voice allocation">
  <h3>Voice allocation</h3>
