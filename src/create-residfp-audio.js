@@ -59,8 +59,14 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
       noteDispatched(source='keyboard'){
         batcher.flush();
         if(!timingEnabled)return;
+        if(context.state!=='running')return;
         const now=performance.now();
-        if(now-lastProbeAt<500)return;
+        // Worklet stalls must not grow this map indefinitely. Expire old
+        // requests and cap outstanding probes independently of acknowledgments.
+        for(const [id,probe] of pendingProbes){
+          if(now-probe.at>3000)pendingProbes.delete(id);
+        }
+        if(now-lastProbeAt<500||pendingProbes.size>=4)return;
         lastProbeAt=now;
         const id=++probeId;
         pendingProbes.set(id,{at:now,source});
