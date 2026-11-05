@@ -4,7 +4,7 @@
 
 Prioritize features that help people **make, retain, exchange, and perform music**. Keep regression tests proportionate to the feature being shipped; defer extended audio-clock research and large architecture changes unless an observed defect requires them. Work in small, separately reviewable PRs, inspect all Copilot review findings, and verify deployment independently.
 
-**Near-term order:** **1. Factory/user presets and import/export** → **2. Composable Arpeggiator + Game Arp and Western scale lock** → **3. MIDI input/output** → **4. App-like installation and offline access**. WAV/M4A recording and the stationary LFO display are already under development in separate PRs. Independent SID-device support remains **UI-design-first** before modifying the engine.
+**Near-term order:** **1. Factory/user presets and import/export** → **2. Composable Arpeggiator + Game Arp and Western scale lock** → **3. MIDI input on iPad and desktop** → **4. App-like installation and offline access**. WAV/M4A recording and the stationary LFO display are already under development in separate PRs. Independent SID-device support remains **UI-design-first** before modifying the engine.
 
 ## Priority 1: factory presets and user preset management
 
@@ -21,6 +21,25 @@ Prioritize features that help people **make, retain, exchange, and perform music
 - [ ] Complete iPad Safari device verification for choose factory → edit → save → reload → export → import → play, including loading a different SID chip model. Unit tests cover validation, persistence, and JSON roundtrips.
 
 **Completion checks:** A new user can load a factory sound in one action. A returning user can save, retrieve, export, and import a custom sound without losing its important settings or needing a server account.
+
+## Priority 1 follow-up: C64 game-inspired factory sounds
+
+**Goal:** Build a substantially larger factory bank of playable SID patches. Start with **24 original presets**, six per category, and expand in batches after listening on iPad.
+
+| Category | Sounds to cover |
+| --- | --- |
+| Bass | Tight pulse, PWM bass, filtered saw, hollow square, octave pulse and soft triangle |
+| Keys | Pluck, bell, chord stab, organ, slow pad and shimmering PWM keys |
+| Leads | Bright pulse, nasal PWM, smooth legato, vibrato, octave lead and filtered saw |
+| Drums | Kick, snare, closed hat, open hat, clap and tom |
+
+- [ ] Start with the original C64 releases of [Turrican](https://www.lemon64.com/game/turrican) (Chris Hülsbeck, Ramiro Vaca and Stefan Hartwig), [Parallax](https://www.slayradio.org/sidinfo/MUSICIANS%2FG%2FGalway_Martin%2FParallax.sid) (Martin Galway), and [Commando](https://www.slayradio.org/sidinfo/MUSICIANS%2FH%2FHubbard_Rob%2FCommando.sid) (Rob Hubbard). Use [HVSC](https://www.hvsc.c64.org/search) to identify the C64 tunes and subtunes. For each reference, log composer, subtune, time range, audible characteristics and any register behavior we can verify.
+- [ ] Listen for short, articulate bass and percussion, slow modulation and evolving keys, and clear pulse leads. Use isolated voices or a SID register trace where available to distinguish the patch from the melody, sequencing and effects. Build original patches using the existing waveform, envelope, filter, PWM and LFO controls.
+- [ ] Prototype one patch per category first. For drums, start with one playable hit per preset. If a convincing hit needs a fast pitch sweep or timed waveform changes beyond the current controls, document the gap and scope that work separately.
+- [ ] Group the existing and new factory presets in the preset browser. Keep My Presets and existing version-3 imports compatible. Credit the soundtrack references in the bank notes and ship original settings and audition phrases.
+- [ ] Audition every preset on iPad with a consistent set of low, middle and high notes. Check that sounds are distinct, levels are usable, drums stop cleanly, and loading a patch leaves playback idle.
+
+**Completion checks:** At least 24 new sounds are easy to find across the four categories, with a short reference and patch-design log for each game.
 
 ## Priority 2a: composable Arpeggiator and Game Arp
 
@@ -79,19 +98,17 @@ SID playback + highlighted keyboard keys
 
 **Completion checks:** A user can select a conventional key/scale and enable scale lock; all keyboard and arpeggiator output then follows that scale, visibly and audibly. Chromatic/default behavior stays unchanged.
 
-## Priority 3: MIDI input and output
+## Priority 3: MIDI input on iPad and desktop
 
-**Goal:** Perform Project6581 from external MIDI controllers and optionally route its generated music into another instrument or DAW.
+**Goal:** Play Project6581 from a connected controller and from another music app running on the same iPad.
 
-- [ ] Support **MIDI input** (device/channel choice, note-on/note-off, velocity where musically appropriate, sustain pedal CC64, panic/all-notes-off). Correctly handle disconnects and prevent stuck notes.
-- [ ] Optionally map external MIDI CC messages to selected sliders and LFO destinations. Include **MIDI Learn** with visible mapping, conflict handling and saved mapping preferences.
-- [ ] Support **MIDI output** of played keyboard notes and optionally post-arpeggiator generated notes. Make the distinction explicit; send corresponding note-off messages, including on Stop All and mode changes.
-- [ ] Add separate input/output enable toggles, port selectors and a clear indication of device connection. Avoid MIDI feedback loops when the same instrument or virtual port is selected for both.
-- [ ] Define MIDI timing/clock sync as a follow-on slice. Do not couple initial note input/output to a speculative AudioWorklet scheduling rewrite.
-- [ ] Check platform support and permissions at runtime. Browser MIDI APIs, particularly on mobile Safari, cannot be assumed universally available; provide a clear unsupported state and evaluate a native-app path where needed.
-- [ ] Test note ownership, velocity ranges, disconnection, channel filtering, MIDI output routing, arp/latch changes and Stop All. Validate at least one physical controller when possible.
+- [ ] **Verify iPad routes first.** Stock Safari on iPad does not expose [Web MIDI](https://caniuse.com/midi). First implement a minimal Web MIDI input adapter that calls `requestMIDIAccess()` and routes note-on/off through Project6581's existing note handling. Then test a MIDI-enabled iPad browser such as [Web MIDI Browser](https://apps.apple.com/us/app/web-midi-browser/id953846217) for both MIDI input and AudioWorklet/WASM playback. Test USB and Bluetooth controllers and a same-iPad sequencer or DAW as separate cases. Record hardware, app and OS versions, routing steps, foreground/split-view behavior and audio recovery after switching apps.
+- [ ] **Prototype a native route if needed.** If a MIDI-enabled browser cannot cover both use cases reliably, try a minimal iPad shell hosting the existing synth. Use [Core MIDI](https://developer.apple.com/documentation/coremidi) for physical inputs and expose a [virtual destination](https://developer.apple.com/documentation/coremidi/mididestinationcreatewithprotocol(_:_:_:_:_:)) another app can select. Verify the complete path from MIDI event to audible SID output, including app switching. Record the chosen route and setup steps before committing to packaging.
+- [ ] **Share the performance path.** On supported desktop browsers use Web MIDI over HTTPS. Route Web MIDI or native input through the same note and arp logic as the on-screen keyboard. Add a port/channel selector and status, note-on/off including velocity-zero note-on, sustain (CC64), panic and clear handling for permission denial or unavailable MIDI. Define an intentional velocity response and preserve note ownership across sources.
+- [ ] **Verify live playing.** Measure MIDI-to-audio onset alongside the existing keyboard latency baseline. Test channel filtering, repeated notes, simultaneous touch/MIDI, both arps, latch, hot unplug/reconnect and Stop All. Verify on a physical iPad with a connected controller and with another app sending notes to Project6581.
+- [ ] **Follow-up slices.** Add optional CC mapping and MIDI Learn. Scope MIDI output separately, distinguishing direct and generated notes and handling matching note-offs and feedback. Evaluate clock sync after live input is stable.
 
-**Completion checks:** Where supported, an external MIDI keyboard can play the SID synth reliably, and an enabled MIDI output sends deliberate notes with matching note-offs. Unsupported environments clearly explain limitations rather than showing inert controls.
+**Completion checks:** A documented iPad setup plays the synth from both a physical controller and another app on the same iPad. Supported desktop browsers pass the same note-lifecycle checks.
 
 ## Priority 4: package Project6581 as an application
 
@@ -105,6 +122,16 @@ SID playback + highlighted keyboard keys
 - [ ] Test offline launch, version upgrades, WAV/M4A sharing, iPad Files import/export and recovery after a suspended/resumed app session.
 
 **Completion checks:** Project6581 can be launched from a home screen or desktop as a focused standalone experience and used offline, while retaining consistent audio, user presets and the existing public web URL.
+
+## Planned investigation: local SID tune playback
+
+**Goal:** Find out whether Project6581 can open a local `.sid` file and play its subtunes reliably on iPad and desktop.
+
+- [ ] **Evaluate a dedicated player.** Read the [HVSC format notes](https://hvsc.c64.org/faq) and prototype [libsidplayfp](https://github.com/libsidplayfp/libsidplayfp) compiled to WASM. A C64 CPU/player environment executes PSID tune code and produces timed SID register writes. reSIDfp consumes those writes and renders PCM audio. RSID needs more complete C64 machine emulation. Check emulator and ROM dependencies, distribution requirements, WASM download size and startup cost.
+- [ ] **Prove the smallest useful player.** Open a local file from iPad Files or the desktop picker. Start with single-SID PSID tunes, display title, author and subtune selection, and provide Play and Stop. Validate header, size, offsets and song selection before emulation. Keep player state separate from the synth and load the player on demand.
+- [ ] **Compare playback and decide scope.** Check Turrican, Parallax and Commando files where their format matches the prototype, and use test fixtures we can distribute for automated checks. Compare subtune selection, PAL/NTSC tempo and chip model against a reference player. Measure startup, CPU load and dropouts on iPad, and verify return to live synth playback. Report separate results for RSID and multi-SID before promising either format. Give unsupported and malformed files clear error messages.
+
+**Completion checks:** A small prototype and compatibility report establish which files play correctly, what the iPad performance costs are, and whether to proceed with an in-app player. User-selected tunes are read locally.
 
 ## In development: record the SID output (WAV and M4A)
 
