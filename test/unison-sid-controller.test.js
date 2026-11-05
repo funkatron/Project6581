@@ -2,67 +2,104 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {UnisonSidController} from '../src/unison-sid-controller.js';
 const sound={wave:'sawtooth',attack:.01,decay:.1,sustain:.8,release:.2,pulse:50};
-test('eight unison oscillators use all three SID chips',()=>{
- const writes=[];const sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:8,detune:30});
- sid.noteOn(69,sound);
- const gates=writes.filter(([r,v])=>r%32<21&&r%32%7===4&&(v&1));
- assert.equal(gates.length,8);
- assert.deepEqual([...new Set(gates.map(([r])=>Math.floor(r/32)))],[0,1,2]);
- sid.noteOff(69);
+const gateOns=writes=>writes.filter(([r,v])=>r%32<21&&r%32%7===4&&(v&1));
+const gateOffs=writes=>writes.filter(([r,v])=>r%32<21&&r%32%7===4&&!(v&1));
+
+test('eight unison layers sound across all three SID chips in Mono',()=>{
+ const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:8,unisonCount:8,mode:'mono',detune:30});
+ const token=sid.noteOn(69,sound);
+ assert.equal(gateOns(writes).length,8);
+ assert.deepEqual([...new Set(gateOns(writes).map(([r])=>Math.floor(r/32)))],[0,1,2]);
+ sid.noteOff(69,token);assert.equal(sid.current,null);assert.equal(gateOffs(writes).length,8);
+});
+
+test('six Voices and two Unison layers allow three Poly pitches',()=>{
+ const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:6,unisonCount:2,mode:'poly',detune:40});
+ const owners=[60,64,67].map(n=>sid.noteOn(n,sound));
+ assert.equal(sid.capacity,3);assert.equal(sid.polyNotes.size,3);
+ assert.deepEqual([...sid.polyNotes.values()].map(x=>x.slots),[[0,1],[2,3],[4,5]]);
+ assert.equal(gateOns(writes).length,6);
+ sid.noteOff(64,owners[1]);assert.equal(sid.polyNotes.size,2);
+ assert.deepEqual([...sid.polyNotes.keys()],[60,67]);
+});
+
+test('Duo steals the oldest complete stack and ignores its stale release',()=>{
+ const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:4,unisonCount:2,mode:'duo'});
+ const first=sid.noteOn(60,sound);
+ sid.noteOn(64,sound);
+ const newer=sid.noteOn(67,sound);
+ assert.deepEqual([...sid.polyNotes.keys()],[64,67]);
+ assert.equal(sid.polyNotes.size,2);
+ const before=writes.length;
+ sid.noteOff(60,first);
+ assert.equal(writes.length,before,'stolen note-off cannot silence replacement');
+ sid.noteOff(67,newer);
+ assert.deepEqual([...sid.polyNotes.keys()],[64]);
+});
+
+test('repeated pitches replace their ownership token without stopping a newer press',()=>{
+ const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:2,unisonCount:1,mode:'poly'});
+ const old=sid.noteOn(60,sound),latest=sid.noteOn(60,sound);
+ const prior=writes.length;
+ sid.noteOff(60,old);
+ assert.equal(writes.length,prior);
+ assert.equal(sid.polyNotes.get(60).token,latest);
+ sid.noteOff(60,latest);
+ assert.equal(sid.polyNotes.size,0);
+});
+
+test('Legato changes pitch without resetting SID gates even on held-note fallback',()=>{
+ const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:3,unisonCount:2,mode:'legato'});
+ const c=sid.noteOn(60,sound);
+ assert.equal(gateOns(writes).length,2);
+ const at=writes.length;
+ const e=sid.noteOn(64,sound);
+ assert.equal(gateOns(writes.slice(at)).length,0);
+ assert.equal(gateOffs(writes.slice(at)).length,0);
+ assert.ok(writes.slice(at).some(([r])=>r%32===0||r%32===7));
+ const fallbackAt=writes.length;
+ sid.noteOff(64,e);
+ assert.equal(sid.current,60);
+ assert.equal(gateOns(writes.slice(fallbackAt)).length,0);
+ assert.equal(gateOffs(writes.slice(fallbackAt)).length,0);
+ sid.noteOff(60,c);
  assert.equal(sid.current,null);
-});
-test('detune spreads oscillator frequency symmetrically',()=>{
- const frequency=(detune)=>{const writes=[];new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:3,detune}).noteOn(69,sound);return [0,7,14].map(base=>writes.findLast(([r])=>r===base+1)[1]*256+writes.findLast(([r])=>r===base)[1])};
- const values=frequency(50);assert.ok(values[0]<values[1]&&values[1]<values[2]);
- assert.equal(new Set(frequency(0)).size,1);
-});
-test('voice count is clamped and panic clears notes',()=>{
- const sid=new UnisonSidController(()=>{});
- sid.configure({voiceCount:99});
- assert.equal(sid.voiceCount,8);
- sid.noteOn(60,sound);sid.panic();assert.equal(sid.current,null);assert.equal(sid.held.length,0);
+ assert.equal(gateOffs(writes).length,2);
 });
 
-test('live detune retunes active unison voices without interrupting held notes',()=>{
- const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:3,detune:10,unison:true});
- sid.noteOn(69,sound);
- const before=writes.length;
- sid.setLiveDetune(80);
- assert.equal(sid.current,69);
- assert.deepEqual(sid.held,[69]);
- const live=writes.slice(before);
- assert.ok(live.some(([r])=>[0,7,14].includes(r%32)));
- assert.equal(live.some(([r])=>[4,11,18].includes(r%32)),false,'no live detune gate cycles');
- const previous=writes.length;
- sid.configure({detune:30});
- assert.equal(sid.current,69,'manually moving detune must not stop held notes');
- assert.equal(sid.detune,30);
- assert.ok(writes.length>previous);
- assert.equal(writes.slice(previous).some(([r])=>[4,11,18].includes(r%32)),false);
+test('Mono retriggers overlapping notes and safely returns to held pitch',()=>{
+ const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:2,unisonCount:2,mode:'mono'});
+ const c=sid.noteOn(60,sound),e=sid.noteOn(64,sound);
+ const at=writes.length;
+ sid.noteOff(64,e);assert.equal(sid.current,60);
+ assert.equal(gateOns(writes.slice(at)).length,2);
+ sid.noteOff(60,c);assert.equal(sid.current,null);
 });
 
-test('ADSR LFO updates affect all active unison voices and no SID gates',()=>{
- const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:5,unison:true});
- sid.noteOn(69,sound);
- const before=writes.length;
- sid.setEnvelope({...sound,attack:.5,sustain:.2});
- const live=writes.slice(before);
- assert.equal(live.some(([r])=>[4,11,18].includes(r%32)),false);
- const envelopeVoices=new Set(live.filter(([r])=>[5,6,12,13,19,20].includes(r%32)).map(([r])=>r));
- assert.ok(envelopeVoices.size>=5,'live ADSR reached all five SID oscillators');
- const same=writes.length;
- sid.setEnvelope({...sound,attack:.5,sustain:.2});
- assert.equal(writes.length,same,'identical live ADSR values do not generate writes');
-});
-
-test('ADSR LFO updates reach only allocated polyphonic voices, not inactive slots',()=>{
- const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:5,unison:false});
+test('Detune retunes active polyphonic stacks without restarting envelopes',()=>{
+ const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:6,unisonCount:2,mode:'poly',detune:10});
  sid.noteOn(60,sound);sid.noteOn(64,sound);
  const before=writes.length;
- sid.setEnvelope({...sound,attack:.8,release:1.2});
- const live=writes.slice(before);
- const slots=new Set(live.map(([r])=>r));
- assert.deepEqual([...slots].sort((a,b)=>a-b),[5,6,12,13]);
  sid.setLiveDetune(90);
- assert.equal(writes.slice(before).some(([r])=>[0,1,7,8].includes(r)),false,'detune is unison only');
+ assert.equal(gateOns(writes.slice(before)).length,0);
+ assert.equal(gateOffs(writes.slice(before)).length,0);
+ assert.ok(writes.length>before);
+ const next=writes.length;
+ sid.setEnvelope({...sound,attack:.8,release:1.2});
+ assert.equal(gateOns(writes.slice(next)).length,0);
+ const envelopeSlots=new Set(writes.slice(next).filter(([r])=>[5,6,12,13,19,20].includes(r%32)).map(([r])=>r));
+ assert.equal(envelopeSlots.size,8,'ADSR updates both registers for four active oscillators');
+});
+
+test('capacity respects full stacks and changes release active voices',()=>{
+ const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:3,unisonCount:2,mode:'duo'});
+ assert.equal(sid.capacity,1);
+ sid.noteOn(60,sound);sid.noteOn(64,sound);
+ assert.deepEqual([...sid.polyNotes.keys()],[64]);
+ sid.configure({unisonCount:1,mode:'poly'});
+ assert.equal(sid.capacity,3);
+ assert.equal(sid.polyNotes.size,0);
+ sid.noteOn(69,sound);sid.panic();
+ assert.equal(sid.polyNotes.size,0);
+ assert.equal(sid.held.length,0);
 });
