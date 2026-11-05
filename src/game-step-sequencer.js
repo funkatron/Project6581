@@ -26,7 +26,10 @@ export function validateSequence(sequence){
 }
 export function sequenceEvent(root,sequence,position){
  if(!Number.isFinite(root)||!Number.isInteger(position)||position<0)throw new RangeError('Invalid root or step');
- const phrase=validateSequence(sequence);
- const index=position%phrase.length,step=phrase.steps[index];
+ // Phrases are validated when loaded or saved. Avoid revalidating and
+ // allocating sixteen new step objects on every browser-timed note tick.
+ if(!sequence||!STEP_LENGTHS.includes(sequence.length)||!Array.isArray(sequence.steps)||sequence.steps.length!==16)
+  throw new RangeError('Invalid active sequence');
+ const index=position%sequence.length,step=sequence.steps[index];
  return {index,gate:step.gate,note:Math.max(0,Math.min(127,Math.round(root+step.offset))),duration:step.duration};
 }
