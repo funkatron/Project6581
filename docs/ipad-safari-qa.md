@@ -14,7 +14,7 @@ This is a **device test plan**, not evidence that any test has passed. Automated
 - [ ] Engine LED shows loading, then ready/running; the first deliberate touch unlocks audio if needed.
 - [ ] No unexpected fallback synth, missing reSIDfp binary, stuck spinner, or silent failure.
 - [ ] Main header, status text, and Stop all fit without text touching or disappearing behind panel borders.
-- [ ] Switch Sound / Arpeggiator & LFO tabs; controls remain operable and the piano keyboard stays visible.
+- [ ] Switch SYNTH / ARP / SEQ tabs; controls remain operable and the piano keyboard stays visible.
 - [ ] Controls do not overlap; labels are readable. LFO layout adapts to the **panel** width in portrait and landscape.
 - [ ] All LFO select boxes, sliders, switches, and octave buttons respond to touch without selecting nearby controls.
 - [ ] Press/release a key once and check that it releases only once, including after pointer capture ends.
@@ -71,6 +71,20 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 - [ ] Export one preset and a full user bank to Files, import again, and confirm duplicate-name replacement requires permission.
 - [ ] Import malformed JSON and an out-of-range parameter; confirm existing user presets remain unchanged.
 - [ ] Refresh the app and verify saved user presets remain available, without assuming cloud sync.
+
+## Game Arp sequencer and full-width keyboard (pending iPad verification)
+
+- [ ] In landscape, open **ARP / SEQ** and inspect all 16 step sliders, gates, and note lengths. Check the 64C-inspired panel alignment and readability.
+- [ ] In portrait, swipe the step grid horizontally. The page should not pan unintentionally or clip the transport, and sliders must remain adjustable with one finger.
+- [ ] Change a step pitch, gate, and length; verify editing selects **Custom steps** and the new pattern plays audibly.
+- [ ] Preview without holding a key. Press and release a different root while previewing; playback should return to the preview root without a stuck note.
+- [ ] Toggle 4/8/16 active steps and confirm wrap-around without off-grid notes; try very short Gate Length and high pattern rates.
+- [ ] Use Game Arp and root Arpeggiator together, including latch, Stop, Stop all, background/foreground transitions, and octave changes.
+- [ ] Hide the full-width keyboard while previewing; the sequence should continue. Show the keyboard again, check no stuck pointers or stale highlights, and reload to verify visibility persists.
+- [ ] Change octaves and rotate iPad during preview. It should continue at the updated root octave and preserve note ownership.
+- [ ] Save the custom sequence in a user preset, load another sound, then restore the user preset. Existing version-3 presets without sequence fields still load.
+- [ ] Confirm that the original Sound settings, LFOs, voice allocation, recording, and preset modal are all reachable in the new layout.
+- [ ] Test VoiceOver range labels, keyboard navigation, and colored step highlights without relying solely on color to identify the active step.
 
 ## Composable Game Arp and Arpeggiator (pending device verification)
 
