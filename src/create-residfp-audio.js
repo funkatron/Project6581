@@ -27,7 +27,19 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
     const node=new AudioWorkletNode(context,'residfp-processor',{outputChannelCount:[2]});
     node.connect(context.destination);
     let capture=null,stopResolve=null,stopReject=null;
+    let probeId=0,lastProbeAt=-Infinity;
+    const pendingProbes=new Map();
     node.port.onmessage=({data})=>{
+      if(data?.type==='latency-probe-result'){
+        const pending=pendingProbes.get(data.id);
+        pendingProbes.delete(data.id);
+        if(pending)onStatus({
+          type:'latency-probe',
+          source:pending.source,
+          dispatchToWorkletRoundTripMs:performance.now()-pending.at
+        });
+        return;
+      }
       if(data?.type==='record-chunk'){
         capture?.(data.samples);return;
       }
@@ -42,6 +54,17 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
     const batcher=createSidWriteBatcher(message=>node.port.postMessage(message));
     return {context,node,
       write:(register,value)=>batcher.write(register,value),
+      // Deliver each complete note-on register batch immediately, rather than
+      // waiting for the next microtask. Probe at most twice per second.
+      noteDispatched(source='keyboard'){
+        batcher.flush();
+        const now=performance.now();
+        if(now-lastProbeAt<500)return;
+        lastProbeAt=now;
+        const id=++probeId;
+        pendingProbes.set(id,{at:now,source});
+        node.port.postMessage({type:'latency-probe',id});
+      },
       startWavCapture(onChunk){
         if(capture||stopResolve)throw new Error('A WAV capture is already active');
         if(typeof onChunk!=='function')throw new TypeError('Expected PCM callback');
@@ -60,7 +83,7 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
       close:async()=>{
         const reject=stopReject;capture=null;stopResolve=null;stopReject=null;
         reject?.(new Error('SID audio closed during WAV capture'));
-        batcher.close();node.disconnect();await context.close()
+        pendingProbes.clear();batcher.close();node.disconnect();await context.close()
       }};
   } catch(err){await context.close();throw err}
 }
