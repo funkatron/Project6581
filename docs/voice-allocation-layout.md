@@ -1,6 +1,6 @@
 # Voice allocation controls: UI-only design proposal
 
-**Status:** Proposed, awaiting layout approval. **No application UI, audio engine, presets, tests, or native/WASM code is changed by this document.**
+**Status:** Layout approved and implemented in PR #50. The Sound tab gains compact controls, the SID allocator supports the four modes, and presets use format v3. **Native/WASM code remains unchanged; iPad device verification is pending.**
 
 ## Design intent
 
@@ -71,12 +71,12 @@ This is a **grouping and reading-order sketch**, not an instruction to redesign 
 3. Switch Voice Assign to **Legato**: the held notes stop cleanly; playing an overlapping sequence moves between notes without envelope retriggering. With Unison still 2, the musical pitch has two layers.
 4. Set Unison to **1**: Detune becomes inactive but preserves its last value. Set it back to 2: the previous Detune value returns.
 
-## Implementation gate (not in this PR)
+## Implementation and completion checks
 
-- [ ] Review/approve this reading order, names and dependent control behavior.
-- [ ] Implement the voice allocator and new mode semantics separately, including live-note release, legato no-retrigger, Duo, Poly, voice limits and deterministic stealing.
-- [ ] Save the new fields with presets, updating schema as needed without compatibility migrations.
-- [ ] Use a small number of playback/ownership tests and confirm audible behavior on iPad Safari before merging.
-- [ ] Check Copilot review threads, CI, and deployment independently.
+- [x] Approved and implemented the compact, wrapping selector group and full-width Detune layout.
+- [x] Implemented Mono, Legato, Duo and Poly in the existing SID allocator, with full Unison stacks, oldest-note stealing and token-matched release.
+- [x] Save Voice Assign, total Voices, Unison layers and Detune in preset format v3; no migration from earlier formats.
+- [x] Added focused allocation, gate, legato and note ownership regression checks.\n- [ ] Verify audible behavior, touch layout, and saved presets on iPad Safari.
+- [ ] Finish CI and inspect all new Copilot review threads. Verify deployment only after an authorized merge.
 
-**Completion check for this design PR:** A clear, implementable layout and interaction specification is documented **without changing the synthesizer**.
+**Completion check for PR #50:** The existing Sound tab can assign complete oscillator stacks, save/reload the settings, and play Mono, Legato, Duo or Poly without stuck notes. iPad QA remains distinct from automated tests.
