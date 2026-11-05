@@ -65,6 +65,10 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
         });
         return;
       }
+      if(data?.type==='wav-first-frame'){
+        eventLog?.add('wav-first-frame',{contextId,audioFrame:data.audioFrame,sampleRate:data.sampleRate});
+        return;
+      }
       if(data?.type==='record-chunk'){
         capture?.(data.samples);return;
       }

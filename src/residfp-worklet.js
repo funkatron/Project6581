@@ -111,6 +111,9 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     if(this.monitorRecording){
       const allowed=Math.min(frames,Math.max(0,this.recordMaxFrames-this.recordFrames));
       if(this.recording){
+        if(this.eventLogEnabled&&allowed>0&&this.recordFrames===0){
+          this.port.postMessage({type:'wav-first-frame',audioFrame:currentFrame,sampleRate});
+        }
         let consumed=0;
         while(consumed<allowed){
           const copy=Math.min(allowed-consumed,this.recordSamples.length-this.recordLength);
