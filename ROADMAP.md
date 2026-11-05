@@ -131,6 +131,15 @@ SID playback + highlighted keyboard keys
 
 The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) identifies current scheduling risks and a bounded measurement/prototype plan. No replacement of the current LFO timer is authorized by regression tests alone. Spectrum analyzer, oscilloscope, spectrogram, and independently configurable SID chips remain separate roadmap items.
 
+## November 5, 2026: latency report and neutral Game Arp reset
+
+- [x] Inspect the supplied iPad screen recording: visible keyboard presses and captured attacks are about 0.9–1.0 seconds apart in multiple examples. This is **recorded A/V separation**, not proof of device speaker latency; iOS screen recording can affect A/V synchronization.
+- [x] Make new/reset Game Arp sequences neutral: 16 zero-offset steps, every gate ON, 75% note length. Preserve explicitly saved user patterns.
+- [x] Flush note-on SID register batches immediately in the input handler rather than deferring to a microtask.
+- [x] Add opt-in in-app timing diagnostics that compare input-to-worklet acknowledgment, reSIDfp render cost versus audio quantum budget, and browser-reported output latency. Do not mislabel any of these as physical speaker latency.
+- [ ] Verify diagnosis on the same iPad without screen recording, with arpeggiators off versus on, and built-in speakers versus external audio routes.
+- [ ] If render time exceeds the block budget or dispatch round trip is large, profile/optimize worklet CPU and consider rendering only active SID chips (requires a native WASM rebuild and careful envelope-tail tests). Keep this separate from the reset and instrumentation PR.
+
 ## Priority: reduce keyboard-to-audio latency
 
 **Goal:** Minimize the delay between touch/keyboard press and the first audible SID sample on iPad Safari and desktop browsers. Preserve authentic reSIDfp rendering, without falling back to prototype audio.

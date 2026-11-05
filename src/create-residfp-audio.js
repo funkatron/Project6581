@@ -27,7 +27,19 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
     const node=new AudioWorkletNode(context,'residfp-processor',{outputChannelCount:[2]});
     node.connect(context.destination);
     let capture=null,stopResolve=null,stopReject=null;
+    let probeId=0,lastProbeAt=-Infinity,timingEnabled=false;
+    const pendingProbes=new Map();
     node.port.onmessage=({data})=>{
+      if(data?.type==='latency-probe-result'){
+        const pending=pendingProbes.get(data.id);
+        pendingProbes.delete(data.id);
+        if(pending)onStatus({
+          type:'latency-probe',
+          source:pending.source,
+          dispatchToWorkletRoundTripMs:performance.now()-pending.at
+        });
+        return;
+      }
       if(data?.type==='record-chunk'){
         capture?.(data.samples);return;
       }
@@ -42,6 +54,29 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
     const batcher=createSidWriteBatcher(message=>node.port.postMessage(message));
     return {context,node,
       write:(register,value)=>batcher.write(register,value),
+      // Deliver each complete note-on register batch immediately, rather than
+      // waiting for the next microtask. Probe at most twice per second.
+      noteDispatched(source='keyboard'){
+        batcher.flush();
+        if(!timingEnabled)return;
+        if(context.state!=='running')return;
+        const now=performance.now();
+        // Worklet stalls must not grow this map indefinitely. Expire old
+        // requests and cap outstanding probes independently of acknowledgments.
+        for(const [id,probe] of pendingProbes){
+          if(now-probe.at>3000)pendingProbes.delete(id);
+        }
+        if(now-lastProbeAt<500||pendingProbes.size>=4)return;
+        lastProbeAt=now;
+        const id=++probeId;
+        pendingProbes.set(id,{at:now,source});
+        node.port.postMessage({type:'latency-probe',id});
+      },
+      setTimingEnabled(enabled){
+        timingEnabled=Boolean(enabled);
+        if(!timingEnabled)pendingProbes.clear();
+        node.port.postMessage({type:'timing-enable',enabled:timingEnabled});
+      },
       startWavCapture(onChunk){
         if(capture||stopResolve)throw new Error('A WAV capture is already active');
         if(typeof onChunk!=='function')throw new TypeError('Expected PCM callback');
@@ -60,7 +95,7 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
       close:async()=>{
         const reject=stopReject;capture=null;stopResolve=null;stopReject=null;
         reject?.(new Error('SID audio closed during WAV capture'));
-        batcher.close();node.disconnect();await context.close()
+        pendingProbes.clear();batcher.close();node.disconnect();await context.close()
       }};
   } catch(err){await context.close();throw err}
 }

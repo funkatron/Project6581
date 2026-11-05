@@ -30,13 +30,15 @@ Choose **ARP / SEQ** to edit a Game Arp phrase. The new 64C-inspired panel has 1
 - Move a vertical step slider to set its **pitch offset** (−12 to +24 semitones from the note you play).
 - Toggle a step's **gate** to make it play or rest. Adjust **Length** beneath the gate to shorten that step's note (25–100%).
 - Choose **4, 8 or 16 steps** and use the existing **Rate**, **Sync**, and **Latch** controls.
-- Tap **Preview** to hear your custom pattern from the current keyboard octave without holding a key. Playing keys changes the root while previewing. **Stop** ends Game Arp playback.
+- Tap **Preview** to hear your custom pattern from the current keyboard octave without holding a key. Playing keys changes the root while previewing. **Stop** ends Game Arp playback. **Reset steps** now makes all 16 steps neutral (0 semitones, every gate on, 75% note length), not a built-in melody with rests.
 - Tap **Root Arpeggiator & 3 LFOs** to expand the existing modulation and root controls.
 - Tap **Hide keyboard** to collapse the full-width keyboard while using the sequencer. Tap **Show keyboard** to restore it. This choice is remembered locally.
 
 Custom steps are stored with your existing version-3 user presets. Existing presets still load and use a default phrase when they contain no step data. The SID audio engine is unchanged.
 
 This release implements pitch, gates, and per-step note length. Glide, parameter automation, and the additional FX/Mix or multi-SID controls shown in the design study are not implemented yet.
+
+**Audio timing investigation:** The **Audio timing** link in the footer opens optional diagnostics for note dispatch to the AudioWorklet, reSIDfp render time per block, and browser-reported base/output buffering. It does not measure speaker latency. For a useful comparison, press one key with both arpeggiators off, then use Game Arp Preview, and compare the figures. Existing user presets retain their explicitly saved sequences until you reset or edit them.
 
 ## 💾 Factory sounds and user presets
 

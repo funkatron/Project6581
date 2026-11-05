@@ -1,8 +1,9 @@
 // One editable, sixteen-step Game Arp phrase. No browser or SID dependencies.
 export const STEP_LENGTHS=Object.freeze([4,8,16]);
+// A reset must be neutral: sixteen root notes, every gate on, no melody
+// or hidden rests. Only an explicitly edited or saved phrase has variations.
 export const DEFAULT_STEPS=Object.freeze(
- [0,4,7,12,7,4,0,-5,0,3,7,10,7,3,0,-2].map((offset,i)=>
-  Object.freeze({offset,gate:![3,7,11].includes(i),duration:75}))
+ Array.from({length:16},()=>Object.freeze({offset:0,gate:true,duration:75}))
 );
 export function defaultSequence(){
  return {length:16,steps:DEFAULT_STEPS.map(step=>({...step}))};

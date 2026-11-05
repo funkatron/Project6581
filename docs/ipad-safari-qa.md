@@ -75,6 +75,14 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 - [ ] Import malformed JSON and an out-of-range parameter; confirm existing user presets remain unchanged.
 - [ ] Refresh the app and verify saved user presets remain available, without assuming cloud sync.
 
+## Note latency and neutral sequencer reset (pending iPad verification)
+
+- [ ] Open **ARP / SEQ**, edit multiple pitch sliders and rests, then tap **Reset steps**. Confirm all sixteen pitch offsets read zero, every gate shows ON, and note lengths are 75%.
+- [ ] With Game Arp and root Arp disabled, hold/release single notes on the keyboard. Check perceived audio onset and release by ear. Repeat while watching the optional **Audio timing** footer panel.
+- [ ] Use Game Arp Preview at BPM 120 and 1/16, then compare to direct-key response. Capture note-dispatch round trip, WASM rendering average/max versus block budget, and browser-reported base/output latency.
+- [ ] If screen recording is used, distinguish apparent A/V synchronization offsets from actually perceived response time. Report iPadOS/Safari version, whether audio goes to built-in speakers, Bluetooth or AirPlay, and whether recording itself changes latency.
+- [ ] Do not claim a latency fix based solely on passing CI or a lower message round-trip figure; verify that the key-to-audible delay is actually reduced.
+
 ## Game Arp sequencer and full-width keyboard (pending iPad verification)
 
 - [ ] In landscape, open **ARP / SEQ** and inspect all 16 step sliders, gates, and note lengths. Check the 64C-inspired panel alignment and readability.
