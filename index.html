@@ -357,7 +357,7 @@ const directOwned=new Set(); // Physical notes sounding independently of either 
 const game={timer:null,last:null,step:0};
 const gameEnabled=()=>$('gameArpOn').checked;
 const arpEnabled=()=>$('arpOn').checked;
-const activeNotes=()=>[...($('arpLatch').checked?arp.latched:arp.held)];
+const activeNotes=()=>[...($('arpLatch').checked&&arp.latched.size?arp.latched:arp.held)];
 const arpNotes=()=>activeNotes().sort((a,b)=>a-b);
 function gameStop(){
  if(game.timer!==null){clearInterval(game.timer);game.timer=null}
@@ -453,7 +453,7 @@ function keyUp(note){
  arp.held.delete(note);
  if(directOwned.delete(note))stop(note);
  if(!gameEnabled()&&!arpEnabled())return;
- if(!$('arpLatch').checked&&arp.held.size===0){
+ if(arp.held.size===0&&(!$('arpLatch').checked||arp.latched.size===0)){
   stopGenerators();$('arpStatus').textContent='No notes held';return;
  }
  if(gameEnabled()&&!arpEnabled())gameRestart();
