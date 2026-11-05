@@ -154,16 +154,16 @@ The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) identifie
 
 **Completion condition:** Three LFOs can run simultaneously, independently modulate selected sliders, and stop cleanly without changing saved base control values or compromising SID playback.
 
-## Planned: voice allocation controls (design approval before implementation)
+## In development: voice allocation controls
 
-**Design proposal:** [Voice allocation layout](docs/voice-allocation-layout.md). Use the ARP 2600 app screenshot for functions only, retaining Project6581's existing Sound-tab design. **Spread is explicitly excluded**, at the user's request.
+**Design and implementation:** [Voice allocation layout](docs/voice-allocation-layout.md). The approved compact Voice Assign, Voices and Unison selectors and a full-width Detune slider are implemented in the same PR. Existing styling and keyboard are retained. **Spread remains excluded.**
 
 - [x] Plan a compact **Voice Assign** selector: **Mono, Legato, Duo, Poly**.
 - [x] Define **Voices** (1–8 total hardware oscillators) separately from **Unison** (1–Voices stacked layers per note), with **Detune** in cents.
 - [x] Specify a compact, wrapping inline group of **content-sized** Voice Assign, Voices and Unison selectors with **Detune on a full-width row**, retaining the current Sound tab, iPad/desktop keyboard visibility, and accessible touch targets.
 - [x] Document the desired allocation, note ownership, clipping/voice limits, legato envelope behavior, and preset/LFO interactions without changing the audio engine.
-- [ ] Obtain UI/interaction approval **before implementation**. No UI styling, voice allocator, native mixer, tests, or preset format changes in this design-only slice.
-- [ ] Implement in a future bounded PR, preserving the current interface and checking Copilot reviews and actual iPad playback.
+- [x] The compact layout was approved for implementation in PR #50. Added Voice Assign (Mono/Legato/Duo/Poly), eight-oscillator budget, per-note Unison stacks, and Detune without stereo Spread.
+- [x] Implemented voice ownership, deterministic oldest-stack stealing, Mono retrigger and Legato pitch-only transitions. Presets use format v3 with no migrations.\n- [ ] Confirm CI, address new Copilot reviews, and verify actual iPad playback and responsive layout before merging.
 
 **Scope decision:** No stereo Spread, panning, or stereo output work for this milestone. The separate future **up-to-three-independent-SID-devices** UI milestone remains distinct.
 
