@@ -6,6 +6,20 @@ Prioritize features that help people **make, retain, exchange, and perform music
 
 **Near-term order:** **1. Factory/user presets and import/export** → **2. Composable Arpeggiator + Game Arp and Western scale lock** → **3. MIDI input on iPad and desktop** → **4. App-like installation and offline access**. WAV/M4A recording and the stationary LFO display are already under development in separate PRs. Independent SID-device support remains **UI-design-first** before modifying the engine.
 
+## Planned UI refinement: consistent control widths and dedicated LFO tab
+
+**Goal:** Make the synth's controls easier to scan and use across desktop and iPad, while giving modulation its own focused workspace. This is a layout and navigation task, not a change to the SID engine.
+
+- [ ] Audit control widths and alignment across the existing tabs: sliders, selects, buttons, numeric readouts, labels and grouped controls. Identify where controls that serve the same role have inconsistent widths.
+- [ ] Establish reusable sizing rules for comparable controls and shared spacing/alignment tokens. Keep full-width sliders full-width where appropriate, and allow compact selectors to wrap consistently rather than forcing every control to the same pixel width.
+- [ ] Verify that labels, values and control tracks align predictably, with adequate inner padding, no clipped text, and accessible touch targets at iPad portrait/landscape and desktop widths.
+- [ ] Move **LFO 1–3** from the Sound tab into a dedicated **LFOs** tab. Preserve every existing waveform, rate, sync, depth, routing and enable control, including visible current values and independent settings for each LFO.
+- [ ] Keep the keyboard available at the bottom, preserve current tab/keyboard behavior, and avoid unnecessary scrolling or losing access to the sound controls.
+- [ ] Ensure tab changes do not restart audio, reset modulation phase, alter preset state, or introduce note latency. Existing presets must still restore all three LFO configurations.
+- [ ] Add focused layout/navigation regression checks, then inspect the result on a real iPad in portrait and landscape. Check Copilot reviews before merging.
+
+**Completion checks:** Controls of the same type look consistently sized and aligned; all three LFOs are accessible from their own tab; audio, modulation, presets and keyboard interaction behave exactly as before.
+
 ## Priority 1: factory presets and user preset management
 
 **Goal:** Open Project6581 and immediately select a useful sound, experiment with it, save custom sounds, and move them between devices. This is the highest-priority new feature.
