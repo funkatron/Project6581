@@ -85,3 +85,23 @@ test('failed local validation never destroys the existing saved bank',()=>{
  ]),/Duplicate/);
  assert.equal(storage.values.get(PRESET_STORAGE_KEY),initial);
 });
+
+test('C64-inspired prototype bank covers four distinct categories without changing preset format',()=>{
+ const prototypes=[
+  ['tight-pulse-bass','Bass','square'],
+  ['shimmer-pwm-keys','Keys','square'],
+  ['bright-pulse-lead','Leads','square'],
+  ['noise-snare','Drums','noise']
+ ];
+ for(const [id,category,wave] of prototypes){
+  const p=FACTORY_PRESETS.find(p=>p.id===id);
+  assert.ok(p,'missing prototype '+id);
+  assert.equal(p.category,category);
+  assert.equal(p.settings.sound.voice.wave,wave);
+  assert.equal(p.settings.performance.game.enabled,false);
+  assert.deepEqual(importPresetFile(exportPreset(p)),[{name:p.name,settings:p.settings}]);
+ }
+ const legacy=['deep-bass','arcade-lead','chiptune-pluck','pulsing-pad','soft-flute','filter-motion'];
+ assert.deepEqual(new Set(FACTORY_PRESETS.map(p=>p.id)),new Set([...legacy,...prototypes.map(([id])=>id)]));
+ assert.equal(PRESET_VERSION,3);
+});
