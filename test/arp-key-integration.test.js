@@ -50,7 +50,7 @@ test('changing note text cannot move the keyboard octave controls',()=>{
 test('direct polyphonic notes are released before an arpeggiator takes ownership',()=>{
  assert.match(script,/const directOwned=new Set\(\)/);
  assert.match(script,/function releaseDirectNotes\(\)\{\s*for\(const note of directOwned\)stop\(note\);\s*directOwned\.clear\(\)/);
- assert.match(script,/releaseDirectNotes\(\);\s*if\(!activeNotes\(\)\.length\)/);
+ assert.match(script,/releaseDirectNotes\(\);\s*if\(!activeNotes\(\)\.length&&!seqPreview\)/);
  assert.match(script,/if\(directOwned\.delete\(note\)\)stop\(note\)/);
  assert.match(script,/directOwned\.clear\(\);activeOwners\.clear\(\);arpKeyVisual\.clear\(\);sidController\?\.panic\(\)/);
 });
