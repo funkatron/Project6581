@@ -46,3 +46,28 @@ test('changing note text cannot move the keyboard octave controls',()=>{
  assert.match(html,/\.keyboard-heading \.octave-controls\s*\{[^}]*min-width:max-content/);
  assert.doesNotMatch(html,/\.arp-visual-note\s*\{/);
 });
+
+test('direct polyphonic notes are released before an arpeggiator takes ownership',()=>{
+ assert.match(script,/const directOwned=new Set\(\)/);
+ assert.match(script,/function releaseDirectNotes\(\)\{\s*for\(const note of directOwned\)stop\(note\);\s*directOwned\.clear\(\)/);
+ assert.match(script,/releaseDirectNotes\(\);\s*if\(!activeNotes\(\)\.length\)/);
+ assert.match(script,/if\(directOwned\.delete\(note\)\)stop\(note\)/);
+ assert.match(script,/directOwned\.clear\(\);arpKeyVisual\.clear\(\);sidController\?\.panic\(\)/);
+});
+
+test('clear latch preserves physical owners and direct notes',()=>{
+ const clearHandler=script.slice(script.indexOf("$('arpClear').addEventListener"),
+  script.indexOf('const keys=new Map();'));
+ assert.ok(clearHandler.length>0);
+ assert.match(clearHandler,/arp\.latched\.clear\(\)/);
+ assert.doesNotMatch(clearHandler,/arp\.held\.clear\(\)/);
+ assert.doesNotMatch(clearHandler,/directOwned\.clear\(\)/);
+ assert.match(script,/const activeNotes=\(\)=>\[\.\.\.\(\$\('arpLatch'\)\.checked&&arp\.latched\.size\?arp\.latched:arp\.held\)\]/);
+});
+
+test('released roots do not produce extra out-of-tempo arp ticks',()=>{
+ const release=script.slice(script.indexOf('function keyUp(note){'),
+  script.indexOf("$('gameArpOn').addEventListener"));
+ assert.match(release,/arp\.root=notes\.length\?selectRoot\(notes,\$\('arpPattern'\)\.value,arp\.step\):null/);
+ assert.doesNotMatch(release,/arpTick\(\)/);
+});
