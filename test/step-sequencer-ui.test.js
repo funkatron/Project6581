@@ -85,4 +85,6 @@ test('landscape and compact layouts preserve sequencer lanes and taller keyboard
  assert.match(css,/@media \(max-width:1100px\)\{\s*header\{display:grid/);
  assert.match(css,/\.seq-grid-scroller\{[^}]*overflow-x:auto/);
  assert.match(css,/@media \(max-height:650px\)/);
+ assert.match(css,/\.seq-grid-scroller\{[^}]*touch-action:auto/);
+ assert.match(css,/\.workspace \.panel\{scroll-padding-bottom:28px/);
 });
