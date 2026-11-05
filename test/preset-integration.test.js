@@ -24,10 +24,17 @@ test('preset editor provides factory/user collections, save, export, import and 
 });
 test('preset loading restores performance settings without stored notes or autoplay',()=>{
  assert.match(script,/masterBpm:Number\(\$\('masterBpm'\)\.value\)/);
+ for(const id of ['voiceAssign','voiceCount','unisonCount','detune','voiceCapacity'])
+  assert.match(html,new RegExp('id="'+id+'"'));
+ assert.doesNotMatch(html,/id="unisonOn"/);
  assert.match(script,/game:\{enabled:\$\('gameArpOn'\)\.checked,style:[\s\S]*?rate:Number\(\$\('gameRate'\)\.value\)/);
  assert.match(script,/arp:\{enabled:\$\('arpOn'\)\.checked,latch:/);
  assert.match(script,/panic\(\);arp\.held\.clear\(\);arp\.latched\.clear\(\)/);
  assert.match(script,/game\.step=0;arp\.root=null/);
+ assert.match(script,/unisonCount:Number\(\$\('unisonCount'\)\.value\)/);
+ assert.match(script,/mode:\$\('voiceAssign'\)\.value/);
+ assert.match(script,/\$\('unisonCount'\)\.value=String\(next\.sound\.instrument\.unisonCount\)/);
+ assert.match(script,/\$\('voiceAssign'\)\.value=next\.sound\.instrument\.mode/);
  assert.match(script,/\$\('gameRate'\)\.value=String\(next\.performance\.game\.rate\)/);
  assert.match(script,/renderVoiceControls\(\);renderLfos\(\);updateUnison\(\);updateModulation\(\)/);
  assert.match(script,/await ensureSidModel\(next\.sound\.model\)/);
