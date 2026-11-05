@@ -140,7 +140,12 @@ export const FACTORY_PRESETS=Object.freeze([
  factory('chiptune-pluck','Chiptune Pluck','Pluck',{voice:{wave:'triangle',decay:.08,sustain:0,release:.08},instrument:{detune:0},filter:{cutoff:8000,resonance:0,volume:75},performance:{game:{enabled:false}}}),
  factory('pulsing-pad','Pulsing Pad','Pad',{voice:{attack:.5,decay:.42,sustain:.65,release:1.2,pwmDepth:28,pwmRate:.7},instrument:{voiceCount:3,detune:16},filter:{cutoff:5000,resonance:20,volume:70},performance:{game:{enabled:false}}}),
  factory('soft-flute','Soft Flute','Lead',{voice:{wave:'triangle',attack:.08,decay:.24,sustain:.86,release:.35},instrument:{detune:0},filter:{cutoff:4300,resonance:5,volume:80},performance:{game:{enabled:false}}}),
- factory('filter-motion','Filter Motion','FX',{filter:{cutoff:4200,resonance:55,volume:60},lfos:[{enabled:true,wave:'triangle',rate:.35,depth:.55,target:'cutoff'}],performance:{game:{enabled:false}}})
+ factory('filter-motion','Filter Motion','FX',{filter:{cutoff:4200,resonance:55,volume:60},lfos:[{enabled:true,wave:'triangle',rate:.35,depth:.55,target:'cutoff'}],performance:{game:{enabled:false}}}),
+ // Original C64-inspired prototypes. These are sound-design starting points, not transcriptions.
+ factory('tight-pulse-bass','Tight Pulse Bass','Bass',{voice:{wave:'square',attack:.002,decay:.11,sustain:.34,release:.07,pulse:27},filter:{cutoff:1350,resonance:18,volume:72},performance:{game:{enabled:false}}}),
+ factory('shimmer-pwm-keys','Shimmer PWM Keys','Keys',{voice:{wave:'square',attack:.04,decay:.4,sustain:.62,release:.65,pulse:43,pwmDepth:14,pwmRate:.55},filter:{cutoff:4900,resonance:12,volume:57},performance:{game:{enabled:false}}}),
+ factory('bright-pulse-lead','Bright Pulse Lead','Leads',{voice:{wave:'square',attack:.002,decay:.13,sustain:.83,release:.12,pulse:18},filter:{cutoff:7200,resonance:9,volume:64},lfos:[{enabled:true,wave:'sine',rate:5,depth:.08,target:'pulse'}],performance:{game:{enabled:false}}}),
+ factory('noise-snare','Noise Snare','Drums',{voice:{wave:'noise',attack:0,decay:.13,sustain:0,release:.04},filter:{cutoff:5500,resonance:8,volume:67,mode:'highpass'},performance:{game:{enabled:false}}})
 ]);
 function unique(presets){
  const names=new Set(),ids=new Set();
