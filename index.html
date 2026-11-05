@@ -60,7 +60,9 @@ input[type=checkbox]:checked::before{transform:translateX(17px)}
 .keyboard-heading h2{margin:0}.keyboard-heading small{font-size:11px}.octave-controls{display:flex;align-items:center;gap:6px}.octave-controls button{min-height:36px;padding:5px 12px}.octave-controls output{font-size:12px;min-width:45px;text-align:center}
 .keyboard{display:flex;flex:1;min-height:94px;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 .key{position:relative;min-width:0;flex:1 1 0;padding:0 0 9px;border-radius:0 0 6px 6px;background:#eef1f5;color:#18212c;border:1px solid #596679;display:flex;align-items:end;justify-content:center;font-size:clamp(9px,1vw,13px);-webkit-touch-callout:none}
-.key.black{background:#202c3b;color:white;flex:0 0 2.4%;height:61%;min-width:0;margin:0 -1.2%;z-index:2;border:1px solid #75869a;padding-bottom:7px}
+/* Black keys occupy roughly 63% of a white key in the two-octave view.
+   Equal negative side margins keep each black key centered at its white-key boundary. */
+.key.black{background:#202c3b;color:white;flex:0 0 4.2%;height:61%;min-width:0;margin:0 -2.1%;z-index:2;border:1px solid #75869a;padding-bottom:7px}
 .key.down{background:#e8a759;color:#151b24}
 footer{font-size:10px;color:#9fadc1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 footer p{display:inline;margin:0}footer strong,footer strong~*{display:none}
@@ -79,7 +81,8 @@ footer p{display:inline;margin:0}footer strong,footer strong~*{display:none}
  .subtitle{display:none}
  .key.octave-hidden{display:none}
  .octave-controls{display:flex}
- .key.black{flex-basis:5%;margin:0 -2.5%}
+ /* One octave has eight white keys; 8% keeps the same ~64% width ratio. */
+ .key.black{flex-basis:8%;margin:0 -4%}
  .key{font-size:11px}
 }
 @media(max-height:760px){main{gap:5px;padding:5px}.keyboard-panel{height:clamp(112px,23dvh,180px)}.workspace .panel{padding:6px 9px}label{min-height:28px;font-size:11px}.section-divider{margin:4px 0}h2{margin-bottom:3px}.voice-grid{gap:0 9px}}
