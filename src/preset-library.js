@@ -1,10 +1,11 @@
-// Project6581 preset format v1: sound and performance settings.
+// Project6581 preset format v3: instrument allocation, sound and performance settings.
 // This is intentionally a single-version format; no migrations are needed yet.
-export const PRESET_VERSION=2;
-export const PRESET_STORAGE_KEY='project6581.user-presets.v2';
+export const PRESET_VERSION=3;
+export const PRESET_STORAGE_KEY='project6581.user-presets.v3';
 export const MAX_USER_PRESETS=100;
 const WAVES=['triangle','sawtooth','square','noise'];
 const MODES=['lowpass','bandpass','highpass'];
+const ASSIGNMENTS=['mono','legato','duo','poly'];
 const LFO_WAVES=['sine','triangle','sawtooth','square','sample-hold'];
 const TARGETS=['cutoff','resonance','volume','pulse','detune','attack','decay','sustain','release','pwmDepth','pwmRate'];
 const DIVISIONS=[.25,.5,1,2,4,8,16,32];
@@ -35,7 +36,7 @@ export function defaultPresetSettings(){
   sound:{
    model:6581,
    voice:{enabled:true,wave:'square',attack:.002,decay:.12,sustain:.8,release:.12,pulse:50,pwmDepth:0,pwmRate:1},
-   instrument:{voiceCount:1,unison:true,detune:12},
+   instrument:{voiceCount:1,unisonCount:1,mode:'mono',detune:12},
    filter:{cutoff:7000,resonance:10,volume:55,mode:'lowpass'},
    lfos:Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',phase:0,seed:i}))
   },
@@ -64,7 +65,9 @@ export function validatePresetSettings(value){
    },
    instrument:{
     voiceCount:integer(ins.voiceCount,'voice count',1,8),
-    unison:boolean(ins.unison,'unison'),detune:numeric(ins.detune,'detune',0,100)
+    unisonCount:integer(ins.unisonCount,'unison layers',1,integer(ins.voiceCount,'voice count',1,8)),
+    mode:choice(ins.mode,'voice assignment',ASSIGNMENTS),
+    detune:numeric(ins.detune,'detune',0,100)
    },
    filter:{
     cutoff:numeric(filter.cutoff,'cutoff',50,10000),
@@ -113,7 +116,12 @@ export function validatePreset(value,{requireId=false}={}){
 function factory(id,name,category,patch={}){
  const settings=defaultPresetSettings();
  if(patch.voice)Object.assign(settings.sound.voice,patch.voice);
- if(patch.instrument)Object.assign(settings.sound.instrument,patch.instrument);
+ if(patch.instrument){
+  Object.assign(settings.sound.instrument,patch.instrument);
+  // Existing factory sound design stacked all its selected oscillators.
+  if(patch.instrument.voiceCount&&!('unisonCount' in patch.instrument))
+   settings.sound.instrument.unisonCount=settings.sound.instrument.voiceCount;
+ }
  if(patch.filter)Object.assign(settings.sound.filter,patch.filter);
  if(patch.model)settings.sound.model=patch.model;
  if(patch.lfos)patch.lfos.forEach((lfo,i)=>Object.assign(settings.sound.lfos[i],lfo));

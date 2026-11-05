@@ -4,7 +4,7 @@
 
 Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of the original C64 sound chip. It works with a touch-friendly screen keyboard, a choice of MOS 6581 or 8580 chip emulation, and two arpeggiator modes.
 
-> **Current voice model:** Up to eight emulated SID oscillators can play either together in **Unison** or as independent notes when Unison is off. All voices use the authentic reSIDfp engine.
+> **Voice allocation:** Up to eight authentic SID oscillators. Choose Mono, Legato, Duo or Poly, and decide how many oscillators each note uses with **Unison**.
 
 **[▶ Open the synthesizer](https://funkatron.github.io/Project6581/)**
 
@@ -32,7 +32,7 @@ Use **Export** to download the current sound as JSON, or **Export bank** to back
 
 A preset includes the SID model, sound and filter controls, all three LFOs, master BPM, and both arpeggiators' settings. Loading a preset stops any current notes but **does not automatically start playing**. Held keys and the notes stored in latches are not saved.
 
-**Storage note:** My presets are stored locally in this browser. They are not automatically shared between devices, and clearing browser data may erase them. **Export bank** provides a backup. The preset JSON format is currently version 2, including Game Arp Pattern rate. There is no migration from version 1: previously saved user presets will not appear after the update, and version-1 JSON files will not import. Recreate those sounds manually if needed.
+**Storage note:** My presets are stored locally in this browser. They are not automatically shared between devices, and clearing browser data may erase them. **Export bank** provides a backup. The preset JSON format is currently version 3, adding Voice Assign and per-note Unison layers. Versions 1–2 are not migrated or imported. Recreate those sounds manually if needed.
 
 ## 🎛️ The controls, in plain language
 
@@ -44,8 +44,8 @@ A preset includes the SID model, sound and filter controls, all three LFOs, mast
 | **Root rate / Pattern rate** | Independent tempos for root selection and Game Arp pattern steps; both follow the selected master/local BPM | Try Root 1/4 and Pattern 1/16 |
 | **BPM** | Overall pattern tempo | Move the slider slowly to hear the difference |
 | **Waveform** | Selects a native SID waveform: Triangle, Sawtooth, Pulse, or Noise | Compare **Pulse** and **Sawtooth** |
-| **Voices** | Sets the total available SID oscillators, 1–8, for Unison or independent notes | Try **3** with Unison off for three-note chords |
-| **Unison / Detune** | Unison stacks the voices on one note; turning it off enables polyphony. Detune applies to Unison only. | Try 4 voices, Unison on, and 12¢ detune |
+| **Voice Assign** | Mono retriggers a single note; Legato changes overlapping pitches without restarting envelopes; Duo plays up to two notes; Poly plays as many complete stacks as the oscillator budget permits | Choose **Poly** for chords |
+| **Voices** | Total oscillator budget, 1–8, across the three emulated SID chips | Try **6** |\n| **Unison** | Layers *per note*, from 1 up to Voices. For example, 6 Voices / 2 Unison layers permits 3 simultaneous Poly notes | Try **2** |\n| **Detune** | Changes pitch in cents between unison layers (not stereo width); inactive with 1 Unison layer | Try **12¢** |
 | **Attack / Decay / Sustain / Release** | How a note begins, changes, holds, and ends | Increase **Release** for a longer tail |
 | **Pulse width / PWM** | Pulse width sets the center of the Pulse waveform; PWM depth and rate now sweep that width continuously | Select Pulse, set depth to 20%, and vary PWM rate |
 | **Filter cutoff** | How much high-frequency sound passes through | Lower it for a darker sound |
@@ -88,7 +88,7 @@ The WAV contains 16-bit mono PCM from the reSIDfp render path (the app plays thi
 - **SID:** The three-voice sound chip used in the Commodore 64 computer.
 - **reSIDfp:** The software emulation engine that produces the authentic SID-style audio.
 - **Arpeggiator (arp):** A feature that plays notes in a repeating sequence.
-- **Polyphonic:** With Unison off, independent keys can sound at the same time, up to the selected Voices limit. When all slots are occupied, the oldest note is replaced. **Unison** instead layers the selected oscillators on the most recently pressed note.
+- **Polyphonic:** Several notes play simultaneously with their selected Unison layers, up to `floor(Voices / Unison)`. Duo limits this to two; oldest sounding notes are stolen when capacity is reached.
 - **Unison:** Several oscillators playing one note together. Small pitch offsets (detune) can make the combined sound thicker.
 - **1/128 rate:** A very fast pattern setting. Browser timing can become uneven at extreme rates, particularly on mobile devices.
 
@@ -126,7 +126,7 @@ PCM samples → browser audio output
 - **Sound generation:** [libresidfp](https://github.com/libsidplayfp/libresidfp), pinned to **v1.1.2**, is compiled into `dist/residfp.wasm`. It models SID oscillators, envelopes, and filter behavior.
 - **Browser audio:** An `AudioWorklet` renders the emulated audio off the main UI thread. JavaScript handles note input, controls, and arpeggiator scheduling.
 - **Chip selection:** The interface offers MOS **6581** and **8580** models, whose filter characteristics differ.
-- **Voice model:** Up to eight active oscillators across three emulated SID chips (three oscillators per chip), with their output mixed in the native bridge. Unison and independent-note polyphony share the Voices control.
+- **Voice model:** Up to eight oscillators across three emulated SID chips. Voice Assign controls one-note retriggering (Mono), no-retrigger pitch changes (Legato), two-note stacks (Duo), or multi-note stacks (Poly). The total Voices and per-note Unison counts are independent.
 - **No audio fallback:** If the WebAssembly SID engine cannot initialize, the app reports the failure instead of silently substituting generic oscillators.
 
 ### Building and testing
@@ -143,9 +143,9 @@ That command runs the Node.js test suite. Building the WASM binary separately re
 
 ### Limitations and ongoing work
 
-- Polyphony and Unison are available, but different SID chips cannot yet be configured independently. Switching between Unison and polyphony releases previous notes to prevent stuck voices.
-- Pulse-width modulation and live ADSR/Unison detune are implemented through SID register updates without retriggering held notes. SID envelope rates and levels are quantized to hardware-supported register values.
-- Three LFOs can route to 11 continuous sound parameters and use synchronized musical divisions. Discrete controls such as oscillator count, waveform and chip model are not modulation targets. Tempo modulation and audio-clock scheduling remain [roadmap](ROADMAP.md) items. The centered-thumb LFO display is available, but iPad Safari visual and touch validation is still pending. The main-thread 60 Hz scheduler can introduce timing jitter, particularly on busy mobile browsers.
+- Voice Assign, Voices, Unison layers and Detune are available, but the three underlying SID chips still cannot be configured independently. Changing the allocation safely releases currently sounding notes.
+- Pulse-width modulation and live ADSR/detune update active stacks through SID registers without retriggering their envelopes. SID envelope rates and levels are quantized to hardware values. Legato pitch changes also avoid retriggering.
+- Three LFOs can route to 11 continuous sound parameters and use synchronized musical divisions. Discrete controls such as oscillator count, waveform and chip model are not modulation targets. Tempo modulation and audio-clock scheduling remain [roadmap](ROADMAP.md) items. Stationary-thumb LFO visualization is implemented; iPad Safari visual and touch verification remains pending. The main-thread 60 Hz scheduler can introduce timing jitter, particularly on busy mobile browsers.
 - Very fast arpeggiator rates depend on browser scheduling and may sound uneven.
 - iPad Safari may require a user gesture to start its audio context.
 - Touch-to-sound latency is an active investigation; see [ROADMAP.md](ROADMAP.md).

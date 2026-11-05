@@ -36,7 +36,8 @@ test('user preset can save and reload every sound and performance setting',()=>{
  settings.sound.voice.wave='noise';
  settings.sound.voice.attack=.45;
  settings.sound.instrument.voiceCount=7;
- settings.sound.instrument.unison=false;
+ settings.sound.instrument.mode='poly';
+ settings.sound.instrument.unisonCount=2;
  settings.sound.filter.cutoff=2300;
  settings.sound.lfos[2]={...settings.sound.lfos[2],enabled:true,wave:'sample-hold',rate:2.25,depth:.45,target:'volume'};
  settings.performance.masterBpm=147;
@@ -69,6 +70,10 @@ test('invalid file, unsupported version, duplicate names and invalid slider valu
  invalid.performance.masterBpm=120;
  invalid.sound.lfos[0].target='eval()';
  assert.throws(()=>validatePresetSettings(invalid),/LFO target/);
+ const badLayers=defaultPresetSettings();badLayers.sound.instrument.unisonCount=4;
+ assert.throws(()=>validatePresetSettings(badLayers),/unison layers/);
+ badLayers.sound.instrument.unisonCount=1;badLayers.sound.instrument.mode='duophonic';
+ assert.throws(()=>validatePresetSettings(badLayers),/voice assignment/);
 });
 test('failed local validation never destroys the existing saved bank',()=>{
  const storage=makeStorage();
