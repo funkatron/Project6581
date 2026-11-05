@@ -32,7 +32,7 @@ Use **Export** to download the current sound as JSON, or **Export bank** to back
 
 A preset includes the SID model, sound and filter controls, all three LFOs, master BPM, and both arpeggiators' settings. Loading a preset stops any current notes but **does not automatically start playing**. Held keys and the notes stored in latches are not saved.
 
-**Storage note:** My presets are stored locally in this browser. They are not automatically shared between devices, and clearing browser data may erase them. **Export bank** provides a backup. The preset JSON format is currently version 2, including Game Arp Pattern rate. Version 1 preset files are not migrated; export any sounds you want to preserve before updating.
+**Storage note:** My presets are stored locally in this browser. They are not automatically shared between devices, and clearing browser data may erase them. **Export bank** provides a backup. The preset JSON format is currently version 2, including Game Arp Pattern rate. There is no migration from version 1: previously saved user presets will not appear after the update, and version-1 JSON files will not import. Recreate those sounds manually if needed.
 
 ## 🎛️ The controls, in plain language
 
