@@ -1,0 +1,1312 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#d6cfbd"><title>Project6581 | SID Studio</title>
+<style>
+:root{font-family:system-ui,-apple-system,sans-serif;color:#f3f5fa;background:#101721;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+main{height:100%;max-width:1400px;margin:auto;padding:clamp(8px,1.5vw,18px);display:grid;grid-template-rows:auto auto minmax(0,1fr) auto auto;gap:8px;overflow:hidden}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+h1{font-size:clamp(18px,2.3vw,28px);margin:0;letter-spacing:-.03em}h2{font-size:14px;margin:0 0 6px}p,small{color:#b6c2d2}
+.subtitle{font-size:11px;margin:2px 0 0}.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+button,select{font:inherit;background:#29384b;color:#f3f5fa;border:1px solid #52647d;border-radius:9px;padding:9px 12px;min-height:44px;touch-action:manipulation}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #f6b96a;outline-offset:2px}
+button.primary{background:#ac682e;border-color:#d08c48}.panel{background:#1b2736;border:1px solid #34455a;border-radius:13px;padding:clamp(7px,1vw,12px);min-height:0}
+.statusbar{display:flex;align-items:center;gap:9px;min-height:30px;font-size:12px;overflow:hidden}
+.statusbar p{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sid-spinner:not([hidden]){display:inline-block;width:17px;height:17px;flex:none;border:3px solid #53657a;border-top-color:#f4b465;border-radius:50%;animation:sid-spin .8s linear infinite}@keyframes sid-spin{to{transform:rotate(360deg)}}
+.workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;min-height:0;overflow:hidden}
+.workspace .panel{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable}
+.voice-panel{grid-column:1}.performance-panel{grid-column:2}
+label{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12px;min-height:32px;margin:0}
+label>input[type=range]{flex:1;min-width:0;max-width:62%;height:26px;accent-color:#eaa75d;touch-action:pan-x}
+label[hidden]{display:none!important}label>output{min-width:38px;text-align:right;font-variant-numeric:tabular-nums;color:#f3bd78}
+label>select{max-width:65%;min-width:0;min-height:34px;padding:4px 6px}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;width:42px;height:25px;flex:none;border:1px solid #6b819c;border-radius:20px;background:#34455a;cursor:pointer;transition:background .12s}
+input[type=checkbox]::before{content:"";position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:#f3f5fa;transition:transform .12s}
+input[type=checkbox]:checked{background:#ac682e;border-color:#f3bd78}
+input[type=checkbox]:checked::before{transform:translateX(17px)}
+.master-tempo{gap:6px;font-size:12px}.master-tempo input{width:67px;min-height:38px;padding:4px 7px;border-radius:6px;border:1px solid #52647d;background:#29384b;color:#f3f5fa;font:inherit}
+.arp-local-bpm[hidden]{display:none!important}
+.voices .panel{border:0;background:none;padding:0;overflow:visible}.voices h2{display:none}
+.voice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 12px}
+.voice-grid label{min-width:0}
+.performance-panel .controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 12px}.performance-panel .controls label{margin:0;min-width:0}.performance-panel .controls button{justify-self:start}
+.slider-stack{position:relative;display:flex;align-items:center;flex:1;min-width:0;max-width:62%;height:36px;isolation:isolate}
+.slider-stack::before{content:"";position:absolute;left:9px;right:9px;top:50%;height:8px;transform:translateY(-50%);border-radius:5px;background:linear-gradient(90deg,#849688 0 var(--center,0%),#d0cbbc var(--center,0%) 100%);pointer-events:none}
+.modulation-band{position:absolute;left:9px;right:9px;top:50%;height:8px;transform:translateY(-50%);border-radius:5px;background:linear-gradient(90deg,transparent 0 var(--band-start,0%),#20836a var(--band-start,0%) var(--band-end,0%),transparent var(--band-end,0%) 100%);pointer-events:none}
+.modulation-band[hidden]{display:none!important}
+.slider-stack>input[type=range]{-webkit-appearance:none;appearance:none;position:relative;z-index:2;flex:1;width:100%;min-width:0;max-width:none;height:36px;margin:0;padding:0;border:0;box-shadow:none;background:transparent;touch-action:pan-x;cursor:pointer}
+.slider-stack>input[type=range]::-webkit-slider-runnable-track{height:8px;background:transparent;border:0}
+.slider-stack>input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:22px;margin-top:-7px;border:2px solid #323c35;border-radius:5px;background:#f1eadd;box-shadow:0 1px 2px #0005}
+.slider-stack>input[type=range]::-moz-range-track{height:8px;background:transparent;border:0}
+.slider-stack>input[type=range]::-moz-range-thumb{width:16px;height:20px;border:2px solid #323c35;border-radius:5px;background:#f1eadd}
+.base-value,.modulated-value{font-size:10px;font-variant-numeric:tabular-nums;white-space:nowrap;flex:none}
+.modulated-value{color:#236b58;font-weight:700}
+.modulated-value[hidden]{display:none!important}
+.modulated-value::before{content:"→ ";opacity:.8}
+.lfo-panel{margin-top:4px}
+#lfoControls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.lfo-controls{display:grid;grid-template-columns:minmax(0,1fr);gap:2px;min-width:0;margin:0;padding:4px 5px;border:1px solid #34455a;border-radius:7px}
+.lfo-controls legend{font-size:11px;font-weight:650;padding:0 3px;grid-column:1/-1}
+.lfo-controls label{min-width:0;min-height:24px;font-size:10px;gap:3px}
+.lfo-controls select{min-width:0;max-width:70%;min-height:27px;padding:2px 3px;font-size:11px}
+.lfo-controls input[type=range]{max-width:53%;height:22px;touch-action:auto}
+.lfo-controls output{min-width:24px;font-size:10px}
+.lfo-controls select[aria-label$="Enabled"]{max-width:62px}
+@media(max-width:700px){#lfoControls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){#lfoControls{grid-template-columns:minmax(0,1fr)}.lfo-controls{grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 8px}}.section-divider{height:1px;background:#34455a;margin:7px 0}
+.keyboard-panel{min-height:0;display:flex;flex-direction:column;gap:5px;padding:8px 10px 10px}
+.keyboard-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.keyboard-heading h2{margin:0}.keyboard-heading small{font-size:11px}.octave-controls{display:flex;align-items:center;gap:6px}.octave-controls button{min-height:36px;padding:5px 12px}.octave-controls output{font-size:12px;min-width:45px;text-align:center}
+.keyboard{display:flex;flex:1;min-height:94px;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.key{position:relative;min-width:0;flex:1 1 0;padding:0 0 9px;border-radius:0 0 6px 6px;background:#eef1f5;color:#18212c;border:1px solid #596679;display:flex;align-items:end;justify-content:center;font-size:clamp(9px,1vw,13px);-webkit-touch-callout:none}
+/* Black keys occupy roughly 63% of a white key in the two-octave view.
+   Equal negative side margins keep each black key centered at its white-key boundary. */
+.key.black{background:#202c3b;color:white;flex:0 0 4.2%;height:61%;min-width:0;margin:0 -2.1%;z-index:2;border:1px solid #75869a;padding-bottom:7px}
+.key.down{background:#e8a759;color:#151b24}
+footer{font-size:10px;color:#9fadc1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+footer p{display:inline;margin:0}footer strong,footer strong~*{display:none}
+.diagnostics{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+@media(max-width:900px),(max-height:620px){
+ main{grid-template-rows:auto auto auto minmax(0,1fr) auto auto;gap:6px;padding:6px}
+ .workspace{grid-template-columns:1fr;display:block}
+ .workspace .panel{height:100%;overflow-y:auto;overflow-x:hidden}
+ .voice-panel,.performance-panel{display:none}
+ .workspace[data-tab="voice"] .voice-panel,.workspace[data-tab="play"] .performance-panel{display:block}
+ .tabbar{display:flex!important;gap:6px}
+ .tabbar button{flex:1;min-height:40px}
+ .tabbar button[aria-selected="true"]{background:#a96730;border-color:#e6a65f}
+ .keyboard-panel{height:clamp(126px,29dvh,240px)}
+ .voice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .subtitle{display:none}
+ .key.octave-hidden{display:none}
+ .octave-controls{display:flex}
+ /* One octave has eight white keys; 8% keeps the same ~64% width ratio. */
+ .key.black{flex-basis:8%;margin:0 -4%}
+ .key{font-size:11px}
+}
+@media(max-height:760px){main{gap:5px;padding:5px}.keyboard-panel{height:clamp(112px,23dvh,180px)}.workspace .panel{padding:6px 9px}label{min-height:28px;font-size:11px}.section-divider{margin:4px 0}h2{margin-bottom:3px}.voice-grid{gap:0 9px}}
+@media(max-width:520px){.voice-grid{gap:0 6px}label{font-size:10px}label>output{min-width:25px}.keyboard-heading small{display:none}.performance-panel .controls{gap:3px 6px}}
+/* Extremely short landscape viewports cannot fit all controls; keep them reachable. */
+@media(max-height:520px){.workspace .panel{overflow-y:auto;overscroll-behavior:contain}.keyboard-panel{height:108px}.keyboard{min-height:64px}.keyboard-heading small{display:none}}
+@media(min-width:901px) and (min-height:621px){.tabbar{display:none!important}.keyboard-panel{height:clamp(150px,28dvh,300px)}}
+@media(prefers-reduced-motion:reduce){.sid-spinner{animation:none}}
+
+/* Earlier high-contrast palette, superseded by the 64C enclosure styling below. */
+:root{color:#fff;background:#090d22}
+body{background:#090d22}
+main{background:#111934;border-color:#7ee8ff}
+header{background:#07142c;color:#fff;border-color:#7ee8ff;box-shadow:inset 0 0 0 2px #23375a}
+.subtitle{color:#e5f4ff}
+.panel,.keyboard-panel{background:#0b1530;border-color:#7ee8ff;box-shadow:inset 0 0 0 2px #1a3052}
+h2{color:#fff}
+button,select,.master-tempo input{background:#172b4a;color:#fff;border-color:#b1d9f2}
+button.primary,button[aria-selected="true"],.tabbar button[aria-selected="true"]{background:#ffdf70;color:#10172d;border-color:#fff}
+button:focus-visible,input:focus-visible,select:focus-visible{outline-color:#ffdf70}
+.statusbar{background:#101d38;border-color:#7ee8ff}
+.statusbar p,small,p{color:#e0eaf7}
+.section-divider{background:repeating-linear-gradient(90deg,#7ee8ff 0 8px,transparent 8px 16px)}
+label>input[type=range]{accent-color:#7ee8ff}
+label>output,.modulated-value{color:#ffdf70}
+
+input[type=checkbox]{background:#1a2b49;border-color:#c5e9ff}
+input[type=checkbox]::before{background:#fff}
+input[type=checkbox]:checked{background:#00b8ce;border-color:#fff}
+.lfo-controls{background:#142441;border-color:#8bdaf2}
+.lfo-controls legend{color:#ffdf70}
+.key{background:#f6f8ff;color:#0b1530;border-color:#567b9f}
+.key.black{background:#071126;color:#fff;border-color:#b5dcf3}
+.key.down{background:#ffdf70;color:#0b1530}
+footer{color:#e0eaf7}
+
+/* 64C / 128D industrial details: warm enclosure trim, graphite keycaps,
+   crisp case seams and restrained hardware-style typography. */
+main{border-left-color:#d4cbb7;border-right-color:#d4cbb7}
+header{border-top:5px solid #d4cbb7;border-bottom:3px solid #7ee8ff}
+h1{letter-spacing:.055em}
+.panel{border-top-color:#d4cbb7}
+button,select,.master-tempo input{font-weight:600;letter-spacing:.01em}
+button:active{background:#d4cbb7;color:#10172d}
+.key{border-bottom:4px solid #a5a7a8}
+.key.black{border-bottom:4px solid #536275}
+.key.down{border-bottom-color:#c89b37}
+.keyboard-panel{border-top-color:#d4cbb7}
+
+/* Compact utility action: retain a 44px touch target without stretching across the grid. */
+#arpClear{justify-self:start;width:max-content;max-width:100%;min-height:44px;padding:6px 10px;font-size:11px;line-height:1.15}
+.sid-spinner:not([hidden]){border-color:#94b8d2;border-top-color:#ffdf70}
+
+/* Use available horizontal space within each control section, wrapping naturally. */
+.performance-panel .controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:6px 12px}
+.performance-panel .controls label{flex:0 1 auto;min-width:110px;max-width:100%;gap:8px}
+.performance-panel .controls label:has(input[type=range]){flex:1 1 190px}
+.performance-panel .controls label>select{max-width:none;min-width:70px}
+.performance-panel .controls #arpClear{flex:none;align-self:center}
+#lfoControls{grid-template-columns:repeat(auto-fit,minmax(min(100%,165px),1fr));gap:8px}
+.lfo-controls{min-width:0}
+@media(max-width:420px){.performance-panel .controls{gap:5px 8px}.performance-panel .controls label{min-width:min(100%,105px)}#lfoControls{grid-template-columns:repeat(auto-fit,minmax(min(100%,145px),1fr))}.lfo-controls{grid-template-columns:minmax(0,1fr)}}
+
+/* Commodore 64C enclosure: warm molded-plastic shell, graphite keys and
+   recessed charcoal instrument panels. Deliberately replaces the navy palette. */
+:root{color:#242724;background:#bdb6a6;color-scheme:light}
+body{background:#bdb6a6}
+main{background:#d6cfbd;border:6px solid #a69d8b;box-shadow:inset 0 0 0 3px #eee9dc}
+header{background:#e9e4d8;color:#222724;border:3px solid #a69d8b;border-top:6px solid #f5f0e5;border-bottom:4px solid #9d9689;box-shadow:inset 0 0 0 2px #d4cbb7}
+h1,h2{color:#252923}
+.subtitle{color:#414941}
+.panel,.keyboard-panel{background:#e9e4d8;border:3px solid #a69d8b;border-top-color:#f5f0e5;box-shadow:inset 0 0 0 2px #d6cfbd}
+button,select,.master-tempo input{background:#575b58;color:#fff;border:2px solid #343a39;box-shadow:inset 0 2px 0 #888e89}
+button.primary,button[aria-selected="true"],.tabbar button[aria-selected="true"]{background:#343b39;color:#fff;border-color:#151b19;box-shadow:inset 0 2px 0 #707772}
+button:active{background:#262d2b;color:#fff}
+button:focus-visible,input:focus-visible,select:focus-visible{outline-color:#145d9d}
+.statusbar{background:#d6cfbd;border-color:#9b9384}
+.statusbar p,small,p,footer{color:#3d453e}
+.section-divider{background:repeating-linear-gradient(90deg,#8b8b80 0 8px,transparent 8px 16px)}
+label>input[type=range]{accent-color:#3e5550}
+label>output,.modulated-value{color:#71470c}
+
+input[type=checkbox]{background:#6c736e;border-color:#333b36}
+input[type=checkbox]::before{background:#fff}
+input[type=checkbox]:checked{background:#236b58;border-color:#173b31}
+.lfo-controls{background:#d6cfbd;border:2px solid #9b9384}
+.lfo-controls legend{color:#303b35}
+.key{background:#f5f0e5;color:#202622;border:2px solid #8e918a;border-bottom:4px solid #a5a7a0}
+.key.black{background:#454b49;color:#fff;border-color:#252c29;border-bottom:4px solid #222927}
+.key.down{background:#d8b76b;color:#242724;border-bottom-color:#96743a}
+.sid-spinner:not([hidden]){border-color:#7d857e;border-top-color:#244f49}
+/* Hardware-inspired sans-serif labeling rather than C64 screen typography. */
+:root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+h1{font-size:clamp(18px,2.2vw,26px);font-weight:800;letter-spacing:.045em;text-transform:uppercase}
+h2{font-weight:750;letter-spacing:.025em;text-transform:uppercase}
+.lfo-controls legend{font-weight:750;text-transform:uppercase}
+button,select,.master-tempo input{font-family:inherit}
+/* Recessed hardware power lamp: dark when off, amber while loading/ready,
+   illuminated green only when the SID audio context is running. */
+.sid-led{display:inline-block;flex:none;width:14px;height:14px;border-radius:50%;border:2px solid #555b54;background:#454a45;box-shadow:inset 0 2px 3px #1d221f,0 1px 0 #fff}
+.sid-led[data-state="loading"],.sid-led[data-state="ready"]{background:#e5a43b;border-color:#85612d;box-shadow:inset 0 1px 2px #fff2bd,0 0 5px #d9a64e}
+.sid-led[data-state="on"]{background:#43ed77;border-color:#237b45;box-shadow:inset 0 1px 2px #d3ffe0,0 0 7px #42e978,0 0 2px #247c46}
+/* Hardware-style unison switch; preserve voices selection in both modes. */
+.voice-allocation{margin:4px 0 9px;min-width:0}
+.voice-allocation h3{font-size:12px;font-weight:650;margin:0 0 4px;color:inherit}
+.allocation-selectors{display:flex;flex-wrap:wrap;align-items:center;gap:4px 15px}
+.allocation-selectors label{display:inline-flex;flex:none;justify-content:flex-start;gap:5px;white-space:nowrap;min-width:0}
+.allocation-selectors select{min-height:44px;width:max-content;max-width:none;min-width:0;padding:6px 23px 6px 8px;font-size:12px}
+.allocation-detune{display:flex;width:100%;max-width:100%;gap:10px;min-width:0}
+.allocation-detune input[type=range]{flex:1;min-width:64px;max-width:none}
+.allocation-detune output{min-width:36px}
+.voice-capacity{display:block;font-size:11px;margin:3px 0 6px;opacity:.85}
+@media(max-width:520px){.allocation-selectors{gap:2px 9px}.allocation-selectors label{font-size:11px}.allocation-selectors select{font-size:11px;padding-right:20px}}
+#detune:disabled{opacity:.45;cursor:not-allowed}
+/* Keep labels and status text clear of recessed panel edges, including
+   compact landscape layouts where the original padding becomes very small. */
+header{padding:8px 12px;min-width:0}
+.statusbar{padding:3px 10px;min-width:0}
+.workspace .panel{padding:clamp(10px,1.25vw,16px)}
+.lfo-controls{padding:8px 10px 9px;min-width:0}
+.lfo-controls legend{padding:0 5px;margin-left:2px}
+.keyboard-panel{padding:9px 12px 12px}
+@media(max-height:760px){.workspace .panel{padding:9px 11px}.lfo-controls{padding:7px 8px 8px}}
+@media(max-width:520px){header{padding:7px 9px}.statusbar{padding:3px 8px}.workspace .panel{padding:9px 10px}.lfo-controls{padding:7px 8px 8px}}
+/* Compact hardware fader for master tempo with always-visible BPM readout. */
+.master-tempo{display:flex;align-items:center;gap:5px;white-space:nowrap;font-size:11px}
+.master-tempo input[type=range]{width:clamp(72px,8vw,110px);max-width:none;min-width:65px;height:28px;padding:0;border:0;background:transparent;box-shadow:none;accent-color:#454b49;touch-action:pan-x}
+.master-tempo output{min-width:28px;text-align:right;font-variant-numeric:tabular-nums;color:#343b39;font-weight:700}
+@media(max-width:520px){.master-tempo input[type=range]{width:72px}}
+/* Size the LFO grid to the actual panel instead of the viewport:
+   an iPad landscape control panel occupies approximately half the width. */
+.performance-panel{container-type:inline-size}
+#lfoControls{grid-template-columns:minmax(0,1fr)}
+@container (min-width:480px){#lfoControls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container (min-width:800px){#lfoControls{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.lfo-controls label{min-height:44px;font-size:12px;gap:7px}
+.lfo-controls select{min-height:40px;font-size:12px;max-width:72%}
+.lfo-controls input[type=range]{height:40px;touch-action:pan-x}
+.lfo-controls output{font-size:11px}
+@media(max-width:520px){header{display:grid;grid-template-columns:minmax(0,1fr);gap:5px}header .controls{justify-content:space-between}}
+/* Arp-generated note: separate from the gold physical-press state. */
+.key.arp-playing:not(.down){background:#7bcabb;color:#16362d;border-bottom-color:#2d7465;box-shadow:inset 0 0 0 3px #236858}
+.key.black.arp-playing:not(.down){background:#2d7768;color:#fff;border-bottom-color:#22584c;box-shadow:inset 0 0 0 3px #a1eedf}
+.key.down.arp-playing{box-shadow:inset 0 0 0 3px #236858}
+/* Fix octave-navigation position independent of currently sounding notes. */
+.keyboard-heading{display:grid;grid-template-columns:minmax(0,1fr) max-content max-content;min-width:0}
+.keyboard-heading .octave-controls{min-width:max-content;white-space:nowrap;justify-self:end}
+/* Compact recording transport, always accessible from either tab. */
+.record-format{font-size:11px;gap:4px;white-space:nowrap}
+.record-format select{min-height:36px;padding:5px 7px;font-size:11px}
+#recordToggle{min-height:38px;white-space:nowrap;padding:6px 10px}
+#recordToggle[data-recording="true"]{background:#a74330;color:#fff;border-color:#9c392c}
+#recordStatus{font-size:11px;min-width:0;max-width:32%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#3d453e}
+#recordDownload{font-size:11px;font-weight:700;color:#155649;text-decoration:underline;text-underline-offset:2px;white-space:nowrap}
+#recordDownload[hidden]{display:none!important}
+@media(max-width:520px){#recordStatus{max-width:35%}.record-format select{min-height:36px}}
+/* Preset dialog reuses the existing Sound palette and controls. */
+#presetOpen{max-width:175px;min-height:38px;padding:6px 10px;display:inline-flex;align-items:center;gap:6px}
+#presetCurrent{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:140px}
+#presetDialog{width:min(760px,calc(100vw - 24px));max-width:100%;max-height:calc(100dvh - 32px);margin:auto;padding:clamp(12px,2vw,20px);color:#f3f5fa;background:#1b2736;border:1px solid #52647d;border-radius:13px;box-shadow:0 20px 65px #0009;overflow-y:auto;overscroll-behavior:contain}
+#presetDialog:not([open]){display:none}
+#presetDialog h2,#presetDialog h3{color:#f3f5fa}
+#presetDialog small,#presetDialog .preset-empty,#presetDialog .preset-item-category{color:#c8d6e5}
+#presetDialog::backdrop{background:#090f18c9}
+.preset-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.preset-dialog-header h2{margin:0;font-size:16px}
+#presetClose{min-height:40px;padding:5px 12px;flex:none}
+.preset-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-height:0}
+.preset-group{min-width:0;border:1px solid #34455a;background:#162232;border-radius:9px;padding:10px}
+.preset-group h3{font-size:13px;margin:0 0 4px}
+.preset-group small{display:block;font-size:11px;margin-bottom:8px}
+.preset-list{display:flex;flex-direction:column;gap:4px;max-height:min(39dvh,330px);min-height:70px;overflow-y:auto;overscroll-behavior:contain}
+.preset-item{width:100%;min-height:40px;padding:8px 10px;text-align:left;border-radius:7px;white-space:normal;overflow-wrap:anywhere;font-size:12px}
+.preset-item[aria-current="true"]{border-color:#f3bd78;background:#80522e}
+.preset-item-category{display:block;color:#b6c2d2;font-size:10px;margin-top:2px}
+.preset-empty{font-size:11px;padding:8px;color:#b6c2d2}
+.preset-actions{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 8px}
+.preset-actions button{min-height:40px;padding:7px 9px;font-size:12px}
+.preset-actions button:disabled{opacity:.48}
+#presetStatus{font-size:11px;color:#b6c2d2;display:block;line-height:1.4;margin:7px 0}
+#presetExportLink:not([hidden]){display:inline-block;color:#b8edda;font-size:12px;margin:4px 0}
+@media(max-width:560px){.preset-columns{grid-template-columns:minmax(0,1fr)}.preset-list{max-height:26dvh}#presetOpen{max-width:130px}#presetCurrent{max-width:98px}}
+/* Active modulation is green, the editable base number stays neutral. */
+label>.base-value{color:#424b43;font-size:10px;min-width:max-content;text-align:right}
+label>.modulated-value{color:#236b58;font-size:10px;font-weight:700;min-width:max-content;text-align:right}
+label:has(.slider-stack){gap:4px}
+.allocation-detune .slider-stack{max-width:none}
+</style><link rel="stylesheet" href="./src/seq-ui.css?v=0.1.53+20261105T193736982Z"></head><body><main>
+<header><div><h1>Project6581 · PR #55 preview</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="presetOpen" type="button" aria-haspopup="dialog" aria-controls="presetDialog" aria-label="Open preset library"><span id="presetCurrent">Current sound</span><span aria-hidden="true">▾</span></button><button id="sidStart" class="primary" hidden>Retry SID initialization</button><label class="master-tempo">Master BPM <input id="masterBpm" type="range" min="40" max="240" step="1" value="120" aria-label="Master tempo in beats per minute"><output id="masterBpmValue" for="masterBpm">120</output></label><label class="record-format">Format <select id="recordFormat" aria-label="Recording format"><option value="wav">WAV</option><option value="m4a">M4A</option></select></label><button id="recordToggle" type="button" disabled>● Record</button><button id="panic">Stop all</button></div></header>
+<dialog id="presetDialog" aria-labelledby="presetDialogTitle">
+ <div class="preset-dialog-header"><h2 id="presetDialogTitle">Preset library</h2><button id="presetClose" type="button" aria-label="Close preset library">Close</button></div>
+ <div class="preset-columns">
+  <section class="preset-group" aria-labelledby="factoryPresetsTitle"><h3 id="factoryPresetsTitle">Factory presets</h3><small>Built-in sounds · read-only</small><div id="factoryPresetList" class="preset-list" aria-label="Factory presets"></div></section>
+  <section class="preset-group" aria-labelledby="userPresetsTitle"><h3 id="userPresetsTitle">My presets</h3><small>Saved locally in this browser</small><div id="userPresetList" class="preset-list" aria-label="My presets"></div></section>
+ </div>
+ <div class="preset-actions" aria-label="Preset actions">
+  <button id="presetSave" type="button" disabled>Save</button><button id="presetSaveAs" type="button">Save as…</button><button id="presetRename" type="button" disabled>Rename</button><button id="presetDelete" type="button" disabled>Delete</button>
+  <button id="presetExport" type="button">Export</button><button id="presetExportBank" type="button">Export bank</button><button id="presetImport" type="button">Import…</button>
+ </div>
+ <input id="presetFile" type="file" accept=".json,application/json" hidden>
+ <output id="presetStatus" role="status" aria-live="polite">Choose a factory sound or save your own.</output><a id="presetExportLink" hidden>Download preset</a>
+</dialog>
+<div class="statusbar"><span id="sidLed" class="sid-led" data-state="off" role="img" aria-label="SID engine off"></span><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine"></span><p id="sidEngineStatus" role="status">Initializing authentic SID…</p><output id="recordStatus" role="status" aria-live="polite"></output><a id="recordDownload" hidden>Download recording</a></div>
+<div class="tabbar" role="tablist" aria-label="Editor sections"><button id="tabVoice" type="button" role="tab" aria-selected="true" aria-controls="voicePanel">SYNTH</button><button id="tabPlay" type="button" role="tab" aria-selected="false" aria-controls="playPanel">ARP / SEQ</button></div>
+<div class="workspace" id="workspace" data-tab="voice">
+<section class="panel voice-panel" id="voicePanel" role="tabpanel" aria-labelledby="tabVoice" aria-label="Sound controls">
+<h2>Sound</h2>
+<div class="voice-allocation" aria-label="Voice allocation">
+ <h3>Voice allocation</h3>
+ <div class="allocation-selectors">
+  <label>Assign <select id="voiceAssign" aria-label="Voice assignment"><option value="mono" selected>Mono</option><option value="legato">Legato</option><option value="duo">Duo</option><option value="poly">Poly</option></select></label>
+  <label>Voices <select id="voiceCount" aria-label="Total SID oscillators"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label>
+  <label>Unison <select id="unisonCount" aria-label="Oscillators per note"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label>
+ </div>
+ <label class="allocation-detune">Detune <input id="detune" type="range" min="0" max="100" value="12" step="1" aria-label="Unison pitch detune"><output id="detuneValue" class="base-value">12¢</output></label>
+ <small id="voiceCapacity" class="voice-capacity" role="status" aria-live="polite">Up to 1 note · 1 oscillator</small>
+</div>
+<div class="voice-grid"><label>Chip <select id="chip"><option value="6581">MOS 6581</option><option value="8580">MOS 8580</option></select></label><label>Volume <input id="volume" type="range" min="0" max="100" value="55"><output class="base-value">55%</output></label><label>Cutoff <input id="cutoff" type="range" min="50" max="10000" value="7000"><output class="base-value">7000 Hz</output></label><label>Resonance <input id="resonance" type="range" min="0" max="100" value="10"><output class="base-value">10%</output></label><label>Filter <select id="mode"><option value="lowpass">Low-pass</option><option value="bandpass">Band-pass</option><option value="highpass">High-pass</option></select></label></div>
+<div class="section-divider"></div><div id="voices" class="voices"></div>
+</section>
+<section class="panel performance-panel" id="playPanel" role="tabpanel" aria-labelledby="tabPlay" aria-label="Arpeggiator controls">
+<h2 id="gameArpTitle">GAME ARP STEP SEQUENCER</h2>
+<div class="seq-transport" aria-label="Game Arp transport">
+ <button type="button" id="seqRun" title="Preview the custom pattern at the current keyboard octave">▶ Preview</button>
+ <button type="button" id="seqStop" title="Stop the Game Arp">■ Stop</button>
+ <label>Enabled <input id="gameArpOn" type="checkbox" checked></label>
+ <label>Latch <input id="arpLatch" type="checkbox"></label>
+ <label>Steps <select id="seqLength" aria-label="Step sequencer length"><option value="4">4</option><option value="8">8</option><option value="16" selected>16</option></select></label>
+ <label>Rate <select id="gameRate" aria-label="Game Arp pattern rate"><option value="0.25">1/1</option><option value="0.5">1/2</option><option value="1">1/4</option><option value="2">1/8</option><option value="4" selected>1/16</option><option value="8">1/32</option><option value="16">1/64</option><option value="32">1/128</option></select></label>
+ <label>Sync <input id="arpSync" type="checkbox" checked></label>
+ <label>Pattern <select id="gameArpStyle"><option value="action">Action</option><option value="adventure">Adventure</option><option value="arcade">Arcade</option><option value="custom">Custom steps</option></select></label>
+ <button type="button" id="seqReset" title="Reset the editable custom phrase">Reset steps</button>
+</div>
+<section class="seq-editor" aria-label="Editable Game Arp steps">
+ <div class="seq-workspace">
+  <aside class="seq-sidebar">
+   <div><strong class="seq-accent">NOTE</strong><p>Pitch offsets<br>−12 to +24 semitones</p></div>
+   <div><strong class="seq-accent">GATE</strong><p>Tap to play or rest</p></div>
+   <div><strong class="seq-accent">LENGTH</strong><p>25–100% of each step</p></div>
+  </aside>
+  <div class="seq-grid-scroller" tabindex="0" aria-label="16-step pitch, gate and note-length editor; scroll horizontally on narrow screens">
+   <div id="seqGrid" class="seq-grid" role="group" aria-label="Custom Game Arp step controls"></div>
+  </div>
+ </div>
+ <p class="seq-summary" id="seqStatus">Edit pitch, gate and length. Moving a step selects Custom steps automatically. Preview runs at the current octave until stopped.</p>
+</section>
+<details class="seq-subsection" id="seqExtras"><summary>Root Arpeggiator &amp; 3 LFOs</summary><h2>Arpeggiator · Root</h2><div class="controls"><label>Enabled <input id="arpOn" type="checkbox"></label><label>Root order <select id="arpPattern"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label><label>Root rate <select id="arpRate"><option value="0.25">1/1</option><option value="0.5">1/2</option><option value="1" selected>1/4</option><option value="2">1/8</option><option value="4">1/16</option><option value="8">1/32</option><option value="16">1/64</option><option value="32">1/128</option></select></label><label class="arp-local-bpm" hidden>Arp BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label><button id="arpClear">Clear latch</button></div><small id="arpStatus">Arp off</small><div class="section-divider"></div><section class="lfo-panel" aria-label="Low frequency oscillators"><h2>Modulation · LFOs</h2><div id="lfoControls"></div></section>
+</details></section></div>
+<section class="panel keyboard-panel" id="keyboardPanel" aria-label="Keyboard"><div class="keyboard-heading"><h2>Keyboard</h2><div class="octave-controls"><button id="octaveDown" type="button" aria-label="Previous octave">−</button><output id="octaveLabel">C3–C4</output><button id="octaveUp" type="button" aria-label="Next octave">+</button></div><small>Touch and hold · layered unison</small><button type="button" class="keyboard-collapse" id="keyboardToggle" aria-expanded="true" aria-controls="keyboard">Hide keyboard ▲</button></div><div id="keyboard" class="keyboard"></div></section>
+<footer><p id="buildInfo">Project6581 v0.1.53 · Built 2026-11-05T19:37:36.982Z (UTC)</p><details id="audioTimingDetails"><summary>Audio timing</summary><div id="audioTimingReport" role="status">Press a key to measure playback dispatch.</div></details><span class="diagnostics" id="sidLatencyStatus">Browser audio latency: not yet available.</span><span class="diagnostics" id="sidPlaybackStatus" role="status" aria-live="off">SID playback diagnostics appear here after enabling authentic SID.</span></footer>
+</main><script type="module">
+import {createArpKeyVisual} from "./src/arp-key-visual.js?v=0.1.53+20261105T193736982Z";
+import {modulationTrack,formatControlValue,SLIDER_TARGETS} from "./src/modulation-track.js?v=0.1.53+20261105T193736982Z";
+import {createSidRecorder,prepareRecordingDownload} from "./src/sid-recorder.js?v=0.1.53+20261105T193736982Z";
+import {selectRoot,patternPitch,stepMilliseconds} from "./src/arp-composition.js?v=0.1.53+20261105T193736982Z";
+import {defaultSequence,validateSequence,sequenceEvent} from "./src/game-step-sequencer.js?v=0.1.53+20261105T193736982Z";
+import {FACTORY_PRESETS,PRESET_VERSION,cleanPresetName,validatePresetSettings,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,importPresetFile} from "./src/preset-library.js?v=0.1.53+20261105T193736982Z";
+
+const $=id=>document.getElementById(id);
+const audioTiming={source:null,roundTripMs:null,renderAvgMs:null,renderMaxMs:null,renderBudgetMs:null,baseMs:null,outputMs:null};
+function updateAudioTimingReport(){
+ const show=value=>Number.isFinite(value)?value.toFixed(1)+' ms':'not reported';
+ $('audioTimingReport').textContent=[
+  'Note dispatch → AudioWorklet acknowledgment: '+show(audioTiming.roundTripMs)+(audioTiming.source?' ('+audioTiming.source+')':''),
+  'WASM render per block: '+show(audioTiming.renderAvgMs)+' average / '+show(audioTiming.renderMaxMs)+' max',
+  'Audio render block budget: '+show(audioTiming.renderBudgetMs),
+  'Browser base/output latency: '+show(audioTiming.baseMs)+' / '+show(audioTiming.outputMs),
+  'Processing measurements only, not speaker latency. Screen recording A/V sync can differ.'
+ ].join('\n');
+}
+updateAudioTimingReport();
+$('audioTimingDetails').addEventListener('toggle',()=>{
+ sidAudio?.setTimingEnabled?.($('audioTimingDetails').open);
+ if($('audioTimingDetails').open)updateAudioTimingReport();
+});
+let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null,activeSidModel=null;
+const settings=[{wave:'square',attack:0.002,decay:0.12,sustain:0.8,release:0.12,pulse:50,pwmDepth:0,pwmRate:1,enabled:true}];
+let currentSidSettings={...settings[0]};
+const ranges=[['attack','Attack',0,2,.01],['decay','Decay',0,3,.01],['sustain','Sustain',0,1,.01],['release','Release',.01,4,.01],['pulse','Pulse width',5,95,1],['pwmDepth','PWM depth',0,45,1],['pwmRate','PWM rate (Hz)',.1,12,.1]];
+function renderVoiceControls(){
+  const s=settings[0],el=document.createElement('section');
+  el.className='panel';
+  el.innerHTML='<h2>SID voice</h2><div class="voice-grid"><label>Enabled <input type="checkbox" data-prop="enabled"></label><label>Waveform <select data-prop="wave"><option value="triangle">Triangle</option><option value="sawtooth">Sawtooth</option><option value="square">Pulse</option><option value="noise">Noise</option></select></label>'+ranges.map(([p,name,min,max,step])=>'<label data-control="'+p+'">'+name+' <input data-prop="'+p+'" type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+s[p]+'"><output class="base-value">'+formatControlValue(p,s[p])+'</output></label>').join('')+'</div>';
+  $('voices').replaceChildren(el);
+  el.querySelector('[data-prop="enabled"]').checked=s.enabled;
+  el.querySelector('[data-prop="wave"]').value=s.wave;
+  const updatePulse=()=>el.querySelectorAll('[data-control="pulse"],[data-control="pwmDepth"],[data-control="pwmRate"]').forEach(label=>{label.hidden=s.wave!=='square'});
+  el.querySelectorAll('[data-prop]').forEach(inp=>inp.addEventListener('input',()=>{
+    s[inp.dataset.prop]=inp.type==='checkbox'?inp.checked:inp.type==='range'?Number(inp.value):inp.value;
+    const baseOutput=inp.closest('label')?.querySelector('output:not(.modulated-value)');
+    if(baseOutput)baseOutput.textContent=formatControlValue(inp.dataset.prop,Number(inp.value));
+    if(inp.dataset.prop==='wave')updatePulse();
+    // Always restore the base settings immediately when a waveform or slider changes.
+    updateModulation();
+  }));
+  updatePulse();
+}
+renderVoiceControls();
+const lfoState=Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',phase:0,seed:i}));
+const lfoTargets=['cutoff','resonance','volume','pulse','detune','attack','decay','sustain','release','pwmDepth','pwmRate'];
+const lfoTargetNames={
+ cutoff:'Filter cutoff',resonance:'Resonance',volume:'Volume',pulse:'Pulse width',
+ detune:'Unison detune',attack:'Attack',decay:'Decay',sustain:'Sustain',release:'Release',
+ pwmDepth:'PWM depth',pwmRate:'PWM rate'
+};
+const syncedRates=[{value:0.25,label:'4/1'},{value:0.5,label:'2/1'},...([1,2,4,8,16,32].map(value=>({value,label:'1/'+value})))];
+function renderLfos(){
+ const root=$('lfoControls');root.replaceChildren();
+ lfoState.forEach((lfo,index)=>{
+  const group=document.createElement('fieldset');group.className='lfo-controls';
+  const legend=document.createElement('legend');legend.textContent='LFO '+(index+1);group.append(legend);
+  const fields=[['enabled','On'],['sync','Sync'],['wave','Wave'],['target','Target'],['rate','Rate'],['depth','Depth']];
+  for(const [prop,label] of fields){
+   const row=document.createElement('label');row.textContent=label+' ';
+   const isSwitch=prop==='enabled'||prop==='sync';
+   const isSelect=prop==='wave'||prop==='target'||(prop==='rate'&&lfo.sync);
+   const input=document.createElement(isSelect?'select':'input');
+   if(isSwitch){input.type='checkbox';input.checked=Boolean(lfo[prop]);}
+   else if(isSelect){
+    const choices=prop==='wave'?['sine','triangle','sawtooth','square','sample-hold']:prop==='target'?lfoTargets:syncedRates;
+    choices.forEach(value=>{const option=document.createElement('option');option.value=String(prop==='rate'?value.value:value);option.textContent=prop==='rate'?value.label:prop==='target'?lfoTargetNames[value]||value:value;input.append(option)});
+    input.value=String(prop==='rate'?lfo.syncDivision:lfo[prop]);
+   }else{
+    input.type='range';input.min=prop==='rate'?'0.05':'0';input.max=prop==='rate'?'20':'100';input.step=prop==='rate'?'0.05':'1';input.value=prop==='rate'?lfo.rate:lfo.depth*100;
+   }
+   input.setAttribute('aria-label','LFO '+(index+1)+' '+label+(prop==='rate'?(lfo.sync?' division':' Hz'):''));
+   const output=isSwitch||isSelect?null:document.createElement('output');
+   if(output)output.textContent=prop==='rate'?Number(input.value).toFixed(2)+' Hz':input.value+'%';
+   input.addEventListener(isSwitch||isSelect?'change':'input',()=>{
+    if(isSwitch)lfo[prop]=input.checked;
+    else if(prop==='rate'&&lfo.sync)lfo.syncDivision=Number(input.value);
+    else if(prop==='depth')lfo.depth=Number(input.value)/100;
+    else lfo[prop]=isSelect?input.value:Number(input.value);
+    if(output)output.textContent=prop==='rate'?Number(input.value).toFixed(2)+' Hz':input.value+'%';
+    if(prop==='sync'){renderLfos();}
+    updateModulation();
+   });
+   row.append(input);if(output)row.append(output);group.append(row);
+  }
+  root.append(group);
+ });
+}
+renderLfos();
+for(const [name,id] of [['voice','tabVoice'],['play','tabPlay']]){
+  $(id).addEventListener('click',()=>{
+    $('workspace').dataset.tab=name;
+    $('tabVoice').setAttribute('aria-selected',String(name==='voice'));
+    $('tabPlay').setAttribute('aria-selected',String(name==='play'));
+  });
+}
+const activeOwners=new Map();
+function play(note,source='key:'+note){
+ if(!sidController||!settings[0].enabled)return;
+ const prior=activeOwners.get(source);
+ if(prior)sidController.noteOff(prior.note,prior.token);
+ const token=sidController.noteOn(note,()=>currentSidSettings);
+ // Deliver complete note-on registers before yielding the input handler.
+ // The diagnostic distinguishes message/render delays from output buffering.
+ sidAudio?.noteDispatched?.(source.startsWith('key:')?'keyboard':source);
+ activeOwners.set(source,{note,token});
+}
+function stop(note,source='key:'+note){
+ const owner=activeOwners.get(source);
+ if(!owner||owner.note!==note)return;
+ activeOwners.delete(source);
+ sidController?.noteOff(note,owner.token);
+}
+function updateUnison(){
+ const voices=Number($('voiceCount').value),selector=$('unisonCount');
+ for(const option of selector.options)option.disabled=Number(option.value)>voices;
+ if(Number(selector.value)>voices)selector.value=String(voices);
+ const layers=Number(selector.value),mode=$('voiceAssign').value;
+ if(sidController&&(sidController.voiceCount!==voices||sidController.unisonCount!==layers||sidController.mode!==mode)){
+  // Assignments change only after releasing owned notes and running generators.
+  panic();arp.held.clear();arp.latched.clear();
+ }
+ sidController?.configure({voiceCount:voices,unisonCount:layers,mode,detune:Number($('detune').value)});
+ $('detune').disabled=layers===1;
+ $('detuneValue').textContent=formatControlValue('detune',Number($('detune').value));
+ const max=mode==='mono'||mode==='legato'?1:mode==='duo'?Math.min(2,Math.floor(voices/layers)):Math.floor(voices/layers);
+ $('voiceCapacity').textContent='Up to '+max+' '+(max===1?'note':'notes')+' · '+voices+' '+(voices===1?'oscillator':'oscillators');
+ updateModulation();
+}
+['voiceAssign','voiceCount','unisonCount','detune'].forEach(id=>$(id).addEventListener('input',updateUnison));
+updateUnison();
+function panic(){gameStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.root=null;directOwned.clear();activeOwners.clear();arpKeyVisual.clear();sidController?.panic()}
+$('panic').addEventListener('click',()=>{
+ $('gameArpOn').checked=false;$('arpOn').checked=false;
+ lfoState.forEach(lfo=>{lfo.enabled=false});renderLfos();updateModulation();
+ panic();arp.held.clear();arp.latched.clear();arp.step=0;game.step=0;seqPreview=false;setSeqTransportLabel();
+ sidController?.panic();
+ $('arpStatus').textContent='Arps and LFOs off';
+});window.addEventListener('blur',()=>{panic();arp.held.clear();seqPreview=false;setSeqTransportLabel()});
+const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+const arp={held:new Set(),latched:new Set(),timer:null,step:0,root:null,last:null};
+const directOwned=new Set(); // Physical notes sounding independently of either generator.
+const game={timer:null,last:null,step:0,gateTimer:null};
+let seqState=defaultSequence(),seqPreview=false,activeSeqStep=-1;
+function clearStepHighlight(){
+ if(activeSeqStep<0)return;
+ const previous=$('seqGrid').children[activeSeqStep];
+ previous?.classList.remove('is-playing');previous?.removeAttribute('aria-current');
+ activeSeqStep=-1;
+}
+function highlightStep(index){
+ if(activeSeqStep===index)return;
+ clearStepHighlight();
+ const element=$('seqGrid').children[index];
+ if(!element)return;
+ element.classList.add('is-playing');element.setAttribute('aria-current','step');
+ activeSeqStep=index;
+}
+function setSeqTransportLabel(){
+ $('seqRun').textContent=seqPreview?'▶ Previewing':'▶ Preview';
+ $('seqRun').setAttribute('aria-pressed',String(seqPreview));
+}
+function renderSequenceSteps(){
+ const fragment=document.createDocumentFragment();
+ seqState.steps.forEach((step,index)=>{
+  const cell=document.createElement('div');cell.className='seq-step';cell.dataset.step=String(index);
+  cell.hidden=index>=seqState.length;
+  const number=document.createElement('span');number.className='seq-number';number.textContent=String(index+1);
+  const pitchWrap=document.createElement('div');pitchWrap.className='seq-pitch-wrap';
+  const pitch=document.createElement('input');pitch.type='range';pitch.className='seq-note';
+  pitch.min='-12';pitch.max='24';pitch.step='1';pitch.value=String(step.offset);
+  pitch.setAttribute('aria-label','Step '+(index+1)+' pitch offset in semitones');
+  const value=document.createElement('output');value.className='seq-note-value';
+  value.textContent=(step.offset>0?'+':'')+step.offset;
+  pitch.addEventListener('input',()=>{
+   seqState.steps[index].offset=Number(pitch.value);
+   value.textContent=(Number(pitch.value)>0?'+':'')+pitch.value;
+   modifiedStepPhrase();
+  });
+  pitchWrap.append(pitch,value);
+  const gate=document.createElement('button');gate.type='button';gate.className='seq-gate';
+  function displayGate(){
+   const enabled=seqState.steps[index].gate;
+   gate.textContent=enabled?'ON':'REST';
+   gate.setAttribute('aria-pressed',String(enabled));
+   gate.setAttribute('aria-label','Step '+(index+1)+' gate '+(enabled?'on':'rest'));
+  }
+  displayGate();
+  gate.addEventListener('click',()=>{
+   seqState.steps[index].gate=!seqState.steps[index].gate;
+   displayGate();modifiedStepPhrase();
+  });
+  const lengthWrap=document.createElement('div');lengthWrap.className='seq-length-group';
+  const length=document.createElement('input');length.type='range';length.className='seq-duration';
+  length.min='25';length.max='100';length.step='5';length.value=String(step.duration);
+  length.setAttribute('aria-label','Step '+(index+1)+' note length percent');
+  const lengthValue=document.createElement('output');lengthValue.className='seq-duration-value';
+  lengthValue.textContent=step.duration+'%';
+  length.addEventListener('input',()=>{
+   seqState.steps[index].duration=Number(length.value);
+   lengthValue.textContent=length.value+'%';
+   modifiedStepPhrase();
+  });
+  lengthWrap.append(length,lengthValue);
+  cell.append(number,pitchWrap,gate,lengthWrap);
+  fragment.append(cell);
+ });
+ $('seqGrid').replaceChildren(fragment);
+ $('seqLength').value=String(seqState.length);
+ activeSeqStep=-1;
+}
+function modifiedStepPhrase(){
+ $('gameArpStyle').value='custom';
+ $('seqStatus').textContent='Custom '+seqState.length+'-step phrase · changes take effect on the next step.';
+ refreshPresetDirty();
+}
+renderSequenceSteps();
+$('seqLength').addEventListener('change',()=>{
+ seqState.length=Number($('seqLength').value);
+ renderSequenceSteps();modifiedStepPhrase();gameRestart();
+});
+$('seqReset').addEventListener('click',()=>{
+ if(!window.confirm('Reset all 16 custom steps?'))return;
+ seqState=defaultSequence();renderSequenceSteps();modifiedStepPhrase();gameRestart();
+});
+$('seqRun').addEventListener('click',()=>{
+ seqPreview=true;$('gameArpStyle').value='custom';$('gameArpOn').checked=true;
+ setSeqTransportLabel();restartGenerators();refreshPresetDirty();
+});
+$('seqStop').addEventListener('click',()=>{
+ seqPreview=false;$('gameArpOn').checked=false;
+ setSeqTransportLabel();restartGenerators();refreshPresetDirty();
+});
+setSeqTransportLabel();
+const gameEnabled=()=>$('gameArpOn').checked;
+const arpEnabled=()=>$('arpOn').checked;
+const activeNotes=()=>[...($('arpLatch').checked&&arp.latched.size?arp.latched:arp.held)];
+const arpNotes=()=>activeNotes().sort((a,b)=>a-b);
+function gameStop(){
+ if(game.timer!==null){clearInterval(game.timer);game.timer=null}
+ if(game.gateTimer!==null){clearTimeout(game.gateTimer);game.gateTimer=null}
+ if(game.last!==null){stop(game.last,'game');game.last=null}
+ clearStepHighlight();
+ arpKeyVisual.clear();
+}
+function arpStopVoice(){
+ if(arp.last!==null){stop(arp.last,'arp');arp.last=null}
+ arpKeyVisual.clear();
+}
+function gameRoot(){
+ const held=activeNotes();
+ if(arpEnabled()&&arp.root!==null)return arp.root;
+ return held.length?held[held.length-1]:seqPreview?(keyboardOctave+1)*12:null;
+}
+function gameTick(){
+ const root=gameRoot();
+ if(root===null){gameStop();$('arpStatus').textContent='No notes held';return}
+ if(game.gateTimer!==null){clearTimeout(game.gateTimer);game.gateTimer=null}
+ if(game.last!==null)stop(game.last,'game');
+ if($('gameArpStyle').value==='custom'){
+  const event=sequenceEvent(root,seqState,game.step++);
+  highlightStep(event.index);
+  game.last=null;
+  if(!event.gate){
+   arpKeyVisual.clear();
+   $('arpStatus').textContent='Custom step '+(event.index+1)+' · rest';
+   return;
+  }
+  game.last=event.note;
+  play(game.last,'game');arpKeyVisual.show(game.last);
+  $('arpStatus').textContent='Custom step '+(event.index+1)+' · '+names[root%12]+(Math.floor(root/12)-1);
+  if(event.duration<100){
+   const sounding=event.note,clock=game.step;
+   const bpm=Number($('arpSync').checked?$('masterBpm').value:$('arpBpm').value);
+   game.gateTimer=setTimeout(()=>{
+    if(game.step!==clock||game.last!==sounding)return;
+    stop(sounding,'game');game.last=null;arpKeyVisual.clear();game.gateTimer=null;
+   },stepMilliseconds(bpm,$('gameRate').value)*event.duration/100);
+  }
+  return;
+ }
+ clearStepHighlight();
+ game.last=patternPitch(root,$('gameArpStyle').value,game.step++);
+ play(game.last,'game');arpKeyVisual.show(game.last);
+ $('arpStatus').textContent='Game Arp · '+$('gameArpStyle').selectedOptions[0].text+
+  ' · root '+names[root%12]+(Math.floor(root/12)-1);
+}
+function arpTick(){
+ const notes=arpNotes();
+ if(!notes.length){
+  arp.root=null;
+  if(!gameEnabled())arpStopVoice();
+  $('arpStatus').textContent='No notes held';return;
+ }
+ const note=selectRoot(notes,$('arpPattern').value,arp.step++);
+ arp.root=note;
+ if(gameEnabled())return; // The separate Game Arp clock voices this root.
+ arpStopVoice();
+ arp.last=note;play(note,'arp');arpKeyVisual.show(note);
+ $('arpStatus').textContent='Root Arp · '+names[note%12]+(Math.floor(note/12)-1)+
+  ' · '+notes.length+' notes';
+}
+function stopGenerators(){
+ gameStop();
+ if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}
+ arpStopVoice();arp.root=null;
+}
+function releaseDirectNotes(){
+ for(const note of directOwned)stop(note);
+ directOwned.clear();
+}
+function restartGenerators(){
+ stopGenerators();arp.step=0;game.step=0;
+ if(!gameEnabled()&&!arpEnabled()){
+  // Return physically held keys to direct sound; never retain stale latches.
+  arp.latched.clear();
+  for(const note of arp.held){
+   if(!directOwned.has(note)){play(note);directOwned.add(note)}
+  }
+  $('arpStatus').textContent='Arps off';return;
+ }
+ // Transitioning from direct polyphony must release EVERY physical owner first.
+ releaseDirectNotes();
+ if(!activeNotes().length&&!seqPreview){$('arpStatus').textContent='No notes held';return}
+ const bpm=Number($('arpSync').checked?$('masterBpm').value:$('arpBpm').value);
+ if(arpEnabled()){
+  arpTick();
+  arp.timer=setInterval(arpTick,stepMilliseconds(bpm,$('arpRate').value));
+ }
+ if(gameEnabled()){
+  gameTick();
+  game.timer=setInterval(gameTick,stepMilliseconds(bpm,$('gameRate').value));
+ }
+}
+function gameRestart(){restartGenerators()}
+function arpRestart(){restartGenerators()}
+function keyDown(note){
+ if(sidController){sidKeys++;$('sidPlaybackStatus').textContent='SID key presses: '+sidKeys+' · waiting for audio samples…'}
+ const hadNotes=activeNotes().length;
+ if(!arp.held.has(note)){
+  const firstPhysical=arp.held.size===0;
+  arp.held.add(note);
+  if((gameEnabled()||arpEnabled())&&$('arpLatch').checked){
+   if(firstPhysical)arp.latched.clear();
+   arp.latched.add(note);
+  }
+ }
+ if(!gameEnabled()&&!arpEnabled()){
+  if(!directOwned.has(note)){play(note);directOwned.add(note)}
+  return;
+ }
+ if(!hadNotes||(gameEnabled()&&!arpEnabled())||(!game.timer&&!arp.timer))
+  restartGenerators();
+}
+function keyUp(note){
+ arp.held.delete(note);
+ if(directOwned.delete(note))stop(note);
+ if(!gameEnabled()&&!arpEnabled())return;
+ if(arp.held.size===0&&(!$('arpLatch').checked||arp.latched.size===0)&&!seqPreview){
+  stopGenerators();$('arpStatus').textContent='No notes held';return;
+ }
+ if(gameEnabled()&&!arpEnabled())gameRestart();
+ else if(arpEnabled()&&!$('arpLatch').checked&&arp.root===note){
+  // Keep the root valid, without firing an extra off-grid arpeggio note.
+  const notes=arpNotes();
+  arp.root=notes.length?selectRoot(notes,$('arpPattern').value,arp.step):null;
+  if(!gameEnabled())arpStopVoice();
+ }
+}
+$('gameArpOn').addEventListener('change',()=>{if(!$('gameArpOn').checked){seqPreview=false;setSeqTransportLabel()}restartGenerators()});
+$('gameArpStyle').addEventListener('change',gameRestart);
+$('gameRate').addEventListener('change',gameRestart);
+$('arpOn').addEventListener('change',restartGenerators);
+$('arpLatch').addEventListener('change',()=>{
+ if($('arpLatch').checked)arp.held.forEach(note=>arp.latched.add(note));
+ else arp.latched.clear();
+ restartGenerators();
+});
+['arpPattern','arpRate'].forEach(id=>$(id).addEventListener('change',arpRestart));
+$('arpBpm').addEventListener('input',()=>{
+ $('bpmValue').textContent=$('arpBpm').value;restartGenerators();
+});
+$('arpClear').addEventListener('click',()=>{
+ // Clear stored notes only. Physical held keys and direct voice owners remain.
+ arp.latched.clear();arp.root=null;arp.step=0;game.step=0;
+ if(gameEnabled()||arpEnabled())restartGenerators();
+ $('arpStatus').textContent='Latch cleared';
+});
+const keys=new Map();
+const arpKeyVisual=createArpKeyVisual({getKey:note=>keys.get(note)});
+const MIN_OCTAVE=0,MAX_OCTAVE=7;
+let keyboardOctave=3;
+const compactKeyboard=()=>matchMedia('(max-width:900px), (max-height:620px)').matches;
+function renderKeyboard(){
+  const resumePreview=seqPreview&&gameEnabled();
+  panic();
+  arp.held.clear(); // Pointer capture cannot survive keyboard reconstruction.
+  if(!$('arpLatch').checked)arp.latched.clear();
+  keys.clear();
+  $('keyboard').replaceChildren();
+  const start=(keyboardOctave+1)*12;
+  const count=compactKeyboard()?13:25;
+  for(let i=0;i<count;i++){
+    const note=start+i;
+    const key=document.createElement('button');
+    key.type='button';
+    key.className='key'+(names[note%12].includes('♯')?' black':'');
+    key.dataset.note=String(note);
+    key.textContent=names[note%12]+(Math.floor(note/12)-1);
+    key.setAttribute('aria-label','Play '+key.textContent);
+    let activePointer=null;
+    key.addEventListener('pointerdown',e=>{if(activePointer!==null)return;e.preventDefault();activePointer=e.pointerId;key.setPointerCapture(e.pointerId);key.classList.add('down');keyDown(note)});
+    const end=e=>{if(activePointer!==e.pointerId)return;activePointer=null;key.classList.remove('down');keyUp(note)};
+    key.addEventListener('pointerup',end);
+    key.addEventListener('pointercancel',end);
+    key.addEventListener('lostpointercapture',end);
+    $('keyboard').append(key);
+    keys.set(note,key);
+  }
+  $('octaveLabel').textContent='C'+keyboardOctave+'–C'+(keyboardOctave+(compactKeyboard()?1:2));
+  $('octaveDown').disabled=keyboardOctave===MIN_OCTAVE;
+  $('octaveUp').disabled=keyboardOctave===MAX_OCTAVE;
+  if(resumePreview)restartGenerators();
+}
+$('octaveDown').addEventListener('click',()=>{keyboardOctave=Math.max(MIN_OCTAVE,keyboardOctave-1);renderKeyboard()});
+$('octaveUp').addEventListener('click',()=>{keyboardOctave=Math.min(MAX_OCTAVE,keyboardOctave+1);renderKeyboard()});
+let wasCompact=compactKeyboard();
+window.addEventListener('resize',()=>{const compact=compactKeyboard();if(compact!==wasCompact){wasCompact=compact;renderKeyboard()}});
+renderKeyboard();
+function setKeyboardVisible(visible){
+ if(!visible){
+  // Release held physical keys but leave a latched or previewed sequence playing.
+  for(const note of [...arp.held])keyUp(note);
+  for(const key of keys.values())key.classList.remove('down');
+ }
+ $('keyboard').hidden=!visible;
+ $('keyboardPanel').classList.toggle('is-collapsed',!visible);
+ $('keyboardToggle').setAttribute('aria-expanded',String(visible));
+ $('keyboardToggle').textContent=visible?'Hide keyboard ▲':'Show keyboard ▼';
+ try{window.localStorage.setItem('project6581.keyboard-visible',visible?'yes':'no')}catch{}
+}
+$('keyboardToggle').addEventListener('click',()=>setKeyboardVisible($('keyboard').hidden));
+try{if(window.localStorage.getItem('project6581.keyboard-visible')==='no')setKeyboardVisible(false)}catch{}
+const layout='awsedftgyhujkolp;';
+window.addEventListener('keydown',e=>{if(e.repeat||e.target.matches('input,select,button'))return;const idx=layout.indexOf(e.key.toLowerCase());if(idx>=0){const note=(keyboardOctave+1)*12+idx;const key=keys.get(note);if(key){e.preventDefault();key.classList.add('down');keyDown(note)}}});
+window.addEventListener('keyup',e=>{const idx=layout.indexOf(e.key.toLowerCase());if(idx>=0){const note=(keyboardOctave+1)*12+idx;keys.get(note)?.classList.remove('down');keyUp(note)}});
+
+function updateSidFilter(overrides={}){
+  if(!sidController)return;
+  const hz=Number(overrides.cutoff??$('cutoff').value);
+  // SID filter frequency register is non-linear in Hz, especially on 6581.
+  // This approximation maps the existing control to the 11-bit SID register.
+  const cutoff=Math.round(Math.max(0,Math.min(1,(hz-50)/9950))*2047);
+  sidController.setFilter({cutoff,resonance:Math.round(Number(overrides.resonance??$('resonance').value)*15/100),
+    mode:$('mode').value,volume:Math.round(Number(overrides.volume??$('volume').value)*15/100)});
+}
+// Overlay a noninteractive range thumb: the actual input retains the base value.
+function setModulationTrack(input,base,effective,enabled){
+ if(!input)return;
+ let stack=input.parentElement;
+ if(!stack?.classList.contains('slider-stack')){
+  stack=document.createElement('span');stack.className='slider-stack';
+  input.before(stack);stack.append(input);
+ }
+ let band=stack.querySelector('.modulation-band');
+ if(!band){
+  band=document.createElement('span');band.className='modulation-band';
+  band.setAttribute('aria-hidden','true');stack.prepend(band);
+ }
+ const track=modulationTrack(base,effective,input.min,input.max,enabled);
+ if(stack.style.getPropertyValue('--center')!==track.center)
+  stack.style.setProperty('--center',track.center);
+ if(band.style.getPropertyValue('--band-start')!==track.start)
+  band.style.setProperty('--band-start',track.start);
+ if(band.style.getPropertyValue('--band-end')!==track.end)
+  band.style.setProperty('--band-end',track.end);
+ band.hidden=!track.active;
+}
+function updateModulation(){
+ const sound=settings[0],pulseActive=sound.wave==='square',unisonActive=Number($('unisonCount').value)>1;
+ // Preserve the actual slider positions as the editable base/center values.
+ const base={
+  cutoff:Number($('cutoff').value),resonance:Number($('resonance').value),volume:Number($('volume').value),
+  pulse:sound.pulse,detune:Number($('detune').value),
+  attack:sound.attack,decay:sound.decay,sustain:sound.sustain,release:sound.release,
+  pwmDepth:sound.pwmDepth,pwmRate:sound.pwmRate
+ };
+ const active=lfoState.some(lfo=>lfo.enabled&&lfo.depth>0);
+ const bpm=Number($('masterBpm').value);
+ const effectiveLfos=lfoState.map(lfo=>lfo.sync&&modulation
+  ?{...lfo,rate:modulation.syncedLfoHz(bpm,lfo.syncDivision)}:lfo);
+ const time=(performance.now()-lfoStarted)/1000;
+ const values=active&&modulation
+  ?modulation.modulate(base,effectiveLfos,time,{pulseActive,unisonActive}):base;
+ // PWM depth/rate are now audible: apply their LFO-controlled settings to
+ // the pulse width only while the hardware Pulse waveform is selected.
+ const livePulse=pulseActive&&modulation
+  ?modulation.pulseWithPwm(values.pulse,values.pwmDepth,values.pwmRate,time):values.pulse;
+ currentSidSettings={...sound,
+  pulse:livePulse,attack:values.attack,decay:values.decay,
+  sustain:values.sustain,release:values.release};
+ for(const target of SLIDER_TARGETS){
+  const input=['cutoff','resonance','volume','detune'].includes(target)
+   ?$(target):document.querySelector('[data-prop="'+target+'"]');
+  const label=input?.closest('label');
+  if(!label)continue;
+  let baseDisplay=label.querySelector('output:not(.modulated-value)');
+  if(!baseDisplay){
+   baseDisplay=document.createElement('output');baseDisplay.className='base-value';label.append(baseDisplay);
+  }
+  baseDisplay.classList.add('base-value');
+  const baseText=formatControlValue(target,base[target]);
+  if(baseDisplay.textContent!==baseText)baseDisplay.textContent=baseText;
+  let display=label.querySelector('.modulated-value');
+  if(!display){
+   display=document.createElement('output');display.className='modulated-value';
+   display.setAttribute('aria-label',target+' effective value');label.append(display);
+  }
+  const targetEnabled=((active&&lfoState.some(lfo=>lfo.enabled&&lfo.depth>0&&lfo.target===target))
+    ||(target==='pulse'&&pulseActive&&values.pwmDepth>0))
+   &&(!['pulse','pwmDepth','pwmRate'].includes(target)||pulseActive)
+   &&(target!=='detune'||unisonActive);
+  const effectiveValue=target==='pulse'?livePulse:values[target];
+  display.hidden=!targetEnabled;
+  setModulationTrack(input,base[target],effectiveValue,targetEnabled);
+  if(targetEnabled){
+   const effectiveText=formatControlValue(target,effectiveValue);
+   if(display.textContent!==effectiveText)display.textContent=effectiveText;
+  }
+ }
+ if(!sidController)return;
+ updateSidFilter(values);
+ sidController.setLiveDetune(values.detune);
+ sidController.setEnvelope(currentSidSettings);
+ if(pulseActive)sidController.setPulse(0,livePulse);
+}
+$('masterBpm').addEventListener('input',()=>{const n=Number($('masterBpm').value);if(!Number.isFinite(n)||n<40||n>240)return;$('masterBpmValue').textContent=String(n);updateModulation();if($('arpSync').checked)restartGenerators();});
+$('arpSync').addEventListener('change',()=>{document.querySelector('.arp-local-bpm').hidden=$('arpSync').checked;restartGenerators();});
+['volume','cutoff','resonance','mode'].forEach(id=>$(id).addEventListener('input',updateModulation));
+function updateSidLed(){
+  const led=$('sidLed');
+  const state=sidAudio?(sidContext?.state==='running'?'on':'ready'):(sidStarting?'loading':'off');
+  led.dataset.state=state;
+  led.setAttribute('aria-label',state==='on'?'SID engine on':state==='ready'?'SID engine ready, audio suspended':state==='loading'?'SID engine loading':'SID engine off');
+}
+let pendingSidStartup=null;
+async function startSid(){
+  if(pendingSidStartup)return pendingSidStartup;
+  if(sidAudio)return;
+  const load=async()=>{
+  const button=$('sidStart'),status=$('sidEngineStatus');
+  sidStarting=true;button.disabled=true;$('sidSpinner').hidden=false;updateSidLed();
+  status.textContent='Loading authentic reSIDfp…';
+  try{
+    status.textContent='Loading SID JavaScript modules…';
+    let moduleTimeout;
+    const modules=Promise.all([
+      import('./src/create-residfp-audio.js?v=0.1.53+20261105T193736982Z'),import('./src/unison-sid-controller.js?v=0.1.53+20261105T193736982Z'),import('./src/lfo-modulation.js?v=0.1.53+20261105T193736982Z')]);
+    const [{createReSidFpAudio},{UnisonSidController},lfoModule]=await Promise.race([
+      modules,
+      new Promise((_,reject)=>{moduleTimeout=setTimeout(()=>reject(new Error('SID JavaScript module loading timed out after 15 seconds')),15000)})
+    ]).finally(()=>clearTimeout(moduleTimeout));
+    let resolveReady,rejectReady;
+    const ready=new Promise((resolve,reject)=>{resolveReady=resolve;rejectReady=reject});
+    // Attach a rejection handler immediately, including WASM-fetch failures.
+    void ready.catch(()=>{});
+    let timeout;
+    const requestedModel=Number($('chip').value);
+    const audio=await createReSidFpAudio({model:requestedModel,onContext:context=>{sidContext=context},onProgress:message=>{status.textContent=message},onStatus:event=>{
+      if(event.type==='ready'&&event.renderer)resolveReady();
+      if(event.type==='error')rejectReady(new Error(event.message));
+      if(event.type==='record-limit'){void stopAndSaveRecording();return}
+      if(event.type==='latency-probe'){
+        audioTiming.source=event.source;
+        audioTiming.roundTripMs=event.dispatchToWorkletRoundTripMs;
+        updateAudioTimingReport();
+        return;
+      }
+      if(event.type==='audio-stats'){
+        audioTiming.renderAvgMs=event.renderAvgMs;
+        audioTiming.renderMaxMs=event.renderMaxMs;
+        audioTiming.renderBudgetMs=event.renderBudgetMs;
+        if($('audioTimingDetails').open)updateAudioTimingReport();
+        const peak=(event.peak*100).toFixed(2);
+        $('sidPlaybackStatus').textContent='SID key presses: '+sidKeys+' · register writes (recent): '+event.writes+' · audio peak: '+peak+'%';
+      }
+    }});
+    timeout=setTimeout(()=>rejectReady(new Error('SID engine initialization timed out')),12000);
+    try{await ready}catch(err){await audio.close();throw err}finally{clearTimeout(timeout)}
+    panic();sidAudio=audio;sidKeys=0;modulation=lfoModule;updateSidLed();
+    audio.setTimingEnabled($('audioTimingDetails').open);
+    sidRecorder=createSidRecorder(audio);
+    $('recordFormat').querySelector('[value="m4a"]').disabled=!sidRecorder.supportsM4a;
+    if(!sidRecorder.supportsM4a)$('recordFormat').value='wav';
+    $('recordToggle').disabled=false;
+    $('recordStatus').textContent=sidRecorder.supportsM4a?'WAV / M4A ready':'WAV ready';
+    sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:Number($('voiceCount').value),unisonCount:Number($('unisonCount').value),mode:$('voiceAssign').value,detune:Number($('detune').value)});
+    activeSidModel=requestedModel;
+    updateModulation();
+    if(lfoTimer===null)lfoTimer=setInterval(()=>{if(lfoState.some(lfo=>lfo.enabled&&lfo.depth>0)||(settings[0].wave==='square'&&settings[0].pwmDepth>0))updateModulation()},1000/60);
+    const base=audio.context.baseLatency,output=audio.context.outputLatency;
+    audioTiming.baseMs=Number.isFinite(base)?base*1000:null;
+    audioTiming.outputMs=Number.isFinite(output)?output*1000:null;
+    updateAudioTimingReport();
+    const parts=[];
+    if(Number.isFinite(base))parts.push('base '+(base*1000).toFixed(1)+' ms');
+    if(Number.isFinite(output))parts.push('output '+(output*1000).toFixed(1)+' ms');
+    $('sidLatencyStatus').textContent=parts.length?'Browser audio latency: '+parts.join(' / ')+' (not total key-to-sound latency)':'Browser audio latency: not reported.';
+    button.hidden=true;button.disabled=false;
+    if(audio.context.state==='suspended')status.textContent='SID ready · touch a key to unlock audio.';
+    if(audio.context.state==='running')status.textContent='Authentic reSIDfp active · up to eight SID voices.';
+  }catch(err){sidContext=null;status.textContent='Authentic SID unavailable: '+(err.message||err)+'. No audio fallback is available.';button.disabled=false;button.hidden=false}
+  finally{sidStarting=false;$('sidSpinner').hidden=true;updateSidLed()}
+  };
+  pendingSidStartup=load();
+  try{return await pendingSidStartup}
+  finally{pendingSidStartup=null}
+}
+async function ensureSidModel(model){
+  // Serialize audio reinitialization with pending initial page startup.
+  if(pendingSidStartup)await pendingSidStartup;
+  if(Number($('chip').value)!==model)return; // Another preset was selected meanwhile.
+  if(sidAudio&&activeSidModel===model)return;
+  if(sidAudio){
+    $('recordToggle').disabled=true;
+    await sidAudio.close();
+    sidAudio=null;sidContext=null;sidController=null;sidRecorder=null;activeSidModel=null;
+    updateSidLed();
+  }
+  await startSid();
+  if(!sidAudio||activeSidModel!==model)
+    throw new Error('Unable to start the '+model+' SID engine. Previous preset settings will be restored.');
+}
+async function stopAndSaveRecording(){
+ if(!sidRecorder?.recording||recordBusy)return;
+ recordBusy=true;
+ $('recordToggle').disabled=true;
+ if(recordTimer!==null){clearTimeout(recordTimer);recordTimer=null}
+ try{
+  $('recordStatus').textContent='Finalizing recording…';
+  const {blob,extension}=await sidRecorder.stop();
+  if(recordDownloadUrl)URL.revokeObjectURL(recordDownloadUrl);
+  const {url,filename}=prepareRecordingDownload(blob,extension,$('recordDownload'));
+  recordDownloadUrl=url;
+  $('recordStatus').textContent='Recording ready: '+filename;
+ }catch(error){
+  $('recordStatus').textContent='Recording failed: '+(error.message||error);
+ }finally{
+  recordBusy=false;
+  $('recordToggle').disabled=false;
+  $('recordToggle').dataset.recording='false';
+  $('recordToggle').textContent='● Record';
+  $('recordFormat').disabled=false;
+ }
+}
+$('recordToggle').addEventListener('click',async()=>{
+ if(recordBusy||!sidRecorder)return;
+ if(sidRecorder.recording){await stopAndSaveRecording();return}
+ recordBusy=true;$('recordToggle').disabled=true;
+ try{
+  const format=$('recordFormat').value;
+  $('recordDownload').hidden=true;
+  await sidRecorder.start(format);
+  $('recordFormat').disabled=true;
+  $('recordStatus').textContent='Recording '+format.toUpperCase()+' · max 3 min';
+  $('recordToggle').dataset.recording='true';
+  $('recordToggle').textContent='■ Stop & save';
+  // Bound memory on iPad. This timer is for ending capture, not musical events.
+  recordTimer=setTimeout(()=>{void stopAndSaveRecording()},3*60*1000);
+ }catch(error){
+  $('recordStatus').textContent='Recording unavailable: '+(error.message||error);
+ }finally{
+  recordBusy=false;$('recordToggle').disabled=false;
+ }
+});
+$('sidStart').addEventListener('click',startSid);
+function unlockSidAudio(){
+  if(!sidContext||sidContext.state!=='suspended')return;
+  // Call resume synchronously inside the trusted gesture for iPad Safari.
+  sidContext.resume().then(()=>{if(sidAudio)$('sidEngineStatus').textContent='Authentic reSIDfp active · SID unison voices.';updateSidLed()}).catch(err=>{$('sidEngineStatus').textContent='Tap again to enable audio: '+err.message;updateSidLed()});
+}
+document.addEventListener('pointerdown',unlockSidAudio,{capture:true});
+document.addEventListener('keydown',unlockSidAudio,{capture:true});
+// Stop capture before Safari suspends background page timers.
+document.addEventListener('visibilitychange',()=>{
+ if(document.hidden&&sidRecorder?.recording&&!recordBusy)void stopAndSaveRecording();
+});
+// Retain blob URLs when iPad Safari moves this page into the back-forward cache.
+window.addEventListener('pagehide',event=>{
+ if(!event.persisted&&recordDownloadUrl)URL.revokeObjectURL(recordDownloadUrl);
+});
+// Sound + performance presets. Held/latching notes are intentionally not serialized.
+let userPresets=[],selectedPreset=null,presetDirty=false,presetStorageError=null,presetDownloadUrl=null;
+try{userPresets=readUserPresets(window.localStorage)}
+catch(error){presetStorageError=error.message||String(error)}
+function snapshotPresetSettings(){
+ return validatePresetSettings({
+  sound:{
+   model:Number($('chip').value),
+   voice:{...settings[0]},
+   instrument:{voiceCount:Number($('voiceCount').value),unisonCount:Number($('unisonCount').value),mode:$('voiceAssign').value,detune:Number($('detune').value)},
+   filter:{cutoff:Number($('cutoff').value),resonance:Number($('resonance').value),
+    volume:Number($('volume').value),mode:$('mode').value},
+   lfos:lfoState.map(lfo=>({...lfo}))
+  },
+  performance:{
+   masterBpm:Number($('masterBpm').value),
+   arp:{enabled:$('arpOn').checked,latch:$('arpLatch').checked,pattern:$('arpPattern').value,
+    rate:Number($('arpRate').value),sync:$('arpSync').checked,localBpm:Number($('arpBpm').value)},
+   game:{enabled:$('gameArpOn').checked,style:$('gameArpStyle').value,
+    rate:Number($('gameRate').value),sequence:seqState}
+  }
+ });
+}
+function currentPreset(){
+ return selectedPreset?.kind==='factory'?FACTORY_PRESETS.find(p=>p.id===selectedPreset.id)
+  :selectedPreset?.kind==='user'?userPresets.find(p=>p.id===selectedPreset.id):null;
+}
+function presetMessage(message){
+ $('presetStatus').textContent=message;
+}
+function renderPresetLibrary(message=null){
+ const selected=selectedPreset?selectedPreset.kind+':'+selectedPreset.id:null;
+ for(const [kind,presets,listId] of [
+  ['factory',FACTORY_PRESETS,'factoryPresetList'],['user',userPresets,'userPresetList']
+ ]){
+  const list=$(listId);
+  const items=presets.map(preset=>{
+   const button=document.createElement('button');
+   button.type='button';button.className='preset-item';
+   button.dataset.kind=kind;button.dataset.id=preset.id;
+   button.append(document.createTextNode(preset.name));
+   if(kind==='factory'){
+    const category=document.createElement('span');
+    category.className='preset-item-category';category.textContent=preset.category;
+    button.append(category);
+   }
+   button.setAttribute('aria-current',String(selected===kind+':'+preset.id));
+   return button;
+  });
+  if(!items.length){
+   const empty=document.createElement('div');empty.className='preset-empty';
+   empty.textContent='No user presets yet. Use Save as… to create one.';
+   items.push(empty);
+  }
+  list.replaceChildren(...items);
+ }
+ const editable=selectedPreset?.kind==='user';
+ $('presetSave').disabled=presetLoading||!editable;
+ $('presetRename').disabled=presetLoading||!editable;
+ $('presetDelete').disabled=presetLoading||!editable;
+ $('presetExportBank').disabled=presetLoading||!userPresets.length;
+ for(const id of ['presetSaveAs','presetExport','presetImport'])$(id).disabled=presetLoading;
+ for(const id of ['factoryPresetList','userPresetList'])
+  $(id).querySelectorAll('button').forEach(button=>button.disabled=presetLoading);
+ const p=currentPreset();
+ const name=p?.name||'Current sound';
+ $('presetCurrent').textContent=name+(presetDirty?' •':'');
+ $('presetOpen').title=name+(presetDirty?' (unsaved changes)':'')+' · Open presets';
+ $('presetOpen').setAttribute('aria-label','Open preset library. '+name+(presetDirty?', unsaved changes':''));
+ const description=p?name+(presetDirty?' · unsaved changes':''):'Current sound';
+ presetMessage(message??(presetStorageError?'Local preset storage unavailable: '+presetStorageError:description));
+}
+function refreshPresetDirty(){
+ const preset=currentPreset();
+ const changed=Boolean(preset)&&JSON.stringify(snapshotPresetSettings())!==JSON.stringify(preset.settings);
+ if(changed!==presetDirty){presetDirty=changed;renderPresetLibrary();}
+}
+function applyPresetControls(next){
+ // Silence old voices and clear transient notes, but retain the saved arp switches.
+ panic();arp.held.clear();arp.latched.clear();arp.step=0;
+ game.step=0;arp.root=null;seqPreview=false;setSeqTransportLabel();
+ for(const key of keys.values())key.classList.remove('down');
+ Object.assign(settings[0],next.sound.voice);
+ $('chip').value=String(next.sound.model);
+ $('voiceCount').value=String(next.sound.instrument.voiceCount);
+ $('unisonCount').value=String(next.sound.instrument.unisonCount);
+ $('voiceAssign').value=next.sound.instrument.mode;
+ $('detune').value=String(next.sound.instrument.detune);
+ for(const key of ['cutoff','resonance','volume'])$(key).value=String(next.sound.filter[key]);
+ $('mode').value=next.sound.filter.mode;
+ next.sound.lfos.forEach((lfo,i)=>Object.assign(lfoState[i],lfo));
+ $('masterBpm').value=String(next.performance.masterBpm);
+ $('masterBpmValue').textContent=String(next.performance.masterBpm);
+ $('arpOn').checked=next.performance.arp.enabled;
+ $('arpLatch').checked=next.performance.arp.latch;
+ $('arpPattern').value=next.performance.arp.pattern;
+ $('arpRate').value=String(next.performance.arp.rate);
+ $('arpSync').checked=next.performance.arp.sync;
+ $('arpBpm').value=String(next.performance.arp.localBpm);
+ $('bpmValue').textContent=String(next.performance.arp.localBpm);
+ document.querySelector('.arp-local-bpm').hidden=next.performance.arp.sync;
+ $('gameArpOn').checked=next.performance.game.enabled;
+ $('gameArpStyle').value=next.performance.game.style;
+ $('gameRate').value=String(next.performance.game.rate);
+ seqState=validateSequence(next.performance.game.sequence);
+ renderSequenceSteps();
+ renderVoiceControls();renderLfos();updateUnison();updateModulation();
+ $('arpStatus').textContent='Preset ready · press a key';
+}
+async function applyPresetSettings(value){
+ if(sidRecorder?.recording||recordBusy)throw new Error('Finish recording before loading a preset');
+ const next=validatePresetSettings(value);
+ const previous=snapshotPresetSettings();
+ applyPresetControls(next);
+ try{
+  await ensureSidModel(next.sound.model);
+  if(activeSidModel!==next.sound.model)throw new Error('SID chip model does not match the selected preset');
+ }catch(error){
+  // Loading is transactional even if a device fails to initialize.
+  applyPresetControls(previous);
+  try{await ensureSidModel(previous.sound.model)}
+  catch(recoveryError){
+    throw new Error('Could not load preset: '+error.message+
+      '. Previous controls restored, but audio recovery failed: '+recoveryError.message);
+  }
+  throw new Error('Could not load preset: '+error.message+'. Previous sound restored.');
+ }
+}
+function newPresetId(){
+ return typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function'
+  ?crypto.randomUUID():'local-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+}
+function savePresetList(next){
+ if(presetStorageError)throw new Error('Local storage is unavailable. Export your sound as JSON instead.');
+ userPresets=writeUserPresets(window.localStorage,next);
+}
+function exportPresetFile(json,filename){
+ if(presetDownloadUrl)URL.revokeObjectURL(presetDownloadUrl);
+ const blob=new Blob([json],{type:'application/json'});
+ presetDownloadUrl=URL.createObjectURL(blob);
+ const anchor=$('presetExportLink');
+ anchor.href=presetDownloadUrl;anchor.download=filename;anchor.hidden=false;
+ anchor.textContent='Download JSON';
+ anchor.click();
+ presetMessage('File ready · tap Download JSON if it did not download');
+}
+function guardPresetAction(work){
+ if(presetLoading)return null;
+ try{return work()}catch(error){presetMessage('Preset error: '+(error.message||error));return null}
+}
+$('presetOpen').addEventListener('click',()=>{
+ if(!$('presetDialog').open)$('presetDialog').showModal();
+});
+$('presetClose').addEventListener('click',()=>$('presetDialog').close());
+$('presetDialog').addEventListener('click',event=>{
+ if(event.target===$('presetDialog'))$('presetDialog').close();
+});
+let presetLoading=false;
+function setPresetLoading(busy){
+ presetLoading=busy;
+ $('presetDialog').setAttribute('aria-busy',String(busy));
+ const editable=selectedPreset?.kind==='user';
+ for(const [id,available] of [
+  ['presetSave',editable],['presetSaveAs',true],['presetRename',editable],
+  ['presetDelete',editable],['presetExport',true],['presetExportBank',userPresets.length>0],
+  ['presetImport',true]
+ ])$(id).disabled=busy||!available;
+ for(const id of ['factoryPresetList','userPresetList'])
+  $(id).querySelectorAll('button').forEach(button=>button.disabled=busy);
+}
+async function loadSelectedPreset(kind,id){
+ if(presetLoading)return;
+ const source=kind==='factory'?FACTORY_PRESETS:kind==='user'?userPresets:null;
+ const preset=source?.find(p=>p.id===id);
+ if(!preset){presetMessage('Preset not found');return}
+ if(presetDirty&&!window.confirm('Discard unsaved changes to this preset?'))return;
+ setPresetLoading(true);
+ try{
+  await applyPresetSettings(preset.settings);
+  selectedPreset={kind,id};presetDirty=false;renderPresetLibrary();
+  $('presetDialog').close();
+ }catch(error){presetMessage('Could not load preset: '+(error.message||error))}
+ finally{
+  setPresetLoading(false);
+ }
+}
+for(const listId of ['factoryPresetList','userPresetList']){
+ $(listId).addEventListener('click',event=>{
+  const button=event.target.closest('button.preset-item');
+  if(button&&$(listId).contains(button))
+   void loadSelectedPreset(button.dataset.kind,button.dataset.id);
+ });
+}
+$('presetSave').addEventListener('click',()=>guardPresetAction(()=>{
+ if(selectedPreset?.kind!=='user')return;
+ const index=userPresets.findIndex(p=>p.id===selectedPreset.id);
+ if(index<0)throw new Error('User preset not found');
+ const next=userPresets.slice();
+ next[index]={...next[index],settings:snapshotPresetSettings()};
+ savePresetList(next);presetDirty=false;renderPresetLibrary('Saved '+next[index].name);
+}));
+$('presetSaveAs').addEventListener('click',()=>guardPresetAction(()=>{
+ const suggested=currentPreset()?.name||'My SID Sound';
+ const answer=window.prompt('Name your preset',suggested);
+ if(answer===null)return;
+ const name=cleanPresetName(answer);
+ if(userPresets.some(p=>p.name.toLowerCase()===name.toLowerCase()))
+  throw new Error('That name already exists. Choose a different name or use Save.');
+ const preset={id:newPresetId(),name,settings:snapshotPresetSettings()};
+ savePresetList([...userPresets,preset]);
+ selectedPreset={kind:'user',id:preset.id};presetDirty=false;renderPresetLibrary('Saved '+name);
+}));
+$('presetRename').addEventListener('click',()=>guardPresetAction(()=>{
+ if(selectedPreset?.kind!=='user')return;
+ const preset=currentPreset();if(!preset)return;
+ const answer=window.prompt('Rename user preset',preset.name);
+ if(answer===null)return;
+ const name=cleanPresetName(answer);
+ if(userPresets.some(p=>p.id!==preset.id&&p.name.toLowerCase()===name.toLowerCase()))
+  throw new Error('A preset already uses that name');
+ savePresetList(userPresets.map(p=>p.id===preset.id?{...p,name}:p));
+ renderPresetLibrary('Renamed '+name);
+}));
+$('presetDelete').addEventListener('click',()=>guardPresetAction(()=>{
+ if(selectedPreset?.kind!=='user')return;
+ const preset=currentPreset();if(!preset||!window.confirm('Delete '+preset.name+'? This cannot be undone.'))return;
+ savePresetList(userPresets.filter(p=>p.id!==preset.id));
+ selectedPreset=null;presetDirty=false;renderPresetLibrary('Deleted preset; current sound remains loaded');
+}));
+$('presetExport').addEventListener('click',()=>guardPresetAction(()=>{
+ const name=currentPreset()?.name||'Current sound';
+ const data=exportPreset({name,settings:snapshotPresetSettings()});
+ exportPresetFile(data,'project6581-'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'.json');
+}));
+$('presetExportBank').addEventListener('click',()=>guardPresetAction(()=>{
+ if(!userPresets.length)throw new Error('Save a user preset before exporting a bank');
+ exportPresetFile(exportPresetBank(userPresets),'project6581-preset-bank.json');
+}));
+$('presetImport').addEventListener('click',()=>{if(!presetLoading)$('presetFile').click()});
+$('presetFile').addEventListener('change',async()=>{
+ const input=$('presetFile'),file=input.files?.[0];
+ if(!file)return;
+ if(presetLoading){input.value='';return}
+ setPresetLoading(true);
+ try{
+  if(file.size>2*1024*1024)throw new Error('Preset file is larger than 2 MB');
+  const imported=importPresetFile(await file.text());
+  const existing=new Map(userPresets.map(p=>[p.name.toLowerCase(),p]));
+  const conflicts=imported.filter(p=>existing.has(p.name.toLowerCase()));
+  if(conflicts.length&&!window.confirm('Replace '+conflicts.length+' existing user preset(s) with matching names?')){
+   presetMessage('Import canceled');return;
+  }
+  for(const p of imported){
+   const prior=existing.get(p.name.toLowerCase());
+   existing.set(p.name.toLowerCase(),{id:prior?.id??newPresetId(),...p});
+  }
+  savePresetList([...existing.values()]);
+  const selected=currentPreset();
+  presetDirty=Boolean(selected)&&JSON.stringify(snapshotPresetSettings())!==JSON.stringify(selected.settings);
+  const importedMessage='Imported '+imported.length+' preset(s).'+
+   (presetDirty?' Selected preset has unsaved changes; Save will replace the imported settings.':
+    ' Choose one from My presets.');
+  renderPresetLibrary(importedMessage);
+ }catch(error){presetMessage('Import failed: '+(error.message||error))}
+ finally{input.value='';setPresetLoading(false)}
+});
+document.addEventListener('input',event=>{
+ if(event.target.id==='presetFile')return;
+ if(event.target.closest('#voicePanel')||event.target.closest('#playPanel')||event.target.id==='masterBpm')
+  refreshPresetDirty();
+});
+document.addEventListener('change',event=>{
+ if(event.target.id==='presetFile')return;
+ if(event.target.closest('#voicePanel')||event.target.closest('#playPanel')||event.target.id==='masterBpm')
+  refreshPresetDirty();
+});
+window.addEventListener('pagehide',event=>{
+ if(!event.persisted&&presetDownloadUrl)URL.revokeObjectURL(presetDownloadUrl);
+});
+renderPresetLibrary();
+startSid();
+</script></body></html>
