@@ -24,7 +24,7 @@ These are concrete lifecycle weaknesses, **not confirmation of the reported iPad
 
 ## Focused changes
 
-1. Worklet acknowledges load receipt, WASM instantiation start/completion, runtime initialization, chip initialization, and success. Failures include the last observed stage and context state. Startup-only events are collected in the existing Audio timing panel with receipt times; no instrumentation was added to `process()`.
+1. Worklet acknowledges load receipt, WASM instantiation start/completion, runtime initialization, chip initialization, and success. Failures include the last observed stage and context state. Startup-only events are collected in the existing Audio timing panel with receipt times; startup logging stays outside `process()`. The opt-in note logger described below adds bounded acknowledgments only to blocks containing tagged note writes.
 2. Context creation/resume occurs synchronously on Retry. **Enable audio** supports suspended/interrupted contexts without creating another engine. Pending startup calls are shared.
 3. Cleanup is idempotent and bounded to two seconds. Unclosed contexts block additional contexts and request a page reload. Late callbacks cannot alter the next attempt. Fetch is aborted during disposal; processor errors expose recovery.
 
