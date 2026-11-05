@@ -1,7 +1,7 @@
-import {closeSidContext} from './sid-audio-lifecycle.js';
-import {createSidWriteBatcher} from './sid-write-batcher.js';
+import {closeSidContext} from './sid-audio-lifecycle.js?v=__BUILD_ID__';
+import {createSidWriteBatcher} from './sid-write-batcher.js?v=__BUILD_ID__';
 // Preload on page load; unlock audio separately during a trusted user gesture.
-export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=()=>{},onProgress=()=>{},context=new AudioContext({latencyHint:'interactive'})}={}){
+export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=()=>{},onProgress=()=>{},eventLog=null,contextId=null,context=new AudioContext({latencyHint:'interactive'})}={}){
   let node=null,batcher=null,closed=false;
   const download=new AbortController();
   const dispose=()=>{
@@ -37,10 +37,23 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
     node.connect(context.destination);
     let capture=null,stopResolve=null,stopReject=null;
     let probeId=0,lastProbeAt=-Infinity,timingEnabled=false;
-    const pendingProbes=new Map();
+    const pendingProbes=new Map(),pendingEvents=new Map();
+    let eventLogEnabled=false;
     node.onprocessorerror=()=>{if(!closed)onStatus({type:'error',message:'SID audio processor stopped unexpectedly'})};
     node.port.onmessage=({data})=>{
       if(closed)return;
+      if(data?.type==='note-rendered'){
+        if(!eventLogEnabled)return;
+        const receivedAt=performance.now();
+        for(const eventId of data.eventIds??[]){
+          const dispatchedAt=pendingEvents.get(eventId);
+          if(dispatchedAt===undefined)continue;
+          pendingEvents.delete(eventId);
+          eventLog?.add('render-acknowledged',{eventId,contextId,dispatchToAckMs:receivedAt-dispatchedAt,
+            audioFrame:data.audioFrame,frames:data.frames,sampleRate:data.sampleRate,contextState:context.state});
+        }
+        return;
+      }
       if(data?.type==='init-progress'){onProgress(data.message);return;}
       if(data?.type==='latency-probe-result'){
         const pending=pendingProbes.get(data.id);
@@ -63,8 +76,34 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
       onStatus(data);
     };
     node.port.postMessage({type:'load',bytes,model},[bytes]);
-    batcher=createSidWriteBatcher(message=>node.port.postMessage(message));
+    batcher=createSidWriteBatcher(message=>{
+      if(eventLogEnabled&&message.diagnostics){
+        const now=performance.now();
+        for(const [id,at] of pendingEvents){
+          if(now-at>3000){pendingEvents.delete(id);eventLog?.add('ack-expired',{eventId:id})}
+        }
+        for(const tag of message.diagnostics){
+          if(pendingEvents.size>=128){
+            const oldest=pendingEvents.keys().next().value;pendingEvents.delete(oldest);
+            eventLog?.add('ack-evicted',{eventId:oldest});
+          }
+          pendingEvents.set(tag.eventId,now);
+          eventLog?.add('sid-dispatch',{eventId:tag.eventId,contextId,contextState:context.state,
+            writes:message.writes.slice(tag.start,tag.end)});
+        }
+      }
+      node.port.postMessage(message);
+    });
     return {context,node,
+      beginNoteTrace(){return eventLogEnabled?batcher.pendingCount:null},
+      endNoteTrace(eventId,start){
+        if(!eventLogEnabled||eventId===null||start===null)return;
+        if(!batcher.tag(eventId,start))eventLog?.add('no-tagged-writes',{eventId});
+      },
+      setEventLogging(enabled){
+        eventLogEnabled=Boolean(enabled);pendingEvents.clear();batcher.clearDiagnostics();
+        node.port.postMessage({type:'event-log-enable',enabled:eventLogEnabled});
+      },
       write:(register,value)=>batcher.write(register,value),
       // Deliver each complete note-on register batch immediately, rather than
       // waiting for the next microtask. Probe at most twice per second.
@@ -107,7 +146,9 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
       close:async()=>{
         const reject=stopReject;capture=null;stopResolve=null;stopReject=null;
         reject?.(new Error('SID audio closed during WAV capture'));
-        pendingProbes.clear();dispose();await closeSidContext(context)
+        pendingProbes.clear();
+        for(const eventId of pendingEvents.keys())eventLog?.add('engine-closed-before-ack',{eventId});
+        pendingEvents.clear();dispose();await closeSidContext(context)
       }};
   } catch(err){
     dispose();

@@ -12,7 +12,7 @@ const unlock=html.slice(html.indexOf('function unlockSidAudio(){'),html.indexOf(
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b});return {promise,resolve,reject}};
 const settle=async()=>{for(let i=0;i<30;i++)await Promise.resolve()};
 
-function app({closeHangs=false,closeRejects=false,moduleHang=false,engineError=false,closedBeforeSettled=false}={}){
+function app({closeHangs=false,closeRejects=false,moduleHang=false,engineError=false,closedBeforeSettled=false,earlyError=false}={}){
  const elements=new Map(),contexts=[],attempts=[],timers=new Map();let timerId=0;
  const $=id=>{
   if(!elements.has(id))elements.set(id,{hidden:false,disabled:false,textContent:'',value:id==='chip'?'6581':'1',dataset:{},setAttribute(){},querySelector(){return {disabled:false}}});
@@ -28,13 +28,15 @@ function app({closeHangs=false,closeRejects=false,moduleHang=false,engineError=f
  const scope=vm.createContext({$,AudioContext:Context,performance:{now:()=>0},
   setTimeout(fn,ms){const id=++timerId;timers.set(id,{fn,ms});return id},clearTimeout:id=>timers.delete(id),
   sidAudio:null,sidContext:null,sidController:null,sidRecorder:null,activeSidModel:null,sidStarting:false,
-  sidKeys:0,lfoTimer:1,modulation:null,sidStartupLog:[],audioTiming:{},
+  sidEventLog:{enabled:false,add(){}},sidKeys:0,lfoTimer:1,modulation:null,sidStartupLog:[],audioTiming:{},
   panic(){},updateModulation(){},updateAudioTimingReport(){},createSidRecorder:()=>({supportsM4a:false}),
   stopAndSaveRecording(){},
   loadModule:async path=>moduleHang?new Promise(()=>{}):path.includes('create-residfp')?{createReSidFpAudio:async options=>{
    if(engineError)throw Error('SID engine download failed');
-   const audio={context:options.context,write(){},setTimingEnabled(){},close:()=>scope.closeSidContext(options.context)};
-   attempts.push({options,audio});return audio;
+   const audio={context:options.context,write(){},setTimingEnabled(){},setEventLogging(){},close:()=>scope.closeSidContext(options.context)};
+   attempts.push({options,audio});
+   if(earlyError){options.onStatus({type:'ready',renderer:true});options.onStatus({type:'error',message:'failed after ready'})}
+   return audio;
   }}:path.includes('unison')?{UnisonSidController:class{}}:{},
  });
  vm.runInContext(lifecycle+'\n'+startup+'\n'+unlock,scope);
@@ -158,4 +160,17 @@ test('worklet acknowledges each initialization stage and reports WASM rejection'
  assert.deepEqual(messages.map(m=>m.type),[...Array(6).fill('init-progress'),'ready']);
  assert.match(messages[1].message,/Instantiating/);assert.match(messages[4].message,/chip/);
  reject=true;await processor.load(new ArrayBuffer(0),6581);assert.equal(messages.at(-1).type,'error');assert.match(messages.at(-1).message,/bad WASM/);
+});
+
+test('gestures cannot resume a retired context during or after stalled cleanup',async()=>{
+ const a=app({closeHangs:true}),pending=a.scope.startSid();await settle();
+ a.fire(12000);await settle();a.scope.unlockSidAudio();assert.equal(a.contexts[0].resumeCalls,1);
+ a.fire(2000);await pending;a.scope.unlockSidAudio();assert.equal(a.contexts[0].resumeCalls,1);
+});
+
+test('error after ready but before factory return prevents assigning a failed engine',async()=>{
+ const a=app({earlyError:true});await a.scope.startSid();
+ assert.equal(a.scope.sidAudio,null);assert.equal(a.contexts[0].state,'closed');
+ assert.match(a.$('sidEngineStatus').textContent,/failed after ready/);
+ assert.equal(a.$('sidSpinner').hidden,true);
 });

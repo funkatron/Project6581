@@ -10,6 +10,7 @@ Prioritize features that help people **make, retain, exchange, and perform music
 
 - [x] Characterize production and PR #56 startup in Work's remote Chrome; both reach ready while suspended. The intermittent iPad failure remains unconfirmed.
 - [x] Add startup-stage acknowledgments, explicit audio activation, bounded cleanup, serialized retry and stale-callback protection without changing note scheduling or native WASM.
+- [x] Add opt-in correlated input/register/render event logging, bounded local capture, and copyable diagnostic reports.
 - [x] Add behavioral lifecycle regression coverage; see [evidence and limits](docs/sid-startup-investigation.md).
 - [ ] Verify the modified preview and iPad Safari startup/recovery, direct keys, sequencer, and actual perceived latency.
 - [ ] Check final CI and Copilot reviews before an authorized merge. Keep factory preset PR #56 separate.

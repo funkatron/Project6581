@@ -34,8 +34,8 @@ Native rendering, note-on batch flushing, and sequencer scheduling are unchanged
 
 ## Automated verification
 
-- `node --test test/sid-startup.test.js`: eleven behavioral tests covering success while suspended, synchronous activation, duplicate calls, ready timeout, retry, stale progress/error/resume callbacks, hung/rejected cleanup, early-stage failure, processor crash, port disposal, and worklet acknowledgments.
-- `npm test`: 135 passing tests, including existing timing, preset, recording and sequencer regressions.
+- `node --test test/sid-startup.test.js`: thirteen behavioral tests covering success while suspended, synchronous activation, duplicate calls, ready timeout, retry, stale progress/error/resume callbacks, hung/rejected cleanup, early-stage failure, processor crash, port disposal, and worklet acknowledgments.
+- `npm test`: 146 passing tests, including existing timing, preset, recording and sequencer regressions.
 - Existing preview-assets WASM: `check-wasm-imports.mjs` and `smoke-test-sid.mjs` pass (44.1/48 kHz). No rebuild.
 
 ## Remaining device checks
@@ -50,3 +50,20 @@ Native rendering, note-on batch flushing, and sequencer scheduling are unchanged
 ## Preview workflow
 
 Run **Build PR preview** from `main`, set `pr_number` to this fix's PR number, and choose `publish`. This reuses the native artifact cache, tests the PR, and requests the existing Pages workflow to include the preview. It does not merge the fix. Confirm both workflow runs succeeded before testing the preview. Keep PR #56 unmerged.
+
+## Correlated note-event report
+
+1. Open **Audio timing** and enable **Log note events**. This setting starts off after every reload and is independent of opening the timing panel.
+2. Reproduce a few direct key presses/releases, then a short sequencer phrase. Disable the checkbox to freeze capture.
+3. Choose **Copy diagnostic report**. If clipboard access is unavailable, copy the selectable text shown beneath the button. **Clear log** removes captured events and pending correlations without restarting playback.
+
+The report retains the latest **512 entries**, plus an overwrite count. Input entries identify musical pointer/keyboard actions; note commands carry their input parent ID where triggered synchronously, or their generator source and custom step index. SID dispatch entries contain the actual register-write range for that command. Acknowledgments identify the first successfully rendered output block after those writes were applied, with its audio-frame position, frame count, sample rate, context ID and main-thread dispatch-to-acknowledgment duration. Several commands can share a block: this is not proof that every intermediate note became audible.
+
+Context transitions and current base/output latency accompany the report. Pending correlations are capped at 128; old entries expire when further tagged batches are dispatched, and evictions/closure are reported. Missing acknowledgments are not automatically evidence of audible loss. Main-thread timestamps and worklet frame positions use separate clocks and must not be directly subtracted.
+
+Capture is local in memory, does not persist across reloads, and sends nothing to a server. It records musical notes/registers, not arbitrary typed text, recordings, or preset names. Native synthesis, note-on immediate flushing, and note-off microtask scheduling remain unchanged. Diagnostics add overhead when enabled; compare playback with logging off before drawing latency conclusions.
+
+Additional automated coverage exercises ring rollover, disabled logging, tagged write ranges, on/off correlation, successful-render acknowledgments, bounded pending events, stale replies, the actual app's input/command linkage, copy/fallback behavior, and transitive import build stamping. Copilot's earlier lifecycle observations are covered by retired-context and post-ready-error regressions; native initialization errors now include available bounded error text.
+
+- [ ] Verify copy/fallback and panel controls on iPad Safari.
+- [ ] Compare logging on/off for direct keys, rapid chords, sequencer and recovery in the published preview.

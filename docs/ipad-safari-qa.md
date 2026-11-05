@@ -19,6 +19,13 @@ See [investigation evidence and limits](sid-startup-investigation.md).
 - [ ] After recovery, test direct keys with both arpeggiators off, then Game Arp Preview and Stop all. Check recording and chip/preset changes.
 - [ ] Compare perceived response using speakers versus external audio, with and without screen recording. Keep acknowledgment time, render cost, reported output latency and perceived sound onset separate.
 
+## Correlated note logging (pending device verification)
+
+- [ ] Open Audio timing, enable Log note events, play/release direct notes, then run and stop the sequencer. Pause logging and copy the diagnostic report.
+- [ ] Confirm the report contains correlated input, note command, register dispatch and rendered-block acknowledgment IDs; context state and current latency are included.
+- [ ] Verify Copy diagnostic report on Safari. If clipboard access fails, select and copy the fallback text. Typing shortcuts in that field must not play notes.
+- [ ] Clear the log, repeat after Retry SID, and compare response with logging disabled. Reload must leave event capture off.
+
 ## Audio readiness and touch controls
 
 - [ ] Engine LED shows loading, then ready/running; the first deliberate touch unlocks audio if needed.
