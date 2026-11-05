@@ -19,6 +19,11 @@ See [investigation evidence and limits](sid-startup-investigation.md).
 - [ ] After recovery, test direct keys with both arpeggiators off, then Game Arp Preview and Stop all. Check recording and chip/preset changes.
 - [ ] Compare perceived response using speakers versus external audio, with and without screen recording. Keep acknowledgment time, render cost, reported output latency and perceived sound onset separate.
 
+## Reference tone comparison (pending device verification)
+
+- [ ] On iPad speakers, reproduce the delay. Tap **Stop all** to silence the sequencer and clear held notes. In **Audio timing**, tap **Play reference tone** and compare the trigger cue with the beep. Close the panel and tap a SID key in the same tab without reloading.
+- [ ] Report whether the reference tone, the SID note, or both sound late. The reference uses a short Web Audio oscillator connected to the current SID audio context's destination. The cue shows when the app triggers it.
+
 ## Correlated note logging (pending device verification)
 
 - [ ] Open Audio timing, enable Log note events, play/release direct notes, then run and stop the sequencer. Pause logging and copy the diagnostic report.
