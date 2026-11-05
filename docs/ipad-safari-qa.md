@@ -9,6 +9,16 @@ This is a **device test plan**, not evidence that any test has passed. Automated
 - [ ] Narrow viewport (e.g. iPhone Safari or Safari responsive mode); check both tabs.
 - [ ] Desktop browser, using a mouse and physical keyboard for comparison.
 
+## SID startup recovery (issue #58; pending device verification)
+
+See [investigation evidence and limits](sid-startup-investigation.md).
+
+- [ ] Repeat fresh load, reload, and background/foreground transitions. If startup stalls, open Audio timing and record its last stage and context state.
+- [ ] Tap **Enable audio** while startup is suspended. Confirm progress or an explicit timeout; no indefinite spinner after foreground timers resume.
+- [ ] On an error, tap **Retry SID** repeatedly. Only one attempt should run. A cleanup failure must request reload instead of opening more contexts.
+- [ ] After recovery, test direct keys with both arpeggiators off, then Game Arp Preview and Stop all. Check recording and chip/preset changes.
+- [ ] Compare perceived response using speakers versus external audio, with and without screen recording. Keep acknowledgment time, render cost, reported output latency and perceived sound onset separate.
+
 ## Audio readiness and touch controls
 
 - [ ] Engine LED shows loading, then ready/running; the first deliberate touch unlocks audio if needed.

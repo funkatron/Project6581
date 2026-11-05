@@ -1,7 +1,16 @@
+import {closeSidContext} from './sid-audio-lifecycle.js';
 import {createSidWriteBatcher} from './sid-write-batcher.js';
 // Preload on page load; unlock audio separately during a trusted user gesture.
-export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=()=>{},onProgress=()=>{}}={}){
-  const context=new AudioContext({latencyHint:'interactive'});
+export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=()=>{},onProgress=()=>{},context=new AudioContext({latencyHint:'interactive'})}={}){
+  let node=null,batcher=null,closed=false;
+  const download=new AbortController();
+  const dispose=()=>{
+    if(closed)return;
+    closed=true;
+    download.abort();
+    batcher?.close();
+    if(node){node.port.onmessage=null;node.onprocessorerror=null;node.port.close();node.disconnect()}
+  };
   try {
     onContext(context);
     // Desktop browsers may permit autoplay. Never await this promise:
@@ -16,7 +25,7 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
     onProgress('Loading SID audio worklet…');
     await deadline(context.audioWorklet.addModule('./src/residfp-worklet.js?v='+version),'Audio worklet loading');
     onProgress('Downloading SID engine…');
-    const response=await deadline(fetch('./dist/residfp.wasm?v='+version,{cache:'no-store'}),'SID engine download');
+    const response=await deadline(fetch('./dist/residfp.wasm?v='+version,{cache:'no-store',signal:download.signal}),'SID engine download');
     if(!response.ok)throw Error('reSIDfp WASM unavailable (build artifact not deployed)');
     const bytes=await deadline(response.arrayBuffer(),'SID engine download');
     onProgress('Compiling SID engine…');
@@ -24,12 +33,15 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
     const unsupported=imports.filter(({module,name})=>module==='env'&&/^invoke_|^dynCall_/.test(name));
     if(unsupported.length)throw Error('Downloaded WASM has unsupported imports: '+unsupported.map(x=>x.module+'.'+x.name).join(', ')+'. The deployed binary is incompatible.');
     onProgress('Initializing SID audio processor…');
-    const node=new AudioWorkletNode(context,'residfp-processor',{outputChannelCount:[2]});
+    node=new AudioWorkletNode(context,'residfp-processor',{outputChannelCount:[2]});
     node.connect(context.destination);
     let capture=null,stopResolve=null,stopReject=null;
     let probeId=0,lastProbeAt=-Infinity,timingEnabled=false;
     const pendingProbes=new Map();
+    node.onprocessorerror=()=>{if(!closed)onStatus({type:'error',message:'SID audio processor stopped unexpectedly'})};
     node.port.onmessage=({data})=>{
+      if(closed)return;
+      if(data?.type==='init-progress'){onProgress(data.message);return;}
       if(data?.type==='latency-probe-result'){
         const pending=pendingProbes.get(data.id);
         pendingProbes.delete(data.id);
@@ -51,7 +63,7 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
       onStatus(data);
     };
     node.port.postMessage({type:'load',bytes,model},[bytes]);
-    const batcher=createSidWriteBatcher(message=>node.port.postMessage(message));
+    batcher=createSidWriteBatcher(message=>node.port.postMessage(message));
     return {context,node,
       write:(register,value)=>batcher.write(register,value),
       // Deliver each complete note-on register batch immediately, rather than
@@ -95,7 +107,11 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
       close:async()=>{
         const reject=stopReject;capture=null;stopResolve=null;stopReject=null;
         reject?.(new Error('SID audio closed during WAV capture'));
-        pendingProbes.clear();batcher.close();node.disconnect();await context.close()
+        pendingProbes.clear();dispose();await closeSidContext(context)
       }};
-  } catch(err){await context.close();throw err}
+  } catch(err){
+    dispose();
+    try{await closeSidContext(context)}catch(cleanup){throw new Error(err.message+'; '+cleanup.message,{cause:err})}
+    throw err;
+  }
 }

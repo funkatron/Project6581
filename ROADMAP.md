@@ -6,6 +6,14 @@ Prioritize features that help people **make, retain, exchange, and perform music
 
 **Near-term order:** **1. Factory/user presets and import/export** → **2. Composable Arpeggiator + Game Arp and Western scale lock** → **3. MIDI input on iPad and desktop** → **4. App-like installation and offline access**. WAV/M4A recording and the stationary LFO display are already under development in separate PRs. Independent SID-device support remains **UI-design-first** before modifying the engine.
 
+## In progress: SID initialization recovery (#58)
+
+- [x] Characterize production and PR #56 startup in Work's remote Chrome; both reach ready while suspended. The intermittent iPad failure remains unconfirmed.
+- [x] Add startup-stage acknowledgments, explicit audio activation, bounded cleanup, serialized retry and stale-callback protection without changing note scheduling or native WASM.
+- [x] Add behavioral lifecycle regression coverage; see [evidence and limits](docs/sid-startup-investigation.md).
+- [ ] Verify the modified preview and iPad Safari startup/recovery, direct keys, sequencer, and actual perceived latency.
+- [ ] Check final CI and Copilot reviews before an authorized merge. Keep factory preset PR #56 separate.
+
 ## Planned UI refinement: consistent control widths and dedicated LFO tab
 
 **Goal:** Make the synth's controls easier to scan and use across desktop and iPad, while giving modulation its own focused workspace. This is a layout and navigation task, not a change to the SID engine.

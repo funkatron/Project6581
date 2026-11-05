@@ -37,14 +37,21 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     };
   }
   async load(bytes,model){
+    const progress=message=>this.port.postMessage({type:'init-progress',message});
     try{
+      progress('SID worklet received initialization.');
       const wasi={fd_write:()=>0,fd_close:()=>0,fd_seek:()=>0,proc_exit:()=>0,environ_sizes_get:()=>0,environ_get:()=>0,args_sizes_get:()=>0,args_get:()=>0};
+      progress('Instantiating SID WebAssembly…');
       const {instance}=await WebAssembly.instantiate(bytes,{wasi_snapshot_preview1:wasi,env:{}});
+      progress('SID WebAssembly instantiated.');
       const e=instance.exports;
       if(!e.memory || !e.sid_init || !e.sid_write || !e.sid_render || !e.sid_pcm_ptr)throw Error('Missing required WASM exports');
+      progress('Initializing SID runtime…');
       e._initialize?.();
+      progress('Initializing SID chip…');
       if(!e.sid_init(model,sampleRate))throw Error('SID initialization failed at stage '+(e.sid_init_stage?.()??'unknown')+' (sample rate '+sampleRate+' Hz)');
       this.exports=e;
+      progress('SID chip initialized.');
       this.port.postMessage({type:'ready',renderer:true});
     }catch(err){this.port.postMessage({type:'error',message:String(err)})}
   }
