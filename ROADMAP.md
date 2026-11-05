@@ -51,6 +51,20 @@ SID playback + highlighted keyboard keys
 
 **Completion checks:** Both generators can run simultaneously; Arpeggiator changes the root of the ongoing Game Arp phrase, each feature retains a clear independent purpose, and no combination produces stuck notes or misleading highlights.
 
+## Implementation preview: Game Arp step sequencer and 64C layout
+
+**Design reference:** The approved Game Arp sequencer mockup, with the keyboard stretching across the bottom and an optional collapse control. This is the first functional adaptation, not a claim that the entire image is implemented.
+
+- [x] Full-width Arp/Seq editor with a warm Commodore 64C-inspired palette, orange highlights, accessible tab navigation and horizontal scrolling on narrow displays.
+- [x] Editable 16-step custom Game Arp pattern with semitone offsets, gate/rest and per-step note length; switch between 4/8/16 active steps.
+- [x] Game Arp Preview transport, existing pattern rate/sync/latch, and visual highlighting for the active step.
+- [x] Preserve authentic reSIDfp note output and separate root-arpeggiator timing; add sequence state to version-3 presets without invalidating existing files.
+- [x] Full-width keyboard with Show/Hide control and remembered visibility. Maintain keyboard and arpeggiator note ownership when hiding or changing octaves.
+- [ ] Verify desktop, iPad landscape, portrait, scrolling, touch slider hit targets, keyboard focus and sound on a real device; CI source tests alone are insufficient.
+- [ ] Evaluate glide/portamento, accent and filter parameter automation in a separate slice, with deterministic per-step timing and authentic SID register behavior.
+- [ ] Design the rest of the broader mockup (FX, Mix, additional independent SID devices) only after the existing working controls fit clearly; never ship decorative dead buttons.
+- [ ] Investigate browser timer jitter and AudioWorklet scheduling independently.
+
 ## Priority 2b: selectable Western scales and scale-constrained playback
 
 **Goal:** Support conventional 12-tone equal-tempered Western musical scales on the keyboard and in all sounding notes, with predictable, opt-in pitch restrictions.
