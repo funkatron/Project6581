@@ -42,7 +42,7 @@ test('user preset can save and reload every sound and performance setting',()=>{
  settings.sound.lfos[2]={...settings.sound.lfos[2],enabled:true,wave:'sample-hold',rate:2.25,depth:.45,target:'volume'};
  settings.performance.masterBpm=147;
  settings.performance.arp={enabled:true,latch:true,pattern:'updown',rate:8,sync:false,localBpm:98};
- settings.performance.game={enabled:true,style:'adventure',rate:8};
+ settings.performance.game={...settings.performance.game,enabled:true,style:'adventure',rate:8};
  const saved=writeUserPresets(storage,[{id:'abc123',name:'My 8580',settings}]);
  assert.deepEqual(readUserPresets(storage),saved);
  assert.deepEqual(saved[0].settings,settings);

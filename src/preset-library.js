@@ -1,3 +1,4 @@
+import {defaultSequence,validateSequence} from './game-step-sequencer.js';
 // Project6581 preset format v3: instrument allocation, sound and performance settings.
 // This is intentionally a single-version format; no migrations are needed yet.
 export const PRESET_VERSION=3;
@@ -10,7 +11,7 @@ const LFO_WAVES=['sine','triangle','sawtooth','square','sample-hold'];
 const TARGETS=['cutoff','resonance','volume','pulse','detune','attack','decay','sustain','release','pwmDepth','pwmRate'];
 const DIVISIONS=[.25,.5,1,2,4,8,16,32];
 const PATTERNS=['up','down','updown','random'];
-const STYLES=['action','adventure','arcade'];
+const STYLES=['action','adventure','arcade','custom'];
 function object(v,name){
  if(!v||typeof v!=='object'||Array.isArray(v))throw new TypeError(name+' must be an object');
  return v;
@@ -43,7 +44,7 @@ export function defaultPresetSettings(){
   performance:{
    masterBpm:120,
    arp:{enabled:false,latch:false,pattern:'up',rate:4,sync:true,localBpm:120},
-   game:{enabled:true,style:'action',rate:4}
+   game:{enabled:true,style:'action',rate:4,sequence:defaultSequence()}
   }
  };
 }
@@ -93,7 +94,8 @@ export function validatePresetSettings(value){
     sync:boolean(arp.sync,'Arp sync'),localBpm:integer(arp.localBpm,'local BPM',40,240)
    },
    game:{enabled:boolean(game.enabled,'Game Arp enabled'),style:choice(game.style,'Game Arp style',STYLES),
-    rate:choice(game.rate,'Game Arp pattern rate',DIVISIONS)}
+    rate:choice(game.rate,'Game Arp pattern rate',DIVISIONS),
+    sequence:validateSequence(game.sequence??defaultSequence())}
   }
  };
 }
