@@ -861,32 +861,49 @@ function currentPreset(){
 function presetMessage(message){
  $('presetStatus').textContent=message;
 }
-function renderPresetPicker(message=null){
- const picker=$('presetPicker');
- picker.replaceChildren(new Option('Current sound','scratch'));
- for(const [label,kind,list] of [
-  ['Factory presets','factory',FACTORY_PRESETS],
-  ['My presets','user',userPresets]
+function renderPresetLibrary(message=null){
+ const selected=selectedPreset?selectedPreset.kind+':'+selectedPreset.id:null;
+ for(const [kind,presets,listId] of [
+  ['factory',FACTORY_PRESETS,'factoryPresetList'],['user',userPresets,'userPresetList']
  ]){
-  const group=document.createElement('optgroup');group.label=label;
-  for(const preset of list)group.append(new Option(preset.name,kind+':'+preset.id));
-  picker.append(group);
+  const list=$(listId);
+  const items=presets.map(preset=>{
+   const button=document.createElement('button');
+   button.type='button';button.className='preset-item';
+   button.dataset.kind=kind;button.dataset.id=preset.id;
+   button.append(document.createTextNode(preset.name));
+   if(kind==='factory'){
+    const category=document.createElement('span');
+    category.className='preset-item-category';category.textContent=preset.category;
+    button.append(category);
+   }
+   button.setAttribute('aria-current',String(selected===kind+':'+preset.id));
+   return button;
+  });
+  if(!items.length){
+   const empty=document.createElement('div');empty.className='preset-empty';
+   empty.textContent='No user presets yet. Use Save as… to create one.';
+   items.push(empty);
+  }
+  list.replaceChildren(...items);
  }
- const value=selectedPreset?selectedPreset.kind+':'+selectedPreset.id:'scratch';
- picker.value=value;
- if(!picker.value)picker.value='scratch';
  const editable=selectedPreset?.kind==='user';
  $('presetSave').disabled=!editable;
  $('presetRename').disabled=!editable;
  $('presetDelete').disabled=!editable;
+ $('presetExportBank').disabled=!userPresets.length;
  const p=currentPreset();
- const description=p?p.name+(presetDirty?' · unsaved changes':''):'Current sound';
+ const name=p?.name||'Current sound';
+ $('presetCurrent').textContent=name+(presetDirty?' •':'');
+ $('presetOpen').title=name+(presetDirty?' (unsaved changes)':'')+' · Open presets';
+ $('presetOpen').setAttribute('aria-label','Open preset library. '+name+(presetDirty?', unsaved changes':''));
+ const description=p?name+(presetDirty?' · unsaved changes':''):'Current sound';
  presetMessage(message??(presetStorageError?'Local preset storage unavailable: '+presetStorageError:description));
 }
 function refreshPresetDirty(){
  const preset=currentPreset();
  const changed=Boolean(preset)&&JSON.stringify(snapshotPresetSettings())!==JSON.stringify(preset.settings);
- if(changed!==presetDirty){presetDirty=changed;renderPresetPicker();}
+ if(changed!==presetDirty){presetDirty=changed;renderPresetLibrary();}
 }
 function applyPresetControls(next){
  // Silence old voices and clear transient notes, but retain the saved arp switches.
@@ -958,37 +975,48 @@ function exportPresetFile(json,filename){
 function guardPresetAction(work){
  try{return work()}catch(error){presetMessage('Preset error: '+(error.message||error));return null}
 }
-$('presetPicker').addEventListener('change',async()=>{
- if($('presetPicker').disabled)return;
- const value=$('presetPicker').value;
- const previous=selectedPreset?selectedPreset.kind+':'+selectedPreset.id:'scratch';
- if(presetDirty&&!window.confirm('Discard unsaved changes to this preset?')){
-  $('presetPicker').value=previous;return;
- }
- if(value==='scratch'){
-  selectedPreset=null;presetDirty=false;renderPresetPicker('Current sound remains loaded');return;
- }
- const [kind,id]=value.split(':');
- const preset=(kind==='factory'?FACTORY_PRESETS:userPresets).find(p=>p.id===id);
- if(!preset){renderPresetPicker('Preset not found');return;}
- $('presetPicker').disabled=true;
+$('presetOpen').addEventListener('click',()=>{
+ if(!$('presetDialog').open)$('presetDialog').showModal();
+});
+$('presetClose').addEventListener('click',()=>$('presetDialog').close());
+$('presetDialog').addEventListener('click',event=>{
+ if(event.target===$('presetDialog'))$('presetDialog').close();
+});
+let presetLoading=false;
+async function loadSelectedPreset(kind,id){
+ if(presetLoading)return;
+ const source=kind==='factory'?FACTORY_PRESETS:kind==='user'?userPresets:null;
+ const preset=source?.find(p=>p.id===id);
+ if(!preset){presetMessage('Preset not found');return}
+ if(presetDirty&&!window.confirm('Discard unsaved changes to this preset?'))return;
+ presetLoading=true;
+ for(const listId of ['factoryPresetList','userPresetList'])
+  $(listId).querySelectorAll('button').forEach(button=>button.disabled=true);
  try{
   await applyPresetSettings(preset.settings);
-  selectedPreset={kind,id};presetDirty=false;renderPresetPicker();
- }catch(error){
-  $('presetPicker').value=previous;
-  presetMessage(error.message||String(error));
- }finally{
-  $('presetPicker').disabled=false;
+  selectedPreset={kind,id};presetDirty=false;renderPresetLibrary();
+  $('presetDialog').close();
+ }catch(error){presetMessage('Could not load preset: '+(error.message||error))}
+ finally{
+  presetLoading=false;
+  for(const listId of ['factoryPresetList','userPresetList'])
+   $(listId).querySelectorAll('button').forEach(button=>button.disabled=false);
  }
-});
+}
+for(const listId of ['factoryPresetList','userPresetList']){
+ $(listId).addEventListener('click',event=>{
+  const button=event.target.closest('button.preset-item');
+  if(button&&$(listId).contains(button))
+   void loadSelectedPreset(button.dataset.kind,button.dataset.id);
+ });
+}
 $('presetSave').addEventListener('click',()=>guardPresetAction(()=>{
  if(selectedPreset?.kind!=='user')return;
  const index=userPresets.findIndex(p=>p.id===selectedPreset.id);
  if(index<0)throw new Error('User preset not found');
  const next=userPresets.slice();
  next[index]={...next[index],settings:snapshotPresetSettings()};
- savePresetList(next);presetDirty=false;renderPresetPicker('Saved '+next[index].name);
+ savePresetList(next);presetDirty=false;renderPresetLibrary('Saved '+next[index].name);
 }));
 $('presetSaveAs').addEventListener('click',()=>guardPresetAction(()=>{
  const suggested=currentPreset()?.name||'My SID Sound';
@@ -999,7 +1027,7 @@ $('presetSaveAs').addEventListener('click',()=>guardPresetAction(()=>{
   throw new Error('That name already exists. Choose a different name or use Save.');
  const preset={id:newPresetId(),name,settings:snapshotPresetSettings()};
  savePresetList([...userPresets,preset]);
- selectedPreset={kind:'user',id:preset.id};presetDirty=false;renderPresetPicker('Saved '+name);
+ selectedPreset={kind:'user',id:preset.id};presetDirty=false;renderPresetLibrary('Saved '+name);
 }));
 $('presetRename').addEventListener('click',()=>guardPresetAction(()=>{
  if(selectedPreset?.kind!=='user')return;
@@ -1010,13 +1038,13 @@ $('presetRename').addEventListener('click',()=>guardPresetAction(()=>{
  if(userPresets.some(p=>p.id!==preset.id&&p.name.toLowerCase()===name.toLowerCase()))
   throw new Error('A preset already uses that name');
  savePresetList(userPresets.map(p=>p.id===preset.id?{...p,name}:p));
- renderPresetPicker('Renamed '+name);
+ renderPresetLibrary('Renamed '+name);
 }));
 $('presetDelete').addEventListener('click',()=>guardPresetAction(()=>{
  if(selectedPreset?.kind!=='user')return;
  const preset=currentPreset();if(!preset||!window.confirm('Delete '+preset.name+'? This cannot be undone.'))return;
  savePresetList(userPresets.filter(p=>p.id!==preset.id));
- selectedPreset=null;presetDirty=false;renderPresetPicker('Deleted preset; current sound remains loaded');
+ selectedPreset=null;presetDirty=false;renderPresetLibrary('Deleted preset; current sound remains loaded');
 }));
 $('presetExport').addEventListener('click',()=>guardPresetAction(()=>{
  const name=currentPreset()?.name||'Current sound';
@@ -1049,23 +1077,23 @@ $('presetFile').addEventListener('change',async()=>{
   const importedMessage='Imported '+imported.length+' preset(s).'+
    (presetDirty?' Selected preset has unsaved changes; Save will replace the imported settings.':
     ' Choose one from My presets.');
-  renderPresetPicker(importedMessage);
+  renderPresetLibrary(importedMessage);
  }catch(error){presetMessage('Import failed: '+(error.message||error))}
  finally{input.value=''}
 });
 document.addEventListener('input',event=>{
- if(event.target.id==='presetPicker'||event.target.id==='presetFile')return;
+ if(event.target.id==='presetFile')return;
  if(event.target.closest('#voicePanel')||event.target.closest('#playPanel')||event.target.id==='masterBpm')
   refreshPresetDirty();
 });
 document.addEventListener('change',event=>{
- if(event.target.id==='presetPicker'||event.target.id==='presetFile')return;
+ if(event.target.id==='presetFile')return;
  if(event.target.closest('#voicePanel')||event.target.closest('#playPanel')||event.target.id==='masterBpm')
   refreshPresetDirty();
 });
 window.addEventListener('pagehide',event=>{
  if(!event.persisted&&presetDownloadUrl)URL.revokeObjectURL(presetDownloadUrl);
 });
-renderPresetPicker();
+renderPresetLibrary();
 startSid();
 </script></body></html>
