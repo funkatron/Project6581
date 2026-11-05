@@ -23,10 +23,12 @@ test('the Arp/Seq workspace is usable and the original Sound controls remain',()
 test('the step editor provides exactly one dynamic control per step and per lane',()=>{
  assert.match(script,/seqState\.steps\.forEach\(\(step,index\)=>\{/);
  assert.match(script,/pitch\.type='range';pitch\.className='seq-note'/);
- assert.match(script,/gate\.type='checkbox';gate\.className='seq-gate'/);
+ assert.match(script,/gate\.type='button';gate\.className='seq-gate'/);
  assert.match(script,/length\.type='range';length\.className='seq-duration'/);
  assert.match(script,/pitch\.addEventListener\('input'/);
- assert.match(script,/gate\.addEventListener\('change'/);
+ assert.match(script,/gate\.addEventListener\('click'/);
+ assert.match(script,/gate\.setAttribute\('aria-pressed',String\(enabled\)\)/);
+ assert.match(script,/gate\.textContent=enabled\?'ON':'REST'/);
  assert.match(script,/length\.addEventListener\('input'/);
  assert.match(script,/seqState\.steps\[index\]\.offset=Number\(pitch\.value\)/);
  assert.match(script,/seqState\.steps\[index\]\.duration=Number\(length\.value\)/);
@@ -66,4 +68,21 @@ test('high-rate gate lengths have no artificial 20 ms minimum',()=>{
  assert.ok(quarterGate<2,'240 BPM at 1/128 has an approximately 1.95 ms quarter gate');
  assert.match(script,/\},stepMilliseconds\(bpm,\$\('gameRate'\)\.value\)\*event\.duration\/100\)/);
  assert.doesNotMatch(script,/Math\.max\(20,Math\.round\(stepMilliseconds/);
+});
+
+test('step gates are touch-friendly rectangular ON/REST buttons, not round switches',()=>{
+ assert.match(css,/\.seq-gate\{[^}]*width:44px[^}]*height:40px[^}]*border-radius:5px/);
+ assert.match(css,/\.seq-gate\[aria-pressed="true"\]/);
+ assert.match(css,/\.seq-gate\[aria-pressed="false"\]/);
+ assert.doesNotMatch(script,/gate\.type='checkbox'/);
+});
+
+test('landscape and compact layouts preserve sequencer lanes and taller keyboard',()=>{
+ assert.match(css,/\.keyboard-panel\{grid-row:4;height:clamp\(190px,27dvh,285px\)/);
+ assert.match(css,/@media \(min-width:701px\) and \(max-height:1000px\)/);
+ assert.match(css,/\.seq-step\{grid-template-rows:21px 112px 42px 44px;gap:0\}/);
+ assert.match(css,/\.keyboard-panel\{height:clamp\(185px,26dvh,270px\)\}/);
+ assert.match(css,/@media \(max-width:1100px\)\{\s*header\{display:grid/);
+ assert.match(css,/\.seq-grid-scroller\{[^}]*overflow-x:auto/);
+ assert.match(css,/@media \(max-height:650px\)/);
 });
