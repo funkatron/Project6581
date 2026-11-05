@@ -51,7 +51,16 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 - [ ] Compare 1, 2, and 3 simultaneous LFOs; observe any audible stepping or UI stutter.
 - [ ] Move Safari to the background and back; record whether timing drifts or audio stops.
 
-## Factory/user presets (pending iPad device verification)
+## Top-bar preset library (pending iPad device verification)
+
+- [ ] On iPad landscape, tap the compact current-preset name in the top bar. The modal opens with Factory presets and My presets in two columns without moving the keyboard or Sound panel.
+- [ ] On narrow screens, verify the two collections stack vertically and scroll independently; all actions remain reachable without horizontal overflow.
+- [ ] Factory sounds are read-only, user sounds remain separate in local storage, and the selected preset is visibly indicated in the correct list.
+- [ ] Choose a factory or user preset; the modal closes, the top bar updates, and playing the keyboard uses the newly selected sound.
+- [ ] Confirm the unsaved-change dot and discard confirmation, and test dialog close and Escape without changing the current sound.
+- [ ] Save, Save as, Rename, Delete, Import and Export inside the modal; verify the persistent download link remains tappable after export.
+
+## Factory/user presets (additional sound and persistence checks)
 
 - [ ] Choose each factory sound, hold a note, and verify the audible waveform, filter and envelope change.
 - [ ] Modify a factory preset, see the unsaved indicator, then Save as… and reload the user preset.
