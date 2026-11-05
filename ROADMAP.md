@@ -160,7 +160,7 @@ The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) identifie
 
 - [x] Plan a compact **Voice Assign** selector: **Mono, Legato, Duo, Poly**.
 - [x] Define **Voices** (1–8 total hardware oscillators) separately from **Unison** (1–Voices stacked layers per note), with **Detune** in cents.
-- [x] Specify where the controls sit in the current Sound tab, including portrait iPad, landscape iPad, desktop, keyboard visibility and accessible labels.
+- [x] Specify a compact, wrapping inline group of **content-sized** Voice Assign, Voices and Unison selectors with **Detune on a full-width row**, retaining the current Sound tab, iPad/desktop keyboard visibility, and accessible touch targets.
 - [x] Document the desired allocation, note ownership, clipping/voice limits, legato envelope behavior, and preset/LFO interactions without changing the audio engine.
 - [ ] Obtain UI/interaction approval **before implementation**. No UI styling, voice allocator, native mixer, tests, or preset format changes in this design-only slice.
 - [ ] Implement in a future bounded PR, preserving the current interface and checking Copilot reviews and actual iPad playback.
