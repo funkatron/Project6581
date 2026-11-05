@@ -20,17 +20,17 @@ This is a **device test plan**, not evidence that any test has passed. Automated
 - [ ] Press/release a key once and check that it releases only once, including after pointer capture ends.
 - [ ] Turn device orientation while no notes are held; no stranded active keys.
 
-## Polyphony and Unison
+## Voice assignment and Unison layers
 
 Disable Game Arp and Arp first, to hear independent keys rather than pattern notes.
 
-- [ ] Set Voices to 3 and Unison **off**. Hold C, E, and G simultaneously; hear a three-note chord.
-- [ ] Play a fourth note while still holding the chord; oldest voice is stolen predictably.
+- [ ] Set **Poly**, Voices **6**, Unison **2**. Hold C, E and G; hear three simultaneous pitches with two oscillators each.
+- [ ] While holding three Poly notes, play a fourth; the **oldest** complete stack is stolen and a late release must not cut off the new note.
 - [ ] Releasing the physically held, stolen key does **not** silence the replacing note.
-- [ ] Set Voices to 8, Unison off; verify multiple notes spanning all three SID instances.
-- [ ] Enable Unison, Voices 4, and Detune 12¢. One held key should sound layered, not a chord.
-- [ ] In Unison, hold two keys, release the newest; the earlier held note should resume.
-- [ ] Switch between modes, adjust Voices, and use Stop all. No hanging notes or unexpected sounds.
+- [ ] Set Voices **8**, Unison **1**, Poly and play an eight-note chord spanning three emulated SID chips.
+- [ ] Set **Mono**, Voices **4**, Unison **4**, Detune **12¢**; one key sounds four detuned oscillators.
+- [ ] In Mono, overlap two keys and release the newest. The earlier pitch returns with retriggering. Repeat in **Legato**, checking that overlapping transitions do not restart the envelope.
+- [ ] In Duo, add a third pitch; the oldest pitch is displaced. Test late note-off and repeated same-note presses.\n- [ ] Change Assign, Voices, Unison while notes sound, then Stop all. No stuck gates; the compact selectors remain readable on iPad portrait/landscape.
 
 ## Synchronized LFOs
 
@@ -87,7 +87,7 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 
 - [ ] All 11 target names appear in each LFO's Target selector, with touch-friendly selection in portrait and landscape.
 - [ ] ADSR modulation audibly changes held Unison and polyphonic notes without breaking note release or causing stuck gates.
-- [ ] Unison detune moves pitch spread smoothly; independent polyphonic notes remain unaffected by detune modulation.
+- [ ] Detune changes pitch between active layers in Mono, Legato, Duo and Poly when Unison is greater than 1; at Unison 1 the slider is inactive without losing its value.
 - [ ] PWM depth/rate audibly change Pulse movement, without changing Triangle/Sawtooth/Noise output.
 - [ ] Turning off or retargeting an LFO restores the saved base setting; two LFOs on one target combine predictably and clip at bounds.
 - [ ] Check fast modulation CPU use, UI responsiveness, register-write load, and audible stepping at 60 Hz. These are not established by Node tests.
