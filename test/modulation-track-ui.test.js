@@ -30,7 +30,8 @@ test('modulation colors the track, not an extra moving thumb or the slider value
  assert.match(html,/::-webkit-slider-thumb\{/);
  assert.match(html,/::-moz-range-thumb\{/);
  assert.doesNotMatch(html,/modulation-thumb/);
- assert.match(script,/setModulationTrack\(input,base\[target\],values\[target\],targetEnabled\)/);
+ assert.match(script,/const effectiveValue=target==='pulse'\?livePulse:values\[target\]/);
+ assert.match(script,/setModulationTrack\(input,base\[target\],effectiveValue,targetEnabled\)/);
  assert.doesNotMatch(script,/input\.value\s*=\s*values\[target\]/);
  assert.match(script,/band\.setAttribute\('aria-hidden','true'\)/);
  assert.match(script,/band\.hidden=!track\.active/);
