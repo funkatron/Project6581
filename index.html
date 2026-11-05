@@ -699,6 +699,7 @@ const MIN_OCTAVE=0,MAX_OCTAVE=7;
 let keyboardOctave=3;
 const compactKeyboard=()=>matchMedia('(max-width:900px), (max-height:620px)').matches;
 function renderKeyboard(){
+  const resumePreview=seqPreview&&gameEnabled();
   panic();
   arp.held.clear(); // Pointer capture cannot survive keyboard reconstruction.
   if(!$('arpLatch').checked)arp.latched.clear();
@@ -726,6 +727,7 @@ function renderKeyboard(){
   $('octaveLabel').textContent='C'+keyboardOctave+'–C'+(keyboardOctave+(compactKeyboard()?1:2));
   $('octaveDown').disabled=keyboardOctave===MIN_OCTAVE;
   $('octaveUp').disabled=keyboardOctave===MAX_OCTAVE;
+  if(resumePreview)restartGenerators();
 }
 $('octaveDown').addEventListener('click',()=>{keyboardOctave=Math.max(MIN_OCTAVE,keyboardOctave-1);renderKeyboard()});
 $('octaveUp').addEventListener('click',()=>{keyboardOctave=Math.min(MAX_OCTAVE,keyboardOctave+1);renderKeyboard()});
