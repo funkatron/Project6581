@@ -22,6 +22,22 @@ Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of th
 
 > 🔈 **No sound?** Turn up your device volume, check the **Engine status** message, and try touching a key again. If initialization fails, reload the page and retry. There is no substitute audio engine.
 
+## 🎛️ Game Arp step sequencer (first implementation)
+
+Choose **ARP / SEQ** to edit a Game Arp phrase. The new 64C-inspired panel has 16 numbered steps and keeps the full-width keyboard beneath the editor. Scroll the step grid horizontally on narrow screens.
+
+- Set **Pattern → Custom steps** (editing any step does this automatically).
+- Move a vertical step slider to set its **pitch offset** (−12 to +24 semitones from the note you play).
+- Toggle a step's **gate** to make it play or rest. Adjust **Length** beneath the gate to shorten that step's note (25–100%).
+- Choose **4, 8 or 16 steps** and use the existing **Rate**, **Sync**, and **Latch** controls.
+- Tap **Preview** to hear your custom pattern from the current keyboard octave without holding a key. Playing keys changes the root while previewing. **Stop** ends Game Arp playback.
+- Tap **Root Arpeggiator & 3 LFOs** to expand the existing modulation and root controls.
+- Tap **Hide keyboard** to collapse the full-width keyboard while using the sequencer. Tap **Show keyboard** to restore it. This choice is remembered locally.
+
+Custom steps are stored with your existing version-3 user presets. Existing presets still load and use a default phrase when they contain no step data. The SID audio engine is unchanged.
+
+This release implements pitch, gates, and per-step note length. Glide, parameter automation, and the additional FX/Mix or multi-SID controls shown in the design study are not implemented yet.
+
 ## 💾 Factory sounds and user presets
 
 Tap the **current preset name in the top bar** to open the preset library. The modal shows **Factory presets** and **My presets** side by side on wider screens and stacked on narrow screens. Choose one to load it and return to the keyboard. Factory presets are read-only.
@@ -69,7 +85,7 @@ The WAV contains 16-bit mono PCM from the reSIDfp render path (the app plays thi
 ## 🎮 Three things to try
 
 ### 1. Make a classic game melody
-- Leave **Game Arp** enabled.
+- Leave **Game Arp** enabled, or select **Custom steps** to hear your edited phrase.
 - Select **Arcade**.
 - Hold a key, then try **Pattern rate → 1/32**.
 
