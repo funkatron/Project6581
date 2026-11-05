@@ -10,7 +10,8 @@ test('eight unison layers sound across all three SID chips in Mono',()=>{
  const token=sid.noteOn(69,sound);
  assert.equal(gateOns(writes).length,8);
  assert.deepEqual([...new Set(gateOns(writes).map(([r])=>Math.floor(r/32)))],[0,1,2]);
- sid.noteOff(69,token);assert.equal(sid.current,null);assert.equal(gateOffs(writes).length,8);
+ const offAt=writes.length;
+ sid.noteOff(69,token);assert.equal(sid.current,null);assert.equal(gateOffs(writes.slice(offAt)).length,8);
 });
 
 test('six Voices and two Unison layers allow three Poly pitches',()=>{
@@ -62,9 +63,10 @@ test('Legato changes pitch without resetting SID gates even on held-note fallbac
  assert.equal(sid.current,60);
  assert.equal(gateOns(writes.slice(fallbackAt)).length,0);
  assert.equal(gateOffs(writes.slice(fallbackAt)).length,0);
+ const offAt=writes.length;
  sid.noteOff(60,c);
  assert.equal(sid.current,null);
- assert.equal(gateOffs(writes).length,2);
+ assert.equal(gateOffs(writes.slice(offAt)).length,2);
 });
 
 test('Mono retriggers overlapping notes and safely returns to held pitch',()=>{
