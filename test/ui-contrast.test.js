@@ -6,14 +6,21 @@ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const css=html.slice(html.indexOf('<style>')+7,html.indexOf('</style>'));
 
 function property(selector,name){
- const start=css.lastIndexOf(selector+'{');
- assert.ok(start!==-1,'Missing CSS selector '+selector);
- const end=css.indexOf('}',start);
- assert.ok(end>start,'Unterminated CSS block for '+selector);
- const rules=css.slice(start+selector.length+1,end).split(';');
- const rule=rules.find(part=>part.trimStart().startsWith(name+':'));
- assert.ok(rule,'Missing '+name+' in '+selector);
- const value=rule.slice(rule.indexOf(':')+1).trim();
+ const needle=selector+'{';
+ let offset=0,found=false,value=null,start;
+ // A later rule might only change spacing, so find the last declaration of
+ // the property rather than assuming the selector's last block defines it.
+ while((start=css.indexOf(needle,offset))!==-1){
+  found=true;
+  const end=css.indexOf('}',start);
+  assert.ok(end>start,'Unterminated CSS block for '+selector);
+  const rules=css.slice(start+needle.length,end).split(';');
+  const rule=rules.find(part=>part.trimStart().startsWith(name+':'));
+  if(rule)value=rule.slice(rule.indexOf(':')+1).trim();
+  offset=end+1;
+ }
+ assert.ok(found,'Missing CSS selector '+selector);
+ assert.ok(value,'Missing '+name+' in '+selector);
  assert.match(value,/^#[0-9a-f]{6}$/i,'Expected an explicit six-digit color for '+selector);
  return value;
 }
