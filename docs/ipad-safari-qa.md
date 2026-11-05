@@ -17,6 +17,9 @@ This is a **device test plan**, not evidence that any test has passed. Automated
 - [ ] Switch Sound / Arpeggiator & LFO tabs; controls remain operable and the piano keyboard stays visible.
 - [ ] Controls do not overlap; labels are readable. LFO layout adapts to the **panel** width in portrait and landscape.
 - [ ] All LFO select boxes, sliders, switches, and octave buttons respond to touch without selecting nearby controls.
+- [ ] Compare the black-key widths to white-key widths in the two-octave desktop layout and compact one-octave iPad layout. Black keys should be roughly two-thirds as wide and remain centered between white keys.
+- [ ] Try C♯, D♯, F♯, G♯ and A♯ by touch in portrait and landscape, including near each black key's edges; notes should trigger reliably without accidentally selecting an adjacent white key.
+- [ ] Verify black keys do not overlap neighboring black keys or clip their note labels; desktop mouse, physical keyboard, and held-note highlighting behave as before.
 - [ ] Press/release a key once and check that it releases only once, including after pointer capture ends.
 - [ ] Turn device orientation while no notes are held; no stranded active keys.
 
