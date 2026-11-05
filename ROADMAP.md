@@ -154,6 +154,19 @@ The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) identifie
 
 **Completion condition:** Three LFOs can run simultaneously, independently modulate selected sliders, and stop cleanly without changing saved base control values or compromising SID playback.
 
+## Planned: voice allocation controls (design approval before implementation)
+
+**Design proposal:** [Voice allocation layout](docs/voice-allocation-layout.md). Use the ARP 2600 app screenshot for functions only, retaining Project6581's existing Sound-tab design. **Spread is explicitly excluded**, at the user's request.
+
+- [x] Plan a compact **Voice Assign** selector: **Mono, Legato, Duo, Poly**.
+- [x] Define **Voices** (1–8 total hardware oscillators) separately from **Unison** (1–Voices stacked layers per note), with **Detune** in cents.
+- [x] Specify where the controls sit in the current Sound tab, including portrait iPad, landscape iPad, desktop, keyboard visibility and accessible labels.
+- [x] Document the desired allocation, note ownership, clipping/voice limits, legato envelope behavior, and preset/LFO interactions without changing the audio engine.
+- [ ] Obtain UI/interaction approval **before implementation**. No UI styling, voice allocator, native mixer, tests, or preset format changes in this design-only slice.
+- [ ] Implement in a future bounded PR, preserving the current interface and checking Copilot reviews and actual iPad playback.
+
+**Scope decision:** No stereo Spread, panning, or stereo output work for this milestone. The separate future **up-to-three-independent-SID-devices** UI milestone remains distinct.
+
 ## Planned: modulation-center slider presentation
 
 **Goal:** Make modulation immediately readable without moving control thumbs during playback.
