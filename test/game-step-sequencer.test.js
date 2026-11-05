@@ -9,6 +9,9 @@ test('default Game Arp phrase contains sixteen independent editable steps',()=>{
  assert.equal(phrase.steps.length,16);
  assert.notStrictEqual(phrase.steps[0],defaultSequence().steps[0]);
  assert.deepEqual(validateSequence(phrase),phrase);
+ assert.ok(phrase.steps.every(step=>step.offset===0&&step.gate===true&&step.duration===75),'reset/default must be a blank, gated phrase');
+ const changed=defaultSequence();changed.steps[3].offset=10;changed.steps[7].gate=false;
+ assert.ok(defaultSequence().steps.every(step=>step.offset===0&&step.gate),'reset must not retain edits');
 });
 
 test('four, eight and sixteen steps wrap at their own lengths',()=>{
@@ -17,13 +20,14 @@ test('four, eight and sixteen steps wrap at their own lengths',()=>{
   phrase.length=length;
   const at=sequenceEvent(60,phrase,length+2);
   assert.equal(at.index,2);
-  assert.equal(at.note,67);
+  assert.equal(at.note,60);
   assert.equal(at.gate,true);
  }
 });
 
 test('rest steps never request a note, and note values stay in MIDI bounds',()=>{
  const phrase=defaultSequence();
+ phrase.steps[3].gate=false;
  const rest=sequenceEvent(48,phrase,3);
  assert.equal(rest.gate,false);
  assert.equal(rest.index,3);
