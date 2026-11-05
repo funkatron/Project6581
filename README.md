@@ -22,14 +22,26 @@ Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of th
 
 > 🔈 **No sound?** Turn up your device volume, check the **Engine status** message, and try touching a key again. If initialization fails, reload the page and retry. There is no substitute audio engine.
 
+## 💾 Factory sounds and user presets
+
+Open **Sound → Preset** to select one of six factory sounds, including bass, lead, pluck, pad and filter effects. Factory sounds cannot be overwritten.
+
+To keep a sound you've changed, select **Save as…** and give it a name. Your new sound appears under **My presets**. Select it later to restore it, and use **Save**, **Rename** or **Delete** as needed. The app marks a loaded sound when you make unsaved changes.
+
+Use **Export** to download the current sound as JSON, or **Export bank** to back up all your user presets. **Import…** loads either file type, validates its settings, and asks before overwriting a user preset with the same name. Downloads can be copied between your iPad and Mac.
+
+A preset includes the SID model, sound and filter controls, all three LFOs, master BPM, and both arpeggiators' settings. Loading a preset stops any current notes but **does not automatically start playing**. Held keys and the notes stored in latches are not saved.
+
+**Storage note:** My presets are stored locally in this browser. They are not automatically shared between devices, and clearing browser data may erase them. **Export bank** provides a backup. The preset JSON format is currently version 2, including Game Arp Pattern rate. There is no migration from version 1: previously saved user presets will not appear after the update, and version-1 JSON files will not import. Recreate those sounds manually if needed.
+
 ## 🎛️ The controls, in plain language
 
 | Control | What it changes | Try this |
 | --- | --- | --- |
-| **Game Arp** | Plays a built-in repeating pattern when you hold a key | Switch between **Action**, **Adventure**, and **Arcade** |
-| **Arp** | Repeats notes you play in a chosen order | Turn **Game Arp off**, then **Arp on** |
+| **Game Arp** | Triggers a repeating pattern relative to a root note, at its own Pattern rate | Switch between **Action**, **Adventure**, and **Arcade** |
+| **Arpeggiator** | Chooses root notes in Up, Down, Up/Down or Random order; with Game Arp on, it moves the pattern's root instead of playing a competing melody | Hold C, E and G and enable both arpeggiators |
 | **Latch** | Keeps the pattern playing after you lift your finger | Enable **Latch**, then tap a key |
-| **Rate** | How frequently the pattern changes notes | Start at **1/16**; try **1/32** for faster motion |
+| **Root rate / Pattern rate** | Independent tempos for root selection and Game Arp pattern steps; both follow the selected master/local BPM | Try Root 1/4 and Pattern 1/16 |
 | **BPM** | Overall pattern tempo | Move the slider slowly to hear the difference |
 | **Waveform** | Selects a native SID waveform: Triangle, Sawtooth, Pulse, or Noise | Compare **Pulse** and **Sawtooth** |
 | **Voices** | Sets the total available SID oscillators, 1–8, for Unison or independent notes | Try **3** with Unison off for three-note chords |
@@ -42,6 +54,14 @@ Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of th
 | **LFO 1–3** | Modulate cutoff, resonance, volume, Pulse width, Unison detune, ADSR, and PWM depth/rate; multiple LFOs may share a target | Route a slow LFO to Attack or PWM depth |
 | **Stop all** | Stops notes, disables both arpeggiators, and clears their held/latch state | Use this to silence and reset playback |
 
+### Record and export audio
+
+Use **Record** in the top bar to capture the actual SID synthesizer output. Choose **WAV** for lossless recording and analysis, or **M4A** for a smaller AAC-compressed recording when the browser offers native M4A recording. **MP3 is not yet supported.**
+
+Press **Stop & save** to finalize a file. The browser attempts a download and keeps a **Download WAV / M4A** link available for iPad Safari if you need to tap it yourself. Recordings stop automatically after three minutes to limit memory consumption. You can keep playing normally while recording.
+
+The WAV contains 16-bit mono PCM from the reSIDfp render path (the app plays this same mono signal through both output channels). No microphone permissions, server uploads, or external recording services are needed. To compare PWM behavior, record the same sustained Pulse note with depth 0%, then 40%, and upload the WAV recordings for analysis.
+
 **LFO display:** A slider's thumb and neutral number show the base value you set. When an LFO changes that parameter, a green track segment shows how far its effective value moves from the base, and a second green number shows the current value. The thumb stays put unless you move it.
 
 **Tip:** Start by changing *one* control at a time. You can learn what each does by listening to the difference.
@@ -51,7 +71,7 @@ Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of th
 ### 1. Make a classic game melody
 - Leave **Game Arp** enabled.
 - Select **Arcade**.
-- Hold a key, then try **Rate → 1/32**.
+- Hold a key, then try **Pattern rate → 1/32**.
 
 ### 2. Play a single bass note
 - Disable **Game Arp** and **Arp**.
@@ -59,9 +79,9 @@ Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of th
 - Lower **Filter cutoff**, then hold a low key.
 
 ### 3. Make a repeating sequence
-- Disable **Game Arp** and enable **Arp**.
-- Hold two or more keys, or turn on **Latch** to keep notes playing.
-- Choose **Up / Down**, then experiment with **BPM**.
+- Turn on **Arpeggiator** and **Game Arp** together.
+- Hold C, E and G, or enable **Latch** to keep the roots cycling.
+- Set **Root order → Up / Down**, **Root rate → 1/4**, and **Pattern rate → 1/16**. Each root receives the selected Game Arp pattern.
 
 ## 🧩 A few useful terms
 

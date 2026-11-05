@@ -51,6 +51,38 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 - [ ] Compare 1, 2, and 3 simultaneous LFOs; observe any audible stepping or UI stutter.
 - [ ] Move Safari to the background and back; record whether timing drifts or audio stops.
 
+## Factory/user presets (pending iPad device verification)
+
+- [ ] Choose each factory sound, hold a note, and verify the audible waveform, filter and envelope change.
+- [ ] Modify a factory preset, see the unsaved indicator, then Save as… and reload the user preset.
+- [ ] Modify an existing user preset, Save, Rename, and Delete it; factory presets remain read-only.
+- [ ] Confirm master BPM, Game Arp style/enable, Arp sync/latch/rate and all three LFOs restore from the same preset.
+- [ ] Loading a preset while a note is held clears active notes but does not trigger new playback or leave hanging notes.
+- [ ] Select a preset using the other SID chip model; check audio reinitializes and Safari allows sound after a key gesture.
+- [ ] Export one preset and a full user bank to Files, import again, and confirm duplicate-name replacement requires permission.
+- [ ] Import malformed JSON and an out-of-range parameter; confirm existing user presets remain unchanged.
+- [ ] Refresh the app and verify saved user presets remain available, without assuming cloud sync.
+
+## Composable Game Arp and Arpeggiator (pending device verification)
+
+- [ ] Both off: keys play directly, with no pattern timers running.
+- [ ] Game Arp only: holding one key triggers the chosen style immediately; Pattern rate changes its note steps.
+- [ ] Arpeggiator only: three keys cycle in Up, Down, Up/Down or Random order; Root rate controls the interval.
+- [ ] Both on: Arpeggiator changes the root while Game Arp independently runs its interval pattern; Root 1/4 and Pattern 1/16 are noticeably distinct.
+- [ ] Releasing the last key with Latch off stops both clocks; with Latch enabled, the stored roots continue.
+- [ ] Switch styles, enable/disable either generator, change BPM and rates, use Clear latch and Stop all. No stuck or doubled notes.
+- [ ] Generated-note highlights follow the actual sounding pitch, including roots outside the visible keyboard range, without adding note text.
+
+## Audio recording and download (pending device verification)
+
+- [ ] With SID active, record a short sustained note as WAV; stop and verify a playable, nonempty file in iPad Files.
+- [ ] Confirm M4A appears only if iPad Safari reports supported native audio/mp4 recording; try the same note in M4A and verify it plays.
+- [ ] If an automatic download does not open on iPad, use the persistent Download WAV / Download M4A link.
+- [ ] Verify selecting a format, pressing Record, playing, and Stop & save do not interrupt normal playback.
+- [ ] Record a silence-to-note transition and check the audio does not rely on microphone permission.
+- [ ] Try three minutes of recording and verify automatic stop, export, reasonable memory consumption and responsive keyboard/controls.
+- [ ] Compare Pulse note WAV captures with PWM depth 0% and 40%, rates 1 Hz and 5 Hz, to assess the reported weak sound change.
+
 ## Stationary-center slider visuals (pending device verification)
 
 - [ ] With no LFO assigned, all 11 continuous sound controls show their numeric base value and appropriate unit.
