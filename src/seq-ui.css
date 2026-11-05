@@ -14,7 +14,7 @@ header button,header select{box-shadow:0 1px 1px #786c5938}
 .workspace .voice-panel,.workspace .performance-panel{grid-column:1}
 .workspace[data-tab="voice"] .performance-panel,.workspace[data-tab="play"] .voice-panel{display:none!important}
 .workspace[data-tab="voice"] .voice-panel,.workspace[data-tab="play"] .performance-panel{display:block}
-.workspace .panel{padding:clamp(11px,1.4vw,20px);background:linear-gradient(#f5eee4,#eee5d8);color:#252925;border:2px solid #c8b8a4;border-top:3px solid var(--seq-orange);border-radius:12px;box-shadow:inset 0 1px #fff;scrollbar-gutter:stable}
+.workspace .panel{scroll-padding-bottom:28px;padding:clamp(11px,1.4vw,20px);background:linear-gradient(#f5eee4,#eee5d8);color:#252925;border:2px solid #c8b8a4;border-top:3px solid var(--seq-orange);border-radius:12px;box-shadow:inset 0 1px #fff;scrollbar-gutter:stable}
 .workspace .panel h2{font-size:clamp(14px,1.5vw,19px);color:#252925}
 .workspace .panel small{color:#4d524b}
 .workspace .panel .section-divider{background:#d8ad89}
@@ -35,7 +35,9 @@ header button,header select{box-shadow:0 1px 1px #786c5938}
 .seq-sidebar strong{display:block;font-size:12px;letter-spacing:.04em;color:#333}
 .seq-sidebar p{font-size:11px;line-height:1.35;margin:2px 0;color:#565146}
 .seq-sidebar .seq-accent{color:#b94415}
-.seq-grid-scroller{min-width:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:thin;touch-action:pan-x}
+/* Both axes must remain scrollable: on short iPad screens the lower lanes
+   sit below the fold, and restricting touch to pan-x traps vertical swipes. */
+.seq-grid-scroller{min-width:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:thin;touch-action:auto;-webkit-overflow-scrolling:touch}
 .seq-grid{display:grid;grid-template-columns:repeat(16,minmax(52px,1fr));gap:3px;min-width:832px;padding:3px 1px 6px}
 .seq-step{display:grid;grid-template-rows:24px 144px 44px 49px;justify-items:center;align-items:center;gap:1px;min-width:0;border:1px solid transparent;border-top:3px solid transparent;border-radius:6px;position:relative;padding:2px 1px}
 .seq-step[hidden]{display:none!important}
