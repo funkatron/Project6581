@@ -17,6 +17,9 @@ This is a **device test plan**, not evidence that any test has passed. Automated
 - [ ] Switch SYNTH / ARP / SEQ tabs; controls remain operable and the piano keyboard stays visible.
 - [ ] Controls do not overlap; labels are readable. LFO layout adapts to the **panel** width in portrait and landscape.
 - [ ] All LFO select boxes, sliders, switches, and octave buttons respond to touch without selecting nearby controls.
+- [ ] Compare black-key widths with white-key widths in both the two-octave and compact one-octave keyboard: roughly two-thirds as wide and centered between white keys.
+- [ ] Tap C♯, D♯, F♯, G♯ and A♯ near the left and right key edges on iPad portrait and landscape; each touch should trigger the intended black key rather than the adjacent white key.
+- [ ] Verify wider black keys neither overlap each other nor clip their labels, and that mouse, physical keyboard and held-note highlighting continue to work.
 - [ ] Press/release a key once and check that it releases only once, including after pointer capture ends.
 - [ ] Turn device orientation while no notes are held; no stranded active keys.
 
