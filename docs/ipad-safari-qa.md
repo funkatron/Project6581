@@ -63,6 +63,16 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 - [ ] Import malformed JSON and an out-of-range parameter; confirm existing user presets remain unchanged.
 - [ ] Refresh the app and verify saved user presets remain available, without assuming cloud sync.
 
+## Composable Game Arp and Arpeggiator (pending device verification)
+
+- [ ] Both off: keys play directly, with no pattern timers running.
+- [ ] Game Arp only: holding one key triggers the chosen style immediately; Pattern rate changes its note steps.
+- [ ] Arpeggiator only: three keys cycle in Up, Down, Up/Down or Random order; Root rate controls the interval.
+- [ ] Both on: Arpeggiator changes the root while Game Arp independently runs its interval pattern; Root 1/4 and Pattern 1/16 are noticeably distinct.
+- [ ] Releasing the last key with Latch off stops both clocks; with Latch enabled, the stored roots continue.
+- [ ] Switch styles, enable/disable either generator, change BPM and rates, use Clear latch and Stop all. No stuck or doubled notes.
+- [ ] Generated-note highlights follow the actual sounding pitch, including roots outside the visible keyboard range, without adding note text.
+
 ## Audio recording and download (pending device verification)
 
 - [ ] With SID active, record a short sustained note as WAV; stop and verify a playable, nonempty file in iPad Files.

@@ -1,7 +1,7 @@
 // Project6581 preset format v1: sound and performance settings.
 // This is intentionally a single-version format; no migrations are needed yet.
-export const PRESET_VERSION=1;
-export const PRESET_STORAGE_KEY='project6581.user-presets.v1';
+export const PRESET_VERSION=2;
+export const PRESET_STORAGE_KEY='project6581.user-presets.v2';
 export const MAX_USER_PRESETS=100;
 const WAVES=['triangle','sawtooth','square','noise'];
 const MODES=['lowpass','bandpass','highpass'];
@@ -42,7 +42,7 @@ export function defaultPresetSettings(){
   performance:{
    masterBpm:120,
    arp:{enabled:false,latch:false,pattern:'up',rate:4,sync:true,localBpm:120},
-   game:{enabled:true,style:'action'}
+   game:{enabled:true,style:'action',rate:4}
   }
  };
 }
@@ -89,7 +89,8 @@ export function validatePresetSettings(value){
     pattern:choice(arp.pattern,'Arp pattern',PATTERNS),rate:choice(arp.rate,'Arp rate',DIVISIONS),
     sync:boolean(arp.sync,'Arp sync'),localBpm:integer(arp.localBpm,'local BPM',40,240)
    },
-   game:{enabled:boolean(game.enabled,'Game Arp enabled'),style:choice(game.style,'Game Arp style',STYLES)}
+   game:{enabled:boolean(game.enabled,'Game Arp enabled'),style:choice(game.style,'Game Arp style',STYLES),
+    rate:choice(game.rate,'Game Arp pattern rate',DIVISIONS)}
   }
  };
 }

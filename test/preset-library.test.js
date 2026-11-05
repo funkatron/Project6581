@@ -41,7 +41,7 @@ test('user preset can save and reload every sound and performance setting',()=>{
  settings.sound.lfos[2]={...settings.sound.lfos[2],enabled:true,wave:'sample-hold',rate:2.25,depth:.45,target:'volume'};
  settings.performance.masterBpm=147;
  settings.performance.arp={enabled:true,latch:true,pattern:'updown',rate:8,sync:false,localBpm:98};
- settings.performance.game={enabled:true,style:'adventure'};
+ settings.performance.game={enabled:true,style:'adventure',rate:8};
  const saved=writeUserPresets(storage,[{id:'abc123',name:'My 8580',settings}]);
  assert.deepEqual(readUserPresets(storage),saved);
  assert.deepEqual(saved[0].settings,settings);
@@ -56,7 +56,7 @@ test('single preset and entire bank export then import without losing LFOs or ar
 test('invalid file, unsupported version, duplicate names and invalid slider values are rejected',()=>{
  const good={name:'Good',settings:defaultPresetSettings()};
  const bad=JSON.parse(exportPreset(good));
- bad.version=2;
+ bad.version=99;
  assert.throws(()=>importPresetFile(JSON.stringify(bad)),/Unsupported preset version/);
  assert.throws(()=>importPresetFile('not JSON'));
  assert.throws(()=>importPresetFile(exportPresetBank([good,{...good,name:'GOOD'}])),/Duplicate name/);

@@ -16,7 +16,7 @@ Prioritize features that help people **make, retain, exchange, and perform music
 - [ ] Make loading predictable while a note is sounding: stop/reinitialize only when required, leave no stuck notes, refresh every numeric display, and do not start autoplay unexpectedly.
 - [x] Persist user presets locally in browser storage with error reporting. Presets are **not** synchronized across devices.
 - [x] **Export** individual presets or a user bank as readable versioned JSON; **import** either with schema/range validation, actionable errors, and confirmation before replacing duplicate names.
-- [x] Use a simple **version 1** preset format without compatibility migrations for older files; validate all imported content before modifying storage. Revise this format freely while the app has a single user.
+- [x] Use a simple **version 2** preset format including Game Arp Pattern rate, with no migration for earlier files. Validate imported content before modifying storage.
 - [x] Put preset actions at the top of the Sound tab, preserving keyboard access and avoiding an additional full-size editor.
 - [ ] Complete iPad Safari device verification for choose factory → edit → save → reload → export → import → play, including loading a different SID chip model. Unit tests cover validation, persistence, and JSON roundtrips.
 
@@ -41,13 +41,13 @@ Game Arp (optional)     -> applies pattern intervals to that root
 SID playback + highlighted keyboard keys
 ```
 
-- [ ] Define each mode explicitly: **both off** plays direct notes; **Game Arp only** plays the selected pattern from the held/latched root; **Arpeggiator only** cycles the held/latched notes directly; **both on** cycles roots using the Arpeggiator while Game Arp plays its chosen interval pattern relative to each root.
-- [ ] Give **Arpeggiator** responsibility for note ordering (Up, Down, Up/Down, Random), latch, and the active root. Give **Game Arp** responsibility for the triggered pattern (Action, Adventure, Arcade, etc.) and its internal note offsets. Neither should silently turn the other off.
-- [ ] Keep a clear musical distinction between **root-change rate** and **pattern-step rate**, with coherent BPM synchronization. Define whether a root change preserves the current pattern phase or restarts the pattern; prefer predictable musical timing and verify it for both fast and slow rates.
-- [ ] Make first key press trigger the pattern immediately, without waiting for a timer tick. Handle additional held notes, releases, latch transitions and switching either feature on/off without stuck notes or duplicate gate writes.
-- [ ] Apply existing MIDI range limits and any future scale-lock policy to the **final sounding pitch**, not merely the root, so combined arpeggiation, playback and keyboard illumination agree.
-- [ ] Simplify labels and help text so users can understand **“Arpeggiator chooses the root; Game Arp plays the pattern.”** Ensure the controls remain usable on iPad and avoid redundant current-note text above the keyboard.
-- [ ] Add deterministic tests of the four mode combinations, independent timing, pattern transitions, changing root while playing, stop/panic, note ownership, and keyboard highlighting.
+- [x] Support four modes: both off (direct notes), Game Arp only (pattern from held/latched root), Arpeggiator only (ordered notes), and both on (ordered roots driving Game Arp).
+- [x] Give Arpeggiator responsibility for note ordering, latch and root, and Game Arp responsibility for interval patterns. Both can run together.
+- [x] Add independent root-change and pattern-step rates sharing master/local BPM. Root changes preserve the ongoing Game Arp phase until its next pattern tick; selecting a new mode, style or rate restarts the phrase.
+- [x] Trigger immediately on first key press, stop on final release when latch is off, and preserve clear-latch/stop behavior. Verify on iPad Safari before claiming device-level reliability.
+- [x] Bound the final Game Arp note to MIDI 0–127 and illuminate that actual note. The future scale-lock policy must run after root transposition and pattern offsets.
+- [x] Label each role and rate explicitly and avoid a redundant current-note readout above the keyboard. iPad layout verification remains pending.
+- [ ] Finish CI and iPad Safari verification of all four modes, independent timing, transitions, latch/stop and keyboard highlights. Pure root/interval and source-wiring regression checks are included.
 
 **Completion checks:** Both generators can run simultaneously; Arpeggiator changes the root of the ongoing Game Arp phrase, each feature retains a clear independent purpose, and no combination produces stuck notes or misleading highlights.
 

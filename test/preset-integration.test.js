@@ -24,10 +24,11 @@ test('preset editor provides factory/user collections, save, export, import and 
 });
 test('preset loading restores performance settings without stored notes or autoplay',()=>{
  assert.match(script,/masterBpm:Number\(\$\('masterBpm'\)\.value\)/);
- assert.match(script,/game:\{enabled:\$\('gameArpOn'\)\.checked,style:/);
+ assert.match(script,/game:\{enabled:\$\('gameArpOn'\)\.checked,style:[\s\S]*?rate:Number\(\$\('gameRate'\)\.value\)/);
  assert.match(script,/arp:\{enabled:\$\('arpOn'\)\.checked,latch:/);
  assert.match(script,/panic\(\);arp\.held\.clear\(\);arp\.latched\.clear\(\)/);
- assert.match(script,/game\.held=\[\];game\.latched=null/);
+ assert.match(script,/game\.step=0;arp\.root=null/);
+ assert.match(script,/\$\('gameRate'\)\.value=String\(next\.performance\.game\.rate\)/);
  assert.match(script,/renderVoiceControls\(\);renderLfos\(\);updateUnison\(\);updateModulation\(\)/);
  assert.match(script,/await ensureSidModel\(next\.sound\.model\)/);
  assert.match(script,/if\(pendingSidStartup\)await pendingSidStartup/);

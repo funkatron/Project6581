@@ -32,16 +32,16 @@ Use **Export** to download the current sound as JSON, or **Export bank** to back
 
 A preset includes the SID model, sound and filter controls, all three LFOs, master BPM, and both arpeggiators' settings. Loading a preset stops any current notes but **does not automatically start playing**. Held keys and the notes stored in latches are not saved.
 
-**Storage note:** My presets are stored locally in this browser. They are not automatically shared between devices, and clearing browser data may erase them. **Export bank** provides a backup. The preset JSON format is currently version 1; older versions are not supported while the format is being developed.
+**Storage note:** My presets are stored locally in this browser. They are not automatically shared between devices, and clearing browser data may erase them. **Export bank** provides a backup. The preset JSON format is currently version 2, including Game Arp Pattern rate. There is no migration from version 1: previously saved user presets will not appear after the update, and version-1 JSON files will not import. Recreate those sounds manually if needed.
 
 ## 🎛️ The controls, in plain language
 
 | Control | What it changes | Try this |
 | --- | --- | --- |
-| **Game Arp** | Plays a built-in repeating pattern when you hold a key | Switch between **Action**, **Adventure**, and **Arcade** |
-| **Arp** | Repeats notes you play in a chosen order | Turn **Game Arp off**, then **Arp on** |
+| **Game Arp** | Triggers a repeating pattern relative to a root note, at its own Pattern rate | Switch between **Action**, **Adventure**, and **Arcade** |
+| **Arpeggiator** | Chooses root notes in Up, Down, Up/Down or Random order; with Game Arp on, it moves the pattern's root instead of playing a competing melody | Hold C, E and G and enable both arpeggiators |
 | **Latch** | Keeps the pattern playing after you lift your finger | Enable **Latch**, then tap a key |
-| **Rate** | How frequently the pattern changes notes | Start at **1/16**; try **1/32** for faster motion |
+| **Root rate / Pattern rate** | Independent tempos for root selection and Game Arp pattern steps; both follow the selected master/local BPM | Try Root 1/4 and Pattern 1/16 |
 | **BPM** | Overall pattern tempo | Move the slider slowly to hear the difference |
 | **Waveform** | Selects a native SID waveform: Triangle, Sawtooth, Pulse, or Noise | Compare **Pulse** and **Sawtooth** |
 | **Voices** | Sets the total available SID oscillators, 1–8, for Unison or independent notes | Try **3** with Unison off for three-note chords |
@@ -69,7 +69,7 @@ The WAV contains 16-bit mono PCM from the reSIDfp render path (the app plays thi
 ### 1. Make a classic game melody
 - Leave **Game Arp** enabled.
 - Select **Arcade**.
-- Hold a key, then try **Rate → 1/32**.
+- Hold a key, then try **Pattern rate → 1/32**.
 
 ### 2. Play a single bass note
 - Disable **Game Arp** and **Arp**.
@@ -77,9 +77,9 @@ The WAV contains 16-bit mono PCM from the reSIDfp render path (the app plays thi
 - Lower **Filter cutoff**, then hold a low key.
 
 ### 3. Make a repeating sequence
-- Disable **Game Arp** and enable **Arp**.
-- Hold two or more keys, or turn on **Latch** to keep notes playing.
-- Choose **Up / Down**, then experiment with **BPM**.
+- Turn on **Arpeggiator** and **Game Arp** together.
+- Hold C, E and G, or enable **Latch** to keep the roots cycling.
+- Set **Root order → Up / Down**, **Root rate → 1/4**, and **Pattern rate → 1/16**. Each root receives the selected Game Arp pattern.
 
 ## 🧩 A few useful terms
 
