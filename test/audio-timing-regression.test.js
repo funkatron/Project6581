@@ -47,3 +47,13 @@ test('optional timing display is clearly labeled and never claims speaker latenc
  assert.match(code,/if\(event\.type==='audio-stats'\)/);
  assert.match(css,/#audioTimingReport\{position:absolute/);
 });
+
+test('timing instrumentation is disabled during ordinary music playback',()=>{
+ assert.match(bridge,/let probeId=0,lastProbeAt=-Infinity,timingEnabled=false/);
+ assert.match(bridge,/batcher\.flush\(\);\s*if\(!timingEnabled\)return/);
+ assert.match(bridge,/setTimingEnabled\(enabled\)\{/);
+ assert.match(worklet,/this\.pendingLatencyProbes=\[\];this\.timingEnabled=false/);
+ assert.match(worklet,/const clock=this\.timingEnabled&&typeof performance/);
+ assert.match(code,/audioTimingDetails'\)\.addEventListener\('toggle'/);
+ assert.match(code,/audio\.setTimingEnabled\(\$\('audioTimingDetails'\)\.open\)/);
+});
