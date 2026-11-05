@@ -582,7 +582,7 @@ function gameTick(){
    game.gateTimer=setTimeout(()=>{
     if(game.step!==clock||game.last!==sounding)return;
     stop(sounding,'game');game.last=null;arpKeyVisual.clear();game.gateTimer=null;
-   },Math.max(20,Math.round(stepMilliseconds(bpm,$('gameRate').value)*event.duration/100)));
+   },stepMilliseconds(bpm,$('gameRate').value)*event.duration/100);
   }
   return;
  }
