@@ -452,7 +452,7 @@ $('panic').addEventListener('click',()=>{
  panic();arp.held.clear();arp.latched.clear();arp.step=0;game.step=0;seqPreview=false;setSeqTransportLabel();
  sidController?.panic();
  $('arpStatus').textContent='Arps and LFOs off';
-});window.addEventListener('blur',()=>{panic();arp.held.clear()});
+});window.addEventListener('blur',()=>{panic();arp.held.clear();seqPreview=false;setSeqTransportLabel()});
 const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 const arp={held:new Set(),latched:new Set(),timer:null,step:0,root:null,last:null};
 const directOwned=new Set(); // Physical notes sounding independently of either generator.
@@ -663,7 +663,7 @@ function keyUp(note){
  arp.held.delete(note);
  if(directOwned.delete(note))stop(note);
  if(!gameEnabled()&&!arpEnabled())return;
- if(arp.held.size===0&&(!$('arpLatch').checked||arp.latched.size===0)){
+ if(arp.held.size===0&&(!$('arpLatch').checked||arp.latched.size===0)&&!seqPreview){
   stopGenerators();$('arpStatus').textContent='No notes held';return;
  }
  if(gameEnabled()&&!arpEnabled())gameRestart();
