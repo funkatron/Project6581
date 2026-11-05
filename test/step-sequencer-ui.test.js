@@ -59,3 +59,11 @@ test('preset settings include the editable phrase and restore its controls',()=>
  assert.match(script,/seqState=validateSequence\(next\.performance\.game\.sequence\)/);
  assert.match(script,/renderSequenceSteps\(\)/);
 });
+
+test('high-rate gate lengths have no artificial 20 ms minimum',()=>{
+ const fastStep=60000/240/32;
+ const quarterGate=fastStep*0.25;
+ assert.ok(quarterGate<2,'240 BPM at 1/128 has an approximately 1.95 ms quarter gate');
+ assert.match(script,/\},stepMilliseconds\(bpm,\$\('gameRate'\)\.value\)\*event\.duration\/100\)/);
+ assert.doesNotMatch(script,/Math\.max\(20,Math\.round\(stepMilliseconds/);
+});
