@@ -27,7 +27,7 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
     const node=new AudioWorkletNode(context,'residfp-processor',{outputChannelCount:[2]});
     node.connect(context.destination);
     let capture=null,stopResolve=null,stopReject=null;
-    let probeId=0,lastProbeAt=-Infinity;
+    let probeId=0,lastProbeAt=-Infinity,timingEnabled=false;
     const pendingProbes=new Map();
     node.port.onmessage=({data})=>{
       if(data?.type==='latency-probe-result'){
@@ -58,12 +58,18 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
       // waiting for the next microtask. Probe at most twice per second.
       noteDispatched(source='keyboard'){
         batcher.flush();
+        if(!timingEnabled)return;
         const now=performance.now();
         if(now-lastProbeAt<500)return;
         lastProbeAt=now;
         const id=++probeId;
         pendingProbes.set(id,{at:now,source});
         node.port.postMessage({type:'latency-probe',id});
+      },
+      setTimingEnabled(enabled){
+        timingEnabled=Boolean(enabled);
+        if(!timingEnabled)pendingProbes.clear();
+        node.port.postMessage({type:'timing-enable',enabled:timingEnabled});
       },
       startWavCapture(onChunk){
         if(capture||stopResolve)throw new Error('A WAV capture is already active');
