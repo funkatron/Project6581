@@ -14,9 +14,9 @@ test('inline keyboard application remains valid JavaScript after adding the visu
 
 test('Game Arp voices its pattern, while regular Arp owns the selected root',()=>{
  assert.match(script,/function gameTick\(\)[\s\S]*?patternPitch\(root,\$\('gameArpStyle'\)\.value,game\.step\+\+\)/);
- assert.match(script,/play\(game\.last\);arpKeyVisual\.show\(game\.last\)/);
+ assert.match(script,/play\(game\.last,'game'\);arpKeyVisual\.show\(game\.last\)/);
  assert.match(script,/function arpTick\(\)[\s\S]*?selectRoot\(notes,\$\('arpPattern'\)\.value,arp\.step\+\+\)/);
- assert.match(script,/arp\.last=note;play\(note\);arpKeyVisual\.show\(note\)/);
+ assert.match(script,/arp\.last=note;play\(note,'arp'\);arpKeyVisual\.show\(note\)/);
  assert.match(script,/if\(gameEnabled\(\)\)return;/);
 });
 test('both arpeggiators have independent rate selectors and timers',()=>{
@@ -52,7 +52,7 @@ test('direct polyphonic notes are released before an arpeggiator takes ownership
  assert.match(script,/function releaseDirectNotes\(\)\{\s*for\(const note of directOwned\)stop\(note\);\s*directOwned\.clear\(\)/);
  assert.match(script,/releaseDirectNotes\(\);\s*if\(!activeNotes\(\)\.length\)/);
  assert.match(script,/if\(directOwned\.delete\(note\)\)stop\(note\)/);
- assert.match(script,/directOwned\.clear\(\);arpKeyVisual\.clear\(\);sidController\?\.panic\(\)/);
+ assert.match(script,/directOwned\.clear\(\);activeOwners\.clear\(\);arpKeyVisual\.clear\(\);sidController\?\.panic\(\)/);
 });
 
 test('clear latch preserves physical owners and direct notes',()=>{
