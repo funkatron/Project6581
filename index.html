@@ -343,7 +343,7 @@ function play(note){if(!sidController)return;if(!settings[0].enabled)return;sidC
 function updateUnison(){const unison=$('unisonOn').checked;sidController?.configure({voiceCount:Number($('voiceCount').value),detune:Number($('detune').value),unison});$('detune').disabled=!unison;$('detuneValue').textContent=unison?$('detune').value+'¢':'Off';updateModulation();}
 ['voiceCount','detune','unisonOn'].forEach(id=>$(id).addEventListener('input',updateUnison));updateUnison();
 function stop(note){sidController?.noteOff(note)}
-function panic(){gameStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.root=null;arpKeyVisual.clear();sidController?.panic()}
+function panic(){gameStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.root=null;directOwned.clear();arpKeyVisual.clear();sidController?.panic()}
 $('panic').addEventListener('click',()=>{
  $('gameArpOn').checked=false;$('arpOn').checked=false;
  lfoState.forEach(lfo=>{lfo.enabled=false});renderLfos();updateModulation();
@@ -353,6 +353,7 @@ $('panic').addEventListener('click',()=>{
 });window.addEventListener('blur',()=>{panic();arp.held.clear()});
 const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 const arp={held:new Set(),latched:new Set(),timer:null,step:0,root:null,last:null};
+const directOwned=new Set(); // Physical notes sounding independently of either generator.
 const game={timer:null,last:null,step:0};
 const gameEnabled=()=>$('gameArpOn').checked;
 const arpEnabled=()=>$('arpOn').checked;
@@ -401,17 +402,30 @@ function stopGenerators(){
  if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}
  arpStopVoice();arp.root=null;
 }
+function releaseDirectNotes(){
+ for(const note of directOwned)stop(note);
+ directOwned.clear();
+}
 function restartGenerators(){
  stopGenerators();arp.step=0;game.step=0;
- if(!gameEnabled()&&!arpEnabled()){$('arpStatus').textContent='Arps off';return}
+ if(!gameEnabled()&&!arpEnabled()){
+  // Return physically held keys to direct sound; never retain stale latches.
+  arp.latched.clear();
+  for(const note of arp.held){
+   if(!directOwned.has(note)){play(note);directOwned.add(note)}
+  }
+  $('arpStatus').textContent='Arps off';return;
+ }
+ // Transitioning from direct polyphony must release EVERY physical owner first.
+ releaseDirectNotes();
  if(!activeNotes().length){$('arpStatus').textContent='No notes held';return}
  const bpm=Number($('arpSync').checked?$('masterBpm').value:$('arpBpm').value);
  if(arpEnabled()){
-  arpTick(); // Establish the first root without waiting for a timer tick.
+  arpTick();
   arp.timer=setInterval(arpTick,stepMilliseconds(bpm,$('arpRate').value));
  }
  if(gameEnabled()){
-  gameTick(); // Trigger the pattern immediately on the chosen root.
+  gameTick();
   game.timer=setInterval(gameTick,stepMilliseconds(bpm,$('gameRate').value));
  }
 }
@@ -421,23 +435,34 @@ function keyDown(note){
  if(sidController){sidKeys++;$('sidPlaybackStatus').textContent='SID key presses: '+sidKeys+' · waiting for audio samples…'}
  const hadNotes=activeNotes().length;
  if(!arp.held.has(note)){
-  if($('arpLatch').checked&&arp.held.size===0)arp.latched.clear();
+  const firstPhysical=arp.held.size===0;
   arp.held.add(note);
-  if($('arpLatch').checked)arp.latched.add(note);
+  if((gameEnabled()||arpEnabled())&&$('arpLatch').checked){
+   if(firstPhysical)arp.latched.clear();
+   arp.latched.add(note);
+  }
  }
- if(!gameEnabled()&&!arpEnabled()){play(note);return}
+ if(!gameEnabled()&&!arpEnabled()){
+  if(!directOwned.has(note)){play(note);directOwned.add(note)}
+  return;
+ }
  if(!hadNotes||(gameEnabled()&&!arpEnabled())||(!game.timer&&!arp.timer))
   restartGenerators();
 }
 function keyUp(note){
  arp.held.delete(note);
- if(!gameEnabled()&&!arpEnabled()){stop(note);return}
+ if(directOwned.delete(note))stop(note);
+ if(!gameEnabled()&&!arpEnabled())return;
  if(!$('arpLatch').checked&&arp.held.size===0){
   stopGenerators();$('arpStatus').textContent='No notes held';return;
  }
  if(gameEnabled()&&!arpEnabled())gameRestart();
- else if(arpEnabled()&&!$('arpLatch').checked&&arp.root===note)
-  arpTick();
+ else if(arpEnabled()&&!$('arpLatch').checked&&arp.root===note){
+  // Keep the root valid, without firing an extra off-grid arpeggio note.
+  const notes=arpNotes();
+  arp.root=notes.length?selectRoot(notes,$('arpPattern').value,arp.step):null;
+  if(!gameEnabled())arpStopVoice();
+ }
 }
 $('gameArpOn').addEventListener('change',restartGenerators);
 $('gameArpStyle').addEventListener('change',gameRestart);
@@ -453,8 +478,10 @@ $('arpBpm').addEventListener('input',()=>{
  $('bpmValue').textContent=$('arpBpm').value;restartGenerators();
 });
 $('arpClear').addEventListener('click',()=>{
- arp.held.clear();arp.latched.clear();arp.root=null;arp.step=0;game.step=0;
- stopGenerators();$('arpStatus').textContent='Latch cleared';
+ // Clear stored notes only. Physical held keys and direct voice owners remain.
+ arp.latched.clear();arp.root=null;arp.step=0;game.step=0;
+ if(gameEnabled()||arpEnabled())restartGenerators();
+ $('arpStatus').textContent='Latch cleared';
 });
 const keys=new Map();
 const arpKeyVisual=createArpKeyVisual({getKey:note=>keys.get(note)});
