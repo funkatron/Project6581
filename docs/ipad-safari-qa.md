@@ -75,6 +75,8 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 ## Game Arp sequencer and full-width keyboard (pending iPad verification)
 
 - [ ] In landscape, open **ARP / SEQ** and inspect all 16 step sliders, gates, and note lengths. Check the 64C-inspired panel alignment and readability.
+- [ ] On iPad landscape with the keyboard **shown**, verify rectangular ON/REST step buttons and note-length sliders can be reached by vertically swiping within the editor; step columns must still swipe horizontally.
+- [ ] Verify the taller keyboard keys on both Synth and Arp/Seq views. Check Safari full-screen and the smaller in-app Safari window for header wrapping, usable piano-key height and no controls trapped below the fold.
 - [ ] In portrait, swipe the step grid horizontally. The page should not pan unintentionally or clip the transport, and sliders must remain adjustable with one finger.
 - [ ] Change a step pitch, gate, and length; verify editing selects **Custom steps** and the new pattern plays audibly.
 - [ ] Preview without holding a key. Press and release a different root while previewing; playback should return to the preview root without a stuck note.
