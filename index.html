@@ -494,9 +494,18 @@ function renderSequenceSteps(){
    modifiedStepPhrase();
   });
   pitchWrap.append(pitch,value);
-  const gate=document.createElement('input');gate.type='checkbox';gate.className='seq-gate';
-  gate.checked=step.gate;gate.setAttribute('aria-label','Step '+(index+1)+' gate enabled');
-  gate.addEventListener('change',()=>{seqState.steps[index].gate=gate.checked;modifiedStepPhrase()});
+  const gate=document.createElement('button');gate.type='button';gate.className='seq-gate';
+  function displayGate(){
+   const enabled=seqState.steps[index].gate;
+   gate.textContent=enabled?'ON':'REST';
+   gate.setAttribute('aria-pressed',String(enabled));
+   gate.setAttribute('aria-label','Step '+(index+1)+' gate '+(enabled?'on':'rest'));
+  }
+  displayGate();
+  gate.addEventListener('click',()=>{
+   seqState.steps[index].gate=!seqState.steps[index].gate;
+   displayGate();modifiedStepPhrase();
+  });
   const lengthWrap=document.createElement('div');lengthWrap.className='seq-length-group';
   const length=document.createElement('input');length.type='range';length.className='seq-duration';
   length.min='25';length.max='100';length.step='5';length.value=String(step.duration);
