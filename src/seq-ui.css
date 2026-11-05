@@ -9,7 +9,7 @@ header .controls{justify-content:flex-end;gap:6px 9px}
 header button,header select{box-shadow:0 1px 1px #786c5938}
 .tabbar{grid-row:2;display:flex!important;gap:6px;min-width:0;padding:1px 2px}
 .tabbar button{min-height:42px;padding:7px clamp(12px,2vw,28px);background:linear-gradient(#f5ede1,#e0d5c6);color:#30312f;border:1px solid #aa9c8a;box-shadow:inset 0 1px #fff,0 2px 2px #a9988440;text-transform:uppercase;font-weight:800;font-size:12px;letter-spacing:.03em}
-.tabbar button[aria-selected="true"]{background:linear-gradient(#f4823c,#d9541c);color:#fff;border-color:#cc521b;box-shadow:inset 0 1px #ffaf6c}
+.tabbar button[aria-selected="true"]{background:linear-gradient(#c54a15,#ad3c0c);color:#fff;border-color:#cc521b;box-shadow:inset 0 1px #ffaf6c}
 .workspace{grid-row:3;display:grid;grid-template-columns:minmax(0,1fr);gap:0;min-height:0;overflow:hidden}
 .workspace .voice-panel,.workspace .performance-panel{grid-column:1}
 .workspace[data-tab="voice"] .performance-panel,.workspace[data-tab="play"] .voice-panel{display:none!important}
@@ -26,7 +26,7 @@ header button,header select{box-shadow:0 1px 1px #786c5938}
 .seq-transport label{gap:6px;min-height:40px;font-size:11px;font-weight:700}
 .seq-transport select{max-width:none;min-height:40px;padding:5px 9px;font-weight:700}
 .seq-transport button{min-height:42px;font-weight:750;padding:7px 14px}
-#seqRun{background:#e76226;color:#fff;border-color:#b84917}
+#seqRun{background:#c54a15;color:#fff;border-color:#a33b0f}
 #seqStop{background:#e2d9ca;color:#282a28}
 #seqReset{margin-left:auto}
 .seq-editor{border:2px solid var(--seq-orange);border-radius:11px;background:#f7efe5;padding:clamp(7px,1vw,14px);min-width:0;box-shadow:inset 0 2px #fff,0 1px 4px #8f746333}
