@@ -24,7 +24,9 @@ test('keyboard and Game Arp note-ons use the same immediate dispatch path',()=>{
  assert.match(code,/const token=sidController\.noteOn\(note,\(\)=>currentSidSettings\);/);
  assert.match(code,/sidAudio\?\.noteDispatched\?\.\(source\.startsWith\('key:'\)\?'keyboard':source\)/);
  assert.match(bridge,/noteDispatched\(source='keyboard'\)\{\s*batcher\.flush\(\)/);
- assert.match(bridge,/if\(now-lastProbeAt<500\)return/);
+ assert.match(bridge,/if\(now-lastProbeAt<500\|\|pendingProbes\.size>=4\)return/);
+ assert.match(bridge,/if\(now-probe\.at>3000\)pendingProbes\.delete\(id\)/);
+ assert.match(bridge,/if\(context\.state!=='running'\)return/);
  assert.match(bridge,/node\.port\.postMessage\(\{type:'latency-probe',id\}\)/);
 });
 
@@ -56,4 +58,9 @@ test('timing instrumentation is disabled during ordinary music playback',()=>{
  assert.match(worklet,/const clock=this\.timingEnabled&&typeof performance/);
  assert.match(code,/audioTimingDetails'\)\.addEventListener\('toggle'/);
  assert.match(code,/audio\.setTimingEnabled\(\$\('audioTimingDetails'\)\.open\)/);
+});
+
+test('optional timing control is reachable on narrow screens',()=>{
+ assert.match(css,/footer #buildInfo\{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\}/);
+ assert.match(css,/#audioTimingDetails\{[^}]*flex:none/);
 });
