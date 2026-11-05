@@ -732,6 +732,20 @@ $('octaveUp').addEventListener('click',()=>{keyboardOctave=Math.min(MAX_OCTAVE,k
 let wasCompact=compactKeyboard();
 window.addEventListener('resize',()=>{const compact=compactKeyboard();if(compact!==wasCompact){wasCompact=compact;renderKeyboard()}});
 renderKeyboard();
+function setKeyboardVisible(visible){
+ if(!visible){
+  // Release held physical keys but leave a latched or previewed sequence playing.
+  for(const note of [...arp.held])keyUp(note);
+  for(const key of keys.values())key.classList.remove('down');
+ }
+ $('keyboard').hidden=!visible;
+ $('keyboardPanel').classList.toggle('is-collapsed',!visible);
+ $('keyboardToggle').setAttribute('aria-expanded',String(visible));
+ $('keyboardToggle').textContent=visible?'Hide keyboard ▲':'Show keyboard ▼';
+ try{window.localStorage.setItem('project6581.keyboard-visible',visible?'yes':'no')}catch{}
+}
+$('keyboardToggle').addEventListener('click',()=>setKeyboardVisible($('keyboard').hidden));
+try{if(window.localStorage.getItem('project6581.keyboard-visible')==='no')setKeyboardVisible(false)}catch{}
 const layout='awsedftgyhujkolp;';
 window.addEventListener('keydown',e=>{if(e.repeat||e.target.matches('input,select,button'))return;const idx=layout.indexOf(e.key.toLowerCase());if(idx>=0){const note=(keyboardOctave+1)*12+idx;const key=keys.get(note);if(key){e.preventDefault();key.classList.add('down');keyDown(note)}}});
 window.addEventListener('keyup',e=>{const idx=layout.indexOf(e.key.toLowerCase());if(idx>=0){const note=(keyboardOctave+1)*12+idx;keys.get(note)?.classList.remove('down');keyUp(note)}});
