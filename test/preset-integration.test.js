@@ -54,3 +54,19 @@ test('preset loading restores performance settings without stored notes or autop
  assert.match(script,/if\(presetDirty&&!window\.confirm\('Discard unsaved changes to this preset\?'\)\)return/);
  assert.match(script,/presetDirty=Boolean\(selected\)&&JSON\.stringify\(snapshotPresetSettings\(\)\)/);
 });
+
+test('preset actions cannot mutate settings while loading a different sound or importing files',()=>{
+ assert.match(script,/function setPresetLoading\(busy\)\{/);
+ assert.match(script,/presetLoading=busy/);
+ assert.match(script,/for\(const \[id,available\] of \[/);
+ assert.match(script,/for\(const id of \['factoryPresetList','userPresetList'\]\)/);
+ assert.match(script,/if\(presetLoading\)return null/);
+ assert.match(script,/setPresetLoading\(true\);\s*try\{\s*await applyPresetSettings\(preset\.settings\)/);
+ assert.match(script,/finally\{\s*setPresetLoading\(false\)/);
+ assert.match(script,/if\(presetLoading\)\{input\.value='';return\}/);
+ assert.match(script,/finally\{input\.value='';setPresetLoading\(false\)\}/);
+});
+test('modal text overrides light-theme global heading and description colors',()=>{
+ assert.match(html,/#presetDialog h2,#presetDialog h3\{color:#f3f5fa\}/);
+ assert.match(html,/#presetDialog small,#presetDialog \.preset-empty,#presetDialog \.preset-item-category\{color:#c8d6e5\}/);
+});
