@@ -24,11 +24,11 @@ Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of th
 
 ## 💾 Factory sounds and user presets
 
-Open **Sound → Preset** to select one of six factory sounds, including bass, lead, pluck, pad and filter effects. Factory sounds cannot be overwritten.
+Tap the **current preset name in the top bar** to open the preset library. The modal shows **Factory presets** and **My presets** side by side on wider screens and stacked on narrow screens. Choose one to load it and return to the keyboard. Factory presets are read-only.
 
-To keep a sound you've changed, select **Save as…** and give it a name. Your new sound appears under **My presets**. Select it later to restore it, and use **Save**, **Rename** or **Delete** as needed. The app marks a loaded sound when you make unsaved changes.
+Inside the preset library, use **Save as…** to keep an edited sound. Your new sound appears in **My presets**, stored separately from the built-in factory collection. You can use **Save**, **Rename**, or **Delete** for your user presets. The top bar shows only the current preset name and a small dot for unsaved changes.
 
-Use **Export** to download the current sound as JSON, or **Export bank** to back up all your user presets. **Import…** loads either file type, validates its settings, and asks before overwriting a user preset with the same name. Downloads can be copied between your iPad and Mac.
+The modal also contains **Export** to download the current sound as JSON, **Export bank** to back up user presets, and **Import…** to load either file type. Imports are validated and require confirmation before overwriting a user preset with the same name. Downloads can be copied between your iPad and Mac.
 
 A preset includes the SID model, sound and filter controls, all three LFOs, master BPM, and both arpeggiators' settings. Loading a preset stops any current notes but **does not automatically start playing**. Held keys and the notes stored in latches are not saved.
 
