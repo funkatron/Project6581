@@ -885,7 +885,7 @@ function updateSidLed(){
   led.dataset.state=state;
   led.setAttribute('aria-label',state==='on'?'SID engine on':state==='ready'?'SID engine ready, audio suspended':state==='loading'?'SID engine loading':'SID engine off');
 }
-let pendingSidStartup=null,sidAttempt=0;
+let pendingSidStartup=null,sidAttempt=0,sidCleanupBlocked=false;
 let sidProgress='';
 function showSidProgress(message){
  sidProgress=message;
@@ -900,7 +900,7 @@ async function startSid(){
   if(pendingSidClose)return pendingSidClose.then(()=>startSid());
   if(sidAudio)return;
   // Never accumulate contexts after failed or stalled cleanup.
-  if(sidContext&&sidContext.state!=='closed')return;
+  if(sidCleanupBlocked||(sidContext&&sidContext.state!=='closed'))return;
   const attempt=++sidAttempt;
   const load=async()=>{
   const button=$('sidStart'),status=$('sidEngineStatus');
@@ -1000,12 +1000,12 @@ async function startSid(){
     sidAudio=null;sidController=null;sidRecorder=null;activeSidModel=null;
     $('recordToggle').disabled=true;
     let message=err.message||String(err);
-    try{if(audio)await audio.close();else if(context)await closeSidContext(context)}catch(cleanup){message+='; '+cleanup.message}
+    try{if(audio)await audio.close();else if(context)await closeSidContext(context)}catch(cleanup){sidCleanupBlocked=true;message+='; '+cleanup.message}
     sidContext=context?.state==='closed'?null:context;
     status.textContent='Authentic SID unavailable: '+message;
     sidStartupLog.push('Failed: '+message);updateAudioTimingReport();
-    button.disabled=Boolean(sidContext);button.hidden=false;
-    if(sidContext)status.textContent+=' Reload the page before retrying.';
+    button.disabled=sidCleanupBlocked||Boolean(sidContext);button.hidden=false;
+    if(sidCleanupBlocked||sidContext)status.textContent+=' Reload the page before retrying.';
   }finally{sidStarting=false;$('sidSpinner').hidden=true;updateSidActivation();if(!sidAudio)$('sidUnlock').hidden=true}
   };
   pendingSidStartup=load();
@@ -1022,6 +1022,7 @@ async function retireSidAudio(){
   sidAudio=null;sidController=null;sidRecorder=null;activeSidModel=null;
   pendingSidClose=(async()=>{
     try{if(audio)await audio.close();else if(context)await closeSidContext(context)}
+    catch(error){sidCleanupBlocked=true;throw error}
     finally{if(context?.state==='closed')sidContext=null;updateSidActivation()}
   })();
   try{await pendingSidClose}finally{pendingSidClose=null}
@@ -1032,8 +1033,8 @@ async function failActiveSid(error,attempt){
   let message=error.message;
   try{await retireSidAudio()}catch(cleanup){message+='; '+cleanup.message}
   if(sidAttempt!==attempt+1)return;
-  $('sidEngineStatus').textContent='Authentic SID unavailable: '+message+(sidContext?' Reload the page before retrying.':'');
-  $('sidStart').hidden=false;$('sidStart').disabled=Boolean(sidContext);
+  $('sidEngineStatus').textContent='Authentic SID unavailable: '+message+(sidCleanupBlocked||sidContext?' Reload the page before retrying.':'');
+  $('sidStart').hidden=false;$('sidStart').disabled=sidCleanupBlocked||Boolean(sidContext);
   $('sidUnlock').hidden=true;
 }
 async function ensureSidModel(model){

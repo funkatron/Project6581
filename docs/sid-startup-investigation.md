@@ -34,8 +34,8 @@ Native rendering, note-on batch flushing, and sequencer scheduling are unchanged
 
 ## Automated verification
 
-- `node --test test/sid-startup.test.js`: ten behavioral tests covering success while suspended, synchronous activation, duplicate calls, ready timeout, retry, stale progress/error/resume callbacks, hung/rejected cleanup, early-stage failure, processor crash, port disposal, and worklet acknowledgments.
-- `npm test`: 134 passing tests, including existing timing, preset, recording and sequencer regressions.
+- `node --test test/sid-startup.test.js`: eleven behavioral tests covering success while suspended, synchronous activation, duplicate calls, ready timeout, retry, stale progress/error/resume callbacks, hung/rejected cleanup, early-stage failure, processor crash, port disposal, and worklet acknowledgments.
+- `npm test`: 135 passing tests, including existing timing, preset, recording and sequencer regressions.
 - Existing preview-assets WASM: `check-wasm-imports.mjs` and `smoke-test-sid.mjs` pass (44.1/48 kHz). No rebuild.
 
 ## Remaining device checks

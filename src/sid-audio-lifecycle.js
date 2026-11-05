@@ -2,8 +2,8 @@
 // Callers must retain an unclosed context and refuse to create another one.
 const closing=new WeakMap();
 export function closeSidContext(context,timeoutMs=2000){
-  if(context.state==='closed')return Promise.resolve();
   if(closing.has(context))return closing.get(context);
+  if(context.state==='closed')return Promise.resolve();
   const result=(async()=>{
     let timer;
     try{

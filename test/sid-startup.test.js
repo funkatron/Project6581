@@ -12,7 +12,7 @@ const unlock=html.slice(html.indexOf('function unlockSidAudio(){'),html.indexOf(
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b});return {promise,resolve,reject}};
 const settle=async()=>{for(let i=0;i<30;i++)await Promise.resolve()};
 
-function app({closeHangs=false,closeRejects=false,moduleHang=false,engineError=false}={}){
+function app({closeHangs=false,closeRejects=false,moduleHang=false,engineError=false,closedBeforeSettled=false}={}){
  const elements=new Map(),contexts=[],attempts=[],timers=new Map();let timerId=0;
  const $=id=>{
   if(!elements.has(id))elements.set(id,{hidden:false,disabled:false,textContent:'',value:id==='chip'?'6581':'1',dataset:{},setAttribute(){},querySelector(){return {disabled:false}}});
@@ -22,7 +22,7 @@ function app({closeHangs=false,closeRejects=false,moduleHang=false,engineError=f
   state='suspended';resumeCalls=0;closeCalls=0;onstatechange=null;
   constructor(){contexts.push(this);this.resumeResult=deferred()}
   resume(){this.resumeCalls++;return this.resumeResult.promise}
-  close(){this.closeCalls++;if(closeRejects)return Promise.reject(Error('close rejected'));if(closeHangs)return new Promise(()=>{});this.state='closed';return Promise.resolve()}
+  close(){this.closeCalls++;if(closeRejects)return Promise.reject(Error('close rejected'));if(closeHangs){if(closedBeforeSettled)this.state='closed';return new Promise(()=>{})};this.state='closed';return Promise.resolve()}
  }
  const lifecycle=readFileSync(new URL('../src/sid-audio-lifecycle.js',import.meta.url),'utf8').replace('export function','function');
  const scope=vm.createContext({$,AudioContext:Context,performance:{now:()=>0},
@@ -72,6 +72,13 @@ test('stalled close clears spinner within cleanup deadline and blocks new contex
  assert.equal(a.$('sidSpinner').hidden,true);assert.equal(a.$('sidStart').disabled,true);
  assert.match(a.$('sidEngineStatus').textContent,/cleanup timed out/);
  await a.scope.startSid();assert.equal(a.contexts.length,1);
+});
+
+test('closed state alone cannot authorize retry while browser resource cleanup never settles',async()=>{
+ const a=app({closeHangs:true,closedBeforeSettled:true});const pending=a.scope.startSid();await settle();
+ a.fire(12000);await settle();assert.equal(a.contexts[0].state,'closed');
+ a.fire(2000);await pending;assert.equal(a.$('sidStart').disabled,true);
+ await a.scope.startSid();assert.equal(a.contexts.length,1);assert.equal(a.$('sidSpinner').hidden,true);
 });
 
 test('rejected cleanup also blocks new contexts and preserves failure detail',async()=>{
