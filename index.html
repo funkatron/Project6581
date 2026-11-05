@@ -241,6 +241,8 @@ header{padding:8px 12px;min-width:0}
 #presetCurrent{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:140px}
 #presetDialog{width:min(760px,calc(100vw - 24px));max-width:100%;max-height:calc(100dvh - 32px);margin:auto;padding:clamp(12px,2vw,20px);color:#f3f5fa;background:#1b2736;border:1px solid #52647d;border-radius:13px;box-shadow:0 20px 65px #0009;overflow-y:auto;overscroll-behavior:contain}
 #presetDialog:not([open]){display:none}
+#presetDialog h2,#presetDialog h3{color:#f3f5fa}
+#presetDialog small,#presetDialog .preset-empty,#presetDialog .preset-item-category{color:#c8d6e5}
 #presetDialog::backdrop{background:#090f18c9}
 .preset-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
 .preset-dialog-header h2{margin:0;font-size:16px}
@@ -888,10 +890,13 @@ function renderPresetLibrary(message=null){
   list.replaceChildren(...items);
  }
  const editable=selectedPreset?.kind==='user';
- $('presetSave').disabled=!editable;
- $('presetRename').disabled=!editable;
- $('presetDelete').disabled=!editable;
- $('presetExportBank').disabled=!userPresets.length;
+ $('presetSave').disabled=presetLoading||!editable;
+ $('presetRename').disabled=presetLoading||!editable;
+ $('presetDelete').disabled=presetLoading||!editable;
+ $('presetExportBank').disabled=presetLoading||!userPresets.length;
+ for(const id of ['presetSaveAs','presetExport','presetImport'])$(id).disabled=presetLoading;
+ for(const id of ['factoryPresetList','userPresetList'])
+  $(id).querySelectorAll('button').forEach(button=>button.disabled=presetLoading);
  const p=currentPreset();
  const name=p?.name||'Current sound';
  $('presetCurrent').textContent=name+(presetDirty?' •':'');
@@ -973,6 +978,7 @@ function exportPresetFile(json,filename){
  presetMessage('File ready · tap Download JSON if it did not download');
 }
 function guardPresetAction(work){
+ if(presetLoading)return null;
  try{return work()}catch(error){presetMessage('Preset error: '+(error.message||error));return null}
 }
 $('presetOpen').addEventListener('click',()=>{
@@ -983,24 +989,32 @@ $('presetDialog').addEventListener('click',event=>{
  if(event.target===$('presetDialog'))$('presetDialog').close();
 });
 let presetLoading=false;
+function setPresetLoading(busy){
+ presetLoading=busy;
+ $('presetDialog').setAttribute('aria-busy',String(busy));
+ const editable=selectedPreset?.kind==='user';
+ for(const [id,available] of [
+  ['presetSave',editable],['presetSaveAs',true],['presetRename',editable],
+  ['presetDelete',editable],['presetExport',true],['presetExportBank',userPresets.length>0],
+  ['presetImport',true]
+ ])$(id).disabled=busy||!available;
+ for(const id of ['factoryPresetList','userPresetList'])
+  $(id).querySelectorAll('button').forEach(button=>button.disabled=busy);
+}
 async function loadSelectedPreset(kind,id){
  if(presetLoading)return;
  const source=kind==='factory'?FACTORY_PRESETS:kind==='user'?userPresets:null;
  const preset=source?.find(p=>p.id===id);
  if(!preset){presetMessage('Preset not found');return}
  if(presetDirty&&!window.confirm('Discard unsaved changes to this preset?'))return;
- presetLoading=true;
- for(const listId of ['factoryPresetList','userPresetList'])
-  $(listId).querySelectorAll('button').forEach(button=>button.disabled=true);
+ setPresetLoading(true);
  try{
   await applyPresetSettings(preset.settings);
   selectedPreset={kind,id};presetDirty=false;renderPresetLibrary();
   $('presetDialog').close();
  }catch(error){presetMessage('Could not load preset: '+(error.message||error))}
  finally{
-  presetLoading=false;
-  for(const listId of ['factoryPresetList','userPresetList'])
-   $(listId).querySelectorAll('button').forEach(button=>button.disabled=false);
+  setPresetLoading(false);
  }
 }
 for(const listId of ['factoryPresetList','userPresetList']){
@@ -1055,10 +1069,12 @@ $('presetExportBank').addEventListener('click',()=>guardPresetAction(()=>{
  if(!userPresets.length)throw new Error('Save a user preset before exporting a bank');
  exportPresetFile(exportPresetBank(userPresets),'project6581-preset-bank.json');
 }));
-$('presetImport').addEventListener('click',()=>$('presetFile').click());
+$('presetImport').addEventListener('click',()=>{if(!presetLoading)$('presetFile').click()});
 $('presetFile').addEventListener('change',async()=>{
  const input=$('presetFile'),file=input.files?.[0];
  if(!file)return;
+ if(presetLoading){input.value='';return}
+ setPresetLoading(true);
  try{
   if(file.size>2*1024*1024)throw new Error('Preset file is larger than 2 MB');
   const imported=importPresetFile(await file.text());
@@ -1079,7 +1095,7 @@ $('presetFile').addEventListener('change',async()=>{
     ' Choose one from My presets.');
   renderPresetLibrary(importedMessage);
  }catch(error){presetMessage('Import failed: '+(error.message||error))}
- finally{input.value=''}
+ finally{input.value='';setPresetLoading(false)}
 });
 document.addEventListener('input',event=>{
  if(event.target.id==='presetFile')return;
