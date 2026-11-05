@@ -178,7 +178,16 @@ button,select,.master-tempo input{font-family:inherit}
 .sid-led[data-state="loading"],.sid-led[data-state="ready"]{background:#e5a43b;border-color:#85612d;box-shadow:inset 0 1px 2px #fff2bd,0 0 5px #d9a64e}
 .sid-led[data-state="on"]{background:#43ed77;border-color:#237b45;box-shadow:inset 0 1px 2px #d3ffe0,0 0 7px #42e978,0 0 2px #247c46}
 /* Hardware-style unison switch; preserve voices selection in both modes. */
-#unisonOn{cursor:pointer}
+.voice-allocation{margin:4px 0 9px;min-width:0}
+.voice-allocation h3{font-size:12px;font-weight:650;margin:0 0 4px;color:inherit}
+.allocation-selectors{display:flex;flex-wrap:wrap;align-items:center;gap:4px 15px}
+.allocation-selectors label{display:inline-flex;flex:none;justify-content:flex-start;gap:5px;white-space:nowrap;min-width:0}
+.allocation-selectors select{min-height:44px;width:max-content;max-width:none;min-width:0;padding:6px 23px 6px 8px;font-size:12px}
+.allocation-detune{display:flex;width:100%;max-width:100%;gap:10px;min-width:0}
+.allocation-detune input[type=range]{flex:1;min-width:64px;max-width:none}
+.allocation-detune output{min-width:36px}
+.voice-capacity{display:block;font-size:11px;margin:3px 0 6px;opacity:.85}
+@media(max-width:520px){.allocation-selectors{gap:2px 9px}.allocation-selectors label{font-size:11px}.allocation-selectors select{font-size:11px;padding-right:20px}}
 #detune:disabled{opacity:.45;cursor:not-allowed}
 /* Keep labels and status text clear of recessed panel edges, including
    compact landscape layouts where the original padding becomes very small. */
@@ -249,7 +258,18 @@ header{padding:8px 12px;min-width:0}
  <output id="presetStatus" role="status" aria-live="polite">Choose a factory sound or save your own.</output>
  <a id="presetExportLink" hidden>Download preset</a>
 </div>
-<h2>Sound</h2><div class="voice-grid"><label>Chip <select id="chip"><option value="6581">MOS 6581</option><option value="8580">MOS 8580</option></select></label><label>Unison <input id="unisonOn" type="checkbox" checked></label><label>Voices <select id="voiceCount"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label><label>Detune <input id="detune" type="range" min="0" max="100" value="12" step="1"><output id="detuneValue">12¢</output></label><label>Volume <input id="volume" type="range" min="0" max="100" value="55"></label><label>Cutoff <input id="cutoff" type="range" min="50" max="10000" value="7000"></label><label>Resonance <input id="resonance" type="range" min="0" max="100" value="10"></label><label>Filter <select id="mode"><option value="lowpass">Low-pass</option><option value="bandpass">Band-pass</option><option value="highpass">High-pass</option></select></label></div>
+<h2>Sound</h2>
+<div class="voice-allocation" aria-label="Voice allocation">
+ <h3>Voice allocation</h3>
+ <div class="allocation-selectors">
+  <label>Assign <select id="voiceAssign" aria-label="Voice assignment"><option value="mono" selected>Mono</option><option value="legato">Legato</option><option value="duo">Duo</option><option value="poly">Poly</option></select></label>
+  <label>Voices <select id="voiceCount" aria-label="Total SID oscillators"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label>
+  <label>Unison <select id="unisonCount" aria-label="Oscillators per note"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label>
+ </div>
+ <label class="allocation-detune">Detune <input id="detune" type="range" min="0" max="100" value="12" step="1" aria-label="Unison pitch detune"><output id="detuneValue">12¢</output></label>
+ <small id="voiceCapacity" class="voice-capacity" role="status" aria-live="polite">Up to 1 note · 1 oscillator</small>
+</div>
+<div class="voice-grid"><label>Chip <select id="chip"><option value="6581">MOS 6581</option><option value="8580">MOS 8580</option></select></label><label>Volume <input id="volume" type="range" min="0" max="100" value="55"></label><label>Cutoff <input id="cutoff" type="range" min="50" max="10000" value="7000"></label><label>Resonance <input id="resonance" type="range" min="0" max="100" value="10"></label><label>Filter <select id="mode"><option value="lowpass">Low-pass</option><option value="bandpass">Band-pass</option><option value="highpass">High-pass</option></select></label></div>
 <div class="section-divider"></div><div id="voices" class="voices"></div>
 </section>
 <section class="panel performance-panel" id="playPanel" role="tabpanel" aria-labelledby="tabPlay" aria-label="Arpeggiator controls">
@@ -339,11 +359,39 @@ for(const [name,id] of [['voice','tabVoice'],['play','tabPlay']]){
     $('tabPlay').setAttribute('aria-selected',String(name==='play'));
   });
 }
-function play(note){if(!sidController)return;if(!settings[0].enabled)return;sidController.noteOn(note,()=>currentSidSettings);}
-function updateUnison(){const unison=$('unisonOn').checked;sidController?.configure({voiceCount:Number($('voiceCount').value),detune:Number($('detune').value),unison});$('detune').disabled=!unison;$('detuneValue').textContent=unison?$('detune').value+'¢':'Off';updateModulation();}
-['voiceCount','detune','unisonOn'].forEach(id=>$(id).addEventListener('input',updateUnison));updateUnison();
-function stop(note){sidController?.noteOff(note)}
-function panic(){gameStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.root=null;directOwned.clear();arpKeyVisual.clear();sidController?.panic()}
+const activeOwners=new Map();
+function play(note,source='key:'+note){
+ if(!sidController||!settings[0].enabled)return;
+ const prior=activeOwners.get(source);
+ if(prior)sidController.noteOff(prior.note,prior.token);
+ const token=sidController.noteOn(note,()=>currentSidSettings);
+ activeOwners.set(source,{note,token});
+}
+function stop(note,source='key:'+note){
+ const owner=activeOwners.get(source);
+ if(!owner||owner.note!==note)return;
+ activeOwners.delete(source);
+ sidController?.noteOff(note,owner.token);
+}
+function updateUnison(){
+ const voices=Number($('voiceCount').value),selector=$('unisonCount');
+ for(const option of selector.options)option.disabled=Number(option.value)>voices;
+ if(Number(selector.value)>voices)selector.value=String(voices);
+ const layers=Number(selector.value),mode=$('voiceAssign').value;
+ if(sidController&&(sidController.voiceCount!==voices||sidController.unisonCount!==layers||sidController.mode!==mode)){
+  // Assignments change only after releasing owned notes and running generators.
+  panic();arp.held.clear();arp.latched.clear();
+ }
+ sidController?.configure({voiceCount:voices,unisonCount:layers,mode,detune:Number($('detune').value)});
+ $('detune').disabled=layers===1;
+ $('detuneValue').textContent=$('detune').value+'¢';
+ const max=mode==='mono'||mode==='legato'?1:mode==='duo'?Math.min(2,Math.floor(voices/layers)):Math.floor(voices/layers);
+ $('voiceCapacity').textContent='Up to '+max+' '+(max===1?'note':'notes')+' · '+voices+' '+(voices===1?'oscillator':'oscillators');
+ updateModulation();
+}
+['voiceAssign','voiceCount','unisonCount','detune'].forEach(id=>$(id).addEventListener('input',updateUnison));
+updateUnison();
+function panic(){gameStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.root=null;directOwned.clear();activeOwners.clear();arpKeyVisual.clear();sidController?.panic()}
 $('panic').addEventListener('click',()=>{
  $('gameArpOn').checked=false;$('arpOn').checked=false;
  lfoState.forEach(lfo=>{lfo.enabled=false});renderLfos();updateModulation();
@@ -361,11 +409,11 @@ const activeNotes=()=>[...($('arpLatch').checked&&arp.latched.size?arp.latched:a
 const arpNotes=()=>activeNotes().sort((a,b)=>a-b);
 function gameStop(){
  if(game.timer!==null){clearInterval(game.timer);game.timer=null}
- if(game.last!==null){stop(game.last);game.last=null}
+ if(game.last!==null){stop(game.last,'game');game.last=null}
  arpKeyVisual.clear();
 }
 function arpStopVoice(){
- if(arp.last!==null){stop(arp.last);arp.last=null}
+ if(arp.last!==null){stop(arp.last,'arp');arp.last=null}
  arpKeyVisual.clear();
 }
 function gameRoot(){
@@ -376,9 +424,9 @@ function gameRoot(){
 function gameTick(){
  const root=gameRoot();
  if(root===null){gameStop();$('arpStatus').textContent='No notes held';return}
- if(game.last!==null)stop(game.last);
+ if(game.last!==null)stop(game.last,'game');
  game.last=patternPitch(root,$('gameArpStyle').value,game.step++);
- play(game.last);arpKeyVisual.show(game.last);
+ play(game.last,'game');arpKeyVisual.show(game.last);
  $('arpStatus').textContent='Game Arp · '+$('gameArpStyle').selectedOptions[0].text+
   ' · root '+names[root%12]+(Math.floor(root/12)-1);
 }
@@ -393,7 +441,7 @@ function arpTick(){
  arp.root=note;
  if(gameEnabled())return; // The separate Game Arp clock voices this root.
  arpStopVoice();
- arp.last=note;play(note);arpKeyVisual.show(note);
+ arp.last=note;play(note,'arp');arpKeyVisual.show(note);
  $('arpStatus').textContent='Root Arp · '+names[note%12]+(Math.floor(note/12)-1)+
   ' · '+notes.length+' notes';
 }
@@ -554,7 +602,7 @@ function setModulationThumb(input,value,enabled){
  if(enabled)thumb.value=String(value);
 }
 function updateModulation(){
- const sound=settings[0],pulseActive=sound.wave==='square',unisonActive=$('unisonOn').checked;
+ const sound=settings[0],pulseActive=sound.wave==='square',unisonActive=Number($('unisonCount').value)>1;
  // Preserve the actual slider positions as the editable base/center values.
  const base={
   cutoff:Number($('cutoff').value),resonance:Number($('resonance').value),volume:Number($('volume').value),
@@ -653,7 +701,7 @@ async function startSid(){
     if(!sidRecorder.supportsM4a)$('recordFormat').value='wav';
     $('recordToggle').disabled=false;
     $('recordStatus').textContent=sidRecorder.supportsM4a?'WAV / M4A ready':'WAV ready';
-    sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:Number($('voiceCount').value),detune:Number($('detune').value),unison:$('unisonOn').checked});
+    sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:Number($('voiceCount').value),unisonCount:Number($('unisonCount').value),mode:$('voiceAssign').value,detune:Number($('detune').value)});
     activeSidModel=requestedModel;
     updateModulation();
     if(lfoTimer===null)lfoTimer=setInterval(()=>{if(lfoState.some(lfo=>lfo.enabled&&lfo.depth>0)||(settings[0].wave==='square'&&settings[0].pwmDepth>0))updateModulation()},1000/60);
@@ -754,7 +802,7 @@ function snapshotPresetSettings(){
   sound:{
    model:Number($('chip').value),
    voice:{...settings[0]},
-   instrument:{voiceCount:Number($('voiceCount').value),unison:$('unisonOn').checked,detune:Number($('detune').value)},
+   instrument:{voiceCount:Number($('voiceCount').value),unisonCount:Number($('unisonCount').value),mode:$('voiceAssign').value,detune:Number($('detune').value)},
    filter:{cutoff:Number($('cutoff').value),resonance:Number($('resonance').value),
     volume:Number($('volume').value),mode:$('mode').value},
    lfos:lfoState.map(lfo=>({...lfo}))
@@ -810,7 +858,8 @@ function applyPresetControls(next){
  Object.assign(settings[0],next.sound.voice);
  $('chip').value=String(next.sound.model);
  $('voiceCount').value=String(next.sound.instrument.voiceCount);
- $('unisonOn').checked=next.sound.instrument.unison;
+ $('unisonCount').value=String(next.sound.instrument.unisonCount);
+ $('voiceAssign').value=next.sound.instrument.mode;
  $('detune').value=String(next.sound.instrument.detune);
  for(const key of ['cutoff','resonance','volume'])$(key).value=String(next.sound.filter[key]);
  $('mode').value=next.sound.filter.mode;
