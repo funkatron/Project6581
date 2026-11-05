@@ -335,6 +335,7 @@ import {createArpKeyVisual} from "./src/arp-key-visual.js?v=__BUILD_ID__";
 import {modulationTrack,formatControlValue,SLIDER_TARGETS} from "./src/modulation-track.js?v=__BUILD_ID__";
 import {createSidRecorder,prepareRecordingDownload} from "./src/sid-recorder.js?v=__BUILD_ID__";
 import {selectRoot,patternPitch,stepMilliseconds} from "./src/arp-composition.js?v=__BUILD_ID__";
+import {defaultSequence,validateSequence,sequenceEvent} from "./src/game-step-sequencer.js?v=__BUILD_ID__";
 import {FACTORY_PRESETS,PRESET_VERSION,cleanPresetName,validatePresetSettings,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,importPresetFile} from "./src/preset-library.js?v=__BUILD_ID__";
 
 const $=id=>document.getElementById(id);let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null,activeSidModel=null;
@@ -448,21 +449,105 @@ function panic(){gameStop();if(arp.timer!==null){clearInterval(arp.timer);arp.ti
 $('panic').addEventListener('click',()=>{
  $('gameArpOn').checked=false;$('arpOn').checked=false;
  lfoState.forEach(lfo=>{lfo.enabled=false});renderLfos();updateModulation();
- panic();arp.held.clear();arp.latched.clear();arp.step=0;game.step=0;
+ panic();arp.held.clear();arp.latched.clear();arp.step=0;game.step=0;seqPreview=false;setSeqTransportLabel();
  sidController?.panic();
  $('arpStatus').textContent='Arps and LFOs off';
 });window.addEventListener('blur',()=>{panic();arp.held.clear()});
 const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 const arp={held:new Set(),latched:new Set(),timer:null,step:0,root:null,last:null};
 const directOwned=new Set(); // Physical notes sounding independently of either generator.
-const game={timer:null,last:null,step:0};
+const game={timer:null,last:null,step:0,gateTimer:null};
+let seqState=defaultSequence(),seqPreview=false,activeSeqStep=-1;
+function clearStepHighlight(){
+ if(activeSeqStep<0)return;
+ const previous=$('seqGrid').children[activeSeqStep];
+ previous?.classList.remove('is-playing');previous?.removeAttribute('aria-current');
+ activeSeqStep=-1;
+}
+function highlightStep(index){
+ if(activeSeqStep===index)return;
+ clearStepHighlight();
+ const element=$('seqGrid').children[index];
+ if(!element)return;
+ element.classList.add('is-playing');element.setAttribute('aria-current','step');
+ activeSeqStep=index;
+}
+function setSeqTransportLabel(){
+ $('seqRun').textContent=seqPreview?'▶ Previewing':'▶ Preview';
+ $('seqRun').setAttribute('aria-pressed',String(seqPreview));
+}
+function renderSequenceSteps(){
+ const fragment=document.createDocumentFragment();
+ seqState.steps.forEach((step,index)=>{
+  const cell=document.createElement('div');cell.className='seq-step';cell.dataset.step=String(index);
+  cell.hidden=index>=seqState.length;
+  const number=document.createElement('span');number.className='seq-number';number.textContent=String(index+1);
+  const pitchWrap=document.createElement('div');pitchWrap.className='seq-pitch-wrap';
+  const pitch=document.createElement('input');pitch.type='range';pitch.className='seq-note';
+  pitch.min='-12';pitch.max='24';pitch.step='1';pitch.value=String(step.offset);
+  pitch.setAttribute('aria-label','Step '+(index+1)+' pitch offset in semitones');
+  const value=document.createElement('output');value.className='seq-note-value';
+  value.textContent=(step.offset>0?'+':'')+step.offset;
+  pitch.addEventListener('input',()=>{
+   seqState.steps[index].offset=Number(pitch.value);
+   value.textContent=(Number(pitch.value)>0?'+':'')+pitch.value;
+   modifiedStepPhrase();
+  });
+  pitchWrap.append(pitch,value);
+  const gate=document.createElement('input');gate.type='checkbox';gate.className='seq-gate';
+  gate.checked=step.gate;gate.setAttribute('aria-label','Step '+(index+1)+' gate enabled');
+  gate.addEventListener('change',()=>{seqState.steps[index].gate=gate.checked;modifiedStepPhrase()});
+  const lengthWrap=document.createElement('div');lengthWrap.className='seq-length-group';
+  const length=document.createElement('input');length.type='range';length.className='seq-duration';
+  length.min='25';length.max='100';length.step='5';length.value=String(step.duration);
+  length.setAttribute('aria-label','Step '+(index+1)+' note length percent');
+  const lengthValue=document.createElement('output');lengthValue.className='seq-duration-value';
+  lengthValue.textContent=step.duration+'%';
+  length.addEventListener('input',()=>{
+   seqState.steps[index].duration=Number(length.value);
+   lengthValue.textContent=length.value+'%';
+   modifiedStepPhrase();
+  });
+  lengthWrap.append(length,lengthValue);
+  cell.append(number,pitchWrap,gate,lengthWrap);
+  fragment.append(cell);
+ });
+ $('seqGrid').replaceChildren(fragment);
+ $('seqLength').value=String(seqState.length);
+ activeSeqStep=-1;
+}
+function modifiedStepPhrase(){
+ $('gameArpStyle').value='custom';
+ $('seqStatus').textContent='Custom '+seqState.length+'-step phrase · changes take effect on the next step.';
+ refreshPresetDirty();
+}
+renderSequenceSteps();
+$('seqLength').addEventListener('change',()=>{
+ seqState.length=Number($('seqLength').value);
+ renderSequenceSteps();modifiedStepPhrase();gameRestart();
+});
+$('seqReset').addEventListener('click',()=>{
+ if(!window.confirm('Reset all 16 custom steps?'))return;
+ seqState=defaultSequence();renderSequenceSteps();modifiedStepPhrase();gameRestart();
+});
+$('seqRun').addEventListener('click',()=>{
+ seqPreview=true;$('gameArpStyle').value='custom';$('gameArpOn').checked=true;
+ setSeqTransportLabel();restartGenerators();refreshPresetDirty();
+});
+$('seqStop').addEventListener('click',()=>{
+ seqPreview=false;$('gameArpOn').checked=false;
+ setSeqTransportLabel();restartGenerators();refreshPresetDirty();
+});
+setSeqTransportLabel();
 const gameEnabled=()=>$('gameArpOn').checked;
 const arpEnabled=()=>$('arpOn').checked;
 const activeNotes=()=>[...($('arpLatch').checked&&arp.latched.size?arp.latched:arp.held)];
 const arpNotes=()=>activeNotes().sort((a,b)=>a-b);
 function gameStop(){
  if(game.timer!==null){clearInterval(game.timer);game.timer=null}
+ if(game.gateTimer!==null){clearTimeout(game.gateTimer);game.gateTimer=null}
  if(game.last!==null){stop(game.last,'game');game.last=null}
+ clearStepHighlight();
  arpKeyVisual.clear();
 }
 function arpStopVoice(){
@@ -470,14 +555,38 @@ function arpStopVoice(){
  arpKeyVisual.clear();
 }
 function gameRoot(){
- if(arpEnabled())return arp.root;
  const held=activeNotes();
- return held.length?held[held.length-1]:null;
+ if(arpEnabled()&&arp.root!==null)return arp.root;
+ return held.length?held[held.length-1]:seqPreview?(keyboardOctave+1)*12:null;
 }
 function gameTick(){
  const root=gameRoot();
  if(root===null){gameStop();$('arpStatus').textContent='No notes held';return}
+ if(game.gateTimer!==null){clearTimeout(game.gateTimer);game.gateTimer=null}
  if(game.last!==null)stop(game.last,'game');
+ if($('gameArpStyle').value==='custom'){
+  const event=sequenceEvent(root,seqState,game.step++);
+  highlightStep(event.index);
+  game.last=null;
+  if(!event.gate){
+   arpKeyVisual.clear();
+   $('arpStatus').textContent='Custom step '+(event.index+1)+' · rest';
+   return;
+  }
+  game.last=event.note;
+  play(game.last,'game');arpKeyVisual.show(game.last);
+  $('arpStatus').textContent='Custom step '+(event.index+1)+' · '+names[root%12]+(Math.floor(root/12)-1);
+  if(event.duration<100){
+   const sounding=event.note,clock=game.step;
+   const bpm=Number($('arpSync').checked?$('masterBpm').value:$('arpBpm').value);
+   game.gateTimer=setTimeout(()=>{
+    if(game.step!==clock||game.last!==sounding)return;
+    stop(sounding,'game');game.last=null;arpKeyVisual.clear();game.gateTimer=null;
+   },Math.max(20,Math.round(stepMilliseconds(bpm,$('gameRate').value)*event.duration/100)));
+  }
+  return;
+ }
+ clearStepHighlight();
  game.last=patternPitch(root,$('gameArpStyle').value,game.step++);
  play(game.last,'game');arpKeyVisual.show(game.last);
  $('arpStatus').textContent='Game Arp · '+$('gameArpStyle').selectedOptions[0].text+
@@ -519,7 +628,7 @@ function restartGenerators(){
  }
  // Transitioning from direct polyphony must release EVERY physical owner first.
  releaseDirectNotes();
- if(!activeNotes().length){$('arpStatus').textContent='No notes held';return}
+ if(!activeNotes().length&&!seqPreview){$('arpStatus').textContent='No notes held';return}
  const bpm=Number($('arpSync').checked?$('masterBpm').value:$('arpBpm').value);
  if(arpEnabled()){
   arpTick();
@@ -565,7 +674,7 @@ function keyUp(note){
   if(!gameEnabled())arpStopVoice();
  }
 }
-$('gameArpOn').addEventListener('change',restartGenerators);
+$('gameArpOn').addEventListener('change',()=>{if(!$('gameArpOn').checked){seqPreview=false;setSeqTransportLabel()}restartGenerators()});
 $('gameArpStyle').addEventListener('change',gameRestart);
 $('gameRate').addEventListener('change',gameRestart);
 $('arpOn').addEventListener('change',restartGenerators);
@@ -876,7 +985,7 @@ function snapshotPresetSettings(){
    arp:{enabled:$('arpOn').checked,latch:$('arpLatch').checked,pattern:$('arpPattern').value,
     rate:Number($('arpRate').value),sync:$('arpSync').checked,localBpm:Number($('arpBpm').value)},
    game:{enabled:$('gameArpOn').checked,style:$('gameArpStyle').value,
-    rate:Number($('gameRate').value)}
+    rate:Number($('gameRate').value),sequence:seqState}
   }
  });
 }
@@ -937,7 +1046,7 @@ function refreshPresetDirty(){
 function applyPresetControls(next){
  // Silence old voices and clear transient notes, but retain the saved arp switches.
  panic();arp.held.clear();arp.latched.clear();arp.step=0;
- game.step=0;arp.root=null;
+ game.step=0;arp.root=null;seqPreview=false;setSeqTransportLabel();
  for(const key of keys.values())key.classList.remove('down');
  Object.assign(settings[0],next.sound.voice);
  $('chip').value=String(next.sound.model);
@@ -961,6 +1070,8 @@ function applyPresetControls(next){
  $('gameArpOn').checked=next.performance.game.enabled;
  $('gameArpStyle').value=next.performance.game.style;
  $('gameRate').value=String(next.performance.game.rate);
+ seqState=validateSequence(next.performance.game.sequence);
+ renderSequenceSteps();
  renderVoiceControls();renderLfos();updateUnison();updateModulation();
  $('arpStatus').textContent='Preset ready · press a key';
 }
