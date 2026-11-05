@@ -6,15 +6,20 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     this.exports=null;
     this.queue=[];
     this.blocks=0;this.lastPeak=0;this.writes=0;
-    this.pendingLatencyProbes=[];
+    this.pendingLatencyProbes=[];this.timingEnabled=false;
     this.renderMsTotal=0;this.renderMsMax=0;this.timedRenderBlocks=0;
     this.recording=false;this.recordSamples=new Int16Array(4096);this.recordLength=0;
     // Audio-rendered frames, rather than throttled page timers, cap capture.
     this.monitorRecording=false;this.recordFrames=0;this.recordMaxFrames=0;
     this.port.onmessage=({data})=>{
       if(data?.type==='load')this.load(data.bytes,data.model??6581);
+      else if(data?.type==='timing-enable'){
+        this.timingEnabled=data.enabled===true;
+        if(!this.timingEnabled)this.pendingLatencyProbes.length=0;
+      }
       else if(data?.type==='latency-probe'){
-        if(Number.isInteger(data.id)&&this.pendingLatencyProbes.length<8)this.pendingLatencyProbes.push(data.id);
+        if(this.timingEnabled&&Number.isInteger(data.id)&&this.pendingLatencyProbes.length<8)
+          this.pendingLatencyProbes.push(data.id);
       }
       else if(data?.type==='write')this.queue.push([data.register,data.value]);
       else if(data?.type==='writes'&&Array.isArray(data.writes))this.queue.push(...data.writes);
@@ -60,7 +65,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     const frames=channels[0].length;
     // Optional worklet performance timing: browsers may not expose
     // performance.now() in AudioWorkletGlobalScope. Never depend on it for audio.
-    const clock=typeof performance!=='undefined'&&typeof performance.now==='function';
+    const clock=this.timingEnabled&&typeof performance!=='undefined'&&typeof performance.now==='function';
     const started=clock?performance.now():null;
     if(e.sid_render(frames)!==frames)return true;
     if(started!==null){
