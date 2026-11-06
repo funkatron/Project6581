@@ -86,6 +86,17 @@ See [release versioning policy](docs/versioning.md) for rationale, version rules
 - [ ] Add compact, touch-friendly editing with a clear envelope graph and numerical controls. Persist it through a deliberately versioned preset-schema change with an explicit compatibility/migration policy; keep application semantic versions independent.
 - [ ] Compare actual recorded SID output against the requested pitch curves, including fast kick/tom drops and slow effects; test 6581/8580 models, 44.1/48 kHz, repeated notes, concurrent voices, CPU budget, iPad Safari latency and recovery. Regression tests must prove disabled envelopes produce unchanged audio behavior.
 
+**Preset updates and new sounds after pitch-envelope support (follow-up PR):**
+
+- [ ] **Revisit existing drum presets first.** Audition and compare `Low Thud Kick` and `Low Tom` with fast downward pitch envelopes, then examine `Noise Snare` and `Noise Clap` for useful brief pitch movement or layered/noise alternatives. Keep hats noise-based unless pitch modulation materially improves them. The goal is audible improvement, not simply using the new feature everywhere.
+- [ ] **Preserve recognizable existing sounds.** Before changing any shipped factory preset, record its current settings and a reference audio sample. For substantial tonal changes, consider a new named variant with a new ID rather than silently replacing a well-liked patch. Do not overwrite users' saved copies or change factory IDs casually.
+- [ ] **Create new pitch-envelope presets** once the effect is tested: swept kick, descending arcade tom, laser/zap, rising or falling FX, pitch-diving bass, and a lead with a short attack scoop. Place them in the existing Drums, FX, Bass and Leads groups, using original sound designs rather than copying commercial soundtrack patches.
+- [ ] **Protect user presets across the schema change.** Define migration/defaults so older version-3 user presets import or load with the pitch envelope disabled and retain their original sound. Include any new envelope parameters in preset saving, exporting, importing, validation and backups; keep the preset-schema version independent of the application's semantic release version.
+- [ ] **Audition before replacing or adding to the default bank.** Compare before/after recordings, pitch trajectory, attack, sustain, levels, retrigger behavior and release tails on iPad Safari for both SID models. Retain distinct, useful sounds; reject redundant or ineffective additions. Document each patch's purpose and what the pitch envelope contributes.
+- [ ] **Extend regression coverage** to enforce unique factory IDs/names, preserve legacy sounds and user presets, verify envelope-enabled presets round-trip correctly, and confirm older saved presets retain their prior audio behavior.
+
+**Suggested delivery sequence:** First ship the pitch-envelope engine and editor without altering factory sounds. Then make a separately reviewable preset-refresh PR, testing improved legacy drums and new pitches before merging either set.
+
 **Completion checks:** A user can program and save an audible, repeatable pitch sweep, hear convincing pitch-descending kick/tom examples, and play overlapping notes without pitch leaks or stuck voices. iPad playback and render-time measurements are required before claiming the audio result is validated.
 
 ## Priority 2a: composable Arpeggiator and Game Arp
