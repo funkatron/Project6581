@@ -258,6 +258,7 @@ header{padding:8px 12px;min-width:0}
 .preset-item{width:100%;min-height:40px;padding:8px 10px;text-align:left;border-radius:7px;white-space:normal;overflow-wrap:anywhere;font-size:12px}
 .preset-item[aria-current="true"]{border-color:#f3bd78;background:#80522e}
 .preset-item-category{display:block;color:#b6c2d2;font-size:10px;margin-top:2px}
+.preset-category-heading{position:sticky;top:0;z-index:1;padding:7px 8px 5px;margin-top:6px;background:#162232;border-bottom:1px solid #34455a;color:#f3bd78;font-size:11px;font-weight:700;letter-spacing:.03em}
 .preset-empty{font-size:11px;padding:8px;color:#b6c2d2}
 .preset-actions{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 8px}
 .preset-actions button{min-height:40px;padding:7px 9px;font-size:12px}
@@ -341,7 +342,7 @@ import {modulationTrack,formatControlValue,SLIDER_TARGETS} from "./src/modulatio
 import {createSidRecorder,prepareRecordingDownload} from "./src/sid-recorder.js?v=__BUILD_ID__";
 import {selectRoot,patternPitch,stepMilliseconds} from "./src/arp-composition.js?v=__BUILD_ID__";
 import {defaultSequence,validateSequence,sequenceEvent} from "./src/game-step-sequencer.js?v=__BUILD_ID__";
-import {FACTORY_PRESETS,PRESET_VERSION,cleanPresetName,validatePresetSettings,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,importPresetFile} from "./src/preset-library.js?v=__BUILD_ID__";
+import {FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,PRESET_VERSION,cleanPresetName,validatePresetSettings,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,importPresetFile} from "./src/preset-library.js?v=__BUILD_ID__";
 
 const $=id=>document.getElementById(id);
 const sidStartupLog=[];
@@ -1235,7 +1236,25 @@ function renderPresetLibrary(message=null){
   ['factory',FACTORY_PRESETS,'factoryPresetList'],['user',userPresets,'userPresetList']
  ]){
   const list=$(listId);
-  const items=presets.map(preset=>{
+  // Stable category headings make the 30 factory sounds navigable without changing preset IDs.
+  const ordered=kind==='factory'
+   ?[...presets].sort((a,b)=>FACTORY_GROUPS.indexOf(factoryGroup(a.category))-FACTORY_GROUPS.indexOf(factoryGroup(b.category)))
+   :presets;
+  const items=[];
+  let previousGroup=null;
+  for(const preset of ordered){
+   if(kind==='factory'){
+    const group=factoryGroup(preset.category);
+    if(group!==previousGroup){
+     const heading=document.createElement('div');
+     heading.className='preset-category-heading';
+     heading.setAttribute('role','heading');
+     heading.setAttribute('aria-level','4');
+     heading.textContent=group;
+     items.push(heading);
+     previousGroup=group;
+    }
+   }
    const button=document.createElement('button');
    button.type='button';button.className='preset-item';
    button.dataset.kind=kind;button.dataset.id=preset.id;
@@ -1246,8 +1265,8 @@ function renderPresetLibrary(message=null){
     button.append(category);
    }
    button.setAttribute('aria-current',String(selected===kind+':'+preset.id));
-   return button;
-  });
+   items.push(button);
+  }
   if(!items.length){
    const empty=document.createElement('div');empty.className='preset-empty';
    empty.textContent='No user presets yet. Use Save as… to create one.';
