@@ -11,7 +11,7 @@ test('preset UI compiles without changing SID native code',()=>{
  assert.ok(script,'inline app module exists');
  const result=spawnSync(process.execPath,['--check','--input-type=module'],{input:script,encoding:'utf8'});
  assert.equal(result.status,0,result.stderr);
- assert.match(script,/import \{FACTORY_PRESETS,PRESET_VERSION,cleanPresetName/);
+ assert.match(script,/import \{FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,PRESET_VERSION,cleanPresetName/);
 });
 test('preset editor provides factory/user collections, save, export, import and backup',()=>{
  for(const id of ['presetOpen','presetCurrent','presetDialog','presetClose','factoryPresetList','userPresetList',
