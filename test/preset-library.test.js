@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
- PRESET_VERSION,PRESET_STORAGE_KEY,FACTORY_PRESETS,defaultPresetSettings,
+ PRESET_VERSION,PRESET_STORAGE_KEY,FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,defaultPresetSettings,
  validatePresetSettings,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,importPresetFile
 } from '../src/preset-library.js';
+import {sequenceEvent} from '../src/game-step-sequencer.js';
 
 const makeStorage=()=>{
  const values=new Map();
@@ -104,4 +105,60 @@ test('C64-inspired prototype bank covers four distinct categories without changi
  const legacy=['deep-bass','arcade-lead','chiptune-pluck','pulsing-pad','soft-flute','filter-motion'];
  assert.deepEqual(new Set(FACTORY_PRESETS.map(p=>p.id)),new Set([...legacy,...prototypes.map(([id])=>id)]));
  assert.equal(PRESET_VERSION,3);
+});
+
+test('expanded C64 factory bank retains legacy sounds and has six originals per new category',()=>{
+ const newIds={
+  Bass:['tight-pulse-bass','pwm-drive-bass','filtered-saw-bass','hollow-square-bass','octave-runner-bass','warm-triangle-bass'],
+  Keys:['shimmer-pwm-keys','chip-pluck-keys','bell-keys','chord-stab-keys','organ-keys','slow-glass-pad'],
+  Leads:['bright-pulse-lead','nasal-pwm-lead','smooth-legato-lead','tremolo-pulse-lead','octave-chase-lead','filtered-saw-lead'],
+  Drums:['noise-snare','low-thud-kick','closed-noise-hat','open-noise-hat','noise-clap','low-tom']
+ };
+ const legacy=['deep-bass','arcade-lead','chiptune-pluck','pulsing-pad','soft-flute','filter-motion'];
+ const allNew=Object.values(newIds).flat();
+ assert.equal(allNew.length,24);
+ assert.equal(FACTORY_PRESETS.length,30);
+ assert.deepEqual(new Set(FACTORY_PRESETS.map(p=>p.id)),new Set([...legacy,...allNew]));
+ assert.equal(new Set(FACTORY_PRESETS.map(p=>p.name.toLowerCase())).size,30);
+ assert.deepEqual(FACTORY_GROUPS,['Bass','Keys','Leads','Drums','FX']);
+ for(const [category,ids] of Object.entries(newIds)){
+  assert.equal(ids.length,6);
+  for(const id of ids){
+   const preset=FACTORY_PRESETS.find(p=>p.id===id);
+   assert.ok(preset,id+' is missing');
+   assert.equal(preset.category,category);
+   assert.equal(factoryGroup(preset.category),category);
+   assert.deepEqual(validatePresetSettings(preset.settings),preset.settings);
+   assert.deepEqual(importPresetFile(exportPreset(preset)),[{name:preset.name,settings:preset.settings}]);
+   if(!['octave-runner-bass','octave-chase-lead'].includes(id))
+    assert.equal(preset.settings.performance.game.enabled,false,id+' should play directly');
+  }
+ }
+ for(const preset of FACTORY_PRESETS)
+  assert.ok(FACTORY_GROUPS.includes(factoryGroup(preset.category)),preset.id+' has no browser group');
+ assert.equal(PRESET_VERSION,3,'application release number must not change preset schema');
+});
+
+test('octave presets use explicit Game Arp patterns and do not change global neutral reset',()=>{
+ for(const [id,expected] of [
+  ['octave-runner-bass',[0,12,0,12]],
+  ['octave-chase-lead',[0,12,7,12]]
+ ]){
+  const preset=FACTORY_PRESETS.find(p=>p.id===id);
+  const game=preset.settings.performance.game;
+  assert.equal(game.enabled,true);
+  assert.equal(game.style,'custom');
+  assert.equal(game.sequence.length,4);
+  assert.deepEqual(game.sequence.steps.slice(0,4).map(s=>s.offset),expected);
+  assert.deepEqual(expected.map((offset,i)=>sequenceEvent(48,game.sequence,i).note),expected.map(offset=>48+offset));
+ }
+ assert.deepEqual(defaultPresetSettings().performance.game.sequence.steps.map(s=>s.offset),Array(16).fill(0));
+});
+
+test('legacy factory category labels group with the expanded bank without rewriting metadata',()=>{
+ assert.equal(factoryGroup('Lead'),'Leads');
+ assert.equal(factoryGroup('Pluck'),'Keys');
+ assert.equal(factoryGroup('Pad'),'Keys');
+ assert.equal(factoryGroup('FX'),'FX');
+ assert.equal(FACTORY_PRESETS.find(p=>p.id==='arcade-lead').category,'Lead');
 });
