@@ -44,6 +44,8 @@ This release implements pitch, gates, and per-step note length. Glide, parameter
 
 Tap the **current preset name in the top bar** to open the preset library. The modal shows **Factory presets** and **My presets** side by side on wider screens and stacked on narrow screens. Choose one to load it and return to the keyboard. Factory presets are read-only.
 
+The factory collection now includes **30 original sounds**: 24 new C64-inspired presets (six each for Bass, Keys, Leads and Drums) alongside the six original factory patches. The library groups them as **Bass, Keys, Leads, Drums and FX**. The kick/tom patches currently use static tones; programmable pitch envelopes for authentic descending drum sweeps are [planned separately](ROADMAP.md#planned-synthesis-feature-programmable-pitch-envelopes).
+
 Inside the preset library, use **Save as…** to keep an edited sound. Your new sound appears in **My presets**, stored separately from the built-in factory collection. You can use **Save**, **Rename**, or **Delete** for your user presets. The top bar shows only the current preset name and a small dot for unsaved changes.
 
 The modal also contains **Export** to download the current sound as JSON, **Export bank** to back up user presets, and **Import…** to load either file type. Imports are validated and require confirmation before overwriting a user preset with the same name. Downloads can be copied between your iPad and Mac.

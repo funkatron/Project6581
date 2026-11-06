@@ -11,7 +11,7 @@ test('preset UI compiles without changing SID native code',()=>{
  assert.ok(script,'inline app module exists');
  const result=spawnSync(process.execPath,['--check','--input-type=module'],{input:script,encoding:'utf8'});
  assert.equal(result.status,0,result.stderr);
- assert.match(script,/import \{FACTORY_PRESETS,PRESET_VERSION,cleanPresetName/);
+ assert.match(script,/import \{FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,PRESET_VERSION,cleanPresetName/);
 });
 test('preset editor provides factory/user collections, save, export, import and backup',()=>{
  for(const id of ['presetOpen','presetCurrent','presetDialog','presetClose','factoryPresetList','userPresetList',
@@ -124,4 +124,16 @@ test('empty live Arp selections snapshot as Up and Action so presets can still l
  assert.equal(game.style,'action');
  app.$=id=>({value:id==='arpPattern'?'random':'1',checked:false});
  assert.equal(runInNewContext(source+'snapshotPresetSettings()',app).performance.arp.pattern,'random');
+});
+
+test('factory preset browser groups the expanded bank without changing the user collection',()=>{
+ assert.match(script,/FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,PRESET_VERSION/);
+ assert.match(script,/kind==='factory'\s*\?\[\.\.\.presets\]\.sort/);
+ assert.match(script,/factoryGroup\(preset\.category\)/);
+ assert.match(script,/heading\.className='preset-category-heading'/);
+ assert.match(script,/heading\.setAttribute\('role','heading'\)/);
+ assert.match(script,/button\.dataset\.kind=kind;button\.dataset\.id=preset\.id/);
+ assert.match(script,/button\.setAttribute\('aria-current',String\(selected===kind\+':'\+preset\.id\)\)/);
+ assert.match(html,/\.preset-category-heading\{position:sticky/);
+ assert.match(script,/\['factory',FACTORY_PRESETS,'factoryPresetList'\],\['user',userPresets,'userPresetList'\]/);
 });
