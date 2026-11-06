@@ -146,5 +146,5 @@ footer #buildInfo{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;whit
 #audioTimingReport .event-log-option{display:flex;align-items:center;gap:8px;margin:8px 0;min-height:44px;color:#30322e}
 #audioTimingReport .event-log-actions{display:flex;gap:8px;flex-wrap:wrap;white-space:normal}
 #audioTimingReport button{min-height:44px;font-size:12px}
-#sidCopyStatus{white-space:normal;color:#30322e;margin:6px 0}
+#sidCopyStatus,#sidReferenceStatus{white-space:normal;color:#30322e;margin:6px 0}
 #sidReportFallback{width:100%;min-height:100px;max-height:180px;font-size:12px}

@@ -1,5 +1,5 @@
-import {closeSidContext} from './sid-audio-lifecycle.js?v=0.1.42+20261105T214818985Z';
-import {createSidWriteBatcher} from './sid-write-batcher.js?v=0.1.42+20261105T214818985Z';
+import {closeSidContext} from './sid-audio-lifecycle.js?v=0.1.43+20261106T013138894Z';
+import {createSidWriteBatcher} from './sid-write-batcher.js?v=0.1.43+20261106T013138894Z';
 // Preload on page load; unlock audio separately during a trusted user gesture.
 export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=()=>{},onProgress=()=>{},eventLog=null,contextId=null,context=new AudioContext({latencyHint:'interactive'})}={}){
   let node=null,batcher=null,closed=false;

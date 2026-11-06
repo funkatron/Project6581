@@ -270,7 +270,7 @@ label>.base-value{color:#424b43;font-size:10px;min-width:max-content;text-align:
 label>.modulated-value{color:#236b58;font-size:10px;font-weight:700;min-width:max-content;text-align:right}
 label:has(.slider-stack){gap:4px}
 .allocation-detune .slider-stack{max-width:none}
-</style><link rel="stylesheet" href="./src/seq-ui.css?v=0.1.42+20261105T214818985Z"></head><body><main>
+</style><link rel="stylesheet" href="./src/seq-ui.css?v=0.1.43+20261106T013138894Z"></head><body><main>
 <header><div><h1>Project6581 · PR #59 preview</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="presetOpen" type="button" aria-haspopup="dialog" aria-controls="presetDialog" aria-label="Open preset library"><span id="presetCurrent">Current sound</span><span aria-hidden="true">▾</span></button><button id="sidStart" class="primary" hidden>Retry SID</button><button id="sidUnlock" hidden>Enable audio</button><label class="master-tempo">Master BPM <input id="masterBpm" type="range" min="40" max="240" step="1" value="120" aria-label="Master tempo in beats per minute"><output id="masterBpmValue" for="masterBpm">120</output></label><label class="record-format">Format <select id="recordFormat" aria-label="Recording format"><option value="wav">WAV</option><option value="m4a">M4A</option></select></label><button id="recordToggle" type="button" disabled>● Record</button><button id="panic">Stop all</button></div></header>
 <dialog id="presetDialog" aria-labelledby="presetDialogTitle">
  <div class="preset-dialog-header"><h2 id="presetDialogTitle">Preset library</h2><button id="presetClose" type="button" aria-label="Close preset library">Close</button></div>
@@ -332,16 +332,16 @@ label:has(.slider-stack){gap:4px}
 <details class="seq-subsection" id="seqExtras"><summary>Root Arpeggiator &amp; 3 LFOs</summary><h2>Arpeggiator · Root</h2><div class="controls"><label>Enabled <input id="arpOn" type="checkbox"></label><label>Root order <select id="arpPattern"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label><label>Root rate <select id="arpRate"><option value="0.25">1/1</option><option value="0.5">1/2</option><option value="1" selected>1/4</option><option value="2">1/8</option><option value="4">1/16</option><option value="8">1/32</option><option value="16">1/64</option><option value="32">1/128</option></select></label><label class="arp-local-bpm" hidden>Arp BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label><button id="arpClear">Clear latch</button></div><small id="arpStatus">Arp off</small><div class="section-divider"></div><section class="lfo-panel" aria-label="Low frequency oscillators"><h2>Modulation · LFOs</h2><div id="lfoControls"></div></section>
 </details></section></div>
 <section class="panel keyboard-panel" id="keyboardPanel" aria-label="Keyboard"><div class="keyboard-heading"><h2>Keyboard</h2><div class="octave-controls"><button id="octaveDown" type="button" aria-label="Previous octave">−</button><output id="octaveLabel">C3–C4</output><button id="octaveUp" type="button" aria-label="Next octave">+</button></div><small>Touch and hold · layered unison</small><button type="button" class="keyboard-collapse" id="keyboardToggle" aria-expanded="true" aria-controls="keyboard">Hide keyboard ▲</button></div><div id="keyboard" class="keyboard"></div></section>
-<footer><p id="buildInfo">Project6581 v0.1.42 · Built 2026-11-05T21:48:18.985Z (UTC)</p><details id="audioTimingDetails"><summary>Audio timing</summary><div id="audioTimingReport"><label class="event-log-option"><input id="sidEventLogging" type="checkbox"> Log note events</label><div class="event-log-actions"><button id="sidCopyReport" type="button">Copy diagnostic report</button><button id="sidClearLog" type="button">Clear log</button></div><p id="sidCopyStatus" role="status"></p><textarea id="sidReportFallback" aria-label="Diagnostic report for manual copying" readonly hidden></textarea><div id="audioTimingSummary" role="status">Press a key to measure playback dispatch.</div></div></details><span class="diagnostics" id="sidLatencyStatus">Browser audio latency: not yet available.</span><span class="diagnostics" id="sidPlaybackStatus" role="status" aria-live="off">SID playback diagnostics appear here after enabling authentic SID.</span></footer>
+<footer><p id="buildInfo">Project6581 v0.1.43 · Built 2026-11-06T01:31:38.894Z (UTC)</p><details id="audioTimingDetails"><summary>Audio timing</summary><div id="audioTimingReport"><label class="event-log-option"><input id="sidEventLogging" type="checkbox"> Log note events</label><div class="event-log-actions"><button id="sidCopyReport" type="button">Copy diagnostic report</button><button id="sidClearLog" type="button">Clear log</button></div><button id="sidReferenceTone" type="button">Play reference tone</button><p id="sidReferenceStatus" role="status"></p><p id="sidCopyStatus" role="status"></p><textarea id="sidReportFallback" aria-label="Diagnostic report for manual copying" readonly hidden></textarea><div id="audioTimingSummary" role="status">Press a key to measure playback dispatch.</div></div></details><span class="diagnostics" id="sidLatencyStatus">Browser audio latency: not yet available.</span><span class="diagnostics" id="sidPlaybackStatus" role="status" aria-live="off">SID playback diagnostics appear here after enabling authentic SID.</span></footer>
 </main><script type="module">
-import {createSidEventLog,formatSidDiagnosticReport} from './src/sid-event-log.js?v=0.1.42+20261105T214818985Z';
-import {closeSidContext} from './src/sid-audio-lifecycle.js?v=0.1.42+20261105T214818985Z';
-import {createArpKeyVisual} from "./src/arp-key-visual.js?v=0.1.42+20261105T214818985Z";
-import {modulationTrack,formatControlValue,SLIDER_TARGETS} from "./src/modulation-track.js?v=0.1.42+20261105T214818985Z";
-import {createSidRecorder,prepareRecordingDownload} from "./src/sid-recorder.js?v=0.1.42+20261105T214818985Z";
-import {selectRoot,patternPitch,stepMilliseconds} from "./src/arp-composition.js?v=0.1.42+20261105T214818985Z";
-import {defaultSequence,validateSequence,sequenceEvent} from "./src/game-step-sequencer.js?v=0.1.42+20261105T214818985Z";
-import {FACTORY_PRESETS,PRESET_VERSION,cleanPresetName,validatePresetSettings,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,importPresetFile} from "./src/preset-library.js?v=0.1.42+20261105T214818985Z";
+import {createSidEventLog,formatSidDiagnosticReport} from './src/sid-event-log.js?v=0.1.43+20261106T013138894Z';
+import {closeSidContext} from './src/sid-audio-lifecycle.js?v=0.1.43+20261106T013138894Z';
+import {createArpKeyVisual} from "./src/arp-key-visual.js?v=0.1.43+20261106T013138894Z";
+import {modulationTrack,formatControlValue,SLIDER_TARGETS} from "./src/modulation-track.js?v=0.1.43+20261106T013138894Z";
+import {createSidRecorder,prepareRecordingDownload} from "./src/sid-recorder.js?v=0.1.43+20261106T013138894Z";
+import {selectRoot,patternPitch,stepMilliseconds} from "./src/arp-composition.js?v=0.1.43+20261106T013138894Z";
+import {defaultSequence,validateSequence,sequenceEvent} from "./src/game-step-sequencer.js?v=0.1.43+20261106T013138894Z";
+import {FACTORY_PRESETS,PRESET_VERSION,cleanPresetName,validatePresetSettings,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,importPresetFile} from "./src/preset-library.js?v=0.1.43+20261106T013138894Z";
 
 const $=id=>document.getElementById(id);
 const sidStartupLog=[];
@@ -980,7 +980,7 @@ async function startSid(){
     progress('Loading SID JavaScript modules…');
     let moduleTimeout;
     const modules=Promise.all([
-      import('./src/create-residfp-audio.js?v=0.1.42+20261105T214818985Z'),import('./src/unison-sid-controller.js?v=0.1.42+20261105T214818985Z'),import('./src/lfo-modulation.js?v=0.1.42+20261105T214818985Z')]);
+      import('./src/create-residfp-audio.js?v=0.1.43+20261106T013138894Z'),import('./src/unison-sid-controller.js?v=0.1.43+20261106T013138894Z'),import('./src/lfo-modulation.js?v=0.1.43+20261106T013138894Z')]);
     const [{createReSidFpAudio},{UnisonSidController},lfoModule]=await Promise.race([
       modules,
       new Promise((_,reject)=>{moduleTimeout=setTimeout(()=>reject(new Error('SID JavaScript module loading timed out after 15 seconds')),15000)})
@@ -1159,6 +1159,36 @@ function unlockSidAudio(){
 }
 document.addEventListener('pointerdown',unlockSidAudio,{capture:true});
 document.addEventListener('keydown',unlockSidAudio,{capture:true});
+let referenceToneCount=0;
+let lastReferenceTone=null;
+$('sidReferenceTone').addEventListener('click',()=>{
+ const context=sidAudio?.context;
+ const status=$('sidReferenceStatus');
+ if(!context||context.state!=='running'){
+  status.textContent='Enable audio and wait for SID to be ready, then try again.';
+  return;
+ }
+ const start=context.currentTime;
+ if(lastReferenceTone?.context===context&&start<lastReferenceTone.end)return;
+
+ const oscillator=context.createOscillator();
+ const gain=context.createGain();
+ const end=start+0.15;
+ oscillator.frequency.value=660;
+ gain.gain.setValueAtTime(0,start);
+ gain.gain.linearRampToValueAtTime(0.12,start+0.005);
+ gain.gain.setValueAtTime(0.12,end-0.02);
+ gain.gain.linearRampToValueAtTime(0,end);
+ oscillator.connect(gain);
+ gain.connect(context.destination);
+ oscillator.onended=()=>{oscillator.disconnect();gain.disconnect()};
+ oscillator.start(start);
+ oscillator.stop(end);
+
+ lastReferenceTone={context,end};
+ status.textContent='Reference tone triggered ('+(++referenceToneCount)+').';
+ sidEventLog.add('reference-tone',{contextId:sidAttempt,contextState:context.state,scheduledAudioTimeSeconds:start});
+});
 // Stop capture before Safari suspends background page timers.
 document.addEventListener('visibilitychange',()=>{
  if(document.hidden&&sidRecorder?.recording&&!recordBusy)void stopAndSaveRecording();
