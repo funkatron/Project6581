@@ -313,7 +313,7 @@ label:has(.slider-stack){gap:4px}
  <label>Steps <select id="seqLength" aria-label="Step sequencer length"><option value="4">4</option><option value="8">8</option><option value="16" selected>16</option></select></label>
  <label>Rate <select id="gameRate" aria-label="Game Arp pattern rate"><option value="0.25">1/1</option><option value="0.5">1/2</option><option value="1">1/4</option><option value="2">1/8</option><option value="4" selected>1/16</option><option value="8">1/32</option><option value="16">1/64</option><option value="32">1/128</option></select></label>
  <label>Sync <input id="arpSync" type="checkbox" checked></label>
- <label>Pattern <select id="gameArpStyle"><option value="action">Action</option><option value="adventure">Adventure</option><option value="arcade">Arcade</option><option value="custom">Custom steps</option></select></label>
+ <label>Pattern <select id="gameArpStyle"><option value="action" selected>Action</option><option value="adventure">Adventure</option><option value="arcade">Arcade</option><option value="custom">Custom steps</option></select></label>
  <button type="button" id="seqReset" title="Reset the editable custom phrase">Reset steps</button>
 </div>
 <section class="seq-editor" aria-label="Editable Game Arp steps">
@@ -673,7 +673,7 @@ function gameTick(){
  clearStepHighlight();
  game.last=patternPitch(root,$('gameArpStyle').value,game.step++);
  play(game.last,'game');arpKeyVisual.show(game.last);
- $('arpStatus').textContent='Game Arp · '+$('gameArpStyle').selectedOptions[0].text+
+ $('arpStatus').textContent='Game Arp · '+($('gameArpStyle').selectedOptions[0]?.text??'Action')+
   ' · root '+names[root%12]+(Math.floor(root/12)-1);
 }
 function arpTick(){
@@ -1217,7 +1217,7 @@ function snapshotPresetSettings(){
    masterBpm:Number($('masterBpm').value),
    arp:{enabled:$('arpOn').checked,latch:$('arpLatch').checked,pattern:arpPattern,
     rate:Number($('arpRate').value),sync:$('arpSync').checked,localBpm:Number($('arpBpm').value)},
-   game:{enabled:$('gameArpOn').checked,style:$('gameArpStyle').value,
+   game:{enabled:$('gameArpOn').checked,style:$('gameArpStyle').value||'action',
     rate:Number($('gameRate').value),sequence:seqState}
   }
  });

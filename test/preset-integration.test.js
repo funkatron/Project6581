@@ -113,13 +113,15 @@ test('chip selection switches the live engine and restores the previous model on
 });
 
 
-test('an empty live Arp selection snapshots as Up so presets can still load',()=>{
+test('empty live Arp selections snapshot as Up and Action so presets can still load',()=>{
  const source=script.slice(script.indexOf('function snapshotPresetSettings()'),script.indexOf('function currentPreset()'));
  const app={
-  $:id=>({value:id==='arpPattern'?'':'1',checked:false}),
+  $:id=>({value:['arpPattern','gameArpStyle'].includes(id)?'':'1',checked:false}),
   validatePresetSettings:value=>value,settings:[{}],lfoState:[],seqState:{}
  };
- assert.equal(runInNewContext(source+'snapshotPresetSettings()',app).performance.arp.pattern,'up');
+ const {arp,game}=runInNewContext(source+'snapshotPresetSettings()',app).performance;
+ assert.equal(arp.pattern,'up');
+ assert.equal(game.style,'action');
  app.$=id=>({value:id==='arpPattern'?'random':'1',checked:false});
  assert.equal(runInNewContext(source+'snapshotPresetSettings()',app).performance.arp.pattern,'random');
 });
