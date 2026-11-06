@@ -9,6 +9,28 @@ This is a **device test plan**, not evidence that any test has passed. Automated
 - [ ] Narrow viewport (e.g. iPhone Safari or Safari responsive mode); check both tabs.
 - [ ] Desktop browser, using a mouse and physical keyboard for comparison.
 
+## SID startup recovery (issue #58; pending device verification)
+
+See [investigation evidence and limits](sid-startup-investigation.md).
+
+- [ ] Repeat fresh load, reload, and background/foreground transitions. If startup stalls, open Audio timing and record its last stage and context state.
+- [ ] Tap **Enable audio** while startup is suspended. Confirm progress or an explicit timeout; no indefinite spinner after foreground timers resume.
+- [ ] On an error, tap **Retry SID** repeatedly. Only one attempt should run. A cleanup failure must request reload instead of opening more contexts.
+- [ ] After recovery, test direct keys with both arpeggiators off, then Game Arp Preview and Stop all. Check recording and chip/preset changes.
+- [ ] Compare perceived response using speakers versus external audio, with and without screen recording. Keep acknowledgment time, render cost, reported output latency and perceived sound onset separate.
+
+## Reference tone comparison (pending device verification)
+
+- [ ] On iPad speakers, reproduce the delay. Tap **Stop all** to silence the sequencer and clear held notes. In **Audio timing**, tap **Play reference tone** and compare the trigger cue with the beep. Close the panel and tap a SID key in the same tab without reloading.
+- [ ] Report whether the reference tone, the SID note, or both sound late. The reference uses a short Web Audio oscillator connected to the current SID audio context's destination. The cue shows when the app triggers it.
+
+## Correlated note logging (pending device verification)
+
+- [ ] Open Audio timing, enable Log note events, play/release direct notes, then run and stop the sequencer. Pause logging and copy the diagnostic report.
+- [ ] Confirm the report contains correlated input, note command, register dispatch and rendered-block acknowledgment IDs; context state and current latency are included.
+- [ ] Verify Copy diagnostic report on Safari. If clipboard access fails, select and copy the fallback text. Typing shortcuts in that field must not play notes.
+- [ ] Clear the log, repeat after Retry SID, and compare response with logging disabled. Reload must leave event capture off.
+
 ## Audio readiness and touch controls
 
 - [ ] Engine LED shows loading, then ready/running; the first deliberate touch unlocks audio if needed.
@@ -70,8 +92,8 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 - [ ] Modify an existing user preset, Save, Rename, and Delete it; factory presets remain read-only.
 - [ ] Confirm master BPM, Game Arp style/enable, Arp sync/latch/rate and all three LFOs restore from the same preset.
 - [ ] Loading a preset while a note is held clears active notes but does not trigger new playback or leave hanging notes.
-- [ ] Select a preset using the other SID chip model; check audio reinitializes and Safari allows sound after a key gesture.
-- [ ] Export one preset and a full user bank to Files, import again, and confirm duplicate-name replacement requires permission.
+- [ ] With playback idle on 6581, load FNK Deep Bass (8580, eight voices in eight-way Legato unison, pulse, low-pass at 1230 Hz with 100% resonance, three synced sine LFOs). Listen for the reported two pops during load. Then return to 6581, use the Chip dropdown to switch to 8580, and wait for the status to show SID 8580. Load FNK Deep Bass and compare whether the pops occur on the dropdown change, the preset load, or both.
+- [ ] Export one preset and a full user bank to Files, import again, and confirm duplicate-name replacement requires permission. Check both the automatic export and the Download JSON link for a new error tab (WebKitBlobResource error 1).
 - [ ] Import malformed JSON and an out-of-range parameter; confirm existing user presets remain unchanged.
 - [ ] Refresh the app and verify saved user presets remain available, without assuming cloud sync.
 

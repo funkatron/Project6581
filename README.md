@@ -174,7 +174,7 @@ The production application is published at **[Project6581](https://funkatron.git
 
 Previews are **not automatically removed** when their PR closes; use the workflow's manual **remove** operation. Fork pull requests are not supported for write-capable preview publication. Preview assets are maintained on the internal `preview-assets` branch and combined with the production site during Pages deployment.
 
-**Source and further reading:** [GitHub repository](https://github.com/funkatron/Project6581) · [Development roadmap](ROADMAP.md) · [Actions](https://github.com/funkatron/Project6581/actions)
+**Source and further reading:** [GitHub repository](https://github.com/funkatron/Project6581) · [Development roadmap](ROADMAP.md) · [Release versioning](docs/versioning.md) · [Actions](https://github.com/funkatron/Project6581/actions)
 
 ## 📱 iPad Safari verification
 

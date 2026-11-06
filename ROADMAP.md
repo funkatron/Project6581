@@ -6,6 +6,24 @@ Prioritize features that help people **make, retain, exchange, and perform music
 
 **Near-term order:** **1. Factory/user presets and import/export** → **2. Composable Arpeggiator + Game Arp and Western scale lock** → **3. MIDI input on iPad and desktop** → **4. App-like installation and offline access**. WAV/M4A recording and the stationary LFO display are already under development in separate PRs. Independent SID-device support remains **UI-design-first** before modifying the engine.
 
+## Release milestone: v0.2.0 (planned)
+
+- [x] Agree that the expanded feature set merits **v0.2.0** rather than continuing the 0.1.x series indefinitely.
+- [ ] After the Safari startup/audio work in PR #59 is satisfactorily verified and explicitly authorized for release, prepare an intentional v0.2.0 release, with an accurate change summary and device-validation record.
+- [ ] Align the existing commit-derived version stamper with milestone-based semantic releases; ordinary builds and documentation edits must not create new semantic releases. Continue identifying exact builds with separate timestamps and commit SHAs.
+- [ ] Check CI, Copilot reviews, release notes, and production deployment separately. This roadmap decision does not authorize a merge or deployment.
+
+See [release versioning policy](docs/versioning.md) for rationale, version rules, and the required follow-up.
+
+## In progress: SID initialization recovery (#58)
+
+- [x] Characterize production and PR #56 startup in Work's remote Chrome; both reach ready while suspended. The intermittent iPad failure remains unconfirmed.
+- [x] Add startup-stage acknowledgments, explicit audio activation, bounded cleanup, serialized retry and stale-callback protection without changing note scheduling or native WASM.
+- [x] Add opt-in correlated input/register/render event logging, bounded local capture, and copyable diagnostic reports.
+- [x] Add behavioral lifecycle regression coverage; see [evidence and limits](docs/sid-startup-investigation.md).
+- [ ] Verify the modified preview and iPad Safari startup/recovery, direct keys, sequencer, and actual perceived latency.
+- [ ] Check final CI and Copilot reviews before an authorized merge. Keep factory preset PR #56 separate.
+
 ## Planned UI refinement: consistent control widths and dedicated LFO tab
 
 **Goal:** Make the synth's controls easier to scan and use across desktop and iPad, while giving modulation its own focused workspace. This is a layout and navigation task, not a change to the SID engine.

@@ -40,8 +40,10 @@ test('audio frame counter bounds WAV and M4A capture even if browser timers are 
  assert.match(script,/document\.addEventListener\('visibilitychange'/);
 });
 
-test('recording availability, Safari downloads and bfcache handling are explicit',()=>{
+test('generated files remain available during Safari download navigation',()=>{
  assert.match(script,/if\(!sidRecorder\.supportsM4a\)\$\('recordFormat'\)\.value='wav'/);
- assert.match(script,/if\(!event\.persisted&&recordDownloadUrl\)/);
+ assert.doesNotMatch(script,/addEventListener\('pagehide'/);
+ assert.match(script,/if\(recordDownloadUrl\)URL\.revokeObjectURL\(recordDownloadUrl\)/);
+ assert.match(script,/if\(presetDownloadUrl\)URL\.revokeObjectURL\(presetDownloadUrl\)/);
  assert.match(html,/id="recordDownload" hidden/);
 });
