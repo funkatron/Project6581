@@ -1312,6 +1312,7 @@ async function applyPresetSettings(value){
  if(sidRecorder?.recording||recordBusy)throw new Error('Finish recording before loading a preset');
  const next=validatePresetSettings(value);
  const previous=snapshotPresetSettings();
+ sidEventLog.add('preset-apply',{contextId:sidAudio?sidAttempt:null,activeModel:activeSidModel,requestedModel:next.sound.model});
  applyPresetControls(next);
  try{
   await ensureSidModel(next.sound.model);

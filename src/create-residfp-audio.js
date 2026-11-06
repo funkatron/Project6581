@@ -9,7 +9,7 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
     closed=true;
     download.abort();
     batcher?.close();
-    if(node){node.port.onmessage=null;node.onprocessorerror=null;node.port.close();node.disconnect()}
+    if(node){node.port.onmessage=null;node.onprocessorerror=null;node.port.close();node.disconnect();eventLog?.add('sid-worklet-disconnected',{contextId,model})}
   };
   try {
     onContext(context);
@@ -35,6 +35,7 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
     onProgress('Initializing SID audio processor…');
     node=new AudioWorkletNode(context,'residfp-processor',{outputChannelCount:[2]});
     node.connect(context.destination);
+    eventLog?.add('sid-worklet-connected',{contextId,model});
     let capture=null,stopResolve=null,stopReject=null;
     let probeId=0,lastProbeAt=-Infinity,timingEnabled=false;
     const pendingProbes=new Map(),pendingEvents=new Map();
@@ -65,6 +66,10 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
         });
         return;
       }
+      if(data?.type==='sid-first-render'){
+        eventLog?.add('sid-first-render',{contextId,model,audioFrame:data.audioFrame,frames:data.frames,sampleRate:data.sampleRate});
+        return;
+      }
       if(data?.type==='wav-first-frame'){
         eventLog?.add('wav-first-frame',{contextId,audioFrame:data.audioFrame,sampleRate:data.sampleRate});
         return;
@@ -79,7 +84,7 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
       if(data?.type==='record-started')return;
       onStatus(data);
     };
-    node.port.postMessage({type:'load',bytes,model},[bytes]);
+    node.port.postMessage({type:'load',bytes,model,traceFirstRender:eventLog?.enabled===true},[bytes]);
     batcher=createSidWriteBatcher(message=>{
       if(eventLogEnabled&&message.diagnostics){
         const now=performance.now();
@@ -152,7 +157,8 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
         reject?.(new Error('SID audio closed during WAV capture'));
         pendingProbes.clear();
         for(const eventId of pendingEvents.keys())eventLog?.add('engine-closed-before-ack',{eventId});
-        pendingEvents.clear();dispose();await closeSidContext(context)
+        pendingEvents.clear();dispose();await closeSidContext(context);
+        eventLog?.add('sid-context-closed',{contextId,model})
       }};
   } catch(err){
     dispose();

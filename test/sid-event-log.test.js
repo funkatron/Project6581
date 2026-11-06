@@ -84,6 +84,11 @@ async function bridgeHarness(){
 
 test('bridge correlates on/off dispatch and rendered acknowledgments and ignores stale replies',async()=>{
  const h=await bridgeHarness();h.audio.setEventLogging(true);
+ assert.equal(h.eventLog.snapshot().entries[0].type,'sid-worklet-connected');
+ assert.equal(h.messages.find(message=>message.type==='load').traceFirstRender,true);
+ h.reply({type:'sid-first-render',audioFrame:0,frames:128,sampleRate:48000});
+ assert.equal(h.eventLog.snapshot().entries.at(-1).type,'sid-first-render');
+ h.eventLog.clear();
  const inputId=h.eventLog.begin('input',{note:60,action:'down'});
  const onId=h.eventLog.begin('note-command',{note:60,action:'on',inputEventId:inputId});
  let start=h.audio.beginNoteTrace();h.audio.write(4,65);h.audio.endNoteTrace(onId,start);h.audio.noteDispatched();
@@ -101,6 +106,7 @@ test('bridge correlates on/off dispatch and rendered acknowledgments and ignores
  h.reply({type:'note-rendered',eventIds:[offId],audioFrame:256,frames:128,sampleRate:48000});
  assert.equal(h.eventLog.snapshot().entries.length,count);
  await h.audio.close();
+ assert.deepEqual(h.eventLog.snapshot().entries.slice(-2).map(e=>e.type),['sid-worklet-disconnected','sid-context-closed']);
 });
 
 test('bridge caps unanswered events and expires old ones without delaying playback',async()=>{
@@ -149,4 +155,14 @@ test('Copy diagnostic report exports a snapshot and provides selectable text if 
  fail=true;await callbacks.get('sidCopyReport')();
  assert.equal($('sidReportFallback').hidden,false);assert.equal($('sidReportFallback').selected,true);
  assert.equal(JSON.parse($('sidReportFallback').value).environment.route,'/pr-59/');
+});
+
+
+test('startup trace reports only the first successful SID render',()=>{
+ const h=processorHarness();
+ h.processor.traceFirstRender=true;
+ h.setRender(false);h.render();
+ assert.deepEqual(h.replies,[]);
+ h.setRender(true);h.render();h.render();
+ assert.deepEqual(h.replies,[{type:'sid-first-render',audioFrame:1024,frames:128,sampleRate:48000}]);
 });
