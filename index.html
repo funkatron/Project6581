@@ -378,6 +378,7 @@ $('sidClearLog').addEventListener('click',()=>{
 $('sidCopyReport').addEventListener('click',async()=>{
  const report=formatSidDiagnosticReport(sidEventLog,{
   build:$('buildInfo').textContent,browser:navigator.userAgent,route:location.pathname,
+  selectedSidModel:Number($('chip').value),activeSidModel,
   contextState:sidContext?.state??'unavailable',sampleRate:sidContext?.sampleRate??null,
   baseLatencyMs:Number.isFinite(sidContext?.baseLatency)?sidContext.baseLatency*1000:null,
   outputLatencyMs:Number.isFinite(sidContext?.outputLatency)?sidContext.outputLatency*1000:null,
@@ -520,6 +521,7 @@ function updateUnison(){
 updateUnison();
 function panic(){gameStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.root=null;directOwned.clear();activeOwners.clear();arpKeyVisual.clear();sidController?.panic()}
 $('panic').addEventListener('click',()=>{
+ sidEventLog.add('stop-all',{contextId:sidAudio?sidAttempt:null,model:activeSidModel});
  $('gameArpOn').checked=false;$('arpOn').checked=false;
  lfoState.forEach(lfo=>{lfo.enabled=false});renderLfos();updateModulation();
  panic();arp.held.clear();arp.latched.clear();arp.step=0;game.step=0;seqPreview=false;setSeqTransportLabel();
@@ -1018,7 +1020,6 @@ async function startSid(){
     }});
     timeout=setTimeout(()=>rejectReady(new Error('SID initialization timed out at: '+sidProgress+' (context: '+context.state+')')),12000);
     try{await ready;if(startupError)throw startupError}finally{clearTimeout(timeout)}
-    progress('SID ready.');
     panic();sidAudio=audio;sidKeys=0;modulation=lfoModule;updateSidLed();
     audio.setTimingEnabled($('audioTimingDetails').open);
     audio.setEventLogging(sidEventLog.enabled);
@@ -1029,6 +1030,8 @@ async function startSid(){
     $('recordStatus').textContent=sidRecorder.supportsM4a?'WAV / M4A ready':'WAV ready';
     sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:Number($('voiceCount').value),unisonCount:Number($('unisonCount').value),mode:$('voiceAssign').value,detune:Number($('detune').value)});
     activeSidModel=requestedModel;
+    progress('SID '+activeSidModel+' ready.');
+    sidEventLog.add('sid-ready',{contextId:attempt,model:activeSidModel});
     updateModulation();
     if(lfoTimer===null)lfoTimer=setInterval(()=>{if(lfoState.some(lfo=>lfo.enabled&&lfo.depth>0)||(settings[0].wave==='square'&&settings[0].pwmDepth>0))updateModulation()},1000/60);
     const base=audio.context.baseLatency,output=audio.context.outputLatency;

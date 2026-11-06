@@ -137,12 +137,14 @@ test('Copy diagnostic report exports a snapshot and provides selectable text if 
   return elements.get(id);
  };
  const log=createSidEventLog();log.setEnabled(true);log.begin('input',{note:60});
+ $('chip').value='8580';
  const source=html.slice(html.indexOf("$('sidCopyReport').addEventListener"),html.indexOf('function traceInput('));
- const scope=vm.createContext({$,sidEventLog:log,formatSidDiagnosticReport,sidContext:{state:'running',sampleRate:48000,baseLatency:0.01},
+ const scope=vm.createContext({$,sidEventLog:log,formatSidDiagnosticReport,activeSidModel:6581,sidContext:{state:'running',sampleRate:48000,baseLatency:0.01},
   navigator:{userAgent:'test browser',clipboard:{writeText:async text=>{if(fail)throw Error('denied');copied=text}}},
   location:{pathname:'/pr-59/'},audioTiming:{},sidStartupLog:['ready']});
  vm.runInContext(source,scope);await callbacks.get('sidCopyReport')();
  const report=JSON.parse(copied);assert.equal(report.environment.baseLatencyMs,10);assert.equal(report.entries[0].note,60);
+ assert.equal(report.environment.selectedSidModel,8580);assert.equal(report.environment.activeSidModel,6581);
  assert.equal($('sidReportFallback').hidden,true);assert.match($('sidCopyStatus').textContent,/copied/);
  fail=true;await callbacks.get('sidCopyReport')();
  assert.equal($('sidReportFallback').hidden,false);assert.equal($('sidReportFallback').selected,true);
