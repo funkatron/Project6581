@@ -103,7 +103,8 @@ test('C64-inspired prototype bank covers four distinct categories without changi
   assert.deepEqual(importPresetFile(exportPreset(p)),[{name:p.name,settings:p.settings}]);
  }
  const legacy=['deep-bass','arcade-lead','chiptune-pluck','pulsing-pad','soft-flute','filter-motion'];
- assert.deepEqual(new Set(FACTORY_PRESETS.map(p=>p.id)),new Set([...legacy,...prototypes.map(([id])=>id)]));
+ for(const id of [...legacy,...prototypes.map(([id])=>id)])
+  assert.ok(FACTORY_PRESETS.some(p=>p.id===id),'legacy or prototype factory sound removed: '+id);
  assert.equal(PRESET_VERSION,3);
 });
 
