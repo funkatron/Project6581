@@ -141,4 +141,10 @@ footer{position:relative;overflow:visible;display:flex;align-items:center;gap:10
 footer #buildInfo{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #audioTimingDetails{position:relative;display:inline-block;flex:none}
 #audioTimingDetails>summary{cursor:pointer;color:#24554b;text-decoration:underline;font-weight:750;min-height:26px;display:flex;align-items:center;font-size:11px}
-#audioTimingReport{position:absolute;right:0;bottom:calc(100% + 7px);min-width:min(330px,calc(100vw - 24px));max-width:calc(100vw - 24px);z-index:25;background:#f8f0e4;border:2px solid #bc6635;border-radius:8px;padding:10px 12px;color:#30322e;font-size:12px;line-height:1.7;font-weight:550;white-space:pre-line;box-shadow:0 5px 15px #0003}
+#audioTimingReport{position:absolute;max-height:60dvh;overflow:auto;right:0;bottom:calc(100% + 7px);min-width:min(330px,calc(100vw - 24px));max-width:calc(100vw - 24px);z-index:25;background:#f8f0e4;border:2px solid #bc6635;border-radius:8px;padding:10px 12px;color:#30322e;font-size:12px;line-height:1.7;font-weight:550;white-space:pre-line;box-shadow:0 5px 15px #0003}
+
+#audioTimingReport .event-log-option{display:flex;align-items:center;gap:8px;margin:8px 0;min-height:44px;color:#30322e}
+#audioTimingReport .event-log-actions{display:flex;gap:8px;flex-wrap:wrap;white-space:normal}
+#audioTimingReport button{min-height:44px;font-size:12px}
+#sidCopyStatus,#sidReferenceStatus{white-space:normal;color:#30322e;margin:6px 0}
+#sidReportFallback{width:100%;min-height:100px;max-height:180px;font-size:12px}
