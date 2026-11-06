@@ -975,7 +975,7 @@ async function startSid(){
       sidEventLog.add('context-state',{contextId:attempt,state:context.state,baseLatencyMs:context.baseLatency*1000,outputLatencyMs:Number.isFinite(context.outputLatency)?context.outputLatency*1000:null});
       updateSidActivation();
       if(sidStarting)showSidProgress(sidProgress);
-      else if(sidAudio)status.textContent=context.state==='running'?'Authentic reSIDfp active · up to eight SID voices.':'SID ready · tap Enable audio to resume.';
+      else if(sidAudio)status.textContent=context.state==='running'?'Authentic reSIDfp active · SID '+activeSidModel+'.':'SID ready · tap Enable audio to resume.';
     };
     updateSidActivation();
     progress('Loading SID JavaScript modules…');
@@ -1041,7 +1041,7 @@ async function startSid(){
     $('sidLatencyStatus').textContent=parts.length?'Browser audio latency: '+parts.join(' / ')+' (not total key-to-sound latency)':'Browser audio latency: not reported.';
     button.hidden=true;button.disabled=false;
     if(audio.context.state==='suspended')status.textContent='SID ready · touch a key to unlock audio.';
-    if(audio.context.state==='running')status.textContent='Authentic reSIDfp active · up to eight SID voices.';
+    if(audio.context.state==='running')status.textContent='Authentic reSIDfp active · SID '+activeSidModel+'.';
   }catch(err){
     // Retire callbacks before cleanup, including delayed resume/port events.
     ++sidAttempt;sidContextRetired=true;
@@ -1099,7 +1099,7 @@ async function ensureSidModel(model){
   }
   await startSid();
   if(!sidAudio||activeSidModel!==model)
-    throw new Error('Unable to start the '+model+' SID engine. Previous preset settings will be restored.');
+    throw new Error('Unable to start the '+model+' SID engine.');
 }
 async function stopAndSaveRecording(){
  if(!sidRecorder?.recording||recordBusy)return;
@@ -1151,7 +1151,7 @@ function unlockSidAudio(){
   // Call resume synchronously inside the trusted gesture for iPad Safari.
   context.resume().then(()=>{
     if(context!==sidContext||attempt!==sidAttempt)return;
-    if(sidAudio&&context.state==='running')$('sidEngineStatus').textContent='Authentic reSIDfp active · SID unison voices.';
+    if(sidAudio&&context.state==='running')$('sidEngineStatus').textContent='Authentic reSIDfp active · SID '+activeSidModel+'.';
     updateSidActivation();
   }).catch(err=>{
     if(context!==sidContext||attempt!==sidAttempt)return;
@@ -1354,6 +1354,7 @@ $('presetDialog').addEventListener('click',event=>{
 let presetLoading=false;
 function setPresetLoading(busy){
  presetLoading=busy;
+ $('chip').disabled=busy;
  $('presetDialog').setAttribute('aria-busy',String(busy));
  const editable=selectedPreset?.kind==='user';
  for(const [id,available] of [
@@ -1364,6 +1365,35 @@ function setPresetLoading(busy){
  for(const id of ['factoryPresetList','userPresetList'])
   $(id).querySelectorAll('button').forEach(button=>button.disabled=busy);
 }
+$('chip').addEventListener('change',async event=>{
+ const chip=event.currentTarget;
+ const model=Number(chip.value);
+ const previousModel=activeSidModel;
+ if(presetLoading||model===previousModel)return;
+ if(sidRecorder?.recording||recordBusy){
+  chip.value=String(previousModel);
+  $('sidEngineStatus').textContent='Finish recording before switching SID models.';
+  return;
+ }
+ setPresetLoading(true);
+ panic();arp.held.clear();arp.latched.clear();
+ seqPreview=false;setSeqTransportLabel();
+ for(const key of keys.values())key.classList.remove('down');
+ try{
+  await ensureSidModel(model);
+ }catch(error){
+  let message='Could not switch to SID '+model+': '+error.message;
+  if(previousModel!==null){
+   chip.value=String(previousModel);
+   try{await ensureSidModel(previousModel)}
+   catch(recoveryError){message+=' Previous model recovery failed: '+recoveryError.message}
+  }
+  $('sidEngineStatus').textContent=message;
+ }finally{
+  setPresetLoading(false);
+  refreshPresetDirty();
+ }
+});
 async function loadSelectedPreset(kind,id){
  if(presetLoading)return;
  const source=kind==='factory'?FACTORY_PRESETS:kind==='user'?userPresets:null;

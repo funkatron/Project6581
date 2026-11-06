@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
+import {runInNewContext} from 'node:vm';
 
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const script=html.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1];
@@ -69,4 +70,44 @@ test('preset actions cannot mutate settings while loading a different sound or i
 test('modal text overrides light-theme global heading and description colors',()=>{
  assert.match(html,/#presetDialog h2,#presetDialog h3\{color:#f3f5fa\}/);
  assert.match(html,/#presetDialog small,#presetDialog \.preset-empty,#presetDialog \.preset-item-category\{color:#c8d6e5\}/);
+});
+
+
+test('chip selection switches the live engine and restores the previous model on failure',async()=>{
+ let change;
+ const chip={value:'8580',addEventListener(type,listener){assert.equal(type,'change');change=listener}};
+ const status={textContent:''};
+ const calls=[];
+ const loading=[];
+ const app={
+  $:id=>id==='chip'?chip:status,
+  activeSidModel:6581,presetLoading:false,sidRecorder:null,recordBusy:false,
+  setPresetLoading:busy=>loading.push(busy),
+  panic(){},arp:{held:new Set(),latched:new Set()},keys:new Map(),
+  seqPreview:false,setSeqTransportLabel(){},refreshPresetDirty(){},
+  async ensureSidModel(model){calls.push(model);app.activeSidModel=model}
+ };
+ const handler=script.match(/\$\('chip'\)\.addEventListener\('change',[\s\S]*?^\}\);/m)?.[0];
+ assert.ok(handler);
+ runInNewContext(handler,app);
+ await change({currentTarget:chip});
+ assert.equal(app.activeSidModel,8580);
+ assert.deepEqual(calls,[8580]);
+ assert.deepEqual(loading,[true,false]);
+
+ chip.value='6581';
+ app.ensureSidModel=async model=>{
+  calls.push(model);
+  if(model===6581)throw new Error('test failure');
+ };
+ await change({currentTarget:chip});
+ assert.equal(chip.value,'8580');
+ assert.deepEqual(calls,[8580,6581,8580]);
+ assert.match(status.textContent,/Could not switch to SID 6581: test failure/);
+
+ app.sidRecorder={recording:true};
+ chip.value='6581';
+ await change({currentTarget:chip});
+ assert.equal(chip.value,'8580');
+ assert.deepEqual(calls,[8580,6581,8580]);
 });
