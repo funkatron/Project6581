@@ -92,8 +92,8 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 - [ ] Modify an existing user preset, Save, Rename, and Delete it; factory presets remain read-only.
 - [ ] Confirm master BPM, Game Arp style/enable, Arp sync/latch/rate and all three LFOs restore from the same preset.
 - [ ] Loading a preset while a note is held clears active notes but does not trigger new playback or leave hanging notes.
-- [ ] Select a preset using the other SID chip model; check audio reinitializes and Safari allows sound after a key gesture.
-- [ ] Export one preset and a full user bank to Files, import again, and confirm duplicate-name replacement requires permission.
+- [ ] With playback idle on 6581, load FNK Deep Bass (8580, eight voices in eight-way Legato unison, pulse, low-pass at 1230 Hz with 100% resonance, three synced sine LFOs). Listen for the reported two pops during load. Reload the preset while 8580 is already active to isolate the model switch from applying the sound settings.
+- [ ] Export one preset and a full user bank to Files, import again, and confirm duplicate-name replacement requires permission. Check both the automatic export and the Download JSON link for a new error tab (WebKitBlobResource error 1).
 - [ ] Import malformed JSON and an out-of-range parameter; confirm existing user presets remain unchanged.
 - [ ] Refresh the app and verify saved user presets remain available, without assuming cloud sync.
 

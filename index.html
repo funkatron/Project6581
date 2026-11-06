@@ -398,6 +398,7 @@ function traceInput(note,source,action,run){
  sidInputEvent=sidEventLog.begin('input',{note,source,action,contextState:sidContext?.state??'unavailable'});
  try{return run()}finally{sidInputEvent=previous}
 }
+// Let the browser release export URLs on unload. Safari may still be resolving a download at pagehide.
 let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null,activeSidModel=null;
 const settings=[{wave:'square',attack:0.002,decay:0.12,sustain:0.8,release:0.12,pulse:50,pwmDepth:0,pwmRate:1,enabled:true}];
 let currentSidSettings={...settings[0]};
@@ -1193,10 +1194,6 @@ $('sidReferenceTone').addEventListener('click',()=>{
 document.addEventListener('visibilitychange',()=>{
  if(document.hidden&&sidRecorder?.recording&&!recordBusy)void stopAndSaveRecording();
 });
-// Retain blob URLs when iPad Safari moves this page into the back-forward cache.
-window.addEventListener('pagehide',event=>{
- if(!event.persisted&&recordDownloadUrl)URL.revokeObjectURL(recordDownloadUrl);
-});
 // Sound + performance presets. Held/latching notes are intentionally not serialized.
 let userPresets=[],selectedPreset=null,presetDirty=false,presetStorageError=null,presetDownloadUrl=null;
 try{userPresets=readUserPresets(window.localStorage)}
@@ -1472,9 +1469,6 @@ document.addEventListener('change',event=>{
  if(event.target.id==='presetFile')return;
  if(event.target.closest('#voicePanel')||event.target.closest('#playPanel')||event.target.id==='masterBpm')
   refreshPresetDirty();
-});
-window.addEventListener('pagehide',event=>{
- if(!event.persisted&&presetDownloadUrl)URL.revokeObjectURL(presetDownloadUrl);
 });
 renderPresetLibrary();
 startSid();
