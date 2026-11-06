@@ -4,6 +4,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
   constructor(){
     super();
     this.exports=null;
+    this.traceFirstRender=false;
     this.queue=[];
     this.blocks=0;this.lastPeak=0;this.writes=0;
     this.pendingNoteEvents=[];this.eventLogEnabled=false;
@@ -13,7 +14,10 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     // Audio-rendered frames, rather than throttled page timers, cap capture.
     this.monitorRecording=false;this.recordFrames=0;this.recordMaxFrames=0;
     this.port.onmessage=({data})=>{
-      if(data?.type==='load')this.load(data.bytes,data.model??6581);
+      if(data?.type==='load'){
+        this.traceFirstRender=data.traceFirstRender===true;
+        this.load(data.bytes,data.model??6581);
+      }
       else if(data?.type==='event-log-enable'){
         this.eventLogEnabled=data.enabled===true;this.pendingNoteEvents.length=0;
       }
@@ -111,6 +115,9 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     if(this.monitorRecording){
       const allowed=Math.min(frames,Math.max(0,this.recordMaxFrames-this.recordFrames));
       if(this.recording){
+        if(this.eventLogEnabled&&allowed>0&&this.recordFrames===0){
+          this.port.postMessage({type:'wav-first-frame',audioFrame:currentFrame,sampleRate});
+        }
         let consumed=0;
         while(consumed<allowed){
           const copy=Math.min(allowed-consumed,this.recordSamples.length-this.recordLength);
@@ -130,6 +137,10 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       const value=pcm[i]/32768;
       peak=Math.max(peak,Math.abs(value));
       for(const channel of channels)channel[i]=value;
+    }
+    if(this.traceFirstRender){
+      this.traceFirstRender=false;
+      this.port.postMessage({type:'sid-first-render',audioFrame:currentFrame,frames,sampleRate});
     }
     if(this.eventLogEnabled&&this.pendingNoteEvents.length){
       // One bounded acknowledgment per block with tagged events, never console logging.

@@ -270,7 +270,7 @@ label>.base-value{color:#424b43;font-size:10px;min-width:max-content;text-align:
 label>.modulated-value{color:#236b58;font-size:10px;font-weight:700;min-width:max-content;text-align:right}
 label:has(.slider-stack){gap:4px}
 .allocation-detune .slider-stack{max-width:none}
-</style><link rel="stylesheet" href="./src/seq-ui.css?v=0.1.43+20261106T013138894Z"></head><body><main>
+</style><link rel="stylesheet" href="./src/seq-ui.css?v=0.1.50+20261106T033608085Z"></head><body><main>
 <header><div><h1>Project6581 · PR #59 preview</h1><p class="subtitle">SID Studio · authentic reSIDfp</p></div><div class="controls"><button id="presetOpen" type="button" aria-haspopup="dialog" aria-controls="presetDialog" aria-label="Open preset library"><span id="presetCurrent">Current sound</span><span aria-hidden="true">▾</span></button><button id="sidStart" class="primary" hidden>Retry SID</button><button id="sidUnlock" hidden>Enable audio</button><label class="master-tempo">Master BPM <input id="masterBpm" type="range" min="40" max="240" step="1" value="120" aria-label="Master tempo in beats per minute"><output id="masterBpmValue" for="masterBpm">120</output></label><label class="record-format">Format <select id="recordFormat" aria-label="Recording format"><option value="wav">WAV</option><option value="m4a">M4A</option></select></label><button id="recordToggle" type="button" disabled>● Record</button><button id="panic">Stop all</button></div></header>
 <dialog id="presetDialog" aria-labelledby="presetDialogTitle">
  <div class="preset-dialog-header"><h2 id="presetDialogTitle">Preset library</h2><button id="presetClose" type="button" aria-label="Close preset library">Close</button></div>
@@ -313,7 +313,7 @@ label:has(.slider-stack){gap:4px}
  <label>Steps <select id="seqLength" aria-label="Step sequencer length"><option value="4">4</option><option value="8">8</option><option value="16" selected>16</option></select></label>
  <label>Rate <select id="gameRate" aria-label="Game Arp pattern rate"><option value="0.25">1/1</option><option value="0.5">1/2</option><option value="1">1/4</option><option value="2">1/8</option><option value="4" selected>1/16</option><option value="8">1/32</option><option value="16">1/64</option><option value="32">1/128</option></select></label>
  <label>Sync <input id="arpSync" type="checkbox" checked></label>
- <label>Pattern <select id="gameArpStyle"><option value="action">Action</option><option value="adventure">Adventure</option><option value="arcade">Arcade</option><option value="custom">Custom steps</option></select></label>
+ <label>Pattern <select id="gameArpStyle"><option value="action" selected>Action</option><option value="adventure">Adventure</option><option value="arcade">Arcade</option><option value="custom">Custom steps</option></select></label>
  <button type="button" id="seqReset" title="Reset the editable custom phrase">Reset steps</button>
 </div>
 <section class="seq-editor" aria-label="Editable Game Arp steps">
@@ -329,19 +329,19 @@ label:has(.slider-stack){gap:4px}
  </div>
  <p class="seq-summary" id="seqStatus">Edit pitch, gate and length. Moving a step selects Custom steps automatically. Preview runs at the current octave until stopped.</p>
 </section>
-<details class="seq-subsection" id="seqExtras"><summary>Root Arpeggiator &amp; 3 LFOs</summary><h2>Arpeggiator · Root</h2><div class="controls"><label>Enabled <input id="arpOn" type="checkbox"></label><label>Root order <select id="arpPattern"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label><label>Root rate <select id="arpRate"><option value="0.25">1/1</option><option value="0.5">1/2</option><option value="1" selected>1/4</option><option value="2">1/8</option><option value="4">1/16</option><option value="8">1/32</option><option value="16">1/64</option><option value="32">1/128</option></select></label><label class="arp-local-bpm" hidden>Arp BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label><button id="arpClear">Clear latch</button></div><small id="arpStatus">Arp off</small><div class="section-divider"></div><section class="lfo-panel" aria-label="Low frequency oscillators"><h2>Modulation · LFOs</h2><div id="lfoControls"></div></section>
+<details class="seq-subsection" id="seqExtras"><summary>Root Arpeggiator &amp; 3 LFOs</summary><h2>Arpeggiator · Root</h2><div class="controls"><label>Enabled <input id="arpOn" type="checkbox"></label><label>Root order <select id="arpPattern"><option value="up" selected>Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label><label>Root rate <select id="arpRate"><option value="0.25">1/1</option><option value="0.5">1/2</option><option value="1" selected>1/4</option><option value="2">1/8</option><option value="4">1/16</option><option value="8">1/32</option><option value="16">1/64</option><option value="32">1/128</option></select></label><label class="arp-local-bpm" hidden>Arp BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label><button id="arpClear">Clear latch</button></div><small id="arpStatus">Arp off</small><div class="section-divider"></div><section class="lfo-panel" aria-label="Low frequency oscillators"><h2>Modulation · LFOs</h2><div id="lfoControls"></div></section>
 </details></section></div>
 <section class="panel keyboard-panel" id="keyboardPanel" aria-label="Keyboard"><div class="keyboard-heading"><h2>Keyboard</h2><div class="octave-controls"><button id="octaveDown" type="button" aria-label="Previous octave">−</button><output id="octaveLabel">C3–C4</output><button id="octaveUp" type="button" aria-label="Next octave">+</button></div><small>Touch and hold · layered unison</small><button type="button" class="keyboard-collapse" id="keyboardToggle" aria-expanded="true" aria-controls="keyboard">Hide keyboard ▲</button></div><div id="keyboard" class="keyboard"></div></section>
-<footer><p id="buildInfo">Project6581 v0.1.43 · Built 2026-11-06T01:31:38.894Z (UTC)</p><details id="audioTimingDetails"><summary>Audio timing</summary><div id="audioTimingReport"><label class="event-log-option"><input id="sidEventLogging" type="checkbox"> Log note events</label><div class="event-log-actions"><button id="sidCopyReport" type="button">Copy diagnostic report</button><button id="sidClearLog" type="button">Clear log</button></div><button id="sidReferenceTone" type="button">Play reference tone</button><p id="sidReferenceStatus" role="status"></p><p id="sidCopyStatus" role="status"></p><textarea id="sidReportFallback" aria-label="Diagnostic report for manual copying" readonly hidden></textarea><div id="audioTimingSummary" role="status">Press a key to measure playback dispatch.</div></div></details><span class="diagnostics" id="sidLatencyStatus">Browser audio latency: not yet available.</span><span class="diagnostics" id="sidPlaybackStatus" role="status" aria-live="off">SID playback diagnostics appear here after enabling authentic SID.</span></footer>
+<footer><p id="buildInfo">Project6581 v0.1.50 · Built 2026-11-06T03:36:08.085Z (UTC)</p><details id="audioTimingDetails"><summary>Audio timing</summary><div id="audioTimingReport"><label class="event-log-option"><input id="sidEventLogging" type="checkbox"> Log note events</label><div class="event-log-actions"><button id="sidCopyReport" type="button">Copy diagnostic report</button><button id="sidClearLog" type="button">Clear log</button></div><button id="sidReferenceTone" type="button">Play reference tone</button><p id="sidReferenceStatus" role="status"></p><p id="sidCopyStatus" role="status"></p><textarea id="sidReportFallback" aria-label="Diagnostic report for manual copying" readonly hidden></textarea><div id="audioTimingSummary" role="status">Press a key to measure playback dispatch.</div></div></details><span class="diagnostics" id="sidLatencyStatus">Browser audio latency: not yet available.</span><span class="diagnostics" id="sidPlaybackStatus" role="status" aria-live="off">SID playback diagnostics appear here after enabling authentic SID.</span></footer>
 </main><script type="module">
-import {createSidEventLog,formatSidDiagnosticReport} from './src/sid-event-log.js?v=0.1.43+20261106T013138894Z';
-import {closeSidContext} from './src/sid-audio-lifecycle.js?v=0.1.43+20261106T013138894Z';
-import {createArpKeyVisual} from "./src/arp-key-visual.js?v=0.1.43+20261106T013138894Z";
-import {modulationTrack,formatControlValue,SLIDER_TARGETS} from "./src/modulation-track.js?v=0.1.43+20261106T013138894Z";
-import {createSidRecorder,prepareRecordingDownload} from "./src/sid-recorder.js?v=0.1.43+20261106T013138894Z";
-import {selectRoot,patternPitch,stepMilliseconds} from "./src/arp-composition.js?v=0.1.43+20261106T013138894Z";
-import {defaultSequence,validateSequence,sequenceEvent} from "./src/game-step-sequencer.js?v=0.1.43+20261106T013138894Z";
-import {FACTORY_PRESETS,PRESET_VERSION,cleanPresetName,validatePresetSettings,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,importPresetFile} from "./src/preset-library.js?v=0.1.43+20261106T013138894Z";
+import {createSidEventLog,formatSidDiagnosticReport} from './src/sid-event-log.js?v=0.1.50+20261106T033608085Z';
+import {closeSidContext} from './src/sid-audio-lifecycle.js?v=0.1.50+20261106T033608085Z';
+import {createArpKeyVisual} from "./src/arp-key-visual.js?v=0.1.50+20261106T033608085Z";
+import {modulationTrack,formatControlValue,SLIDER_TARGETS} from "./src/modulation-track.js?v=0.1.50+20261106T033608085Z";
+import {createSidRecorder,prepareRecordingDownload} from "./src/sid-recorder.js?v=0.1.50+20261106T033608085Z";
+import {selectRoot,patternPitch,stepMilliseconds} from "./src/arp-composition.js?v=0.1.50+20261106T033608085Z";
+import {defaultSequence,validateSequence,sequenceEvent} from "./src/game-step-sequencer.js?v=0.1.50+20261106T033608085Z";
+import {FACTORY_PRESETS,PRESET_VERSION,cleanPresetName,validatePresetSettings,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,importPresetFile} from "./src/preset-library.js?v=0.1.50+20261106T033608085Z";
 
 const $=id=>document.getElementById(id);
 const sidStartupLog=[];
@@ -378,6 +378,7 @@ $('sidClearLog').addEventListener('click',()=>{
 $('sidCopyReport').addEventListener('click',async()=>{
  const report=formatSidDiagnosticReport(sidEventLog,{
   build:$('buildInfo').textContent,browser:navigator.userAgent,route:location.pathname,
+  selectedSidModel:Number($('chip').value),activeSidModel,
   contextState:sidContext?.state??'unavailable',sampleRate:sidContext?.sampleRate??null,
   baseLatencyMs:Number.isFinite(sidContext?.baseLatency)?sidContext.baseLatency*1000:null,
   outputLatencyMs:Number.isFinite(sidContext?.outputLatency)?sidContext.outputLatency*1000:null,
@@ -398,6 +399,7 @@ function traceInput(note,source,action,run){
  sidInputEvent=sidEventLog.begin('input',{note,source,action,contextState:sidContext?.state??'unavailable'});
  try{return run()}finally{sidInputEvent=previous}
 }
+// Let the browser release export URLs on unload. Safari may still be resolving a download at pagehide.
 let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null,activeSidModel=null;
 const settings=[{wave:'square',attack:0.002,decay:0.12,sustain:0.8,release:0.12,pulse:50,pwmDepth:0,pwmRate:1,enabled:true}];
 let currentSidSettings={...settings[0]};
@@ -519,6 +521,7 @@ function updateUnison(){
 updateUnison();
 function panic(){gameStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.root=null;directOwned.clear();activeOwners.clear();arpKeyVisual.clear();sidController?.panic()}
 $('panic').addEventListener('click',()=>{
+ sidEventLog.add('stop-all',{contextId:sidAudio?sidAttempt:null,model:activeSidModel});
  $('gameArpOn').checked=false;$('arpOn').checked=false;
  lfoState.forEach(lfo=>{lfo.enabled=false});renderLfos();updateModulation();
  panic();arp.held.clear();arp.latched.clear();arp.step=0;game.step=0;seqPreview=false;setSeqTransportLabel();
@@ -670,7 +673,7 @@ function gameTick(){
  clearStepHighlight();
  game.last=patternPitch(root,$('gameArpStyle').value,game.step++);
  play(game.last,'game');arpKeyVisual.show(game.last);
- $('arpStatus').textContent='Game Arp · '+$('gameArpStyle').selectedOptions[0].text+
+ $('arpStatus').textContent='Game Arp · '+($('gameArpStyle').selectedOptions[0]?.text??'Action')+
   ' · root '+names[root%12]+(Math.floor(root/12)-1);
 }
 function arpTick(){
@@ -974,13 +977,13 @@ async function startSid(){
       sidEventLog.add('context-state',{contextId:attempt,state:context.state,baseLatencyMs:context.baseLatency*1000,outputLatencyMs:Number.isFinite(context.outputLatency)?context.outputLatency*1000:null});
       updateSidActivation();
       if(sidStarting)showSidProgress(sidProgress);
-      else if(sidAudio)status.textContent=context.state==='running'?'Authentic reSIDfp active · up to eight SID voices.':'SID ready · tap Enable audio to resume.';
+      else if(sidAudio)status.textContent=context.state==='running'?'Authentic reSIDfp active · SID '+activeSidModel+'.':'SID ready · tap Enable audio to resume.';
     };
     updateSidActivation();
     progress('Loading SID JavaScript modules…');
     let moduleTimeout;
     const modules=Promise.all([
-      import('./src/create-residfp-audio.js?v=0.1.43+20261106T013138894Z'),import('./src/unison-sid-controller.js?v=0.1.43+20261106T013138894Z'),import('./src/lfo-modulation.js?v=0.1.43+20261106T013138894Z')]);
+      import('./src/create-residfp-audio.js?v=0.1.50+20261106T033608085Z'),import('./src/unison-sid-controller.js?v=0.1.50+20261106T033608085Z'),import('./src/lfo-modulation.js?v=0.1.50+20261106T033608085Z')]);
     const [{createReSidFpAudio},{UnisonSidController},lfoModule]=await Promise.race([
       modules,
       new Promise((_,reject)=>{moduleTimeout=setTimeout(()=>reject(new Error('SID JavaScript module loading timed out after 15 seconds')),15000)})
@@ -1017,7 +1020,6 @@ async function startSid(){
     }});
     timeout=setTimeout(()=>rejectReady(new Error('SID initialization timed out at: '+sidProgress+' (context: '+context.state+')')),12000);
     try{await ready;if(startupError)throw startupError}finally{clearTimeout(timeout)}
-    progress('SID ready.');
     panic();sidAudio=audio;sidKeys=0;modulation=lfoModule;updateSidLed();
     audio.setTimingEnabled($('audioTimingDetails').open);
     audio.setEventLogging(sidEventLog.enabled);
@@ -1028,6 +1030,8 @@ async function startSid(){
     $('recordStatus').textContent=sidRecorder.supportsM4a?'WAV / M4A ready':'WAV ready';
     sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:Number($('voiceCount').value),unisonCount:Number($('unisonCount').value),mode:$('voiceAssign').value,detune:Number($('detune').value)});
     activeSidModel=requestedModel;
+    progress('SID '+activeSidModel+' ready.');
+    sidEventLog.add('sid-ready',{contextId:attempt,model:activeSidModel});
     updateModulation();
     if(lfoTimer===null)lfoTimer=setInterval(()=>{if(lfoState.some(lfo=>lfo.enabled&&lfo.depth>0)||(settings[0].wave==='square'&&settings[0].pwmDepth>0))updateModulation()},1000/60);
     const base=audio.context.baseLatency,output=audio.context.outputLatency;
@@ -1040,7 +1044,7 @@ async function startSid(){
     $('sidLatencyStatus').textContent=parts.length?'Browser audio latency: '+parts.join(' / ')+' (not total key-to-sound latency)':'Browser audio latency: not reported.';
     button.hidden=true;button.disabled=false;
     if(audio.context.state==='suspended')status.textContent='SID ready · touch a key to unlock audio.';
-    if(audio.context.state==='running')status.textContent='Authentic reSIDfp active · up to eight SID voices.';
+    if(audio.context.state==='running')status.textContent='Authentic reSIDfp active · SID '+activeSidModel+'.';
   }catch(err){
     // Retire callbacks before cleanup, including delayed resume/port events.
     ++sidAttempt;sidContextRetired=true;
@@ -1098,7 +1102,7 @@ async function ensureSidModel(model){
   }
   await startSid();
   if(!sidAudio||activeSidModel!==model)
-    throw new Error('Unable to start the '+model+' SID engine. Previous preset settings will be restored.');
+    throw new Error('Unable to start the '+model+' SID engine.');
 }
 async function stopAndSaveRecording(){
  if(!sidRecorder?.recording||recordBusy)return;
@@ -1150,7 +1154,7 @@ function unlockSidAudio(){
   // Call resume synchronously inside the trusted gesture for iPad Safari.
   context.resume().then(()=>{
     if(context!==sidContext||attempt!==sidAttempt)return;
-    if(sidAudio&&context.state==='running')$('sidEngineStatus').textContent='Authentic reSIDfp active · SID unison voices.';
+    if(sidAudio&&context.state==='running')$('sidEngineStatus').textContent='Authentic reSIDfp active · SID '+activeSidModel+'.';
     updateSidActivation();
   }).catch(err=>{
     if(context!==sidContext||attempt!==sidAttempt)return;
@@ -1193,15 +1197,13 @@ $('sidReferenceTone').addEventListener('click',()=>{
 document.addEventListener('visibilitychange',()=>{
  if(document.hidden&&sidRecorder?.recording&&!recordBusy)void stopAndSaveRecording();
 });
-// Retain blob URLs when iPad Safari moves this page into the back-forward cache.
-window.addEventListener('pagehide',event=>{
- if(!event.persisted&&recordDownloadUrl)URL.revokeObjectURL(recordDownloadUrl);
-});
 // Sound + performance presets. Held/latching notes are intentionally not serialized.
 let userPresets=[],selectedPreset=null,presetDirty=false,presetStorageError=null,presetDownloadUrl=null;
 try{userPresets=readUserPresets(window.localStorage)}
 catch(error){presetStorageError=error.message||String(error)}
 function snapshotPresetSettings(){
+ // A browser-restored select can have no selected option. Playback defaults to Up.
+ const arpPattern=$('arpPattern').value||'up';
  return validatePresetSettings({
   sound:{
    model:Number($('chip').value),
@@ -1213,9 +1215,9 @@ function snapshotPresetSettings(){
   },
   performance:{
    masterBpm:Number($('masterBpm').value),
-   arp:{enabled:$('arpOn').checked,latch:$('arpLatch').checked,pattern:$('arpPattern').value,
+   arp:{enabled:$('arpOn').checked,latch:$('arpLatch').checked,pattern:arpPattern,
     rate:Number($('arpRate').value),sync:$('arpSync').checked,localBpm:Number($('arpBpm').value)},
-   game:{enabled:$('gameArpOn').checked,style:$('gameArpStyle').value,
+   game:{enabled:$('gameArpOn').checked,style:$('gameArpStyle').value||'action',
     rate:Number($('gameRate').value),sequence:seqState}
   }
  });
@@ -1310,6 +1312,7 @@ async function applyPresetSettings(value){
  if(sidRecorder?.recording||recordBusy)throw new Error('Finish recording before loading a preset');
  const next=validatePresetSettings(value);
  const previous=snapshotPresetSettings();
+ sidEventLog.add('preset-apply',{contextId:sidAudio?sidAttempt:null,activeModel:activeSidModel,requestedModel:next.sound.model});
  applyPresetControls(next);
  try{
   await ensureSidModel(next.sound.model);
@@ -1357,6 +1360,7 @@ $('presetDialog').addEventListener('click',event=>{
 let presetLoading=false;
 function setPresetLoading(busy){
  presetLoading=busy;
+ $('chip').disabled=busy;
  $('presetDialog').setAttribute('aria-busy',String(busy));
  const editable=selectedPreset?.kind==='user';
  for(const [id,available] of [
@@ -1367,6 +1371,35 @@ function setPresetLoading(busy){
  for(const id of ['factoryPresetList','userPresetList'])
   $(id).querySelectorAll('button').forEach(button=>button.disabled=busy);
 }
+$('chip').addEventListener('change',async event=>{
+ const chip=event.currentTarget;
+ const model=Number(chip.value);
+ const previousModel=activeSidModel;
+ if(presetLoading||model===previousModel)return;
+ if(sidRecorder?.recording||recordBusy){
+  chip.value=String(previousModel);
+  $('sidEngineStatus').textContent='Finish recording before switching SID models.';
+  return;
+ }
+ setPresetLoading(true);
+ panic();arp.held.clear();arp.latched.clear();
+ seqPreview=false;setSeqTransportLabel();
+ for(const key of keys.values())key.classList.remove('down');
+ try{
+  await ensureSidModel(model);
+ }catch(error){
+  let message='Could not switch to SID '+model+': '+error.message;
+  if(previousModel!==null){
+   chip.value=String(previousModel);
+   try{await ensureSidModel(previousModel)}
+   catch(recoveryError){message+=' Previous model recovery failed: '+recoveryError.message}
+  }
+  $('sidEngineStatus').textContent=message;
+ }finally{
+  setPresetLoading(false);
+  refreshPresetDirty();
+ }
+});
 async function loadSelectedPreset(kind,id){
  if(presetLoading)return;
  const source=kind==='factory'?FACTORY_PRESETS:kind==='user'?userPresets:null;
@@ -1472,9 +1505,6 @@ document.addEventListener('change',event=>{
  if(event.target.id==='presetFile')return;
  if(event.target.closest('#voicePanel')||event.target.closest('#playPanel')||event.target.id==='masterBpm')
   refreshPresetDirty();
-});
-window.addEventListener('pagehide',event=>{
- if(!event.persisted&&presetDownloadUrl)URL.revokeObjectURL(presetDownloadUrl);
 });
 renderPresetLibrary();
 startSid();
