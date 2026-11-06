@@ -111,3 +111,15 @@ test('chip selection switches the live engine and restores the previous model on
  assert.equal(chip.value,'8580');
  assert.deepEqual(calls,[8580,6581,8580]);
 });
+
+
+test('an empty live Arp selection snapshots as Up so presets can still load',()=>{
+ const source=script.slice(script.indexOf('function snapshotPresetSettings()'),script.indexOf('function currentPreset()'));
+ const app={
+  $:id=>({value:id==='arpPattern'?'':'1',checked:false}),
+  validatePresetSettings:value=>value,settings:[{}],lfoState:[],seqState:{}
+ };
+ assert.equal(runInNewContext(source+'snapshotPresetSettings()',app).performance.arp.pattern,'up');
+ app.$=id=>({value:id==='arpPattern'?'random':'1',checked:false});
+ assert.equal(runInNewContext(source+'snapshotPresetSettings()',app).performance.arp.pattern,'random');
+});
