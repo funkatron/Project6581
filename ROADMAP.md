@@ -73,6 +73,21 @@ See [release versioning policy](docs/versioning.md) for rationale, version rules
 
 **Completion checks:** At least 24 new sounds are easy to find across the four categories, with a short reference and patch-design log for each game.
 
+## Planned synthesis feature: programmable pitch envelopes
+
+**Why this is needed:** Project6581 currently has ADSR for **volume**, plus controls for timbre, PWM and LFO modulation, but no programmable *per-note pitch trajectory*. A kick's deep falling attack, a tom's descending body, laser/zap effects, and other classic SID percussion rely on rapid changes to the SID oscillator **frequency registers** after a note starts. A static note or a stepped Game Arp cannot reproduce those smooth, millisecond-scale pitch sweeps. The current factory drums are explicitly approximations rather than authentic pitch-swept drum patches. This also unlocks intentional pitch bends in basses, leads, and effects without requiring a full SID-tune player.
+
+**Implementation plan (separate PR after the 24-sound factory bank):**
+
+- [ ] Specify a small **editable pitch envelope** per sound: enabled/bypass, initial pitch offset in semitones, a sequence of time/value breakpoints (milliseconds and semitones relative to the played note), and selectable linear or curved interpolation. Ship useful starting shapes (kick drop, tom fall, laser rise); keep the neutral/off state equivalent to current playback.
+- [ ] Prove a bounded implementation with one-shot attack/decay sweeps first; then extend to several editable stages. Define what happens at the final point (hold or return to zero), retrigger, legato, note stealing, Stop All, and playback at very fast arpeggiator rates.
+- [ ] Schedule pitch writes against the **audio clock** at enough resolution for short transients, ideally inside or adjacent to the AudioWorklet rendering path rather than relying on a coarse main-thread interval. Convert semitone offsets to SID frequency-register values without changing the underlying reSIDfp synthesis, and clamp safely at supported pitch/frequency limits.
+- [ ] Keep envelopes **per note and per allocated voice/unison layer**. Verify independently playing notes do not change each other's pitch, and document interaction with detune, regular/Game Arp, scale lock (future), and the existing LFO system. Don't silently rewrite a held root or MIDI note identity when its audible frequency bends.
+- [ ] Add compact, touch-friendly editing with a clear envelope graph and numerical controls. Persist it through a deliberately versioned preset-schema change with an explicit compatibility/migration policy; keep application semantic versions independent.
+- [ ] Compare actual recorded SID output against the requested pitch curves, including fast kick/tom drops and slow effects; test 6581/8580 models, 44.1/48 kHz, repeated notes, concurrent voices, CPU budget, iPad Safari latency and recovery. Regression tests must prove disabled envelopes produce unchanged audio behavior.
+
+**Completion checks:** A user can program and save an audible, repeatable pitch sweep, hear convincing pitch-descending kick/tom examples, and play overlapping notes without pitch leaks or stuck voices. iPad playback and render-time measurements are required before claiming the audio result is validated.
+
 ## Priority 2a: composable Arpeggiator and Game Arp
 
 **Goal:** Make Game Arp a reusable pattern triggered at a root pitch, while the regular Arpeggiator independently selects and advances that root. The two features should work together rather than being mutually exclusive.
