@@ -48,7 +48,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
           !Array.isArray(points)||points.length<1||points.length>16||
           !['linear','curve'].includes(interpolation)||!['hold','zero'].includes(end))return;
         let previous=-1;
-        if(!points.every(p=>p&&Number.isFinite(p.ms)&&p.ms>=0&&p.ms<=10000&&p.ms>previous&&
+        if(!points.every(p=>p&&typeof p==='object'&&!Array.isArray(p)&&Number.isFinite(p.ms)&&p.ms>=0&&p.ms<=10000&&p.ms>previous&&
           (previous=p.ms)>=0&&Number.isFinite(p.semitones)&&Math.abs(p.semitones)<=48)||points[0].ms!==0)return;
         this.pitchEnvelopes.set(register,{baseFrequency,points:points.map(p=>({ms:p.ms,semitones:p.semitones})),
           interpolation,end,startFrame:null,lastFrequency:null});
