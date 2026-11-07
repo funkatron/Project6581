@@ -21,10 +21,10 @@ test('curved interpolation preserves endpoints and changes midpoint trajectory',
  assert.equal(pitchOffsetAt(e,50),6);
  assert.equal(pitchOffsetAt(e,1000),0);
 });
-test('rejects invalid timing, range, and shape',()=>{
+test('hold retains a nonzero final pitch after the last breakpoint',()=>{\n const e=validatePitchEnvelope({enabled:true,interpolation:'linear',end:'hold',points:[{ms:0,semitones:12},{ms:100,semitones:-5}]});\n assert.equal(pitchOffsetAt(e,101),-5);\n assert.equal(pitchOffsetAt(e,10000),-5);\n});\n\ntest('rejects invalid timing, range, and shape',()=>{
  const base={enabled:true,interpolation:'linear',end:'hold'};
  for(const points of [[],[{ms:1,semitones:0}],[{ms:0,semitones:0},{ms:0,semitones:1}],
-  [{ms:0,semitones:49}],[{ms:0,semitones:NaN}],[{ms:0,semitones:0},{ms:10001,semitones:1}]])
+  [[0,1],[{ms:0,semitones:49}]],[{ms:0,semitones:NaN}],[{ms:0,semitones:0},{ms:10001,semitones:1}]])
   assert.throws(()=>validatePitchEnvelope({...base,points}));
  assert.throws(()=>validatePitchEnvelope({...base,interpolation:'cubic',points:[{ms:0,semitones:0}]}));
 });
