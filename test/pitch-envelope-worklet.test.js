@@ -49,3 +49,10 @@ test('retuning changes base pitch without restarting the audio-frame envelope',(
  assert.deepEqual(h.writes.slice(-2),[[0,12],[1,11]]); // 2828 at 50 ms, not 4000 at a restarted 0 ms
  h.render(4800);assert.deepEqual(h.writes.slice(-2),[[0,208],[1,7]]);
 });
+
+test('malformed worklet envelope points cannot replace active modulation',()=>{
+ const h=harness();h.send(sweep);h.render(0);
+ h.send({...sweep,points:[[0,12]]});
+ h.render(2400);
+ assert.deepEqual(h.writes.slice(-2),[[0,134],[1,5]]);
+});
