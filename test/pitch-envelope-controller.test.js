@@ -7,7 +7,8 @@ function harness(options={}){
  const events=[];
  const controller=new UnisonSidController(()=>{}, {...options,
   onPitchStart:(slot,note,value)=>events.push(['start',slot,note,value]),
-  onPitchStop:slot=>events.push(['stop',slot])});
+  onPitchStop:slot=>events.push(['stop',slot]),
+  onPitchRetune:(slot,note)=>events.push(['retune',slot,note])});
  return {controller,events};
 }
 test('enabled envelope starts for each unison slot and stops on release',()=>{
@@ -32,4 +33,13 @@ test('retrigger and panic cancel previous envelopes',()=>{
  assert.equal(events.at(-1)[0],'stop');
  controller.noteOff(62,second);
  assert.equal(events.at(-1)[0],'stop');
+});
+
+test('live unison detune retunes each slot without cancelling envelopes',()=>{
+ const {controller,events}=harness({voiceCount:2,unisonCount:2});
+ controller.noteOn(60,settings);
+ const before=events.length;
+ controller.setLiveDetune(50);
+ assert.deepEqual(events.slice(before).map(e=>e[0]),['retune','retune']);
+ assert.equal(events.filter(e=>e[0]==='start').length,2);
 });
