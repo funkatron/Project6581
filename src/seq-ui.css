@@ -148,3 +148,6 @@ footer #buildInfo{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;whit
 #audioTimingReport button{min-height:44px;font-size:12px}
 #sidCopyStatus,#sidReferenceStatus{white-space:normal;color:#30322e;margin:6px 0}
 #sidReportFallback{width:100%;min-height:100px;max-height:180px;font-size:12px}
+
+/* Hide inactive editors across all viewport and active-panel display rules. */
+.workspace > [role="tabpanel"][hidden]{display:none!important}
