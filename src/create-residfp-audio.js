@@ -123,6 +123,13 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
         node.port.postMessage({type:'pitch-envelope-start',register,baseFrequency,
           points:envelope.points,interpolation:envelope.interpolation,end:envelope.end});
       },
+      retunePitchEnvelope(slot,note){
+        if(!Number.isInteger(slot)||slot<0||slot>=8||!Number.isFinite(note))return;
+        const register=Math.floor(slot/3)*0x20+(slot%3)*7;
+        const baseFrequency=Math.max(0,Math.min(65535,Math.round(440*2**((note-69)/12)*16777216/985248)));
+        batcher.flush();
+        node.port.postMessage({type:'pitch-envelope-retune',register,baseFrequency});
+      },
       stopPitchEnvelope(slot){
         if(!Number.isInteger(slot)||slot<0||slot>=8)return;
         const register=Math.floor(slot/3)*0x20+(slot%3)*7;
