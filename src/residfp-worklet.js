@@ -53,6 +53,13 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
         this.pitchEnvelopes.set(register,{baseFrequency,points:points.map(p=>({ms:p.ms,semitones:p.semitones})),
           interpolation,end,startFrame:null,lastFrequency:null});
       }
+      else if(data?.type==='pitch-envelope-retune'){
+        const state=this.pitchEnvelopes.get(data.register);
+        if(state&&Number.isInteger(data.baseFrequency)&&data.baseFrequency>=0&&data.baseFrequency<=65535){
+          state.baseFrequency=data.baseFrequency;
+          state.lastFrequency=null;
+        }
+      }
       else if(data?.type==='pitch-envelope-stop'){
         if(Number.isInteger(data.register))this.pitchEnvelopes.delete(data.register);
       }
