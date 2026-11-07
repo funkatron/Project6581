@@ -3,9 +3,9 @@ import {SidRegisters} from './sid-registers.js';
 // Eight available SID oscillators across three three-voice chips.
 // voiceCount is the total budget; unisonCount is the layers per sounding pitch.
 export class UnisonSidController {
- constructor(write,{voiceCount=1,unisonCount=1,mode='mono',detune=0,onPitchStart=()=>{},onPitchStop=()=>{}}={}){
+ constructor(write,{voiceCount=1,unisonCount=1,mode='mono',detune=0,onPitchStart=()=>{},onPitchStop=()=>{},onPitchRetune=()=>{}}={}){
   this.chips=Array.from({length:3},(_,chip)=>new SidRegisters((reg,value)=>write(chip*0x20+reg,value)));
-  this.onPitchStart=onPitchStart;this.onPitchStop=onPitchStop;
+  this.onPitchStart=onPitchStart;this.onPitchStop=onPitchStop;this.onPitchRetune=onPitchRetune;
   this.voiceCount=1;this.unisonCount=1;this.mode='mono';
   this.detune=0;this.liveDetune=0;this.held=[];this.monoTokens=new Map();
   this.current=null;this.currentToken=null;this.settings=null;
@@ -52,8 +52,9 @@ export class UnisonSidController {
  }
  releaseSlots(slots){for(const slot of slots){this.onPitchStop(slot);this.chip(slot).noteOff(this.voice(slot))}}
  retuneSlots(slots,note){slots.forEach((slot,i)=>{
-  this.onPitchStop(slot);
-  this.chip(slot).setFrequency(this.voice(slot),note+this.offset(i));
+  const tuned=note+this.offset(i);
+  this.onPitchRetune(slot,tuned);
+  this.chip(slot).setFrequency(this.voice(slot),tuned);
  })}
  noteOn(note,settings){
   if(!Number.isFinite(note))throw new RangeError('MIDI note');
