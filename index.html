@@ -404,6 +404,37 @@ function traceInput(note,source,action,run){
 let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null,activeSidModel=null;
 const settings=[{wave:'square',attack:0.002,decay:0.12,sustain:0.8,release:0.12,pulse:50,pwmDepth:0,pwmRate:1,enabled:true}];
 let currentSidSettings={...settings[0]};
+// Temporary sound-design audition controls. Deliberately excluded from preset serialization.
+const pitchAudition={enabled:false,start:12,duration:120};
+function auditionPitchEnvelope(){
+ return {enabled:pitchAudition.enabled,interpolation:'linear',end:'hold',
+  points:[{ms:0,semitones:pitchAudition.start},{ms:pitchAudition.duration,semitones:0}]};
+}
+function renderPitchAudition(){
+ const host=document.createElement('fieldset');
+ host.className='pitch-audition';
+ host.innerHTML='<legend>Pitch sweep · audition</legend>'+
+  '<label>Enable sweep <input type="checkbox" data-pitch-audition="enabled"></label>'+
+  '<label>Starting pitch (semitones) <input type="range" min="-24" max="24" step="1" data-pitch-audition="start"><output></output></label>'+
+  '<label>Sweep duration (ms) <input type="range" min="10" max="1000" step="10" data-pitch-audition="duration"><output></output></label>'+
+  '<small>Applies to newly played notes. Audition only: not saved with presets.</small>';
+ const controls=host.querySelectorAll('[data-pitch-audition]');
+ for(const input of controls){
+  const key=input.dataset.pitchAudition;
+  input[input.type==='checkbox'?'checked':'value']=pitchAudition[key];
+  const refresh=()=>{
+   pitchAudition[key]=input.type==='checkbox'?input.checked:Number(input.value);
+   const output=input.closest('label').querySelector('output');
+   if(output)output.textContent=String(pitchAudition[key])+(key==='duration'?' ms':' st');
+   currentSidSettings={...currentSidSettings,pitchEnvelope:auditionPitchEnvelope()};
+  };
+  input.addEventListener('input',refresh);
+  const output=input.closest('label').querySelector('output');
+  if(output)output.textContent=String(pitchAudition[key])+(key==='duration'?' ms':' st');
+ }
+ $('voices').append(host);
+}
+
 const ranges=[['attack','Attack',0,2,.01],['decay','Decay',0,3,.01],['sustain','Sustain',0,1,.01],['release','Release',.01,4,.01],['pulse','Pulse width',5,95,1],['pwmDepth','PWM depth',0,45,1],['pwmRate','PWM rate (Hz)',.1,12,.1]];
 function renderVoiceControls(){
   const s=settings[0],el=document.createElement('section');
@@ -422,6 +453,7 @@ function renderVoiceControls(){
     updateModulation();
   }));
   updatePulse();
+  renderPitchAudition();
 }
 renderVoiceControls();
 const lfoState=Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',phase:0,seed:i}));
@@ -888,7 +920,7 @@ function updateModulation(){
  // the pulse width only while the hardware Pulse waveform is selected.
  const livePulse=pulseActive&&modulation
   ?modulation.pulseWithPwm(values.pulse,values.pwmDepth,values.pwmRate,time):values.pulse;
- currentSidSettings={...sound,
+ currentSidSettings={...sound,pitchEnvelope:auditionPitchEnvelope(),
   pulse:livePulse,attack:values.attack,decay:values.decay,
   sustain:values.sustain,release:values.release};
  for(const target of SLIDER_TARGETS){
