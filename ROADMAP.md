@@ -56,7 +56,9 @@ See [release versioning policy](docs/versioning.md) for rationale, version rules
 
 ## Priority 1 follow-up: C64 game-inspired factory sounds
 
-**Goal:** Build a substantially larger factory bank of playable SID patches. Start with **24 original presets**, six per category, and expand in batches after listening on iPad.
+**Implementation status (2026-11-07):** The initial 24 original presets are already implemented on `main`, six each in Bass, Keys, Leads and Drums, alongside six legacy factory sounds (30 total). The preset-library tests check IDs, categories, validation and JSON roundtrips. Only the first four prototypes have documented iPad listening feedback; the remaining 20 are not acoustically verified. See [factory-bank notes](docs/c64-factory-bank.md). Do not add duplicate patches to satisfy this milestone. Next work is iPad listening, useful adjustments based on evidence, and soundtrack-reference research.
+
+**Goal:** Maintain and validate the expanded bank of **24 original presets**, six per category, and expand only after listening on iPad.
 
 | Category | Sounds to cover |
 | --- | --- |
@@ -68,7 +70,8 @@ See [release versioning policy](docs/versioning.md) for rationale, version rules
 - [ ] Start with the original C64 releases of [Turrican](https://www.lemon64.com/game/turrican) (Chris Hülsbeck, Ramiro Vaca and Stefan Hartwig), [Parallax](https://www.slayradio.org/sidinfo/MUSICIANS%2FG%2FGalway_Martin%2FParallax.sid) (Martin Galway), and [Commando](https://www.slayradio.org/sidinfo/MUSICIANS%2FH%2FHubbard_Rob%2FCommando.sid) (Rob Hubbard). Use [HVSC](https://www.hvsc.c64.org/search) to identify the C64 tunes and subtunes. For each reference, log composer, subtune, time range, audible characteristics and any register behavior we can verify.
 - [ ] Listen for short, articulate bass and percussion, slow modulation and evolving keys, and clear pulse leads. Use isolated voices or a SID register trace where available to distinguish the patch from the melody, sequencing and effects. Build original patches using the existing waveform, envelope, filter, PWM and LFO controls.
 - [ ] Prototype one patch per category first. For drums, start with one playable hit per preset. If a convincing hit needs a fast pitch sweep or timed waveform changes beyond the current controls, document the gap and scope that work separately.
-- [ ] Group the existing and new factory presets in the preset browser. Keep My Presets and existing version-3 imports compatible. Credit the soundtrack references in the bank notes and ship original settings and audition phrases.
+- [x] Group the existing and new factory presets in the preset browser while retaining My Presets and version-3 import compatibility.
+- [ ] Complete soundtrack-reference research (composer, subtune, time range, audible characteristics and verified SID-register behavior) and document original patch-design notes and audition phrases.
 - [ ] Audition every preset on iPad with a consistent set of low, middle and high notes. Check that sounds are distinct, levels are usable, drums stop cleanly, and loading a patch leaves playback idle.
 
 **Completion checks:** At least 24 new sounds are easy to find across the four categories, with a short reference and patch-design log for each game.
