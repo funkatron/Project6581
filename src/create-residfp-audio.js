@@ -114,6 +114,20 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
         node.port.postMessage({type:'event-log-enable',enabled:eventLogEnabled});
       },
       write:(register,value)=>batcher.write(register,value),
+      startPitchEnvelope(slot,note,envelope){
+        if(!Number.isInteger(slot)||slot<0||slot>=8||!Number.isFinite(note))return;
+        const register=Math.floor(slot/3)*0x20+(slot%3)*7;
+        // Flush the note-on frequency and gate before starting modulation.
+        batcher.flush();
+        const baseFrequency=Math.max(0,Math.min(65535,Math.round(440*2**((note-69)/12)*16777216/985248)));
+        node.port.postMessage({type:'pitch-envelope-start',register,baseFrequency,
+          points:envelope.points,interpolation:envelope.interpolation,end:envelope.end});
+      },
+      stopPitchEnvelope(slot){
+        if(!Number.isInteger(slot)||slot<0||slot>=8)return;
+        const register=Math.floor(slot/3)*0x20+(slot%3)*7;
+        node.port.postMessage({type:'pitch-envelope-stop',register});
+      },
       // Deliver each complete note-on register batch immediately, rather than
       // waiting for the next microtask. Probe at most twice per second.
       noteDispatched(source='keyboard'){
