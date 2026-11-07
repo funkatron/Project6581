@@ -6,6 +6,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     this.exports=null;
     this.traceFirstRender=false;
     this.queue=[];
+    this.pitchEnvelopes=new Map();
     this.blocks=0;this.lastPeak=0;this.writes=0;
     this.pendingNoteEvents=[];this.eventLogEnabled=false;
     this.pendingLatencyProbes=[];this.timingEnabled=false;
@@ -39,7 +40,32 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
           }
         }
       }
-      else if(data?.type==='reset')this.exports?.sid_reset();
+      else if(data?.type==='pitch-envelope-start'){
+        // Explicit opt-in protocol. Existing note messages are unchanged.
+        const {register,baseFrequency,points,interpolation='linear',end='hold'}=data;
+        if(!Number.isInteger(register)||register<0||register>=0x60||register%0x20>0x14||register%0x20%7!==0||
+          !Number.isInteger(baseFrequency)||baseFrequency<0||baseFrequency>65535||
+          !Array.isArray(points)||points.length<1||points.length>16||
+          !['linear','curve'].includes(interpolation)||!['hold','zero'].includes(end))return;
+        let previous=-1;
+        if(!points.every(p=>p&&typeof p==='object'&&!Array.isArray(p)&&Number.isFinite(p.ms)&&p.ms>=0&&p.ms<=10000&&p.ms>previous&&
+          (previous=p.ms)>=0&&Number.isFinite(p.semitones)&&Math.abs(p.semitones)<=48)||points[0].ms!==0)return;
+        this.pitchEnvelopes.set(register,{baseFrequency,points:points.map(p=>({ms:p.ms,semitones:p.semitones})),
+          interpolation,end,startFrame:null,lastFrequency:null});
+      }
+      else if(data?.type==='pitch-envelope-retune'){
+        const state=this.pitchEnvelopes.get(data.register);
+        if(state&&Number.isInteger(data.baseFrequency)&&data.baseFrequency>=0&&data.baseFrequency<=65535){
+          state.baseFrequency=data.baseFrequency;
+          state.lastFrequency=null;
+        }
+      }
+      else if(data?.type==='pitch-envelope-stop'){
+        if(Number.isInteger(data.register))this.pitchEnvelopes.delete(data.register);
+      }
+      else if(data?.type==='reset'){
+        this.pitchEnvelopes.clear();this.exports?.sid_reset();
+      }
       else if(data?.type==='record-start'||data?.type==='record-monitor-start'){
         this.recordLength=0;
         this.recording=data.type==='record-start';
@@ -93,6 +119,31 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     for(const [reg,value] of this.queue)e.sid_write(reg,value);
     this.writes+=this.queue.length;
     this.queue.length=0;
+    // Frequency updates occur at render-block boundaries, using the audio frame
+    // clock. Max scheduling granularity is one render quantum (128 frames).
+    for(const [register,state] of this.pitchEnvelopes){
+      if(state.startFrame===null)state.startFrame=currentFrame;
+      const ms=(currentFrame-state.startFrame)*1000/sampleRate;
+      const points=state.points;
+      let semitones=points[0].semitones;
+      if(ms>=points[points.length-1].ms){
+        semitones=state.end==='zero'?0:points[points.length-1].semitones;
+      }else{
+        for(let i=1;i<points.length;i++){
+          if(ms<=points[i].ms){
+            const a=points[i-1],b=points[i];let t=(ms-a.ms)/(b.ms-a.ms);
+            if(state.interpolation==='curve')t=t*t*(3-2*t);
+            semitones=a.semitones+(b.semitones-a.semitones)*t;
+            break;
+          }
+        }
+      }
+      const frequency=Math.max(0,Math.min(65535,Math.round(state.baseFrequency*2**(semitones/12))));
+      if(frequency!==state.lastFrequency){
+        e.sid_write(register,frequency&255);e.sid_write(register+1,frequency>>8);
+        state.lastFrequency=frequency;this.writes+=2;
+      }
+    }
     const frames=channels[0].length;
     // Optional worklet performance timing: browsers may not expose
     // performance.now() in AudioWorkletGlobalScope. Never depend on it for audio.
