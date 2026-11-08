@@ -25,6 +25,7 @@ function app({closeHangs=false,closeRejects=false,moduleHang=false,engineError=f
   close(){this.closeCalls++;if(closeRejects)return Promise.reject(Error('close rejected'));if(closeHangs){if(closedBeforeSettled)this.state='closed';return new Promise(()=>{})};this.state='closed';return Promise.resolve()}
  }
  const lifecycle=readFileSync(new URL('../src/sid-audio-lifecycle.js',import.meta.url),'utf8').replace('export function','function');
+ const statusUi=readFileSync(new URL('../src/sid-engine-status-ui.js',import.meta.url),'utf8').replace(/export function/g,'function');
  const scope=vm.createContext({$,AudioContext:Context,performance:{now:()=>0},
   setTimeout(fn,ms){const id=++timerId;timers.set(id,{fn,ms});return id},clearTimeout:id=>timers.delete(id),
   sidAudio:null,sidContext:null,sidController:null,sidRecorder:null,activeSidModel:null,sidStarting:false,
@@ -39,7 +40,7 @@ function app({closeHangs=false,closeRejects=false,moduleHang=false,engineError=f
    return audio;
   }}:path.includes('unison')?{UnisonSidController:class{}}:{},
  });
- vm.runInContext(lifecycle+'\n'+startup+'\n'+unlock,scope);
+ vm.runInContext(statusUi+'\n'+lifecycle+'\n'+startup+'\n'+unlock,scope);
  const fire=ms=>{for(const [id,timer] of [...timers])if(timer.ms===ms){timers.delete(id);timer.fn()}};
  return {scope,$,contexts,attempts,timers,fire};
 }
