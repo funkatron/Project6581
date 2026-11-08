@@ -40,3 +40,10 @@ export function pitchOffsetAt(envelope,elapsedMs) {
 export const DEFAULT_PITCH_ENVELOPE=Object.freeze({
  enabled:false,interpolation:'linear',end:'zero',points:Object.freeze([Object.freeze({ms:0,semitones:0})])
 });
+export function simplePitchEnvelope(enabled,start,duration){
+ if(!enabled)return validatePitchEnvelope(DEFAULT_PITCH_ENVELOPE);
+ return validatePitchEnvelope({
+  enabled:true,interpolation:'linear',end:'hold',
+  points:[{ms:0,semitones:start},{ms:duration,semitones:0}]
+ });
+}

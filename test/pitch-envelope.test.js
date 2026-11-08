@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope,pitchOffsetAt} from '../src/pitch-envelope.js';
+import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope,pitchOffsetAt,simplePitchEnvelope} from '../src/pitch-envelope.js';
 
 test('disabled pitch envelope leaves all notes unchanged',()=>{
  const e=validatePitchEnvelope({...DEFAULT_PITCH_ENVELOPE,points:[{ms:0,semitones:24}]});
@@ -25,6 +25,13 @@ test('hold retains a nonzero final pitch after the last breakpoint',()=>{
  const e=validatePitchEnvelope({enabled:true,interpolation:'linear',end:'hold',points:[{ms:0,semitones:12},{ms:100,semitones:-5}]});
  assert.equal(pitchOffsetAt(e,101),-5);
  assert.equal(pitchOffsetAt(e,10000),-5);
+});
+
+test('simplePitchEnvelope maps the two-point sweep helper',()=>{
+ assert.equal(simplePitchEnvelope(false,12,120).enabled,false);
+ const on=simplePitchEnvelope(true,-6,80);
+ assert.deepEqual(on.points,[{ms:0,semitones:-6},{ms:80,semitones:0}]);
+ assert.equal(on.end,'hold');
 });
 
 test('rejects invalid timing, range, and shape',()=>{
