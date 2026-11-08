@@ -361,6 +361,7 @@ label:has(.slider-stack){gap:4px}
 <footer><p id="buildInfo">Project6581 v__BUILD_VERSION__ · Built __BUILD_TIMESTAMP__ (UTC)</p><details id="audioTimingDetails"><summary>Audio timing</summary><div id="audioTimingReport"><label class="event-log-option"><input id="sidEventLogging" type="checkbox"> Log note events</label><div class="event-log-actions"><button id="sidCopyReport" type="button">Copy diagnostic report</button><button id="sidClearLog" type="button">Clear log</button></div><button id="sidReferenceTone" type="button">Play reference tone</button><p id="sidReferenceStatus" role="status"></p><p id="sidCopyStatus" role="status"></p><textarea id="sidReportFallback" aria-label="Diagnostic report for manual copying" readonly hidden></textarea><div id="audioTimingSummary" role="status">Press a key to measure playback dispatch.</div></div></details><span class="diagnostics" id="sidLatencyStatus">Browser audio latency: not yet available.</span><span class="diagnostics" id="sidPlaybackStatus" role="status" aria-live="off">SID playback diagnostics appear here after enabling authentic SID.</span></footer>
 </main><script type="module">
 import {createSidEventLog,formatSidDiagnosticReport} from './src/sid-event-log.js?v=__BUILD_ID__';
+import {formatActiveSidStatus,formatBrowserLatencyStatus,formatSidProgressMessage,shouldShowSidUnlock,sidLedAriaLabel,sidLedState} from './src/sid-engine-status-ui.js?v=__BUILD_ID__';
 import {closeSidContext} from './src/sid-audio-lifecycle.js?v=__BUILD_ID__';
 import {createArpKeyVisual} from "./src/arp-key-visual.js?v=__BUILD_ID__";
 import {modulationTrack,formatControlValue,SLIDER_TARGETS} from "./src/modulation-track.js?v=__BUILD_ID__";
@@ -972,18 +973,18 @@ $('arpSync').addEventListener('change',()=>{document.querySelector('.arp-local-b
 ['volume','cutoff','resonance','mode'].forEach(id=>$(id).addEventListener('input',updateModulation));
 function updateSidLed(){
   const led=$('sidLed');
-  const state=sidAudio?(sidContext?.state==='running'?'on':'ready'):(sidStarting?'loading':'off');
+  const state=sidLedState({hasAudio:Boolean(sidAudio),contextState:sidContext?.state,starting:sidStarting});
   led.dataset.state=state;
-  led.setAttribute('aria-label',state==='on'?'SID engine on':state==='ready'?'SID engine ready, audio suspended':state==='loading'?'SID engine loading':'SID engine off');
+  led.setAttribute('aria-label',sidLedAriaLabel(state));
 }
 let pendingSidStartup=null,sidAttempt=0,sidCleanupBlocked=false,sidContextRetired=false;
 let sidProgress='';
 function showSidProgress(message){
  sidProgress=message;
- $('sidEngineStatus').textContent=message+(sidContext?.state==='suspended'?' Tap Enable audio to activate playback.':'');
+ $('sidEngineStatus').textContent=formatSidProgressMessage(message,sidContext?.state);
 }
 function updateSidActivation(){
- $('sidUnlock').hidden=sidContextRetired||!sidContext||sidContext.state==='running'||sidContext.state==='closed';
+ $('sidUnlock').hidden=!shouldShowSidUnlock({contextRetired:sidContextRetired,context:sidContext});
  updateSidLed();
 }
 async function startSid(){
@@ -1019,7 +1020,7 @@ async function startSid(){
       sidEventLog.add('context-state',{contextId:attempt,state:context.state,baseLatencyMs:context.baseLatency*1000,outputLatencyMs:Number.isFinite(context.outputLatency)?context.outputLatency*1000:null});
       updateSidActivation();
       if(sidStarting)showSidProgress(sidProgress);
-      else if(sidAudio)status.textContent=context.state==='running'?'Authentic reSIDfp active · SID '+activeSidModel+'.':'SID ready · tap Enable audio to resume.';
+      else if(sidAudio)status.textContent=formatActiveSidStatus(context.state,activeSidModel);
     };
     updateSidActivation();
     progress('Loading SID JavaScript modules…');
@@ -1080,13 +1081,10 @@ async function startSid(){
     audioTiming.baseMs=Number.isFinite(base)?base*1000:null;
     audioTiming.outputMs=Number.isFinite(output)?output*1000:null;
     updateAudioTimingReport();
-    const parts=[];
-    if(Number.isFinite(base))parts.push('base '+(base*1000).toFixed(1)+' ms');
-    if(Number.isFinite(output))parts.push('output '+(output*1000).toFixed(1)+' ms');
-    $('sidLatencyStatus').textContent=parts.length?'Browser audio latency: '+parts.join(' / ')+' (not total key-to-sound latency)':'Browser audio latency: not reported.';
+    $('sidLatencyStatus').textContent=formatBrowserLatencyStatus(base,output);
     button.hidden=true;button.disabled=false;
-    if(audio.context.state==='suspended')status.textContent='SID ready · touch a key to unlock audio.';
-    if(audio.context.state==='running')status.textContent='Authentic reSIDfp active · SID '+activeSidModel+'.';
+    if(audio.context.state==='suspended'||audio.context.state==='running')
+     status.textContent=formatActiveSidStatus(audio.context.state,activeSidModel,{afterInit:true});
   }catch(err){
     // Retire callbacks before cleanup, including delayed resume/port events.
     ++sidAttempt;sidContextRetired=true;
