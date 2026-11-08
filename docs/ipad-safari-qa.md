@@ -2,6 +2,8 @@
 
 This is a **device test plan**, not evidence that any test has passed. Automated Node tests cover core register behavior but cannot establish sound quality, screen layout, or iPadOS AudioContext behavior.
 
+**Automation map:** [ipad-safari-automation-map.md](ipad-safari-automation-map.md) lists which checklist themes have CI coverage (**Auto** / **Partial**) versus **Manual** iPad-only verification. Run `npm test` before device sessions; passing CI does not check any box here by itself.
+
 ## Test environments
 
 - [ ] iPad Safari, portrait, default browser text size; reload from a clean tab.
