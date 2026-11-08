@@ -50,9 +50,9 @@ Inside the preset library, use **Save as…** to keep an edited sound. Your new 
 
 The modal also contains **Export** to download the current sound as JSON, **Export bank** to back up user presets, and **Import…** to load either file type. Imports are validated and require confirmation before overwriting a user preset with the same name. Downloads can be copied between your iPad and Mac.
 
-A preset includes the SID model, sound and filter controls, all three LFOs, master BPM, and both arpeggiators' settings. Loading a preset stops any current notes but **does not automatically start playing**. Held keys and the notes stored in latches are not saved.
+A preset includes the SID model, sound and filter controls, pitch envelope (when enabled), all three LFOs, master BPM, and both arpeggiators' settings. Loading a preset stops any current notes but **does not automatically start playing**. Held keys and the notes stored in latches are not saved.
 
-**Storage note:** My presets are stored locally in this browser. They are not automatically shared between devices, and clearing browser data may erase them. **Export bank** provides a backup. The preset JSON format is currently version 3, adding Voice Assign and per-note Unison layers. Versions 1–2 are not migrated or imported. Recreate those sounds manually if needed.
+**Storage note:** My presets are stored locally in this browser. They are not automatically shared between devices, and clearing browser data may erase them. **Export bank** provides a backup. The preset JSON format is currently **version 4**, adding an optional per-voice **pitch envelope** (disabled by default on factory sounds). Version **3** exports can still be imported and upgrade with the pitch envelope off. Versions 1–2 are not migrated or imported. Recreate those sounds manually if needed.
 
 ## 🎛️ The controls, in plain language
 

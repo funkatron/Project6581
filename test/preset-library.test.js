@@ -1,9 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
- PRESET_VERSION,PRESET_STORAGE_KEY,FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,defaultPresetSettings,
- validatePresetSettings,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,importPresetFile
+ PRESET_VERSION,PRESET_STORAGE_KEY,LEGACY_PRESET_STORAGE_KEY_V3,FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,
+ defaultPresetSettings,validatePresetSettings,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,
+ importPresetFile
 } from '../src/preset-library.js';
+import {DEFAULT_PITCH_ENVELOPE} from '../src/pitch-envelope.js';
 import {sequenceEvent} from '../src/game-step-sequencer.js';
 
 const makeStorage=()=>{
@@ -11,6 +13,7 @@ const makeStorage=()=>{
  return {
   getItem:key=>values.has(key)?values.get(key):null,
   setItem:(key,value)=>values.set(key,value),
+  removeItem:key=>{values.delete(key)},
   values
  };
 };
@@ -105,7 +108,8 @@ test('C64-inspired prototype bank covers four distinct categories without changi
  const legacy=['deep-bass','arcade-lead','chiptune-pluck','pulsing-pad','soft-flute','filter-motion'];
  for(const id of [...legacy,...prototypes.map(([id])=>id)])
   assert.ok(FACTORY_PRESETS.some(p=>p.id===id),'legacy or prototype factory sound removed: '+id);
- assert.equal(PRESET_VERSION,3);
+ assert.equal(PRESET_VERSION,4);
+ assert.equal(FACTORY_PRESETS[0].settings.sound.voice.pitchEnvelope.enabled,false);
 });
 
 test('expanded C64 factory bank retains legacy sounds and has six originals per new category',()=>{
@@ -137,7 +141,7 @@ test('expanded C64 factory bank retains legacy sounds and has six originals per 
  }
  for(const preset of FACTORY_PRESETS)
   assert.ok(FACTORY_GROUPS.includes(factoryGroup(preset.category)),preset.id+' has no browser group');
- assert.equal(PRESET_VERSION,3,'application release number must not change preset schema');
+ assert.equal(PRESET_VERSION,4);
 });
 
 test('octave presets use explicit Game Arp patterns and do not change global neutral reset',()=>{
@@ -162,4 +166,52 @@ test('legacy factory category labels group with the expanded bank without rewrit
  assert.equal(factoryGroup('Pad'),'Keys');
  assert.equal(factoryGroup('FX'),'FX');
  assert.equal(FACTORY_PRESETS.find(p=>p.id==='arcade-lead').category,'Lead');
+});
+
+test('version 3 preset files import with default disabled pitch envelope',()=>{
+ const base=defaultPresetSettings();
+ const voice={...base.sound.voice};
+ delete voice.pitchEnvelope;
+ const settings={sound:{...base.sound,voice},performance:base.performance};
+ const raw=JSON.stringify({type:'project6581-preset',version:3,preset:{name:'Legacy',settings}});
+ const [imported]=importPresetFile(raw);
+ assert.equal(imported.settings.sound.voice.pitchEnvelope.enabled,false);
+ assert.equal(JSON.parse(exportPreset(imported)).version,PRESET_VERSION);
+});
+
+test('local v3 bank migrates to v4 storage on read',()=>{
+ const storage=makeStorage();
+ const base=defaultPresetSettings();
+ const voice={...base.sound.voice};
+ delete voice.pitchEnvelope;
+ storage.setItem(LEGACY_PRESET_STORAGE_KEY_V3,JSON.stringify({
+  version:3,
+  presets:[{id:'keep-me',name:'Keep',settings:{sound:{...base.sound,voice},performance:base.performance}}]
+ }));
+ const items=readUserPresets(storage);
+ assert.equal(items.length,1);
+ assert.equal(items[0].name,'Keep');
+ assert.equal(items[0].settings.sound.voice.pitchEnvelope.enabled,false);
+ assert.ok(storage.getItem(PRESET_STORAGE_KEY));
+ assert.equal(storage.getItem(LEGACY_PRESET_STORAGE_KEY_V3),null);
+});
+
+test('enabled pitch envelope validates and round-trips',()=>{
+ const settings=defaultPresetSettings();
+ settings.sound.voice.pitchEnvelope={
+  enabled:true,interpolation:'curve',end:'zero',
+  points:[{ms:0,semitones:12},{ms:80,semitones:0}]
+ };
+ const validated=validatePresetSettings(settings);
+ const [imported]=importPresetFile(exportPreset({name:'Sweep',settings:validated}));
+ assert.deepEqual(imported.settings.sound.voice.pitchEnvelope,validated.sound.voice.pitchEnvelope);
+});
+
+test('invalid pitch envelope times reject preset settings',()=>{
+ const settings=defaultPresetSettings();
+ settings.sound.voice.pitchEnvelope={
+  enabled:true,interpolation:'linear',end:'hold',
+  points:[{ms:0,semitones:0},{ms:0,semitones:5}]
+ };
+ assert.throws(()=>validatePresetSettings(settings),/Pitch point/);
 });

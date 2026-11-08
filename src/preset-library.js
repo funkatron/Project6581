@@ -1,8 +1,10 @@
 import {defaultSequence,validateSequence} from './game-step-sequencer.js';
-// Project6581 preset format v3: instrument allocation, sound and performance settings.
-// This is intentionally a single-version format; no migrations are needed yet.
-export const PRESET_VERSION=3;
-export const PRESET_STORAGE_KEY='project6581.user-presets.v3';
+import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from './pitch-envelope.js';
+// Project6581 preset format v4: adds per-voice pitchEnvelope (v3 imports upgrade with envelope off).
+export const PRESET_VERSION=4;
+export const PRESET_STORAGE_KEY='project6581.user-presets.v4';
+export const LEGACY_PRESET_STORAGE_KEY_V3='project6581.user-presets.v3';
+export const IMPORTABLE_PRESET_VERSIONS=Object.freeze([3,4]);
 export const MAX_USER_PRESETS=100;
 const WAVES=['triangle','sawtooth','square','noise'];
 const MODES=['lowpass','bandpass','highpass'];
@@ -36,7 +38,10 @@ export function defaultPresetSettings(){
  return {
   sound:{
    model:6581,
-   voice:{enabled:true,wave:'square',attack:.002,decay:.12,sustain:.8,release:.12,pulse:50,pwmDepth:0,pwmRate:1},
+   voice:{
+    enabled:true,wave:'square',attack:.002,decay:.12,sustain:.8,release:.12,pulse:50,pwmDepth:0,pwmRate:1,
+    pitchEnvelope:validatePitchEnvelope(DEFAULT_PITCH_ENVELOPE)
+   },
    instrument:{voiceCount:1,unisonCount:1,mode:'mono',detune:12},
    filter:{cutoff:7000,resonance:10,volume:55,mode:'lowpass'},
    lfos:Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',phase:0,seed:i}))
@@ -48,9 +53,15 @@ export function defaultPresetSettings(){
   }
  };
 }
+export function attachDefaultPitchEnvelope(voice){
+ const source=object(voice,'voice');
+ if(source.pitchEnvelope===undefined)return {...source,pitchEnvelope:validatePitchEnvelope(DEFAULT_PITCH_ENVELOPE)};
+ return source;
+}
 export function validatePresetSettings(value){
  const root=object(value,'settings'),sound=object(root.sound,'sound');
- const v=object(sound.voice,'voice'),ins=object(sound.instrument,'instrument'),filter=object(sound.filter,'filter');
+ const v=attachDefaultPitchEnvelope(sound.voice);
+ const ins=object(sound.instrument,'instrument'),filter=object(sound.filter,'filter');
  if(!Array.isArray(sound.lfos)||sound.lfos.length!==3)throw new RangeError('Exactly three LFOs are required');
  const perf=object(root.performance,'performance');
  const arp=object(perf.arp,'arpeggiator'),game=object(perf.game,'Game Arp');
@@ -62,7 +73,8 @@ export function validatePresetSettings(value){
     attack:numeric(v.attack,'attack',0,2),decay:numeric(v.decay,'decay',0,3),
     sustain:numeric(v.sustain,'sustain',0,1),release:numeric(v.release,'release',.01,4),
     pulse:numeric(v.pulse,'pulse width',5,95),pwmDepth:numeric(v.pwmDepth,'PWM depth',0,45),
-    pwmRate:numeric(v.pwmRate,'PWM rate',.1,12)
+    pwmRate:numeric(v.pwmRate,'PWM rate',.1,12),
+    pitchEnvelope:validatePitchEnvelope(v.pitchEnvelope)
    },
    instrument:{
     voiceCount:integer(ins.voiceCount,'voice count',1,8),
@@ -192,14 +204,24 @@ function unique(presets){
   names.add(key);ids.add(p.id);
  }
 }
-export function readUserPresets(storage){
- const raw=storage.getItem(PRESET_STORAGE_KEY);
- if(raw===null)return [];
+function readStoredPresetBank(storage,key,expectedVersion){
+ const raw=storage.getItem(key);
+ if(raw===null)return null;
  const bank=object(JSON.parse(raw),'stored preset bank');
- if(bank.version!==PRESET_VERSION||!Array.isArray(bank.presets)||bank.presets.length>MAX_USER_PRESETS)
+ if(bank.version!==expectedVersion||!Array.isArray(bank.presets)||bank.presets.length>MAX_USER_PRESETS)
   throw new RangeError('Unsupported or oversized preset bank');
- const items=bank.presets.map(p=>validatePreset(p,{requireId:true}));
- unique(items);return items;
+ return bank.presets.map(p=>validatePreset(p,{requireId:true}));
+}
+export function readUserPresets(storage){
+ let items=readStoredPresetBank(storage,PRESET_STORAGE_KEY,PRESET_VERSION);
+ if(items!==null){unique(items);return items}
+ const legacy=readStoredPresetBank(storage,LEGACY_PRESET_STORAGE_KEY_V3,3);
+ if(legacy===null)return [];
+ items=legacy.map(p=>({...p,settings:validatePresetSettings(p.settings)}));
+ unique(items);
+ writeUserPresets(storage,items);
+ storage.removeItem(LEGACY_PRESET_STORAGE_KEY_V3);
+ return items;
 }
 export function writeUserPresets(storage,presets){
  if(!Array.isArray(presets)||presets.length>MAX_USER_PRESETS)throw new RangeError('Too many presets');
@@ -217,12 +239,18 @@ export function exportPresetBank(presets){
  if(safe.length>MAX_USER_PRESETS)throw new RangeError('Too many presets to export');
  return JSON.stringify({type:'project6581-preset-bank',version:PRESET_VERSION,presets:safe},null,2);
 }
+function normalizeImportedPreset(preset){
+ const base=object(preset,'preset');
+ return validatePreset({...base,settings:validatePresetSettings(base.settings)});
+}
 export function importPresetFile(raw){
  if(typeof raw!=='string'||raw.length>2*1024*1024)throw new RangeError('Preset file is too large');
  const file=object(JSON.parse(raw),'preset file');
- if(file.version!==PRESET_VERSION)throw new RangeError('Unsupported preset version. No older formats are supported yet.');
- const presets=file.type==='project6581-preset'?[validatePreset(file.preset)]
-  :file.type==='project6581-preset-bank'&&Array.isArray(file.presets)?file.presets.map(p=>validatePreset(p)):null;
+ if(!IMPORTABLE_PRESET_VERSIONS.includes(file.version))
+  throw new RangeError('Unsupported preset version. Import v3 or v4 JSON only; older formats are not supported.');
+ const rawPresets=file.type==='project6581-preset'?[file.preset]
+  :file.type==='project6581-preset-bank'&&Array.isArray(file.presets)?file.presets:null;
+ const presets=rawPresets?rawPresets.map(normalizeImportedPreset):null;
  if(!presets||presets.length>MAX_USER_PRESETS)throw new TypeError('Not a Project6581 preset file');
  const names=new Set();
  for(const p of presets){const n=p.name.toLowerCase();if(names.has(n))throw new RangeError('Duplicate name in imported bank');names.add(n)}
