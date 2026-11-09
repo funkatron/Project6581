@@ -43,6 +43,22 @@ for (const engine of engines) {
     }, null, { timeout: 20000 });
     const status = await page.locator('#sidEngineStatus').textContent();
     assert.match(status, /ready/i, 'SID engine did not become ready: ' + status);
+    // Exercise the model-switch lifecycle that historically stalled in Safari.
+    // This measures engine readiness, not physical speaker latency.
+    const switchModel = async model => {
+      const started = Date.now();
+      await page.locator('#chip').selectOption(String(model));
+      await page.waitForFunction(expected => {
+        const status = document.querySelector('#sidEngineStatus')?.textContent || '';
+        return status.includes(String(expected)) && /ready/i.test(status)
+          && !document.querySelector('#chip')?.disabled;
+      }, model, { timeout: 25000 });
+      const elapsed = Date.now() - started;
+      console.log(engine + ' SID ' + model + ' model switch ready in ' + elapsed + ' ms');
+      assert.equal(await page.locator('#chip').inputValue(), String(model));
+    };
+    await switchModel(8580);
+    await switchModel(6581);
     assert.equal(errors.length, 0, 'Unexpected JavaScript errors: ' + errors.join('; '));
     console.log('PASS ' + engine + ': tabs, visibility, keyboard toggle');
     await context.close();
