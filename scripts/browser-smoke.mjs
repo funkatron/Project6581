@@ -40,7 +40,7 @@ for (const engine of engines) {
     await page.waitForFunction(() => {
       const text = document.querySelector('#sidEngineStatus')?.textContent || '';
       return /ready|unavailable|failed|error/i.test(text);
-    }, { timeout: 20000 });
+    }, null, { timeout: 20000 });
     const status = await page.locator('#sidEngineStatus').textContent();
     assert.match(status, /ready/i, 'SID engine did not become ready: ' + status);
     assert.equal(errors.length, 0, 'Unexpected JavaScript errors: ' + errors.join('; '));
