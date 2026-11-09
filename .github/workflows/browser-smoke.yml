@@ -18,6 +18,23 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Restore compiled SID engine
+        id: sid-cache
+        uses: actions/cache@v4
+        with:
+          path: dist/residfp.wasm
+          key: sid-wasm-emsdk-4.0.15-linux-v1-${{ hashFiles('scripts/build-residfp.sh', 'native/**') }}
+      - uses: mymindstorm/setup-emsdk@v14
+        if: steps.sid-cache.outputs.cache-hit != 'true'
+        with:
+          version: '4.0.15'
+      - if: steps.sid-cache.outputs.cache-hit != 'true'
+        run: sudo apt-get update && sudo apt-get install -y autoconf automake libtool pkg-config
+      - if: steps.sid-cache.outputs.cache-hit != 'true'
+        run: bash scripts/build-residfp.sh
+      - run: test -s dist/residfp.wasm
+      - run: node scripts/check-wasm-imports.mjs
+      - run: node scripts/stamp-build.mjs
       - name: Install browser harness (not part of normal npm test)
         run: |
           npm install --no-save --no-package-lock playwright@1.56.1
@@ -29,7 +46,7 @@ jobs:
       - name: Run browser smoke
         env:
           BROWSER: ${{ inputs.browser }}
-        run: node test/browser-smoke.mjs
+        run: node scripts/browser-smoke.mjs
       - name: Upload diagnostic log on failure
         if: failure()
         uses: actions/upload-artifact@v4
