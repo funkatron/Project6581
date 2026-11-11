@@ -59,6 +59,33 @@ for (const engine of engines) {
     };
     await switchModel(8580);
     await switchModel(6581);
+    // Create a valid v4 user preset using the application's own schema.
+    // Exercise the actual preset picker, rather than only changing #chip.
+    await page.evaluate(async () => {
+      const { defaultPresetSettings } = await import('./src/preset-library.js');
+      const settings = defaultPresetSettings();
+      settings.sound.model = 8580;
+      localStorage.setItem('project6581.user-presets.v4', JSON.stringify({
+        version: 4, presets: [{ id: 'smoke-8580', name: 'Smoke 8580', settings }]
+      }));
+    });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => /ready/i.test(document.querySelector('#sidEngineStatus')?.textContent || ''), null, { timeout: 20000 });
+    await page.locator('#presetOpen').click();
+    const preset = page.locator('#userPresetList button[data-id="smoke-8580"]');
+    await preset.waitFor();
+    const presetStarted = Date.now();
+    await preset.click();
+    await page.waitForFunction(() => {
+      const status = document.querySelector('#sidEngineStatus')?.textContent || '';
+      return document.querySelector('#chip')?.value === '8580'
+        && /8580.*ready/i.test(status)
+        && document.querySelector('#presetDialog')?.open === false;
+    }, null, { timeout: 25000 });
+    console.log(engine + ' 8580 user preset loaded in ' + (Date.now() - presetStarted) + ' ms');
+    assert.equal(await page.locator('#chip').inputValue(), '8580');
+    // Switching back must still recover the original engine.
+    await switchModel(6581);
     assert.equal(errors.length, 0, 'Unexpected JavaScript errors: ' + errors.join('; '));
     console.log('PASS ' + engine + ': tabs, visibility, keyboard toggle');
     await context.close();
