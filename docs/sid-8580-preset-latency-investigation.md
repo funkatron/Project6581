@@ -34,6 +34,12 @@ The test records **initialization time**, not note-on-to-speaker latency. Headle
 
 The full switch samples were Chromium 8580 [335,335,332], 6581 [331,328,332,350]; WebKit 8580 [504,440,506], 6581 [492,529,471,505]. Both browsers passed. These measurements are browser/UI readiness times and cannot establish audible latency. The single user-preset sample per browser does not justify a stable preset-versus-model-switch ratio.
 
+## Repeated-fetch verification and intermittent WebKit failure
+
+Run 43138664993 confirmed **one additional `dist/residfp.wasm` resource fetch on every measured 6581/8580 switch** in both Chromium and WebKit. Chromium passed all switches. WebKit passed several switches, then stalled during a final switch to 8580; the page/context was closed before the readiness wait completed. This is a real automated regression signal, but the available log does not yet distinguish engine stall from browser crash, test timeout or runner resource pressure. Do not infer the exact cause.
+
+The harness now logs browser crashes, console errors, and a status/LED/spinner snapshot on timeout. Retest before changing production audio behavior.
+
 ## Follow-up after baseline
 
 - If a model-changing preset leaves the new context suspended, investigate an explicit user-activation handoff without weakening the existing cleanup serialization or opening multiple contexts.
