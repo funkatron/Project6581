@@ -1,0 +1,39 @@
+name: SID startup latency diagnostic
+on:
+  push:
+    branches: [perf/cache-sid-wasm-by-build]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  startup-latency:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/cache@v4
+        id: sid-cache
+        with:
+          path: dist/residfp.wasm
+          key: sid-wasm-emsdk-4.0.15-linux-v1-${{ hashFiles('scripts/build-residfp.sh', 'native/**') }}
+      - uses: mymindstorm/setup-emsdk@v14
+        if: steps.sid-cache.outputs.cache-hit != 'true'
+        with:
+          version: '4.0.15'
+      - if: steps.sid-cache.outputs.cache-hit != 'true'
+        run: sudo apt-get update && sudo apt-get install -y autoconf automake libtool pkg-config
+      - if: steps.sid-cache.outputs.cache-hit != 'true'
+        run: bash scripts/build-residfp.sh
+      - run: node scripts/stamp-build.mjs
+      - run: npm install --no-save --no-package-lock playwright@1.56.1
+      - run: npx playwright install --with-deps webkit
+      - run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/sid-server.log 2>&1 &
+      - run: BROWSER=webkit node scripts/browser-startup-latency.mjs
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sid-startup-server-log
+          path: /tmp/sid-server.log
