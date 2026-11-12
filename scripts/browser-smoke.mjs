@@ -37,12 +37,19 @@ for (const engine of engines) {
     await page.locator('#keyboardToggle').click();
     assert.equal(await page.locator('#keyboardToggle').getAttribute('aria-expanded'), 'true');
     // The engine must actually finish initialization, not merely display its UI.
-    await page.waitForFunction(() => {
-      const text = document.querySelector('#sidEngineStatus')?.textContent || '';
-      return /ready|unavailable|failed|error/i.test(text);
-    }, null, { timeout: 20000 });
-    const status = await page.locator('#sidEngineStatus').textContent();
-    assert.match(status, /ready/i, 'SID engine did not become ready: ' + status);
+    const waitReady = async (model, timeout = 25000) => {
+      await page.waitForFunction(expected => {
+        const status = document.querySelector('#sidEngineStatus')?.textContent || '';
+        const led = document.querySelector('#sidLed')?.dataset.state;
+        return (led === 'on' || led === 'ready') &&
+          (status.includes(String(expected)) || status.includes('SID ready'));
+      }, model, { timeout });
+      const state = await page.locator('#sidLed').getAttribute('data-state');
+      const status = await page.locator('#sidEngineStatus').textContent();
+      console.log(engine + ' SID ' + model + ': LED=' + state + '; ' + status);
+      assert.ok(['on', 'ready'].includes(state), 'SID failed to initialize: ' + status);
+    };
+    await waitReady(6581);
     // Exercise the model-switch lifecycle that historically stalled in Safari.
     // This measures engine readiness, not physical speaker latency.
     const switchModel = async model => {
@@ -50,9 +57,12 @@ for (const engine of engines) {
       await page.locator('#chip').selectOption(String(model));
       await page.waitForFunction(expected => {
         const status = document.querySelector('#sidEngineStatus')?.textContent || '';
-        return status.includes(String(expected)) && /ready/i.test(status)
-          && !document.querySelector('#chip')?.disabled;
+        const led = document.querySelector('#sidLed')?.dataset.state;
+        return (led === 'on' || led === 'ready') &&
+          status.includes(String(expected)) &&
+          !document.querySelector('#chip')?.disabled;
       }, model, { timeout: 25000 });
+      await waitReady(model);
       const elapsed = Date.now() - started;
       console.log(engine + ' SID ' + model + ' model switch ready in ' + elapsed + ' ms');
       assert.equal(await page.locator('#chip').inputValue(), String(model));
@@ -70,7 +80,7 @@ for (const engine of engines) {
       }));
     });
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.waitForFunction(() => /ready/i.test(document.querySelector('#sidEngineStatus')?.textContent || ''), null, { timeout: 20000 });
+    await waitReady(6581);
     await page.locator('#presetOpen').click();
     const preset = page.locator('#userPresetList button[data-id="smoke-8580"]');
     await preset.waitFor();
@@ -79,10 +89,13 @@ for (const engine of engines) {
     await page.waitForFunction(() => {
       const status = document.querySelector('#sidEngineStatus')?.textContent || '';
       return document.querySelector('#chip')?.value === '8580'
-        && /8580.*ready/i.test(status)
+        && (document.querySelector('#sidLed')?.dataset.state === 'on'
+          || document.querySelector('#sidLed')?.dataset.state === 'ready')
+        && status.includes('8580')
         && document.querySelector('#presetDialog')?.open === false;
     }, null, { timeout: 25000 });
     console.log(engine + ' 8580 user preset loaded in ' + (Date.now() - presetStarted) + ' ms');
+    await waitReady(8580);
     assert.equal(await page.locator('#chip').inputValue(), '8580');
     // Switching back must still recover the original engine.
     await switchModel(6581);
