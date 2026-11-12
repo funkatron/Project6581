@@ -14,9 +14,10 @@ for (const engine of engines) {
     const page = await context.newPage();
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    page.on('crash', () => errors.push('Browser page crashed'));
+    page.on('crash', () => { errors.push('Browser page crashed'); console.error(engine + ' browser page CRASHED'); });
     page.on('close', () => console.log(engine + ' page closed'));
     page.on('console', message => { if (message.type() === 'error') console.log(engine + ' console error: ' + message.text()); });
+    console.log(engine + ' browser launched; pid=' + (browser.process()?.pid ?? 'unknown'));
     await page.goto(url, { waitUntil: 'domcontentloaded' });
     await page.locator('#tabLfos').click();
     assert.equal(await page.locator('#workspace').getAttribute('data-tab'), 'lfos');
@@ -64,6 +65,7 @@ for (const engine of engines) {
     // This measures engine readiness, not physical speaker latency.
     const switchModel = async model => {
       const wasmBefore = await wasmFetches();
+      console.log(engine + ' switching SID to ' + model + '; WASM fetches before=' + wasmBefore);
       const started = Date.now();
       await page.locator('#chip').selectOption(String(model));
       try {
