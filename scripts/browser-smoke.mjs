@@ -46,7 +46,8 @@ for (const engine of engines) {
       }, model, { timeout });
       const state = await page.locator('#sidLed').getAttribute('data-state');
       const status = await page.locator('#sidEngineStatus').textContent();
-      console.log(engine + ' SID ' + model + ': LED=' + state + '; ' + status);
+      const activation = state === 'on' ? 'running' : 'suspended';
+      console.log(engine + ' SID ' + model + ': activation=' + activation + '; ' + status);
       assert.ok(['on', 'ready'].includes(state), 'SID failed to initialize: ' + status);
     };
     await waitReady(6581);
