@@ -24,6 +24,16 @@ The optional browser smoke workflow now:
 
 The test records **initialization time**, not note-on-to-speaker latency. Headless WebKit is not physical iPad Safari. Any transition from a running engine to a suspended engine after a model-changing preset is evidence to investigate, not proof of audible latency.
 
+## Measured baseline (GitHub Actions Ubuntu 24.04, run 43138437023)
+
+| Operation | Chromium | WebKit |
+|---|---:|---:|
+| 6581 → 8580 (3 samples, median) | 335 ms | 504 ms |
+| 8580 → 6581 (4 samples, median) | 332 ms | 505 ms |
+| Load 8580 user preset (one sample) | 371 ms | 959 ms |
+
+The full switch samples were Chromium 8580 [335,335,332], 6581 [331,328,332,350]; WebKit 8580 [504,440,506], 6581 [492,529,471,505]. Both browsers passed. These measurements are browser/UI readiness times and cannot establish audible latency. The single user-preset sample per browser does not justify a stable preset-versus-model-switch ratio.
+
 ## Follow-up after baseline
 
 - If a model-changing preset leaves the new context suspended, investigate an explicit user-activation handoff without weakening the existing cleanup serialization or opening multiple contexts.
