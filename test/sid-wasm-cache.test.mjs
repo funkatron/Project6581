@@ -40,3 +40,38 @@ test('rejects unsupported WASM imports', async () => {
   };
   await assert.rejects(loadSidWasm('test-imports.wasm',deps),/unsupported imports/);
 });
+
+test('stalled fetch times out, aborts, and next attempt refetches', async () => {
+  let fetches=0, aborted=false, fireTimeout;
+  const deps={
+    fetchImpl:async (_url,{signal})=>{
+      fetches++;
+      if(fetches===1){signal.addEventListener('abort',()=>{aborted=true});return new Promise(()=>{});}
+      return {ok:true,arrayBuffer:async()=>new ArrayBuffer(8)};
+    },
+    compile:async()=>({}),imports:()=>[],
+    setTimer:callback=>{fireTimeout=callback;return 1;},
+    clearTimer:()=>{}
+  };
+  const first=loadSidWasm('test-timeout.wasm',deps);
+  fireTimeout();
+  await assert.rejects(first,/timed out/);
+  assert.equal(aborted,true);
+  await loadSidWasm('test-timeout.wasm',deps);
+  assert.equal(fetches,2);
+});
+
+test('each audio processor can transfer a distinct copy of cached bytes', async () => {
+  let fetches=0;
+  const deps={
+    fetchImpl:async()=>{fetches++;return {ok:true,arrayBuffer:async()=>new Uint8Array([1,2,3]).buffer};},
+    compile:async()=>({}),imports:()=>[]
+  };
+  const [a,b]=await Promise.all([loadSidWasm('test-transfer.wasm',deps),loadSidWasm('test-transfer.wasm',deps)]);
+  const copy=a.slice(0);
+  const first=structuredClone(copy,{transfer:[copy]});
+  const second=b.slice(0);
+  assert.deepEqual([...new Uint8Array(first)],[1,2,3]);
+  assert.deepEqual([...new Uint8Array(second)],[1,2,3]);
+  assert.equal(fetches,1);
+});
