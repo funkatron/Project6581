@@ -52,9 +52,12 @@ for (const engine of engines) {
     };
     await waitReady(6581);
     const timings = { to8580: [], to6581: [], preset8580: [] };
+    const wasmFetches = async () => page.evaluate(() => performance.getEntriesByType('resource')
+      .filter(entry => entry.name.includes('/dist/residfp.wasm')).length);
     // Exercise the model-switch lifecycle that historically stalled in Safari.
     // This measures engine readiness, not physical speaker latency.
     const switchModel = async model => {
+      const wasmBefore = await wasmFetches();
       const started = Date.now();
       await page.locator('#chip').selectOption(String(model));
       await page.waitForFunction(expected => {
@@ -66,6 +69,8 @@ for (const engine of engines) {
       }, model, { timeout: 25000 });
       await waitReady(model);
       const elapsed = Date.now() - started;
+      const wasmAfter = await wasmFetches();
+      console.log(engine + ' SID ' + model + ' additional WASM resource fetches: ' + (wasmAfter - wasmBefore));
       timings[model === 8580 ? 'to8580' : 'to6581'].push(elapsed);
       console.log(engine + ' SID ' + model + ' model switch ready in ' + elapsed + ' ms');
       assert.equal(await page.locator('#chip').inputValue(), String(model));
