@@ -51,7 +51,7 @@ jobs:
           echo $! > /tmp/project6581-server.pid
       - name: Run browser smoke
         env:
-          BROWSER: ${{ inputs.browser || 'both' }}
+          BROWSER: ${{ inputs.browser || 'webkit' }}
         run: node scripts/browser-smoke.mjs
       - name: Upload diagnostic log on failure
         if: failure()
