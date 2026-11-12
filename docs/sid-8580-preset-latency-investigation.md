@@ -7,6 +7,12 @@
 - The status UI distinguishes an initialized, suspended SID (`sidLed[data-state="ready"]`) from a running one (`sidLed[data-state="on"]`). A browser smoke must not interpret "ready" as audible playback.
 - The prior diagnostic note-to-worklet acknowledgments are not physical key-to-speaker latency measurements.
 
+## Additional performance hypothesis
+
+Every call to `createReSidFpAudio` currently generates a fresh `Date.now()` URL query for the worklet and WASM, fetches WASM with `cache: 'no-store'`, and invokes `WebAssembly.compile(bytes)`. Consequently, switching SID models repeatedly can repeat network retrieval, worklet module loading and WASM compilation even though the binary is unchanged. This is a concrete source of *avoidable initialization work*, not evidence of note-to-speaker latency.
+
+Potential optimization after timing baselines: cache the fetched/compiled WASM module by build ID and reuse a stable worklet URL per build where supported, while keeping a new AudioContext/worklet processor for each model and preserving current cleanup/rollback behavior. Measure cold versus warm switch timings first; avoid changing the production engine in this testing PR.
+
 ## Bounded automated reproduction
 
 The optional browser smoke workflow now:
