@@ -1,5 +1,23 @@
 import {closeSidContext} from './sid-audio-lifecycle.js?v=__BUILD_ID__';
 import {createSidWriteBatcher} from './sid-write-batcher.js?v=__BUILD_ID__';
+// Reuse a validated binary for the lifetime of this build. A failed request is
+// evicted so Retry can fetch again. Each worklet gets its own transferable copy.
+let sidWasmBytesPromise = null;
+async function getSidWasmBytes() {
+  if (!sidWasmBytesPromise) {
+    sidWasmBytesPromise = (async () => {
+      const response = await fetch('./dist/residfp.wasm?v=__BUILD_ID__', {cache:'no-store'});
+      if (!response.ok) throw Error('reSIDfp WASM unavailable (build artifact not deployed)');
+      const bytes = await response.arrayBuffer();
+      const imports = WebAssembly.Module.imports(await WebAssembly.compile(bytes));
+      const unsupported = imports.filter(({module,name}) => module==='env' && /^invoke_|^dynCall_/.test(name));
+      if (unsupported.length) throw Error('Downloaded WASM has unsupported imports: ' +
+        unsupported.map(x => x.module+'.'+x.name).join(', ') + '. The deployed binary is incompatible.');
+      return bytes;
+    })().catch(error => { sidWasmBytesPromise = null; throw error; });
+  }
+  return sidWasmBytesPromise;
+}
 // Preload on page load; unlock audio separately during a trusted user gesture.
 export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=()=>{},onProgress=()=>{},eventLog=null,contextId=null,context=new AudioContext({latencyHint:'interactive'})}={}){
   let node=null,batcher=null,closed=false;
@@ -16,7 +34,7 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
     // Desktop browsers may permit autoplay. Never await this promise:
     // Safari can leave it pending until a trusted gesture occurs.
     void context.resume().catch(()=>{});
-    const version=Date.now().toString(36);
+    const version='__BUILD_ID__';
     const deadline=async(promise,label)=>{
       let timer;
       try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label+' timed out after 15 seconds')),15000)})])}
@@ -24,14 +42,9 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
     };
     onProgress('Loading SID audio worklet…');
     await deadline(context.audioWorklet.addModule('./src/residfp-worklet.js?v='+version),'Audio worklet loading');
-    onProgress('Downloading SID engine…');
-    const response=await deadline(fetch('./dist/residfp.wasm?v='+version,{cache:'no-store',signal:download.signal}),'SID engine download');
-    if(!response.ok)throw Error('reSIDfp WASM unavailable (build artifact not deployed)');
-    const bytes=await deadline(response.arrayBuffer(),'SID engine download');
-    onProgress('Compiling SID engine…');
-    const imports=WebAssembly.Module.imports(await deadline(WebAssembly.compile(bytes),'SID engine compilation'));
-    const unsupported=imports.filter(({module,name})=>module==='env'&&/^invoke_|^dynCall_/.test(name));
-    if(unsupported.length)throw Error('Downloaded WASM has unsupported imports: '+unsupported.map(x=>x.module+'.'+x.name).join(', ')+'. The deployed binary is incompatible.');
+    onProgress('Preparing SID engine…');
+    // Clone before transfer: transferring the cached source would detach it.
+    const bytes=(await deadline(getSidWasmBytes(),'SID engine preparation')).slice(0);
     onProgress('Initializing SID audio processor…');
     node=new AudioWorkletNode(context,'residfp-processor',{outputChannelCount:[2]});
     node.connect(context.destination);
