@@ -51,6 +51,7 @@ for (const engine of engines) {
       assert.ok(['on', 'ready'].includes(state), 'SID failed to initialize: ' + status);
     };
     await waitReady(6581);
+    const timings = { to8580: [], to6581: [], preset8580: [] };
     // Exercise the model-switch lifecycle that historically stalled in Safari.
     // This measures engine readiness, not physical speaker latency.
     const switchModel = async model => {
@@ -65,6 +66,7 @@ for (const engine of engines) {
       }, model, { timeout: 25000 });
       await waitReady(model);
       const elapsed = Date.now() - started;
+      timings[model === 8580 ? 'to8580' : 'to6581'].push(elapsed);
       console.log(engine + ' SID ' + model + ' model switch ready in ' + elapsed + ' ms');
       assert.equal(await page.locator('#chip').inputValue(), String(model));
     };
@@ -95,11 +97,28 @@ for (const engine of engines) {
         && status.includes('8580')
         && document.querySelector('#presetDialog')?.open === false;
     }, null, { timeout: 25000 });
-    console.log(engine + ' 8580 user preset loaded in ' + (Date.now() - presetStarted) + ' ms');
+    const presetElapsed = Date.now() - presetStarted;
+    timings.preset8580.push(presetElapsed);
+    console.log(engine + ' 8580 user preset loaded in ' + presetElapsed + ' ms');
     await waitReady(8580);
     assert.equal(await page.locator('#chip').inputValue(), '8580');
     // Switching back must still recover the original engine.
     await switchModel(6581);
+    // Repeat both directions to reveal cold-start effects and intermittent stalls.
+    for (let repetition = 0; repetition < 2; repetition++) {
+      await switchModel(8580);
+      await switchModel(6581);
+    }
+    const summary = Object.fromEntries(Object.entries(timings).map(([operation, values]) => [
+      operation, {
+        count: values.length,
+        minMs: Math.min(...values),
+        medianMs: [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)],
+        maxMs: Math.max(...values),
+        samplesMs: values
+      }
+    ]));
+    console.log('SID_TIMING_SUMMARY ' + JSON.stringify({ browser: engine, ...summary }));
     assert.equal(errors.length, 0, 'Unexpected JavaScript errors: ' + errors.join('; '));
     console.log('PASS ' + engine + ': tabs, visibility, keyboard toggle');
     await context.close();
