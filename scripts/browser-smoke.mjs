@@ -17,7 +17,7 @@ for (const engine of engines) {
     page.on('crash', () => { errors.push('Browser page crashed'); console.error(engine + ' browser page CRASHED'); });
     page.on('close', () => console.log(engine + ' page closed'));
     page.on('console', message => { if (message.type() === 'error') console.log(engine + ' console error: ' + message.text()); });
-    console.log(engine + ' browser launched; pid=' + (browser.process()?.pid ?? 'unknown'));
+    console.log(engine + ' browser launched');
     await page.goto(url, { waitUntil: 'domcontentloaded' });
     await page.locator('#tabLfos').click();
     assert.equal(await page.locator('#workspace').getAttribute('data-tab'), 'lfos');
