@@ -14,6 +14,9 @@ for (const engine of engines) {
     const page = await context.newPage();
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
+    page.on('crash', () => errors.push('Browser page crashed'));
+    page.on('close', () => console.log(engine + ' page closed'));
+    page.on('console', message => { if (message.type() === 'error') console.log(engine + ' console error: ' + message.text()); });
     await page.goto(url, { waitUntil: 'domcontentloaded' });
     await page.locator('#tabLfos').click();
     assert.equal(await page.locator('#workspace').getAttribute('data-tab'), 'lfos');
@@ -60,13 +63,27 @@ for (const engine of engines) {
       const wasmBefore = await wasmFetches();
       const started = Date.now();
       await page.locator('#chip').selectOption(String(model));
-      await page.waitForFunction(expected => {
-        const status = document.querySelector('#sidEngineStatus')?.textContent || '';
-        const led = document.querySelector('#sidLed')?.dataset.state;
-        return (led === 'on' || led === 'ready') &&
-          status.includes(String(expected)) &&
-          !document.querySelector('#chip')?.disabled;
-      }, model, { timeout: 25000 });
+      try {
+        await page.waitForFunction(expected => {
+          const status = document.querySelector('#sidEngineStatus')?.textContent || '';
+          const led = document.querySelector('#sidLed')?.dataset.state;
+          return (led === 'on' || led === 'ready') &&
+            status.includes(String(expected)) &&
+            !document.querySelector('#chip')?.disabled;
+        }, model, { timeout: 25000 });
+      } catch (error) {
+        if (!page.isClosed()) {
+          const snapshot = await page.evaluate(() => ({
+            status: document.querySelector('#sidEngineStatus')?.textContent,
+            led: document.querySelector('#sidLed')?.dataset.state,
+            selectedModel: document.querySelector('#chip')?.value,
+            spinnerHidden: document.querySelector('#sidSpinner')?.hidden,
+            timingReport: document.querySelector('#audioTimingDetails')?.textContent?.slice(0, 3000)
+          })).catch(e => ({ snapshotError: e.message }));
+          console.error(engine + ' stalled SID switch ' + model + ': ' + JSON.stringify(snapshot));
+        }
+        throw error;
+      }
       await waitReady(model);
       const elapsed = Date.now() - started;
       const wasmAfter = await wasmFetches();
