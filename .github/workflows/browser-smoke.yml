@@ -1,5 +1,7 @@
 name: Optional browser smoke
 on:
+  pull_request:
+    types: [ready_for_review]
   workflow_dispatch:
     inputs:
       browser:
@@ -11,6 +13,8 @@ permissions:
   contents: read
 jobs:
   smoke:
+    # A one-time PR validation can be started by marking a draft ready.
+    # Subsequent commits do not rerun the expensive browser suite.
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
