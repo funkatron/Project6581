@@ -76,6 +76,7 @@ async function bridgeHarness(){
  class Node{constructor(){node=this;this.port={postMessage:m=>messages.push(m),close(){}}}connect(){}disconnect(){}}
  const scope=vm.createContext({AbortController,AudioWorkletNode:Node,closeSidContext,setTimeout,clearTimeout,
   createSidWriteBatcher:post=>createSidWriteBatcher(post,job=>jobs.push(job)),performance:{now:()=>time},
+  loadSidWasm:async()=>new ArrayBuffer(8),
   fetch:async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(0)}),WebAssembly:{compile:async()=>({}),Module:{imports:()=>[]}}});
  const source=readFileSync(new URL('../src/create-residfp-audio.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replace('export async function','async function');
  vm.runInContext(source,scope);const audio=await scope.createReSidFpAudio({context,eventLog,contextId:7});

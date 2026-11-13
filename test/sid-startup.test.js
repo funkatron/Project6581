@@ -139,7 +139,8 @@ test('bridge forwards progress/errors, preserves note flushing and silences obso
  const source=readFileSync(new URL('../src/create-residfp-audio.js',import.meta.url),'utf8')
   .replace(/^import .*;\n/gm,'').replace('export async function','async function');
  const scope=vm.createContext({AbortController,AudioWorkletNode:Node,createSidWriteBatcher,closeSidContext,setTimeout,clearTimeout,
-  performance,fetch:async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(0)}),WebAssembly:{compile:async()=>({}),Module:{imports:()=>[]}}});
+  performance,loadSidWasm:async()=>new ArrayBuffer(8),
+  fetch:async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(0)}),WebAssembly:{compile:async()=>({}),Module:{imports:()=>[]}}});
  vm.runInContext(source,scope);
  const audio=await scope.createReSidFpAudio({context,onStatus:e=>statuses.push(e),onProgress:m=>progress.push(m)});
  const old=node.port.onmessage;
