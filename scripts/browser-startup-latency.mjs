@@ -8,6 +8,12 @@ try{
   const context=await browser.newContext({viewport:{width:820,height:1180},hasTouch:true,isMobile:engine===webkit});
   const page=await context.newPage();
   page.on('pageerror',e=>console.error(path,'pageerror',e.message));
+  await page.addInitScript(() => {
+   const NativeAudioContext=window.AudioContext;
+   window.AudioContext=class extends NativeAudioContext {
+    constructor(...args){super(...args);window.__sidDiagnosticContext=this}
+   };
+  });
   await page.goto('http://127.0.0.1:8765/');
   const presetSettings=await page.evaluate(async()=>{
    const {defaultPresetSettings}=await import('./src/preset-library.js');
@@ -31,18 +37,42 @@ try{
   try { await page.waitForFunction(()=>document.querySelector('#chip')?.value==='8580'&&['ready','on'].includes(document.querySelector('#sidLed')?.dataset.state),null,{timeout:30000}); }
   catch(error){console.error('PRESET_LOAD_DIAGNOSTIC',JSON.stringify(await page.evaluate(()=>({chip:document.querySelector('#chip')?.value,led:document.querySelector('#sidLed')?.dataset.state,status:document.querySelector('#sidEngineStatus')?.textContent,preset:document.querySelector('#presetStatus')?.textContent,startup:document.querySelector('#audioTimingSummary')?.textContent}))));throw error;}
   console.log('PRESET_LOADED',path,JSON.stringify(await page.evaluate(()=>({chip:document.querySelector('#chip')?.value,led:document.querySelector('#sidLed')?.dataset.state,status:document.querySelector('#sidEngineStatus')?.textContent}))));
-  const initial=await page.evaluate(()=>({led:document.querySelector('#sidLed')?.dataset.state,status:document.querySelector('#sidEngineStatus')?.textContent}));
-  console.log(path,'initial',JSON.stringify(initial));
+  // Both paths MUST begin with a genuinely suspended AudioContext.
+  await page.evaluate(async()=>{await window.__sidDiagnosticContext.suspend()});
+  const initial=await page.evaluate(()=>({
+   state:window.__sidDiagnosticContext.state,
+   currentTime:window.__sidDiagnosticContext.currentTime,
+   led:document.querySelector('#sidLed')?.dataset.state,
+   status:document.querySelector('#sidEngineStatus')?.textContent
+  }));
+  if(initial.state!=='suspended')throw new Error('Invalid diagnostic: context not suspended');
+  console.log('SUSPENDED_CONTEXT',path,JSON.stringify(initial));
+  // Enable the application's existing diagnostics before sending the first note.
+  await page.locator('#sidEventLogging').check();
+  await page.locator('#audioTimingDetails').evaluate(el=>{el.open=true;el.dispatchEvent(new Event('toggle'))});
   if(path==='enable-audio-first'){
-   const unlock=page.locator('#sidUnlock');
-   if(await unlock.isVisible())await unlock.click();
-   await page.waitForFunction(()=>document.querySelector('#sidLed')?.dataset.state==='on',null,{timeout:10000});
+   await page.locator('#sidUnlock').click();
+   await page.waitForFunction(()=>window.__sidDiagnosticContext.state==='running',null,{timeout:10000});
   }
+  const before=await page.evaluate(()=>({state:window.__sidDiagnosticContext.state,audioTime:window.__sidDiagnosticContext.currentTime,wallTime:performance.now()}));
   const key=page.locator('#keyboard .key').first();
-  await key.dispatchEvent('pointerdown',{pointerId:1,bubbles:true});
+  await key.scrollIntoViewIfNeeded();
+  const rect=await key.boundingBox();
+  if(!rect)throw new Error('Keyboard key not visible');
+  await page.touchscreen.tap(rect.x+rect.width/2,rect.y+rect.height/2);
   await page.waitForTimeout(900);
-  const snapshot=await page.evaluate(()=>({led:document.querySelector('#sidLed')?.dataset.state,status:document.querySelector('#sidEngineStatus')?.textContent,playback:document.querySelector('#sidPlaybackStatus')?.textContent,timing:document.querySelector('#audioTimingDetails')?.textContent?.slice(0,2000)}));
-  console.log('STARTUP_PATH_DIAGNOSTIC',JSON.stringify({path,initial,snapshot}));
+  const snapshot=await page.evaluate(()=>({
+   state:window.__sidDiagnosticContext.state,
+   audioTime:window.__sidDiagnosticContext.currentTime,
+   wallTime:performance.now(),
+   led:document.querySelector('#sidLed')?.dataset.state,
+   status:document.querySelector('#sidEngineStatus')?.textContent,
+   playback:document.querySelector('#sidPlaybackStatus')?.textContent,
+   timing:document.querySelector('#audioTimingSummary')?.textContent?.slice(0,3000),
+   eventLog:document.querySelector('#sidEventLogging')?.checked
+  }));
+  if(snapshot.state!=='running')throw new Error('Audio context did not resume: '+JSON.stringify(snapshot));
+  console.log('STARTUP_PATH_DIAGNOSTIC',JSON.stringify({path,initial,before,snapshot}));
   await context.close();
  }
 }finally{await browser.close()}
