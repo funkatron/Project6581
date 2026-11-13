@@ -9,7 +9,7 @@ try{
   const page=await context.newPage();
   page.on('pageerror',e=>console.error(path,'pageerror',e.message));
   await page.goto('http://127.0.0.1:8765/');
-  await page.evaluate(async()=>{
+  const presetSettings=await page.evaluate(async()=>{
    const {defaultPresetSettings}=await import('./src/preset-library.js');
    const settings=defaultPresetSettings();
    settings.sound.model=8580;
@@ -23,13 +23,14 @@ try{
    ];
    settings.performance.masterBpm=86;
    Object.assign(settings.performance.game,{enabled:true,style:'custom',rate:4,sequence:{length:16,steps:[0,-7,-6,0,0,4,0,-5,0,3,7,12,1,3,-12,-2].map(offset=>({offset,gate:true,duration:75}))}});
-   localStorage.setItem('project6581.user-presets.v4',JSON.stringify({version:4,presets:[{id:'fnk-latency',name:'FNK Deep Bass diagnostic',settings}]}));
+   return settings;
   });
-  await page.reload();
-  await page.waitForFunction(()=>['ready','on'].includes(document.querySelector('#sidLed')?.dataset.state),null,{timeout:30000});
   await page.locator('#presetOpen').click();
-  await page.locator('#userPresetList button[data-id="fnk-latency"]').click();
-  await page.waitForFunction(()=>document.querySelector('#chip')?.value==='8580'&&['ready','on'].includes(document.querySelector('#sidLed')?.dataset.state),null,{timeout:30000});
+  await page.locator('#presetFile').setInputFiles({name:'fnk-deep-bass.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({type:'project6581-preset',version:4,preset:{name:'FNK Deep Bass',settings:presetSettings}}))});
+  await page.locator('#userPresetList button').filter({hasText:'FNK Deep Bass'}).click();
+  try { await page.waitForFunction(()=>document.querySelector('#chip')?.value==='8580'&&['ready','on'].includes(document.querySelector('#sidLed')?.dataset.state),null,{timeout:30000}); }
+  catch(error){console.error('PRESET_LOAD_DIAGNOSTIC',JSON.stringify(await page.evaluate(()=>({chip:document.querySelector('#chip')?.value,led:document.querySelector('#sidLed')?.dataset.state,status:document.querySelector('#sidEngineStatus')?.textContent,preset:document.querySelector('#presetStatus')?.textContent,startup:document.querySelector('#audioTimingSummary')?.textContent}))));throw error;}
+  console.log('PRESET_LOADED',path,JSON.stringify(await page.evaluate(()=>({chip:document.querySelector('#chip')?.value,led:document.querySelector('#sidLed')?.dataset.state,status:document.querySelector('#sidEngineStatus')?.textContent}))));
   const initial=await page.evaluate(()=>({led:document.querySelector('#sidLed')?.dataset.state,status:document.querySelector('#sidEngineStatus')?.textContent}));
   console.log(path,'initial',JSON.stringify(initial));
   if(path==='enable-audio-first'){
