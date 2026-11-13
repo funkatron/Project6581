@@ -48,8 +48,8 @@ try{
   if(initial.state!=='suspended')throw new Error('Invalid diagnostic: context not suspended');
   console.log('SUSPENDED_CONTEXT',path,JSON.stringify(initial));
   // Enable the application's existing diagnostics before sending the first note.
+  await page.locator('#audioTimingDetails > summary').click();
   await page.locator('#sidEventLogging').check();
-  await page.locator('#audioTimingDetails').evaluate(el=>{el.open=true;el.dispatchEvent(new Event('toggle'))});
   if(path==='enable-audio-first'){
    await page.locator('#sidUnlock').click();
    await page.waitForFunction(()=>window.__sidDiagnosticContext.state==='running',null,{timeout:10000});
