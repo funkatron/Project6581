@@ -1,0 +1,182 @@
+{
+  "type": "project6581-preset",
+  "version": 4,
+  "preset": {
+    "name": "FNK Deep Bass",
+    "settings": {
+      "sound": {
+        "model": 8580,
+        "voice": {
+          "enabled": true,
+          "wave": "square",
+          "attack": 0,
+          "decay": 1.36,
+          "sustain": 0,
+          "release": 0.01,
+          "pulse": 76,
+          "pwmDepth": 7,
+          "pwmRate": 2.7,
+          "pitchEnvelope": {
+            "enabled": false,
+            "interpolation": "linear",
+            "end": "zero",
+            "points": [
+              {
+                "ms": 0,
+                "semitones": 0
+              }
+            ]
+          }
+        },
+        "instrument": {
+          "voiceCount": 8,
+          "unisonCount": 8,
+          "mode": "legato",
+          "detune": 7
+        },
+        "filter": {
+          "cutoff": 1230,
+          "resonance": 100,
+          "volume": 80,
+          "mode": "lowpass"
+        },
+        "lfos": [
+          {
+            "enabled": true,
+            "sync": true,
+            "wave": "sine",
+            "rate": 1,
+            "syncDivision": 0.5,
+            "depth": 0.14,
+            "target": "cutoff",
+            "phase": 0,
+            "seed": 0
+          },
+          {
+            "enabled": true,
+            "sync": true,
+            "wave": "sine",
+            "rate": 1,
+            "syncDivision": 4,
+            "depth": 0.38,
+            "target": "pulse",
+            "phase": 0,
+            "seed": 1
+          },
+          {
+            "enabled": true,
+            "sync": true,
+            "wave": "sine",
+            "rate": 1,
+            "syncDivision": 0.25,
+            "depth": 0.6,
+            "target": "decay",
+            "phase": 0,
+            "seed": 2
+          }
+        ]
+      },
+      "performance": {
+        "masterBpm": 86,
+        "arp": {
+          "enabled": false,
+          "latch": true,
+          "pattern": "random",
+          "rate": 4,
+          "sync": true,
+          "localBpm": 120
+        },
+        "game": {
+          "enabled": true,
+          "style": "custom",
+          "rate": 4,
+          "sequence": {
+            "length": 16,
+            "steps": [
+              {
+                "offset": 0,
+                "gate": true,
+                "duration": 75
+              },
+              {
+                "offset": -7,
+                "gate": true,
+                "duration": 75
+              },
+              {
+                "offset": -6,
+                "gate": true,
+                "duration": 75
+              },
+              {
+                "offset": 0,
+                "gate": true,
+                "duration": 75
+              },
+              {
+                "offset": 0,
+                "gate": true,
+                "duration": 75
+              },
+              {
+                "offset": 4,
+                "gate": true,
+                "duration": 75
+              },
+              {
+                "offset": 0,
+                "gate": true,
+                "duration": 75
+              },
+              {
+                "offset": -5,
+                "gate": true,
+                "duration": 75
+              },
+              {
+                "offset": 0,
+                "gate": true,
+                "duration": 75
+              },
+              {
+                "offset": 3,
+                "gate": true,
+                "duration": 75
+              },
+              {
+                "offset": 7,
+                "gate": true,
+                "duration": 75
+              },
+              {
+                "offset": 12,
+                "gate": true,
+                "duration": 75
+              },
+              {
+                "offset": 1,
+                "gate": true,
+                "duration": 75
+              },
+              {
+                "offset": 3,
+                "gate": true,
+                "duration": 75
+              },
+              {
+                "offset": -12,
+                "gate": true,
+                "duration": 75
+              },
+              {
+                "offset": -2,
+                "gate": true,
+                "duration": 75
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
