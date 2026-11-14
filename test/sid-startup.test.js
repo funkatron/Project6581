@@ -4,11 +4,12 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {closeSidContext} from '../src/sid-audio-lifecycle.js';
 import {createSidWriteBatcher} from '../src/sid-write-batcher.js';
+import {needsAudioResume} from '../src/sid-note-gate.js';
 
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const startup=html.slice(html.indexOf('function updateSidLed(){'),html.indexOf('async function stopAndSaveRecording(){'))
  .replaceAll('import(', 'loadModule(');
-const unlock=html.slice(html.indexOf('function unlockSidAudio(){'),html.indexOf("document.addEventListener('pointerdown',unlockSidAudio"));
+const unlock=html.slice(html.indexOf('let pendingSidResume=null;'),html.indexOf("document.addEventListener('pointerdown',unlockSidAudio"));
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b});return {promise,resolve,reject}};
 const settle=async()=>{for(let i=0;i<30;i++)await Promise.resolve()};
 
@@ -26,7 +27,7 @@ function app({closeHangs=false,closeRejects=false,moduleHang=false,engineError=f
  }
  const lifecycle=readFileSync(new URL('../src/sid-audio-lifecycle.js',import.meta.url),'utf8').replace('export function','function');
  const statusUi=readFileSync(new URL('../src/sid-engine-status-ui.js',import.meta.url),'utf8').replace(/export function/g,'function');
- const scope=vm.createContext({$,AudioContext:Context,performance:{now:()=>0},
+ const scope=vm.createContext({$,AudioContext:Context,performance:{now:()=>0},needsAudioResume,
   setTimeout(fn,ms){const id=++timerId;timers.set(id,{fn,ms});return id},clearTimeout:id=>timers.delete(id),
   sidAudio:null,sidContext:null,sidController:null,sidRecorder:null,activeSidModel:null,sidStarting:false,
   sidEventLog:{enabled:false,add(){}},sidKeys:0,lfoTimer:1,modulation:null,sidStartupLog:[],audioTiming:{},
