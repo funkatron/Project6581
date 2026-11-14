@@ -438,20 +438,17 @@ function sidMusicalInputBlocked(){
   cleanupBlocked:sidCleanupBlocked
  });
 }
-async function ensureAudibleForNote(meta={}){
-  if(sidMusicalInputBlocked()){
-    if(sidEventLog.enabled)sidEventLog.add('note-skipped',{...meta,reason:'engine busy'});
-    return false;
-  }
-  const context=sidContext;
-  if(context&&needsAudioResume(context.state)){
-    const running=await resumeSidAudio();
-    if(!running||context!==sidContext){
-      if(sidEventLog.enabled)sidEventLog.add('note-skipped',{...meta,reason:'audio not running',contextState:context?.state??'unavailable'});
-      return false;
-    }
-  }
-  return true;
+let sidOutputMuted=false;
+function silenceSidOutput(){
+ panic();
+ sidController?.forceSilent();
+ sidAudio?.noteDispatched?.('silence');
+ sidOutputMuted=true;
+}
+function restoreSidOutput(){
+ if(!sidOutputMuted)return;
+ sidOutputMuted=false;
+ updateSidFilter();
 }
 // Let the browser release export URLs on unload. Safari may still be resolving a download at pagehide.
 let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null,activeSidModel=null;
@@ -545,6 +542,7 @@ for(const [name,id] of [['voice','tabVoice'],['play','tabPlay'],['lfos','tabLfos
 }
 const activeOwners=new Map();
 function play(note,source='key:'+note){
+ restoreSidOutput();
  const eventId=sidEventLog.enabled?sidEventLog.begin('note-command',{note,source,action:'on',inputEventId:sidInputEvent,stepIndex:source==='game'&&activeSeqStep>=0?activeSeqStep:null,contextState:sidContext?.state??'unavailable'}):null;
  const gate=canDispatchNote({
   blocked:sidMusicalInputBlocked(),
@@ -694,7 +692,10 @@ $('seqRun').addEventListener('click',()=>{
 });
 $('seqStop').addEventListener('click',()=>{
  seqPreview=false;$('gameArpOn').checked=false;
- setSeqTransportLabel();restartGenerators();refreshPresetDirty();
+ setSeqTransportLabel();
+ stopGenerators();arp.held.clear();arp.latched.clear();
+ silenceSidOutput();
+ refreshPresetDirty();
 });
 setSeqTransportLabel();
 const gameEnabled=()=>$('gameArpOn').checked;
@@ -799,13 +800,23 @@ function restartGenerators(){
 }
 function gameRestart(){restartGenerators()}
 function arpRestart(){restartGenerators()}
-async function keyDown(note){
+let queuedKeyNotes=[];
+function flushQueuedKeys(){
+ if(sidContext?.state!=='running')return;
+ const notes=queuedKeyNotes;queuedKeyNotes=[];
+ for(const note of notes)beginKey(note);
+}
+function beginKey(note){
  if(sidMusicalInputBlocked()){
   if(sidEventLog.enabled)sidEventLog.add('note-skipped',{note,reason:'engine busy',action:'key-down'});
   return;
  }
- // Await resume from this trusted gesture before flushing registers.
- if(!(await ensureAudibleForNote({note,action:'key-down'})))return;
+ if(sidContext&&needsAudioResume(sidContext.state)){
+  armSidResume();
+  if(!queuedKeyNotes.includes(note))queuedKeyNotes.push(note);
+  if(sidContext.state==='running')flushQueuedKeys();
+  return;
+ }
  if(sidController){sidKeys++;$('sidPlaybackStatus').textContent='SID key presses: '+sidKeys+' · waiting for audio samples…'}
  const hadNotes=activeNotes().length;
  if(!arp.held.has(note)){
@@ -823,6 +834,7 @@ async function keyDown(note){
  if(!hadNotes||(gameEnabled()&&!arpEnabled())||(!game.timer&&!arp.timer))
   restartGenerators();
 }
+function keyDown(note){beginKey(note)}
 function keyUp(note){
  arp.held.delete(note);
  if(directOwned.delete(note))stop(note);
@@ -1024,7 +1036,14 @@ function updateSidActivation(){
  $('sidUnlock').hidden=!shouldShowSidUnlock({contextRetired:sidContextRetired,context:sidContext});
  updateSidLed();
 }
-async function startSid(){
+function refreshEngineStatus(){
+ if(!sidAudio||!sidContext)return;
+ const output=sidContext.outputLatency;
+ const outputLatencyMs=Number.isFinite(output)?output*1000:null;
+ $('sidEngineStatus').textContent=formatActiveSidStatus(sidContext.state,activeSidModel,{afterInit:true,outputLatencyMs});
+ $('sidLatencyStatus').textContent=formatBrowserLatencyStatus(sidContext.baseLatency,output);
+}
+async function startSid({gesture=false}={}){
   if(pendingSidStartup)return pendingSidStartup;
   if(pendingSidClose)return pendingSidClose.then(()=>startSid());
   if(sidAudio)return;
@@ -1047,17 +1066,19 @@ async function startSid(){
   sidStarting=true;button.disabled=true;$('sidSpinner').hidden=false;updateSidLed();
   status.textContent='Loading authentic reSIDfp…';
   try{
-    // Before any await: Retry's click must activate this new context directly.
+    // Retry's click resumes before the first await. Page load must not:
+    // an ungestured resume() can stay pending and block later presses.
     context=new AudioContext({latencyHint:'interactive'});
     sidContext=context;sidContextRetired=false;
-    void context.resume().catch(()=>{});
+    if(gesture)context.resume().catch(()=>{});
     context.onstatechange=()=>{
       if(!current()||sidContext!==context)return;
       trace('Audio context changed to '+context.state+'.');
       sidEventLog.add('context-state',{contextId:attempt,state:context.state,baseLatencyMs:context.baseLatency*1000,outputLatencyMs:Number.isFinite(context.outputLatency)?context.outputLatency*1000:null});
       updateSidActivation();
       if(sidStarting)showSidProgress(sidProgress);
-      else if(sidAudio)status.textContent=formatActiveSidStatus(context.state,activeSidModel);
+      else if(sidAudio)refreshEngineStatus();
+      flushQueuedKeys();
     };
     updateSidActivation();
     progress('Loading SID JavaScript modules…');
@@ -1118,10 +1139,8 @@ async function startSid(){
     audioTiming.baseMs=Number.isFinite(base)?base*1000:null;
     audioTiming.outputMs=Number.isFinite(output)?output*1000:null;
     updateAudioTimingReport();
-    $('sidLatencyStatus').textContent=formatBrowserLatencyStatus(base,output);
     button.hidden=true;button.disabled=false;
-    if(audio.context.state==='suspended'||audio.context.state==='running')
-     status.textContent=formatActiveSidStatus(audio.context.state,activeSidModel,{afterInit:true});
+    if(audio.context.state==='suspended'||audio.context.state==='running')refreshEngineStatus();
   }catch(err){
     // Retire callbacks before cleanup, including delayed resume/port events.
     ++sidAttempt;sidContextRetired=true;
@@ -1172,13 +1191,19 @@ async function ensureSidModel(model){
   if(pendingSidStartup)await pendingSidStartup;
   if(Number($('chip').value)!==model)return; // Another preset was selected meanwhile.
   if(sidAudio&&activeSidModel===model)return;
-  $('sidEngineStatus').textContent='Switching SID to '+model+'…';
-  if(sidAudio){
-    $('recordToggle').disabled=true;
-    await retireSidAudio();
+  if(!sidAudio){
+    await startSid();
+  }else{
+    silenceSidOutput();
+    $('sidEngineStatus').textContent='Switching SID to '+model+'…';
+    await sidAudio.setModel(model);
+    activeSidModel=model;
+    updateSidFilter();
+    sidOutputMuted=false;
+    sidEventLog.add('sid-model',{contextId:sidAttempt,model});
+    refreshEngineStatus();
     updateSidLed();
   }
-  await startSid();
   if(!sidAudio||activeSidModel!==model)
     throw new Error('Unable to start the '+model+' SID engine.');
 }
@@ -1224,32 +1249,25 @@ $('recordToggle').addEventListener('click',async()=>{
   recordBusy=false;$('recordToggle').disabled=false;
  }
 });
-$('sidStart').addEventListener('click',startSid);
+$('sidStart').addEventListener('click',()=>{void startSid({gesture:true})});
 $('sidUnlock').addEventListener('click',unlockSidAudio);
-let pendingSidResume=null;
-function resumeSidAudio(){
+function armSidResume(){
   const context=sidContext,attempt=sidAttempt;
-  if(sidContextRetired||!context)return Promise.resolve(false);
-  if(context.state==='running')return Promise.resolve(true);
-  if(!needsAudioResume(context.state))return Promise.resolve(false);
-  if(pendingSidResume)return pendingSidResume;
-  // Call resume() synchronously inside the trusted gesture for iPad Safari.
-  pendingSidResume=context.resume().then(()=>{
-    if(context!==sidContext||attempt!==sidAttempt)return false;
-    if(sidAudio&&context.state==='running')
-      $('sidEngineStatus').textContent='Authentic reSIDfp active · SID '+activeSidModel+'.';
+  if(sidContextRetired||!context||!needsAudioResume(context.state))return;
+  // Call resume() for this gesture even if an older resume() is still pending.
+  context.resume().then(()=>{
+    if(context!==sidContext||attempt!==sidAttempt)return;
+    if(sidAudio&&context.state==='running')refreshEngineStatus();
     updateSidActivation();
-    return context.state==='running';
+    flushQueuedKeys();
   }).catch(err=>{
-    if(context!==sidContext||attempt!==sidAttempt)return false;
+    if(context!==sidContext||attempt!==sidAttempt)return;
     $('sidEngineStatus').textContent='Tap Enable audio again: '+err.message;
     updateSidActivation();
-    return false;
-  }).finally(()=>{pendingSidResume=null});
-  return pendingSidResume;
+  });
 }
 function unlockSidAudio(){
-  void resumeSidAudio();
+  armSidResume();
 }
 document.addEventListener('pointerdown',unlockSidAudio,{capture:true});
 document.addEventListener('keydown',unlockSidAudio,{capture:true});

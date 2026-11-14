@@ -23,6 +23,10 @@ export class SidRegisters {
     this.controls[voice]=wave|1;this.reg(voice,4,wave);this.reg(voice,4,wave|1);
   }
   noteOff(voice){this.controls[voice]&=~1;this.reg(voice,4,this.controls[voice]);}
+  forceSilent(){
+    for(let voice=0;voice<3;voice++){this.controls[voice]=0;this.reg(voice,4,0)}
+    this.setFilter({cutoff:0,resonance:0,routing:0,mode:'lowpass',volume:0});
+  }
   setFrequency(voice,note){
     if(!Number.isInteger(voice)||voice<0||voice>2)throw new RangeError('voice');
     const freq=freqRegister(midiHz(note),this.clock);

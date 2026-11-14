@@ -19,6 +19,9 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
         this.traceFirstRender=data.traceFirstRender===true;
         this.load(data.bytes,data.model??6581);
       }
+      else if(data?.type==='set-model'){
+        this.switchModel(data.model);
+      }
       else if(data?.type==='event-log-enable'){
         this.eventLogEnabled=data.enabled===true;this.pendingNoteEvents.length=0;
       }
@@ -103,6 +106,19 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       this.exports=e;
       progress('SID chip initialized.');
       this.port.postMessage({type:'ready',renderer:true});
+    }catch(err){this.port.postMessage({type:'error',message:String(err)})}
+  }
+  switchModel(model){
+    const e=this.exports;
+    try{
+      if(!e?.sid_init)throw Error('SID engine is not ready');
+      this.queue.length=0;
+      this.pitchEnvelopes.clear();
+      e.sid_reset?.();
+      if(!e.sid_init(model,sampleRate)){
+        throw Error('SID model switch failed at stage '+(e.sid_init_stage?.()??'unknown'));
+      }
+      this.port.postMessage({type:'model-ready',model});
     }catch(err){this.port.postMessage({type:'error',message:String(err)})}
   }
   // Transfer buffers every ~85 ms at 48 kHz, never posting one message per audio quantum.
