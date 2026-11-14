@@ -1,6 +1,6 @@
-import {closeSidContext} from './sid-audio-lifecycle.js?v=0.1.75+20261114T225410281Z';
-import {loadSidWasm} from './sid-wasm-cache.js?v=0.1.75+20261114T225410281Z';
-import {createSidWriteBatcher} from './sid-write-batcher.js?v=0.1.75+20261114T225410281Z';
+import {closeSidContext} from './sid-audio-lifecycle.js?v=0.1.76+20261114T232926096Z';
+import {loadSidWasm} from './sid-wasm-cache.js?v=0.1.76+20261114T232926096Z';
+import {createSidWriteBatcher} from './sid-write-batcher.js?v=0.1.76+20261114T232926096Z';
 // Preload on page load; unlock audio separately during a trusted user gesture.
 export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=()=>{},onProgress=()=>{},eventLog=null,contextId=null,context=new AudioContext({latencyHint:'interactive'})}={}){
   let node=null,batcher=null,closed=false;
@@ -12,10 +12,9 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
   };
   try {
     onContext(context);
-    // Desktop browsers may permit autoplay. Never await this promise:
-    // Safari can leave it pending until a trusted gesture occurs.
-    void context.resume().catch(()=>{});
-    const version='0.1.75+20261114T225410281Z';
+    // Do not resume here. A resume started outside a user gesture can stay
+    // pending on iPad and swallow later presses that wait on that promise.
+    const version='0.1.76+20261114T232926096Z';
     const deadline=async(promise,label)=>{
       let timer;
       try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label+' timed out after 15 seconds')),15000)})])}
@@ -30,7 +29,7 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
     node=new AudioWorkletNode(context,'residfp-processor',{outputChannelCount:[2]});
     node.connect(context.destination);
     eventLog?.add('sid-worklet-connected',{contextId,model});
-    let capture=null,stopResolve=null,stopReject=null;
+    let capture=null,stopResolve=null,stopReject=null,modelReady=null;
     let probeId=0,lastProbeAt=-Infinity,timingEnabled=false;
     const pendingProbes=new Map(),pendingEvents=new Map();
     let eventLogEnabled=false;
@@ -75,7 +74,16 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
         capture=null;const done=stopResolve;stopResolve=null;stopReject=null;
         done?.();return;
       }
+      if(data?.type==='model-ready'){
+        const pending=modelReady;modelReady=null;
+        pending?.resolve(data.model);
+        return;
+      }
       if(data?.type==='record-started')return;
+      if(data?.type==='error'&&modelReady){
+        const pending=modelReady;modelReady=null;
+        pending.reject(new Error(data.message||'SID model switch failed'));
+      }
       onStatus(data);
     };
     const transferable=bytes.slice(0);
@@ -109,6 +117,19 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
         node.port.postMessage({type:'event-log-enable',enabled:eventLogEnabled});
       },
       write:(register,value)=>batcher.write(register,value),
+      setModel(nextModel){
+        if(closed||!node)return Promise.reject(new Error('SID engine is closed'));
+        return new Promise((resolve,reject)=>{
+          const timer=setTimeout(()=>{
+            if(modelReady){modelReady=null;reject(new Error('SID model switch timed out'))}
+          },4000);
+          modelReady={
+            resolve:model=>{clearTimeout(timer);resolve(model)},
+            reject:error=>{clearTimeout(timer);reject(error)}
+          };
+          node.port.postMessage({type:'set-model',model:nextModel});
+        });
+      },
       startPitchEnvelope(slot,note,envelope){
         if(!Number.isInteger(slot)||slot<0||slot>=8||!Number.isFinite(note))return;
         const register=Math.floor(slot/3)*0x20+(slot%3)*7;
