@@ -31,7 +31,7 @@ Choose **ARP / SEQ** to edit a Game Arp phrase. The new 64C-inspired panel has 1
 - Toggle a step's **gate** to make it play or rest. Adjust **Length** beneath the gate to shorten that step's note (25–100%).
 - Choose **4, 8 or 16 steps** and use the existing **Rate**, **Sync**, and **Latch** controls.
 - Tap **Preview** to hear your custom pattern from the current keyboard octave without holding a key. Playing keys changes the root while previewing. **Stop** ends Game Arp playback. **Reset steps** now makes all 16 steps neutral (0 semitones, every gate on, 75% note length), not a built-in melody with rests.
-- Tap **Root Arpeggiator & 3 LFOs** to expand the existing modulation and root controls.
+- **Latch** sits above both arpeggiators and holds notes for Game Arp and Root Arp. The Root Arp stays visible beneath the step grid.
 - Tap **Hide keyboard** to collapse the full-width keyboard while using the sequencer. Tap **Show keyboard** to restore it. This choice is remembered locally.
 
 Custom steps are stored with your existing version-3 user presets. Existing presets still load and use a default phrase when they contain no step data. The SID audio engine is unchanged.
