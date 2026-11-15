@@ -1,5 +1,5 @@
-import {selectRoot,patternPitch,stepMilliseconds} from './arp-composition.js?v=__BUILD_ID__';
-import {defaultSequence,sequenceEvent} from './game-step-sequencer.js?v=__BUILD_ID__';
+import {selectRoot,stepMilliseconds} from './arp-composition.js?v=__BUILD_ID__';
+import {defaultSequence,sequenceEvent,sequenceForStyle} from './game-step-sequencer.js?v=__BUILD_ID__';
 
 // Step grid plus the Game Arp and root-arp clocks. The studio still owns play(),
 // stop(), and the preset snapshot; this module asks those to run.
@@ -102,39 +102,46 @@ export function mountPerformance({
   if(isSeqPreview())return (keyboardState.octave+1)*12;
   return null;
  }
+ function phraseLabel(){
+  if($('gameArpStyle').value==='custom')return 'Custom';
+  const selected=$('gameArpStyle').selectedOptions[0];
+  if(selected&&selected.text)return selected.text;
+  return 'Action';
+ }
+ // Built-in styles replace the visible phrase. Custom keeps the steps already shown.
+ function loadBuiltInPhrase(style){
+  const phrase=sequenceForStyle(style);
+  if(!phrase)return false;
+  setSeqState(phrase);
+  renderSequenceSteps();
+  $('seqStatus').textContent=phraseLabel()+' · '+phrase.length+'-step phrase. Edit a step to make it Custom.';
+  return true;
+ }
  function gameTick(){
   const seqState=getSeqState();
   const root=gameRoot();
   if(root===null){gameStop();$('arpStatus').textContent='No notes held';return}
   if(game.gateTimer!==null){clearTimeout(game.gateTimer);game.gateTimer=null}
   if(game.last!==null)stop(game.last,'game');
-  if($('gameArpStyle').value==='custom'){
-   const event=sequenceEvent(root,seqState,game.step++);
-   highlightStep(event.index);
-   game.last=null;
-   if(!event.gate){
-    getArpKeyVisual().clear();
-    $('arpStatus').textContent='Custom step '+(event.index+1)+' · rest';
-    return;
-   }
-   game.last=event.note;
-   play(game.last,'game');getArpKeyVisual().show(game.last);
-   $('arpStatus').textContent='Custom step '+(event.index+1)+' · '+names[root%12]+(Math.floor(root/12)-1);
-   if(event.duration<100){
-    const sounding=event.note,clock=game.step;
-    const bpm=Number($('arpSync').checked?$('masterBpm').value:$('arpBpm').value);
-    game.gateTimer=setTimeout(()=>{
-     if(game.step!==clock||game.last!==sounding)return;
-     stop(sounding,'game');game.last=null;getArpKeyVisual().clear();game.gateTimer=null;
-    },stepMilliseconds(bpm,$('gameRate').value)*event.duration/100);
-   }
+  const event=sequenceEvent(root,seqState,game.step++);
+  highlightStep(event.index);
+  game.last=null;
+  if(!event.gate){
+   getArpKeyVisual().clear();
+   $('arpStatus').textContent=phraseLabel()+' step '+(event.index+1)+' · rest';
    return;
   }
-  clearStepHighlight();
-  game.last=patternPitch(root,$('gameArpStyle').value,game.step++);
+  game.last=event.note;
   play(game.last,'game');getArpKeyVisual().show(game.last);
-  $('arpStatus').textContent='Game Arp · '+($('gameArpStyle').selectedOptions[0]?.text??'Action')+
-   ' · root '+names[root%12]+(Math.floor(root/12)-1);
+  $('arpStatus').textContent=phraseLabel()+' step '+(event.index+1)+' · '+names[root%12]+(Math.floor(root/12)-1);
+  if(event.duration<100){
+   const sounding=event.note,clock=game.step;
+   const bpm=Number($('arpSync').checked?$('masterBpm').value:$('arpBpm').value);
+   game.gateTimer=setTimeout(()=>{
+    if(game.step!==clock||game.last!==sounding)return;
+    stop(sounding,'game');game.last=null;getArpKeyVisual().clear();game.gateTimer=null;
+   },stepMilliseconds(bpm,$('gameRate').value)*event.duration/100);
+  }
  }
  function arpTick(){
   const notes=arpNotes();
@@ -187,6 +194,7 @@ export function mountPerformance({
  function gameRestart(){restartGenerators()}
  function arpRestart(){restartGenerators()}
  renderSequenceSteps();
+ loadBuiltInPhrase($('gameArpStyle').value);
  $('seqLength').addEventListener('change',()=>{
   const seqState=getSeqState();
   seqState.length=Number($('seqLength').value);
@@ -212,7 +220,11 @@ export function mountPerformance({
   if(!$('gameArpOn').checked){setSeqPreview(false);setSeqTransportLabel()}
   restartGenerators();
  });
- $('gameArpStyle').addEventListener('change',gameRestart);
+ $('gameArpStyle').addEventListener('change',()=>{
+  loadBuiltInPhrase($('gameArpStyle').value);
+  refreshPresetDirty();
+  gameRestart();
+ });
  $('gameRate').addEventListener('change',gameRestart);
  $('arpOn').addEventListener('change',restartGenerators);
  $('arpLatch').addEventListener('change',()=>{
@@ -230,5 +242,5 @@ export function mountPerformance({
   if(gameEnabled()||arpEnabled())restartGenerators();
   $('arpStatus').textContent='Latch cleared';
  });
- return {gameStop,arpStopVoice,restartGenerators,stopGenerators,gameRestart,setSeqTransportLabel,renderSequenceSteps};
+ return {gameStop,arpStopVoice,restartGenerators,stopGenerators,gameRestart,setSeqTransportLabel,renderSequenceSteps,loadBuiltInPhrase};
 }

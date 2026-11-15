@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {defaultSequence,validateSequence,sequenceEvent} from '../src/game-step-sequencer.js';
+import {defaultSequence,validateSequence,sequenceEvent,sequenceForStyle} from '../src/game-step-sequencer.js';
+import {GAME_PATTERNS} from '../src/arp-composition.js';
 import {defaultPresetSettings,validatePresetSettings} from '../src/preset-library.js';
 
 test('default Game Arp phrase contains sixteen independent editable steps',()=>{
@@ -12,6 +13,19 @@ test('default Game Arp phrase contains sixteen independent editable steps',()=>{
  assert.ok(phrase.steps.every(step=>step.offset===0&&step.gate===true&&step.duration===75),'reset/default must be a blank, gated phrase');
  const changed=defaultSequence();changed.steps[3].offset=10;changed.steps[7].gate=false;
  assert.ok(defaultSequence().steps.every(step=>step.offset===0&&step.gate),'reset must not retain edits');
+});
+
+test('Action, Adventure, and Arcade load as eight full-length steps',()=>{
+ for(const style of ['action','adventure','arcade']){
+  const phrase=sequenceForStyle(style);
+  assert.equal(phrase.length,8);
+  assert.equal(phrase.steps.length,16);
+  assert.deepEqual(phrase.steps.slice(0,8).map(step=>step.offset),[...GAME_PATTERNS[style]]);
+  assert.ok(phrase.steps.slice(0,8).every(step=>step.gate===true&&step.duration===100));
+  assert.deepEqual(validateSequence(phrase),phrase);
+ }
+ assert.equal(sequenceForStyle('custom'),null);
+ assert.ok(defaultSequence().steps.every(step=>step.offset===0&&step.duration===75),'built-in phrases must not change the neutral reset');
 });
 
 test('four, eight and sixteen steps wrap at their own lengths',()=>{
