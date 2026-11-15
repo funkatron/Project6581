@@ -339,8 +339,9 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     }
     this.lastPeak=Math.max(this.lastPeak,peak);
     if(++this.blocks%128===0){
+      const statsPeaks=Array.isArray(chipPeaks)?chipPeaks:[this.lastPeak,this.lastPeak,this.lastPeak];
       this.port.postMessage({
-        type:'audio-stats',peak:this.lastPeak,chipPeaks,writes:this.writes,frames:frames*128,
+        type:'audio-stats',peak:this.lastPeak,chipPeaks:statsPeaks,writes:this.writes,frames:frames*128,
         renderAvgMs:this.timedRenderBlocks?this.renderMsTotal/this.timedRenderBlocks:null,
         renderMaxMs:this.timedRenderBlocks?this.renderMsMax:null,
         renderBudgetMs:frames*1000/sampleRate
