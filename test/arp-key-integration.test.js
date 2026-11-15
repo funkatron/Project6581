@@ -12,6 +12,7 @@ test('inline keyboard application remains valid JavaScript after adding the visu
  assert.ok(script,'module script must exist');
  const result=spawnSync(process.execPath,['--check','--input-type=module'],{input:script,encoding:'utf8'});
  assert.equal(result.status,0,result.stderr);
+ assert.match(script,/let flushQueuedKeys=\(\)=>\{\}/);
 });
 
 test('Game Arp voices its pattern, while regular Arp owns the selected root',()=>{

@@ -20,7 +20,7 @@ export function formatSidProgressMessage(message,contextState){
 
 export function formatActiveSidStatus(contextState,model,{afterInit=false,outputLatencyMs=null}={}){
  let text;
- if(contextState==='running')text='Authentic reSIDfp active · SID '+model+'.';
+ if(contextState==='running')text='SID '+model+' active.';
  else if(contextState==='suspended'){
   text=afterInit?'SID ready · touch a key to unlock audio.':'SID ready · tap Enable audio to resume.';
  }else text='SID ready · touch a key to unlock audio.';

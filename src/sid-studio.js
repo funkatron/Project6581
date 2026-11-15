@@ -259,6 +259,7 @@ let stopGenerators=()=>{};
 let gameRestart=()=>{};
 let setSeqTransportLabel=()=>{};
 let renderSequenceSteps=()=>{};
+let flushQueuedKeys=()=>{};
 const gameEnabled=()=>$('gameArpOn').checked;
 const arpEnabled=()=>$('arpOn').checked;
 const activeNotes=()=>[...($('arpLatch').checked&&arp.latched.size?arp.latched:arp.held)];
@@ -428,7 +429,7 @@ async function startSid({gesture=false}={}){
   const progress=message=>{if(current()){trace(message);showSidProgress(message)}};
   sidStartupLog.length=0;
   sidStarting=true;button.disabled=true;$('sidSpinner').hidden=false;updateSidLed();
-  status.textContent='Loading authentic reSIDfp…';
+  status.textContent='Loading SID…';
   try{
     // Retry's click resumes before the first await. Page load must not:
     // an ungestured resume() can stay pending and block later presses.
@@ -534,7 +535,7 @@ async function startSid({gesture=false}={}){
     let message=err.message||String(err);
     try{if(audio)await audio.close();else if(context)await closeSidContext(context)}catch(cleanup){sidCleanupBlocked=true;message+='; '+cleanup.message}
     sidContext=context?.state==='closed'?null:context;
-    status.textContent='Authentic SID unavailable: '+message;
+    status.textContent='SID unavailable: '+message;
     sidStartupLog.push('Failed: '+message);updateAudioTimingReport();
     button.disabled=sidCleanupBlocked||Boolean(sidContext);button.hidden=false;
     if(sidCleanupBlocked||sidContext)status.textContent+=' Reload the page before retrying.';
@@ -565,7 +566,7 @@ async function failActiveSid(error,attempt){
   let message=error.message;
   try{await retireSidAudio()}catch(cleanup){message+='; '+cleanup.message}
   if(sidAttempt!==attempt+1)return;
-  $('sidEngineStatus').textContent='Authentic SID unavailable: '+message+(sidCleanupBlocked||sidContext?' Reload the page before retrying.':'');
+  $('sidEngineStatus').textContent='SID unavailable: '+message+(sidCleanupBlocked||sidContext?' Reload the page before retrying.':'');
   $('sidStart').hidden=false;$('sidStart').disabled=sidCleanupBlocked||Boolean(sidContext);
   $('sidUnlock').hidden=true;
 }
