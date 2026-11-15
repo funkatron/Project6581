@@ -13,8 +13,9 @@ import {mountKeyboard} from "./keyboard-input.js?v=__BUILD_ID__";
 import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from "./pitch-envelope.js?v=__BUILD_ID__";
 import {mountEditorTabs} from "./editor-tabs.js?v=__BUILD_ID__";
 import {mountLfoPanel} from "./lfo-panel-ui.js?v=__BUILD_ID__";
-import {mountVoiceSoundPanel} from "./voice-sound-panel.js?v=__BUILD_ID__";
 import {mountAudioTimingPanel} from "./audio-timing-panel.js?v=__BUILD_ID__";
+import {createDefaultEngines,clampVoiceCount,maxVoicesForEngines,DEFAULT_ROUTING} from "./sid-engines.js?v=__BUILD_ID__";
+import {mountSidEnginePanels} from "./sid-engine-panels-ui.js?v=__BUILD_ID__";
 
 export function startSidStudio(){
 const $=id=>document.getElementById(id);
@@ -63,20 +64,59 @@ function restoreSidOutput(){
  updateSidFilter();
 }
 // Let the browser release export URLs on unload. Safari may still be resolving a download at pagehide.
-const settings=[{wave:'square',attack:0.002,decay:0.12,sustain:0.8,release:0.12,pulse:50,pwmDepth:0,pwmRate:1,enabled:true,
- pitchEnvelope:validatePitchEnvelope(DEFAULT_PITCH_ENVELOPE)}];
+const engines=createDefaultEngines(6581);
+engines[1].enabled=false;engines[2].enabled=false;
+const settings=[engines[0].voice];
 let currentSidSettings={...settings[0]};
-function applyPitchEnvelope(envelope){
- settings[0].pitchEnvelope=validatePitchEnvelope(envelope);
- refreshPresetDirty();
- updateModulation();
+const useAudioClockLfo=true;
+let enginePanelsUi=null;
+let chipPeakLevels=[0,0,0];
+function syncLegacyFilterInputs(){
+ const filter=engines[0].filter;
+ $('chip').value=String(engines[0].model);
+ $('volume').value=String(filter.volume);
+ $('cutoff').value=String(filter.cutoff);
+ $('resonance').value=String(filter.resonance);
+ $('mode').value=filter.mode;
 }
-
+function syncVoiceCountOptions(){
+ const max=maxVoicesForEngines(engines);
+ const select=$('voiceCount');
+ const value=clampVoiceCount(select.value,engines);
+ select.replaceChildren();
+ for(let option=1;option<=max;option++){
+  const el=document.createElement('option');
+  el.value=String(option);el.textContent=String(option);
+  select.append(el);
+ }
+ select.value=String(value);
+}
+function syncEnginePans(){
+ for(let chip=0;chip<3;chip++)sidAudio?.setPan?.(chip,engines[chip].pan);
+}
 const ranges=[['attack','Attack',0,2,.01],['decay','Decay',0,3,.01],['sustain','Sustain',0,1,.01],['release','Release',.01,4,.01],['pulse','Pulse width',5,95,1],['pwmDepth','PWM depth',0,45,1],['pwmRate','PWM rate (Hz)',.1,12,.1]];
-const {renderVoiceControls}=mountVoiceSoundPanel({
- $,settings,ranges,formatControlValue,applyPitchEnvelope,onVoiceChange:()=>updateModulation()
+enginePanelsUi=mountSidEnginePanels({
+ $,engines,getEngines:()=>engines,ranges,formatControlValue,
+ getMeterLevels:()=>chipPeakLevels,
+ syncVoiceSelectOptions:syncVoiceCountOptions,
+ onEngineChange:(_index,kind)=>{
+  syncLegacyFilterInputs();
+  syncEnginePans();
+  if(kind==='model'&&sidAudio){
+   const chip=_index;
+   sidAudio.setChipModel(chip,engines[chip].model).catch(()=>{});
+  }
+  refreshPresetDirty();
+  updateModulation();
+ }
 });
-const lfoState=Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',phase:0,seed:i}));
+syncVoiceCountOptions();
+$('sidEngineAdd')?.addEventListener('click',()=>{
+ for(const engine of engines){
+  if(!engine.enabled){engine.enabled=true;enginePanelsUi.render();syncVoiceCountOptions();updateModulation();return}
+ }
+});
+const lfoState=Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',engines:'all',phase:0,seed:i}));
 const lfoTargets=['cutoff','resonance','volume','pulse','detune','attack','decay','sustain','release','pwmDepth','pwmRate'];
 const lfoTargetNames={
  cutoff:'Filter cutoff',resonance:'Resonance',volume:'Volume',pulse:'Pulse width',
@@ -193,14 +233,28 @@ const arpKeyVisual=createArpKeyVisual({getKey:note=>keys.get(note)});
  traceInput,panic
 }));
 
-function updateSidFilter(overrides={}){
+function updateSidFilter(overrides={},engineIndex=0){
   if(!sidController)return;
-  const hz=Number(overrides.cutoff??$('cutoff').value);
-  // SID filter frequency register is non-linear in Hz, especially on 6581.
-  // This approximation maps the existing control to the 11-bit SID register.
+  const filter=engines[engineIndex].filter;
+  const hz=Number(overrides.cutoff??filter.cutoff);
   const cutoff=Math.round(Math.max(0,Math.min(1,(hz-50)/9950))*2047);
-  sidController.setFilter({cutoff,resonance:Math.round(Number(overrides.resonance??$('resonance').value)*15/100),
-    mode:$('mode').value,volume:Math.round(Number(overrides.volume??$('volume').value)*15/100)});
+  const resonancePct=Number(overrides.resonance??filter.resonance);
+  const volumePct=Number(overrides.volume??filter.volume);
+  const mode=overrides.mode??filter.mode;
+  if(useAudioClockLfo)return;
+  sidController.setFilter({
+    cutoff,resonance:Math.round(resonancePct*15/100),
+    mode,volume:Math.round(volumePct*15/100)
+  },engineIndex);
+}
+function pushAudioModulationConfig(values){
+ if(!sidAudio?.setModulationConfig)return;
+ sidAudio.setModulationConfig({
+  bpm:Number($('masterBpm').value),
+  engines:engines.map(engine=>({enabled:engine.enabled,filter:{...engine.filter,volume:values?.volume??engine.filter.volume,
+   cutoff:values?.cutoff??engine.filter.cutoff,resonance:values?.resonance??engine.filter.resonance}})),
+  lfos:lfoState.map(lfo=>({...lfo,engines:lfo.engines??'all'}))
+ });
 }
 // Overlay a noninteractive range thumb: the actual input retains the base value.
 function setModulationTrack(input,base,effective,enabled){
@@ -225,6 +279,8 @@ function setModulationTrack(input,base,effective,enabled){
  band.hidden=!track.active;
 }
 function updateModulation(){
+ syncLegacyFilterInputs();
+ Object.assign(settings[0],engines[0].voice);
  const sound=settings[0],pulseActive=sound.wave==='square',unisonActive=Number($('unisonCount').value)>1;
  // Preserve the actual slider positions as the editable base/center values.
  const base={
@@ -277,7 +333,8 @@ function updateModulation(){
   }
  }
  if(!sidController)return;
- updateSidFilter(values);
+ if(useAudioClockLfo)pushAudioModulationConfig(values);
+ else for(let chip=0;chip<3;chip++)if(engines[chip].enabled)updateSidFilter(values,chip);
  sidController.setLiveDetune(values.detune);
  sidController.setEnvelope(currentSidSettings);
  if(pulseActive)sidController.setPulse(0,livePulse);
@@ -401,6 +458,8 @@ async function startSid({gesture=false}={}){
         audioTiming.renderBudgetMs=event.renderBudgetMs;
         if($('audioTimingDetails').open)updateAudioTimingReport();
         const peak=(event.peak*100).toFixed(2);
+        if(Array.isArray(event.chipPeaks))chipPeakLevels=event.chipPeaks;
+        enginePanelsUi?.updateMeters(chipPeakLevels);
         $('sidPlaybackStatus').textContent='SID key presses: '+sidKeys+' · register writes (recent): '+event.writes+' · audio peak: '+peak+'%';
       }
     }});
@@ -418,8 +477,9 @@ async function startSid({gesture=false}={}){
     activeSidModel=requestedModel;
     progress('SID '+activeSidModel+' ready.');
     sidEventLog.add('sid-ready',{contextId:attempt,model:activeSidModel});
+    for(let chip=0;chip<3;chip++)sidAudio?.setPan?.(chip,engines[chip].pan);
     updateModulation();
-    if(lfoTimer===null)lfoTimer=setInterval(()=>{if(lfoState.some(lfo=>lfo.enabled&&lfo.depth>0)||(settings[0].wave==='square'&&settings[0].pwmDepth>0))updateModulation()},1000/60);
+    // LFO runs on the audio clock in the worklet; no main-thread modulation timer.
     const base=audio.context.baseLatency,output=audio.context.outputLatency;
     audioTiming.baseMs=Number.isFinite(base)?base*1000:null;
     audioTiming.outputMs=Number.isFinite(output)?output*1000:null;
@@ -617,14 +677,16 @@ function applyPresetControls(next){
  panic();arp.held.clear();arp.latched.clear();arp.step=0;
  game.step=0;arp.root=null;seqPreview=false;setSeqTransportLabel();
  for(const key of keys.values())key.classList.remove('down');
- Object.assign(settings[0],next.sound.voice);
+ Object.assign(engines[0].voice,next.sound.voice);
+ Object.assign(settings[0],engines[0].voice);
+ Object.assign(engines[0].filter,next.sound.filter);
+ engines[0].model=next.sound.model;
  $('chip').value=String(next.sound.model);
- $('voiceCount').value=String(next.sound.instrument.voiceCount);
+ $('voiceCount').value=String(clampVoiceCount(next.sound.instrument.voiceCount,engines));
  $('unisonCount').value=String(next.sound.instrument.unisonCount);
  $('voiceAssign').value=next.sound.instrument.mode;
  $('detune').value=String(next.sound.instrument.detune);
- for(const key of ['cutoff','resonance','volume'])$(key).value=String(next.sound.filter[key]);
- $('mode').value=next.sound.filter.mode;
+ syncVoiceCountOptions();
  next.sound.lfos.forEach((lfo,i)=>Object.assign(lfoState[i],lfo));
  $('masterBpm').value=String(next.performance.masterBpm);
  $('masterBpmValue').textContent=String(next.performance.masterBpm);
@@ -642,7 +704,7 @@ function applyPresetControls(next){
  seqState=validateSequence(next.performance.game.sequence);
  renderSequenceSteps();
  loadBuiltInPhrase($('gameArpStyle').value);
- renderVoiceControls();renderLfos();updateUnison();updateModulation();
+ enginePanelsUi?.render();renderLfos();updateUnison();updateModulation();
  $('arpStatus').textContent='Preset ready · press a key';
 }
 async function applyPresetSettings(value){

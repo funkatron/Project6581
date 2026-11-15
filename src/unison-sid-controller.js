@@ -13,7 +13,7 @@ export class UnisonSidController {
   this.configure({voiceCount,unisonCount,mode,detune});
  }
  configure({voiceCount=this.voiceCount,unisonCount=this.unisonCount,mode=this.mode,detune=this.detune}={}){
-  const count=Math.max(1,Math.min(8,Math.round(Number(voiceCount)||1)));
+  const count=Math.max(1,Math.min(9,Math.round(Number(voiceCount)||1)));
   const layers=Math.max(1,Math.min(count,Math.round(Number(unisonCount)||1)));
   const assignment=['mono','legato','duo','poly'].includes(mode)?mode:'mono';
   const cents=Math.max(0,Math.min(100,Number(detune)||0));
@@ -32,7 +32,7 @@ export class UnisonSidController {
   return this.mode==='mono'||this.mode==='legato'?1:
    this.mode==='duo'?Math.min(2,available):available;
  }
- chip(slot){return this.chips[Math.floor(slot/3)]}
+  chip(slot){return this.chips[Math.min(2,Math.floor(slot/3))]}
  voice(slot){return slot%3}
  offset(index){
   return this.unisonCount===1?0:
@@ -129,7 +129,10 @@ export class UnisonSidController {
    [...this.polyNotes.values()].flatMap(entry=>entry.slots);
   for(const slot of slots)this.chip(slot).setEnvelope(this.voice(slot),settings);
  }
- setFilter(settings){for(const chip of this.chips)chip.setFilter(settings)}
+ setFilter(settings,chipIndex){
+  if(Number.isInteger(chipIndex)&&chipIndex>=0&&chipIndex<3)this.chips[chipIndex].setFilter(settings);
+  else for(const chip of this.chips)chip.setFilter(settings);
+ }
  setPulse(_voice,percent){
   const slots=this.current!==null?this.stackSlots(0):
    [...this.polyNotes.values()].flatMap(entry=>entry.slots);

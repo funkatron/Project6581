@@ -15,6 +15,8 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     this.recording=false;this.recordSamples=new Int16Array(4096);this.recordLength=0;
     // Audio-rendered frames, rather than throttled page timers, cap capture.
     this.monitorRecording=false;this.recordFrames=0;this.recordMaxFrames=0;
+    this.modulationConfig=null;
+    this.lfoPhase=[];
     this.port.onmessage=({data})=>{
       if(data?.type==='load'){
         this.traceFirstRender=data.traceFirstRender===true;
@@ -22,6 +24,17 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       }
       else if(data?.type==='set-model'){
         this.switchModel(data.model);
+      }
+      else if(data?.type==='set-chip-model'){
+        this.setChipModel(data.chip,data.model);
+      }
+      else if(data?.type==='set-pan'){
+        if(Number.isInteger(data.chip)&&data.chip>=0&&data.chip<=2&&Number.isFinite(data.pan))
+          this.exports?.sid_set_pan?.(data.chip,Math.round(data.pan));
+      }
+      else if(data?.type==='modulation-config'){
+        this.modulationConfig=data;
+        this.lfoPhase=Array.isArray(data.lfos)?data.lfos.map(()=>data.phaseOffset??0):[];
       }
       else if(data?.type==='event-log-enable'){
         this.eventLogEnabled=data.enabled===true;this.pendingNoteEvents.length=0;
@@ -125,6 +138,83 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       this.port.postMessage({type:'model-ready',model});
     }catch(err){this.port.postMessage({type:'error',message:String(err)})}
   }
+  setChipModel(chip,model){
+    const e=this.exports;
+    try{
+      if(!e?.sid_set_chip_model)throw Error('Per-chip model switch is unavailable');
+      if(!Number.isInteger(chip)||chip<0||chip>2)throw Error('Invalid chip index');
+      if(!e.sid_set_chip_model(chip,model))throw Error('SID chip model switch failed');
+      this.port.postMessage({type:'chip-model-ready',chip,model});
+    }catch(err){this.port.postMessage({type:'error',message:String(err)})}
+  }
+  lfoWaveValue(wave,phase,seed=0){
+    const p=phase-Math.floor(phase);
+    if(wave==='sine')return Math.sin(2*Math.PI*p);
+    if(wave==='triangle')return 1-4*Math.abs(p-0.5);
+    if(wave==='sawtooth')return 2*p-1;
+    if(wave==='square')return p<0.5?1:-1;
+    if(wave==='sample-hold'){
+      const n=Math.sin((Math.floor(phase)+seed+1)*127.1)*43758.5453;
+      return 2*(n-Math.floor(n))-1;
+    }
+    return 0;
+  }
+  syncedLfoHz(bpm,division){
+    const safe=Number.isFinite(bpm)&&bpm>=40&&bpm<=240?bpm:120;
+    return safe/240*Number(division);
+  }
+  applyAudioClockModulation(){
+    const config=this.modulationConfig;
+    const e=this.exports;
+    if(!config||!e?.sid_write||!Array.isArray(config.engines))return;
+    const blockSec=(128/sampleRate);
+    const targets={volume:[0,100],cutoff:[50,10000],resonance:[0,100]};
+    config.lfos.forEach((lfo,index)=>{
+      const rate=lfo.sync?this.syncedLfoHz(config.bpm,lfo.syncDivision):(Number(lfo.rate)||0);
+      const phase=this.lfoPhase[index]??0;
+      this.lfoPhase[index]=phase+rate*blockSec;
+    });
+    for(let chip=0;chip<3;chip++){
+      const engine=config.engines[chip];
+      if(!engine?.enabled)continue;
+      const base={
+        volume:Number(engine.filter.volume),
+        cutoff:Number(engine.filter.cutoff),
+        resonance:Number(engine.filter.resonance)
+      };
+      const offsets={};
+      for(const [lfoIndex,lfo] of config.lfos.entries()){
+        if(!lfo.enabled||!lfo.depth||!targets[lfo.target])continue;
+        const engineTarget=lfo.engines??'all';
+        if(engineTarget!=='all'&&Number(engineTarget)!==chip+1)continue;
+        const [min,max]=targets[lfo.target];
+        const depth=Math.max(0,Math.min(1,Number(lfo.depth)||0));
+        const rate=lfo.sync?this.syncedLfoHz(config.bpm,lfo.syncDivision):(Number(lfo.rate)||0);
+        const offset=this.lfoWaveValue(lfo.wave,(this.lfoPhase[lfoIndex]??0)+(lfo.phase??0),lfo.seed??0)*depth*(max-min)/2;
+        offsets[lfo.target]=(offsets[lfo.target]??0)+offset;
+      }
+      const values={...base};
+      for(const [target,offset] of Object.entries(offsets)){
+        const [min,max]=targets[target];
+        values[target]=Math.max(min,Math.min(max,values[target]+offset));
+      }
+      const fc=Math.round(Math.max(0,Math.min(1,(values.cutoff-50)/9950))*2047);
+      const resonance=Math.round(values.resonance*15/100);
+      const volume=Math.round(values.volume*15/100);
+      const modes={lowpass:0x10,bandpass:0x20,highpass:0x40};
+      const modeBits=modes[engine.filter.mode]??0x10;
+      const baseReg=chip*0x20;
+      e.sid_write(baseReg+0x15,fc&7);
+      e.sid_write(baseReg+0x16,fc>>3);
+      e.sid_write(baseReg+0x17,(resonance<<4)|7);
+      e.sid_write(baseReg+0x18,modeBits|(volume&15));
+    }
+    if(this.blocks%16===0){
+      this.port.postMessage({type:'modulation-display',engines:config.engines.map((engine,chip)=>({
+        chip,filter:{...engine.filter}
+      })),lfoPhase:[...this.lfoPhase]});
+    }
+  }
   // Transfer buffers every ~85 ms at 48 kHz, never posting one message per audio quantum.
   flushRecording(){
     if(this.recordLength===0)return;
@@ -136,6 +226,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     const channels=outputs[0];
     for(const channel of channels)channel.fill(0);
     const e=this.exports;if(!e)return true;
+    this.applyAudioClockModulation();
     const queuedWrites=this.queue.length;
     for(const [reg,value] of this.queue)e.sid_write(reg,value);
     this.writes+=this.queue.length;
@@ -186,7 +277,8 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     }
     const ptr=e.sid_pcm_ptr();
     if(ptr<0 || ptr+frames*2>e.memory.buffer.byteLength){this.port.postMessage({type:'error',message:'Invalid PCM buffer'});this.exports=null;return true}
-    const pcm=new Int16Array(e.memory.buffer,ptr,frames);
+    const stereo=e.memory.buffer.byteLength>=ptr+frames*4;
+    const pcm=stereo?new Int16Array(e.memory.buffer,ptr,frames*2):new Int16Array(e.memory.buffer,ptr,frames);
     if(this.monitorRecording){
       const allowed=Math.min(frames,Math.max(0,this.recordMaxFrames-this.recordFrames));
       if(this.recording){
@@ -196,7 +288,10 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
         let consumed=0;
         while(consumed<allowed){
           const copy=Math.min(allowed-consumed,this.recordSamples.length-this.recordLength);
-          this.recordSamples.set(pcm.subarray(consumed,consumed+copy),this.recordLength);
+          for(let i=0;i<copy;i++){
+            const mono=stereo?(pcm[i*2]+pcm[i*2+1])/2:pcm[i];
+            this.recordSamples[this.recordLength+i]=mono;
+          }
           this.recordLength+=copy;consumed+=copy;
           if(this.recordLength===this.recordSamples.length)this.flushRecording();
         }
@@ -208,10 +303,17 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       }
     }
     let peak=0;
+    let chipPeaks=null;
+    const peaksPtr=e.sid_chip_peaks_ptr?.();
+    if(Number.isInteger(peaksPtr)&&peaksPtr>=0&&peaksPtr+12<=e.memory.buffer.byteLength)
+      chipPeaks=Array.from(new Float32Array(e.memory.buffer,peaksPtr,3));
     for(let i=0;i<frames;i++){
-      const value=pcm[i]/32768;
-      peak=Math.max(peak,Math.abs(value));
-      for(const channel of channels)channel[i]=value;
+      const left=stereo?pcm[i*2]/32768:pcm[i]/32768;
+      const right=stereo?pcm[i*2+1]/32768:left;
+      const value=Math.max(Math.abs(left),Math.abs(right));
+      peak=Math.max(peak,value);
+      if(channels[0])channels[0][i]=left;
+      if(channels[1])channels[1][i]=right;
     }
     if(this.traceFirstRender){
       this.traceFirstRender=false;
@@ -227,7 +329,8 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       this.energyBlocks++;
       let sampleOffset=-1;
       for(let i=0;i<frames;i++){
-        if(Math.abs(pcm[i])>655){sampleOffset=i;break}
+        const sample=stereo?Math.max(Math.abs(pcm[i*2]),Math.abs(pcm[i*2+1])):Math.abs(pcm[i]);
+        if(sample>655){sampleOffset=i;break}
       }
       if(sampleOffset>=0||this.energyBlocks>=16){
         this.port.postMessage({type:'first-energy',hit:sampleOffset>=0,sampleOffset,blocks:this.energyBlocks,sampleRate});
@@ -237,7 +340,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     this.lastPeak=Math.max(this.lastPeak,peak);
     if(++this.blocks%128===0){
       this.port.postMessage({
-        type:'audio-stats',peak:this.lastPeak,writes:this.writes,frames:frames*128,
+        type:'audio-stats',peak:this.lastPeak,chipPeaks,writes:this.writes,frames:frames*128,
         renderAvgMs:this.timedRenderBlocks?this.renderMsTotal/this.timedRenderBlocks:null,
         renderMaxMs:this.timedRenderBlocks?this.renderMsMax:null,
         renderBudgetMs:frames*1000/sampleRate

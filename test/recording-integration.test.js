@@ -26,7 +26,7 @@ test('WAV capture transfers SID renderer PCM, not microphone or synthesis impost
  assert.match(worklet,/this\.port\.onmessage/);
  assert.match(worklet,/data\?\.type==='record-start'/);
  assert.match(worklet,/data\?\.type==='record-stop'/);
- assert.match(worklet,/this\.recordSamples\.set\(pcm\.subarray/);
+ assert.match(worklet,/this\.recordSamples\[this\.recordLength\+i\]=mono/);
  assert.match(worklet,/type:'record-chunk',samples/);
  assert.match(worklet,/type:'record-stopped'/);
  assert.doesNotMatch(html,/getUserMedia\(/);

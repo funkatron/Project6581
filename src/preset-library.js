@@ -44,7 +44,7 @@ export function defaultPresetSettings(){
    },
    instrument:{voiceCount:1,unisonCount:1,mode:'mono',detune:12},
    filter:{cutoff:7000,resonance:10,volume:55,mode:'lowpass'},
-   lfos:Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',phase:0,seed:i}))
+   lfos:Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',phase:0,seed:i,engines:'all'}))
   },
   performance:{
    masterBpm:120,
@@ -77,8 +77,8 @@ export function validatePresetSettings(value){
     pitchEnvelope:validatePitchEnvelope(v.pitchEnvelope)
    },
    instrument:{
-    voiceCount:integer(ins.voiceCount,'voice count',1,8),
-    unisonCount:integer(ins.unisonCount,'unison layers',1,integer(ins.voiceCount,'voice count',1,8)),
+    voiceCount:integer(ins.voiceCount,'voice count',1,9),
+    unisonCount:integer(ins.unisonCount,'unison layers',1,integer(ins.voiceCount,'voice count',1,9)),
     mode:choice(ins.mode,'voice assignment',ASSIGNMENTS),
     detune:numeric(ins.detune,'detune',0,100)
    },
@@ -94,7 +94,8 @@ export function validatePresetSettings(value){
      wave:choice(lfo.wave,'LFO waveform',LFO_WAVES),
      rate:numeric(lfo.rate,'LFO rate',.05,20),syncDivision:choice(lfo.syncDivision,'LFO division',DIVISIONS),
      depth:numeric(lfo.depth,'LFO depth',0,1),target:choice(lfo.target,'LFO target',TARGETS),
-     phase:numeric(lfo.phase,'LFO phase',-1e6,1e6),seed:numeric(lfo.seed,'LFO seed',-1e6,1e6)
+     phase:numeric(lfo.phase,'LFO phase',-1e6,1e6),seed:numeric(lfo.seed,'LFO seed',-1e6,1e6),
+     engines:choice(lfo.engines??'all','LFO engines',['all','1','2','3'])
     };
    })
   },

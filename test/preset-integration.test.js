@@ -49,7 +49,7 @@ test('preset loading restores performance settings without stored notes or autop
  assert.match(script,/\$\('unisonCount'\)\.value=String\(next\.sound\.instrument\.unisonCount\)/);
  assert.match(script,/\$\('voiceAssign'\)\.value=next\.sound\.instrument\.mode/);
  assert.match(script,/\$\('gameRate'\)\.value=String\(next\.performance\.game\.rate\)/);
- assert.match(script,/renderVoiceControls\(\);renderLfos\(\);updateUnison\(\);updateModulation\(\)/);
+ assert.match(script,/enginePanelsUi\?\.render\(\);renderLfos\(\);updateUnison\(\);updateModulation\(\)/);
  assert.match(script,/await ensureSidModel\(next\.sound\.model\)/);
  assert.match(script,/if\(pendingSidStartup\)await pendingSidStartup/);
  assert.match(script,/activeSidModel=requestedModel/);
