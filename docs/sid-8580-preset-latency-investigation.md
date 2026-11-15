@@ -49,4 +49,4 @@ The harness logs browser crashes, console errors, and a status/LED/spinner snaps
 - Add offline WAV/audio-signal checks for onset, RMS, silence after Stop All and 6581/8580 differences. Keep those distinct from physical speaker timing.
 - Retest with actual iPad Safari and record iPadOS, output route, build ID, LED state and timing report.
 
-No audio-path behavior change is justified until a reproducible baseline exists.
+The repeated WASM compilation was the smoke failure. Audible key-to-speaker timing is still a separate measurement.
