@@ -5,10 +5,11 @@ import {closeSidContext} from './sid-audio-lifecycle.js?v=__BUILD_ID__';
 import {createArpKeyVisual} from "./arp-key-visual.js?v=__BUILD_ID__";
 import {modulationTrack,formatControlValue,SLIDER_TARGETS} from "./modulation-track.js?v=__BUILD_ID__";
 import {createSidRecorder,prepareRecordingDownload} from "./sid-recorder.js?v=__BUILD_ID__";
-import {selectRoot,patternPitch,stepMilliseconds} from "./arp-composition.js?v=__BUILD_ID__";
-import {defaultSequence,validateSequence,sequenceEvent} from "./game-step-sequencer.js?v=__BUILD_ID__";
+import {defaultSequence,validateSequence} from "./game-step-sequencer.js?v=__BUILD_ID__";
+import {mountPerformance} from "./performance-play.js?v=__BUILD_ID__";
 import {validatePresetSettings} from "./preset-library.js?v=__BUILD_ID__";
 import {mountPresetLibrary} from "./preset-library-ui.js?v=__BUILD_ID__";
+import {mountKeyboard} from "./keyboard-input.js?v=__BUILD_ID__";
 import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from "./pitch-envelope.js?v=__BUILD_ID__";
 import {mountPitchEnvelopeEditor} from "./pitch-envelope-editor.js?v=__BUILD_ID__";
 
@@ -251,334 +252,45 @@ const arp={held:new Set(),latched:new Set(),timer:null,step:0,root:null,last:nul
 const directOwned=new Set(); // Physical notes sounding independently of either generator.
 const game={timer:null,last:null,step:0,gateTimer:null};
 let seqState=defaultSequence(),seqPreview=false,activeSeqStep=-1;
-function clearStepHighlight(){
- if(activeSeqStep<0)return;
- const previous=$('seqGrid').children[activeSeqStep];
- previous?.classList.remove('is-playing');previous?.removeAttribute('aria-current');
- activeSeqStep=-1;
-}
-function highlightStep(index){
- if(activeSeqStep===index)return;
- clearStepHighlight();
- const element=$('seqGrid').children[index];
- if(!element)return;
- element.classList.add('is-playing');element.setAttribute('aria-current','step');
- activeSeqStep=index;
-}
-function setSeqTransportLabel(){
- $('seqRun').textContent=seqPreview?'▶ Previewing':'▶ Preview';
- $('seqRun').setAttribute('aria-pressed',String(seqPreview));
-}
-function renderSequenceSteps(){
- const fragment=document.createDocumentFragment();
- seqState.steps.forEach((step,index)=>{
-  const cell=document.createElement('div');cell.className='seq-step';cell.dataset.step=String(index);
-  cell.hidden=index>=seqState.length;
-  const number=document.createElement('span');number.className='seq-number';number.textContent=String(index+1);
-  const pitchWrap=document.createElement('div');pitchWrap.className='seq-pitch-wrap';
-  const pitch=document.createElement('input');pitch.type='range';pitch.className='seq-note';
-  pitch.min='-12';pitch.max='24';pitch.step='1';pitch.value=String(step.offset);
-  pitch.setAttribute('aria-label','Step '+(index+1)+' pitch offset in semitones');
-  const value=document.createElement('output');value.className='seq-note-value';
-  value.textContent=(step.offset>0?'+':'')+step.offset;
-  pitch.addEventListener('input',()=>{
-   seqState.steps[index].offset=Number(pitch.value);
-   value.textContent=(Number(pitch.value)>0?'+':'')+pitch.value;
-   modifiedStepPhrase();
-  });
-  pitchWrap.append(pitch,value);
-  const gate=document.createElement('button');gate.type='button';gate.className='seq-gate';
-  function displayGate(){
-   const enabled=seqState.steps[index].gate;
-   gate.textContent=enabled?'ON':'REST';
-   gate.setAttribute('aria-pressed',String(enabled));
-   gate.setAttribute('aria-label','Step '+(index+1)+' gate '+(enabled?'on':'rest'));
-  }
-  displayGate();
-  gate.addEventListener('click',()=>{
-   seqState.steps[index].gate=!seqState.steps[index].gate;
-   displayGate();modifiedStepPhrase();
-  });
-  const lengthWrap=document.createElement('div');lengthWrap.className='seq-length-group';
-  const length=document.createElement('input');length.type='range';length.className='seq-duration';
-  length.min='25';length.max='100';length.step='5';length.value=String(step.duration);
-  length.setAttribute('aria-label','Step '+(index+1)+' note length percent');
-  const lengthValue=document.createElement('output');lengthValue.className='seq-duration-value';
-  lengthValue.textContent=step.duration+'%';
-  length.addEventListener('input',()=>{
-   seqState.steps[index].duration=Number(length.value);
-   lengthValue.textContent=length.value+'%';
-   modifiedStepPhrase();
-  });
-  lengthWrap.append(length,lengthValue);
-  cell.append(number,pitchWrap,gate,lengthWrap);
-  fragment.append(cell);
- });
- $('seqGrid').replaceChildren(fragment);
- $('seqLength').value=String(seqState.length);
- activeSeqStep=-1;
-}
-function modifiedStepPhrase(){
- $('gameArpStyle').value='custom';
- $('seqStatus').textContent='Custom '+seqState.length+'-step phrase · changes take effect on the next step.';
- refreshPresetDirty();
-}
-renderSequenceSteps();
-$('seqLength').addEventListener('change',()=>{
- seqState.length=Number($('seqLength').value);
- renderSequenceSteps();modifiedStepPhrase();gameRestart();
-});
-$('seqReset').addEventListener('click',()=>{
- if(!window.confirm('Reset all 16 custom steps?'))return;
- seqState=defaultSequence();renderSequenceSteps();modifiedStepPhrase();gameRestart();
-});
-$('seqRun').addEventListener('click',()=>{
- seqPreview=true;$('gameArpStyle').value='custom';$('gameArpOn').checked=true;
- setSeqTransportLabel();restartGenerators();refreshPresetDirty();
-});
-$('seqStop').addEventListener('click',()=>{
- seqPreview=false;$('gameArpOn').checked=false;
- setSeqTransportLabel();
- stopGenerators();arp.held.clear();arp.latched.clear();
- silenceSidOutput();
- refreshPresetDirty();
-});
-setSeqTransportLabel();
+let gameStop=()=>{};
+let arpStopVoice=()=>{};
+let restartGenerators=()=>{};
+let stopGenerators=()=>{};
+let gameRestart=()=>{};
+let setSeqTransportLabel=()=>{};
+let renderSequenceSteps=()=>{};
 const gameEnabled=()=>$('gameArpOn').checked;
 const arpEnabled=()=>$('arpOn').checked;
 const activeNotes=()=>[...($('arpLatch').checked&&arp.latched.size?arp.latched:arp.held)];
 const arpNotes=()=>activeNotes().sort((a,b)=>a-b);
-function gameStop(){
- if(game.timer!==null){clearInterval(game.timer);game.timer=null}
- if(game.gateTimer!==null){clearTimeout(game.gateTimer);game.gateTimer=null}
- if(game.last!==null){stop(game.last,'game');game.last=null}
- clearStepHighlight();
- arpKeyVisual.clear();
-}
-function arpStopVoice(){
- if(arp.last!==null){stop(arp.last,'arp');arp.last=null}
- arpKeyVisual.clear();
-}
-function gameRoot(){
- const held=activeNotes();
- if(arpEnabled()&&arp.root!==null)return arp.root;
- return held.length?held[held.length-1]:seqPreview?(keyboardOctave+1)*12:null;
-}
-function gameTick(){
- const root=gameRoot();
- if(root===null){gameStop();$('arpStatus').textContent='No notes held';return}
- if(game.gateTimer!==null){clearTimeout(game.gateTimer);game.gateTimer=null}
- if(game.last!==null)stop(game.last,'game');
- if($('gameArpStyle').value==='custom'){
-  const event=sequenceEvent(root,seqState,game.step++);
-  highlightStep(event.index);
-  game.last=null;
-  if(!event.gate){
-   arpKeyVisual.clear();
-   $('arpStatus').textContent='Custom step '+(event.index+1)+' · rest';
-   return;
-  }
-  game.last=event.note;
-  play(game.last,'game');arpKeyVisual.show(game.last);
-  $('arpStatus').textContent='Custom step '+(event.index+1)+' · '+names[root%12]+(Math.floor(root/12)-1);
-  if(event.duration<100){
-   const sounding=event.note,clock=game.step;
-   const bpm=Number($('arpSync').checked?$('masterBpm').value:$('arpBpm').value);
-   game.gateTimer=setTimeout(()=>{
-    if(game.step!==clock||game.last!==sounding)return;
-    stop(sounding,'game');game.last=null;arpKeyVisual.clear();game.gateTimer=null;
-   },stepMilliseconds(bpm,$('gameRate').value)*event.duration/100);
-  }
-  return;
- }
- clearStepHighlight();
- game.last=patternPitch(root,$('gameArpStyle').value,game.step++);
- play(game.last,'game');arpKeyVisual.show(game.last);
- $('arpStatus').textContent='Game Arp · '+($('gameArpStyle').selectedOptions[0]?.text??'Action')+
-  ' · root '+names[root%12]+(Math.floor(root/12)-1);
-}
-function arpTick(){
- const notes=arpNotes();
- if(!notes.length){
-  arp.root=null;
-  if(!gameEnabled())arpStopVoice();
-  $('arpStatus').textContent='No notes held';return;
- }
- const note=selectRoot(notes,$('arpPattern').value,arp.step++);
- arp.root=note;
- if(gameEnabled())return; // The separate Game Arp clock voices this root.
- arpStopVoice();
- arp.last=note;play(note,'arp');arpKeyVisual.show(note);
- $('arpStatus').textContent='Root Arp · '+names[note%12]+(Math.floor(note/12)-1)+
-  ' · '+notes.length+' notes';
-}
-function stopGenerators(){
- gameStop();
- if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}
- arpStopVoice();arp.root=null;
-}
-function releaseDirectNotes(){
- for(const note of directOwned)stop(note);
- directOwned.clear();
-}
-function restartGenerators(){
- stopGenerators();arp.step=0;game.step=0;
- if(!gameEnabled()&&!arpEnabled()){
-  // Return physically held keys to direct sound; never retain stale latches.
-  arp.latched.clear();
-  for(const note of arp.held){
-   if(!directOwned.has(note)){play(note);directOwned.add(note)}
-  }
-  $('arpStatus').textContent='Arps off';return;
- }
- // Transitioning from direct polyphony must release EVERY physical owner first.
- releaseDirectNotes();
- if(!activeNotes().length&&!seqPreview){$('arpStatus').textContent='No notes held';return}
- const bpm=Number($('arpSync').checked?$('masterBpm').value:$('arpBpm').value);
- if(arpEnabled()){
-  arpTick();
-  arp.timer=setInterval(arpTick,stepMilliseconds(bpm,$('arpRate').value));
- }
- if(gameEnabled()){
-  gameTick();
-  game.timer=setInterval(gameTick,stepMilliseconds(bpm,$('gameRate').value));
- }
-}
-function gameRestart(){restartGenerators()}
-function arpRestart(){restartGenerators()}
-let queuedKeyNotes=[];
-function flushQueuedKeys(){
- if(sidContext?.state!=='running')return;
- const notes=queuedKeyNotes;queuedKeyNotes=[];
- for(const note of notes)beginKey(note,true);
-}
-function beginKey(note,fromQueue=false){
- if(!fromQueue){
-  audioTiming.keyAt=performance.now();
-  audioTiming.keyEnergyMs=null;
-  audioTiming.keyEnergyMissed=false;
- }
- if(sidMusicalInputBlocked()){
-  audioTiming.keyAt=null;
-  if(sidEventLog.enabled)sidEventLog.add('note-skipped',{note,reason:'engine busy',action:'key-down'});
-  return;
- }
- if(sidContext&&needsAudioResume(sidContext.state)){
-  armSidResume();
-  if(!queuedKeyNotes.includes(note))queuedKeyNotes.push(note);
-  if(sidContext.state==='running')flushQueuedKeys();
-  return;
- }
- if(sidController){sidKeys++;$('sidPlaybackStatus').textContent='SID key presses: '+sidKeys+' · waiting for audio samples…'}
- const hadNotes=activeNotes().length;
- if(!arp.held.has(note)){
-  const firstPhysical=arp.held.size===0;
-  arp.held.add(note);
-  if((gameEnabled()||arpEnabled())&&$('arpLatch').checked){
-   if(firstPhysical)arp.latched.clear();
-   arp.latched.add(note);
-  }
- }
- if(!gameEnabled()&&!arpEnabled()){
-  if(!directOwned.has(note)){play(note);directOwned.add(note)}
-  return;
- }
- const restart=!hadNotes||(gameEnabled()&&!arpEnabled())||(!game.timer&&!arp.timer);
- if(restart)restartGenerators();
-}
-function keyDown(note){beginKey(note)}
-function keyUp(note){
- arp.held.delete(note);
- if(directOwned.delete(note))stop(note);
- if(!gameEnabled()&&!arpEnabled())return;
- if(arp.held.size===0&&(!$('arpLatch').checked||arp.latched.size===0)&&!seqPreview){
-  stopGenerators();$('arpStatus').textContent='No notes held';return;
- }
- if(gameEnabled()&&!arpEnabled())gameRestart();
- else if(arpEnabled()&&!$('arpLatch').checked&&arp.root===note){
-  // Keep the root valid, without firing an extra off-grid arpeggio note.
-  const notes=arpNotes();
-  arp.root=notes.length?selectRoot(notes,$('arpPattern').value,arp.step):null;
-  if(!gameEnabled())arpStopVoice();
- }
-}
-$('gameArpOn').addEventListener('change',()=>{if(!$('gameArpOn').checked){seqPreview=false;setSeqTransportLabel()}restartGenerators()});
-$('gameArpStyle').addEventListener('change',gameRestart);
-$('gameRate').addEventListener('change',gameRestart);
-$('arpOn').addEventListener('change',restartGenerators);
-$('arpLatch').addEventListener('change',()=>{
- if($('arpLatch').checked)arp.held.forEach(note=>arp.latched.add(note));
- else arp.latched.clear();
- restartGenerators();
-});
-['arpPattern','arpRate'].forEach(id=>$(id).addEventListener('change',arpRestart));
-$('arpBpm').addEventListener('input',()=>{
- $('bpmValue').textContent=$('arpBpm').value;restartGenerators();
-});
-$('arpClear').addEventListener('click',()=>{
- // Clear stored notes only. Physical held keys and direct voice owners remain.
- arp.latched.clear();arp.root=null;arp.step=0;game.step=0;
- if(gameEnabled()||arpEnabled())restartGenerators();
- $('arpStatus').textContent='Latch cleared';
-});
+const keyboardState={octave:3};
 const keys=new Map();
 const arpKeyVisual=createArpKeyVisual({getKey:note=>keys.get(note)});
-const MIN_OCTAVE=0,MAX_OCTAVE=7;
-let keyboardOctave=3;
-const compactKeyboard=()=>matchMedia('(max-width:900px), (max-height:620px)').matches;
-function renderKeyboard(){
-  const resumePreview=seqPreview&&gameEnabled();
-  panic();
-  arp.held.clear(); // Pointer capture cannot survive keyboard reconstruction.
-  if(!$('arpLatch').checked)arp.latched.clear();
-  keys.clear();
-  $('keyboard').replaceChildren();
-  const start=(keyboardOctave+1)*12;
-  const count=compactKeyboard()?13:25;
-  for(let i=0;i<count;i++){
-    const note=start+i;
-    const key=document.createElement('button');
-    key.type='button';
-    key.className='key'+(names[note%12].includes('♯')?' black':'');
-    key.dataset.note=String(note);
-    key.textContent=names[note%12]+(Math.floor(note/12)-1);
-    key.setAttribute('aria-label','Play '+key.textContent);
-    let activePointer=null;
-    key.addEventListener('pointerdown',e=>{if(activePointer!==null)return;e.preventDefault();activePointer=e.pointerId;key.setPointerCapture(e.pointerId);key.classList.add('down');traceInput(note,'pointer','down',()=>keyDown(note))});
-    const end=e=>{if(activePointer!==e.pointerId)return;activePointer=null;key.classList.remove('down');traceInput(note,'pointer',e.type,()=>keyUp(note))};
-    key.addEventListener('pointerup',end);
-    key.addEventListener('pointercancel',end);
-    key.addEventListener('lostpointercapture',end);
-    $('keyboard').append(key);
-    keys.set(note,key);
-  }
-  $('octaveLabel').textContent='C'+keyboardOctave+'–C'+(keyboardOctave+(compactKeyboard()?1:2));
-  $('octaveDown').disabled=keyboardOctave===MIN_OCTAVE;
-  $('octaveUp').disabled=keyboardOctave===MAX_OCTAVE;
-  if(resumePreview)restartGenerators();
-}
-$('octaveDown').addEventListener('click',()=>{keyboardOctave=Math.max(MIN_OCTAVE,keyboardOctave-1);renderKeyboard()});
-$('octaveUp').addEventListener('click',()=>{keyboardOctave=Math.min(MAX_OCTAVE,keyboardOctave+1);renderKeyboard()});
-let wasCompact=compactKeyboard();
-window.addEventListener('resize',()=>{const compact=compactKeyboard();if(compact!==wasCompact){wasCompact=compact;renderKeyboard()}});
-renderKeyboard();
-function setKeyboardVisible(visible){
- if(!visible){
-  // Release held physical keys but leave a latched or previewed sequence playing.
-  for(const note of [...arp.held])keyUp(note);
-  for(const key of keys.values())key.classList.remove('down');
- }
- $('keyboard').hidden=!visible;
- $('keyboardPanel').classList.toggle('is-collapsed',!visible);
- $('keyboardToggle').setAttribute('aria-expanded',String(visible));
- $('keyboardToggle').textContent=visible?'Hide keyboard ▲':'Show keyboard ▼';
- try{window.localStorage.setItem('project6581.keyboard-visible',visible?'yes':'no')}catch{}
-}
-$('keyboardToggle').addEventListener('click',()=>setKeyboardVisible($('keyboard').hidden));
-try{if(window.localStorage.getItem('project6581.keyboard-visible')==='no')setKeyboardVisible(false)}catch{}
-const layout='awsedftgyhujkolp;';
-window.addEventListener('keydown',e=>{if(e.repeat||e.target.matches('input,select,button,textarea,[contenteditable="true"]'))return;const idx=layout.indexOf(e.key.toLowerCase());if(idx>=0){const note=(keyboardOctave+1)*12+idx;const key=keys.get(note);if(key){e.preventDefault();key.classList.add('down');traceInput(note,'keyboard','down',()=>keyDown(note))}}});
-window.addEventListener('keyup',e=>{const idx=layout.indexOf(e.key.toLowerCase());if(idx>=0){const note=(keyboardOctave+1)*12+idx;keys.get(note)?.classList.remove('down');arp.held.has(note)?traceInput(note,'keyboard','up',()=>keyUp(note)):keyUp(note)}});
+({gameStop,arpStopVoice,restartGenerators,stopGenerators,gameRestart,setSeqTransportLabel,renderSequenceSteps}=mountPerformance({
+ $,names,keyboardState,arp,game,directOwned,play,stop,silenceSidOutput,refreshPresetDirty,
+ getArpKeyVisual:()=>arpKeyVisual,
+ gameEnabled,arpEnabled,activeNotes,arpNotes,
+ getSeqState:()=>seqState,
+ setSeqState:value=>{seqState=value},
+ isSeqPreview:()=>seqPreview,
+ setSeqPreview:value=>{seqPreview=value},
+ getActiveSeqStep:()=>activeSeqStep,
+ setActiveSeqStep:value=>{activeSeqStep=value}
+}));
+({flushQueuedKeys}=mountKeyboard({
+ $,keys,names,keyboardState,audioTiming,sidEventLog,
+ getSidContext:()=>sidContext,
+ sidMusicalInputBlocked,armSidResume,
+ hasController:()=>Boolean(sidController),
+ countKeyPress(){
+  sidKeys++;
+  $('sidPlaybackStatus').textContent='SID key presses: '+sidKeys+' · waiting for audio samples…';
+ },
+ activeNotes,arp,game,gameEnabled,arpEnabled,directOwned,play,stop,restartGenerators,stopGenerators,
+ gameRestart,arpStopVoice,arpNotes,
+ isSeqPreview:()=>seqPreview,
+ traceInput,panic
+}));
 
 function updateSidFilter(overrides={}){
   if(!sidController)return;

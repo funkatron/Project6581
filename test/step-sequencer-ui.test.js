@@ -6,6 +6,8 @@ import {spawnSync} from 'node:child_process';
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const css=readFileSync(new URL('../src/seq-ui.css',import.meta.url),'utf8');
 const script=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
+const keyboard=readFileSync(new URL('../src/keyboard-input.js',import.meta.url),'utf8');
+const performance=readFileSync(new URL('../src/performance-play.js',import.meta.url),'utf8');
 
 test('the Arp/Seq workspace is usable and the original Sound controls remain',()=>{
  assert.ok(script,'App module must exist');
@@ -21,39 +23,39 @@ test('the Arp/Seq workspace is usable and the original Sound controls remain',()
 });
 
 test('the step editor provides exactly one dynamic control per step and per lane',()=>{
- assert.match(script,/seqState\.steps\.forEach\(\(step,index\)=>\{/);
- assert.match(script,/pitch\.type='range';pitch\.className='seq-note'/);
- assert.match(script,/gate\.type='button';gate\.className='seq-gate'/);
- assert.match(script,/length\.type='range';length\.className='seq-duration'/);
- assert.match(script,/pitch\.addEventListener\('input'/);
- assert.match(script,/gate\.addEventListener\('click'/);
- assert.match(script,/gate\.setAttribute\('aria-pressed',String\(enabled\)\)/);
- assert.match(script,/gate\.textContent=enabled\?'ON':'REST'/);
- assert.match(script,/length\.addEventListener\('input'/);
- assert.match(script,/seqState\.steps\[index\]\.offset=Number\(pitch\.value\)/);
- assert.match(script,/seqState\.steps\[index\]\.duration=Number\(length\.value\)/);
+ assert.match(performance,/seqState\.steps\.forEach\(\(step,index\)=>\{/);
+ assert.match(performance,/pitch\.type='range';pitch\.className='seq-note'/);
+ assert.match(performance,/gate\.type='button';gate\.className='seq-gate'/);
+ assert.match(performance,/length\.type='range';length\.className='seq-duration'/);
+ assert.match(performance,/pitch\.addEventListener\('input'/);
+ assert.match(performance,/gate\.addEventListener\('click'/);
+ assert.match(performance,/gate\.setAttribute\('aria-pressed',String\(enabled\)\)/);
+ assert.match(performance,/gate\.textContent=enabled\?'ON':'REST'/);
+ assert.match(performance,/length\.addEventListener\('input'/);
+ assert.match(performance,/seqState\.steps\[index\]\.offset=Number\(pitch\.value\)/);
+ assert.match(performance,/seqState\.steps\[index\]\.duration=Number\(length\.value\)/);
  assert.match(css,/grid-template-columns:repeat\(16,minmax\(52px,1fr\)\)/);
  assert.match(css,/overflow-x:auto/);
 });
 
 test('custom sequence starts without held keys, handles rests and cancels stale note gates',()=>{
- assert.match(script,/function gameTick\(\)[\s\S]*?sequenceEvent\(root,seqState,game\.step\+\+\)/);
- assert.match(script,/if\(!event\.gate\)\{/);
- assert.match(script,/game\.gateTimer=setTimeout/);
- assert.match(script,/if\(game\.step!==clock\|\|game\.last!==sounding\)return/);
- assert.match(script,/if\(!activeNotes\(\)\.length&&!seqPreview\)/);
- assert.match(script,/if\(game\.gateTimer!==null\)\{clearTimeout\(game\.gateTimer\)/);
- assert.match(script,/seqPreview=false;\$\('gameArpOn'\)\.checked=false/);
+ assert.match(performance,/function gameTick\(\)[\s\S]*?sequenceEvent\(root,seqState,game\.step\+\+\)/);
+ assert.match(performance,/if\(!event\.gate\)\{/);
+ assert.match(performance,/game\.gateTimer=setTimeout/);
+ assert.match(performance,/if\(game\.step!==clock\|\|game\.last!==sounding\)return/);
+ assert.match(performance,/if\(!activeNotes\(\)\.length&&!seqPreview\)/);
+ assert.match(performance,/if\(game\.gateTimer!==null\)\{clearTimeout\(game\.gateTimer\)/);
+ assert.match(performance,/setSeqPreview\(false\);\$\('gameArpOn'\)\.checked=false/);
 });
 
 test('keyboard remains full width and can collapse without stopping preview',()=>{
  assert.match(css,/\.keyboard\{width:100%;min-height:0;flex:1\}/);
  assert.match(css,/#keyboard\[hidden\]\{display:none!important\}/);
  assert.match(html,/id="keyboardToggle" aria-expanded="true"/);
- assert.match(script,/function setKeyboardVisible\(visible\)\{/);
- assert.match(script,/for\(const note of \[\.\.\.arp\.held\]\)keyUp\(note\)/);
- assert.match(script,/setItem\('project6581\.keyboard-visible'/);
- assert.match(script,/\$\('keyboard'\)\.hidden=!visible/);
+ assert.match(keyboard,/function setKeyboardVisible\(visible\)\{/);
+ assert.match(keyboard,/for\(const note of \[\.\.\.arp\.held\]\)keyUp\(note\)/);
+ assert.match(keyboard,/setItem\('project6581\.keyboard-visible'/);
+ assert.match(keyboard,/\$\('keyboard'\)\.hidden=!visible/);
 });
 
 test('preset settings include the editable phrase and restore its controls',()=>{
@@ -66,15 +68,15 @@ test('high-rate gate lengths have no artificial 20 ms minimum',()=>{
  const fastStep=60000/240/32;
  const quarterGate=fastStep*0.25;
  assert.ok(quarterGate<2,'240 BPM at 1/128 has an approximately 1.95 ms quarter gate');
- assert.match(script,/\},stepMilliseconds\(bpm,\$\('gameRate'\)\.value\)\*event\.duration\/100\)/);
- assert.doesNotMatch(script,/Math\.max\(20,Math\.round\(stepMilliseconds/);
+ assert.match(performance,/\},stepMilliseconds\(bpm,\$\('gameRate'\)\.value\)\*event\.duration\/100\)/);
+ assert.doesNotMatch(performance,/Math\.max\(20,Math\.round\(stepMilliseconds/);
 });
 
 test('step gates are touch-friendly rectangular ON/REST buttons, not round switches',()=>{
  assert.match(css,/\.seq-gate\{[^}]*width:44px[^}]*height:40px[^}]*border-radius:5px/);
  assert.match(css,/\.seq-gate\[aria-pressed="true"\]/);
  assert.match(css,/\.seq-gate\[aria-pressed="false"\]/);
- assert.doesNotMatch(script,/gate\.type='checkbox'/);
+ assert.doesNotMatch(performance,/gate\.type='checkbox'/);
 });
 
 test('landscape and compact layouts preserve sequencer lanes and taller keyboard',()=>{
