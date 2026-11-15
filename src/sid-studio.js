@@ -259,6 +259,7 @@ let stopGenerators=()=>{};
 let gameRestart=()=>{};
 let setSeqTransportLabel=()=>{};
 let renderSequenceSteps=()=>{};
+let loadBuiltInPhrase=()=>false;
 let flushQueuedKeys=()=>{};
 const gameEnabled=()=>$('gameArpOn').checked;
 const arpEnabled=()=>$('arpOn').checked;
@@ -267,7 +268,7 @@ const arpNotes=()=>activeNotes().sort((a,b)=>a-b);
 const keyboardState={octave:3};
 const keys=new Map();
 const arpKeyVisual=createArpKeyVisual({getKey:note=>keys.get(note)});
-({gameStop,arpStopVoice,restartGenerators,stopGenerators,gameRestart,setSeqTransportLabel,renderSequenceSteps}=mountPerformance({
+({gameStop,arpStopVoice,restartGenerators,stopGenerators,gameRestart,setSeqTransportLabel,renderSequenceSteps,loadBuiltInPhrase}=mountPerformance({
  $,names,keyboardState,arp,game,directOwned,play,stop,silenceSidOutput,refreshPresetDirty,
  getArpKeyVisual:()=>arpKeyVisual,
  gameEnabled,arpEnabled,activeNotes,arpNotes,
@@ -741,6 +742,7 @@ function applyPresetControls(next){
  $('gameRate').value=String(next.performance.game.rate);
  seqState=validateSequence(next.performance.game.sequence);
  renderSequenceSteps();
+ loadBuiltInPhrase($('gameArpStyle').value);
  renderVoiceControls();renderLfos();updateUnison();updateModulation();
  $('arpStatus').textContent='Preset ready · press a key';
 }

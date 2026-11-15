@@ -16,7 +16,9 @@ test('inline keyboard application remains valid JavaScript after adding the visu
 });
 
 test('Game Arp voices its pattern, while regular Arp owns the selected root',()=>{
- assert.match(performance,/function gameTick\(\)[\s\S]*?patternPitch\(root,\$\('gameArpStyle'\)\.value,game\.step\+\+\)/);
+ assert.match(performance,/function gameTick\(\)[\s\S]*?sequenceEvent\(root,seqState,game\.step\+\+\)/);
+ assert.doesNotMatch(performance,/patternPitch\(/);
+ assert.match(performance,/loadBuiltInPhrase\(\$\('gameArpStyle'\)\.value\)/);
  assert.match(performance,/play\(game\.last,'game'\);getArpKeyVisual\(\)\.show\(game\.last\)/);
  assert.match(performance,/function arpTick\(\)[\s\S]*?selectRoot\(notes,\$\('arpPattern'\)\.value,arp\.step\+\+\)/);
  assert.match(performance,/arp\.last=note;play\(note,'arp'\);getArpKeyVisual\(\)\.show\(note\)/);

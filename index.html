@@ -353,7 +353,7 @@ label:has(.slider-stack){gap:4px}
    <div id="seqGrid" class="seq-grid" role="group" aria-label="Custom Game Arp step controls"></div>
   </div>
  </div>
- <p class="seq-summary" id="seqStatus">Edit pitch, gate and length. Moving a step selects Custom steps automatically. Preview runs at the current octave until stopped.</p>
+ <p class="seq-summary" id="seqStatus">Choosing Action, Adventure, or Arcade loads that phrase. Editing a step makes it Custom. Preview runs at the current octave until stopped.</p>
 </section>
 <details class="seq-subsection" id="seqExtras"><summary>Root Arpeggiator &amp; 3 LFOs</summary><h2>Arpeggiator · Root</h2><div class="controls"><label>Enabled <input id="arpOn" type="checkbox"></label><label>Root order <select id="arpPattern"><option value="up" selected>Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label><label>Root rate <select id="arpRate"><option value="0.25">1/1</option><option value="0.5">1/2</option><option value="1" selected>1/4</option><option value="2">1/8</option><option value="4">1/16</option><option value="8">1/32</option><option value="16">1/64</option><option value="32">1/128</option></select></label><label class="arp-local-bpm" hidden>Arp BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label><button id="arpClear">Clear latch</button></div><small id="arpStatus">Arp off</small>
 </details></section><section class="panel lfo-panel" id="lfoPanel" hidden role="tabpanel" aria-labelledby="tabLfos" aria-label="Low frequency oscillators"><h2>Modulation · LFOs</h2><div id="lfoControls"></div></section></div>

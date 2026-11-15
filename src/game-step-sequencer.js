@@ -1,4 +1,5 @@
 // One editable, sixteen-step Game Arp phrase. No browser or SID dependencies.
+import {GAME_PATTERNS} from './arp-composition.js';
 export const STEP_LENGTHS=Object.freeze([4,8,16]);
 // A reset must be neutral: sixteen root notes, every gate on, no melody
 // or hidden rests. Only an explicitly edited or saved phrase has variations.
@@ -24,6 +25,18 @@ export function validateSequence(sequence){
    return {offset:step.offset,gate:step.gate,duration:step.duration};
   })
  };
+}
+// Action, Adventure, and Arcade are built-in phrases. Custom stays null so
+// the current steps are left alone. Duration 100 holds each note for the step.
+export function sequenceForStyle(style){
+ const offsets=GAME_PATTERNS[style];
+ if(!offsets)return null;
+ const sequence=defaultSequence();
+ sequence.length=offsets.length;
+ for(let i=0;i<offsets.length;i++){
+  sequence.steps[i]={offset:offsets[i],gate:true,duration:100};
+ }
+ return sequence;
 }
 export function sequenceEvent(root,sequence,position){
  if(!Number.isFinite(root)||!Number.isInteger(position)||position<0)throw new RangeError('Invalid root or step');
