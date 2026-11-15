@@ -7,7 +7,8 @@ const studio=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8'
 for(const [file,exportName] of [
  ['../src/editor-tabs.js','mountEditorTabs'],
  ['../src/lfo-panel-ui.js','mountLfoPanel'],
- ['../src/voice-sound-panel.js','mountVoiceSoundPanel'],
+ ['../src/sid-engine-panels-ui.js','mountSidEnginePanels'],
+ ['../src/sid-engines.js','maxVoicesForEngines'],
  ['../src/audio-timing-panel.js','mountAudioTimingPanel'],
  ['../src/studio-bootstrap.js','bootSidStudio'],
 ]){
@@ -21,8 +22,8 @@ test('sid-studio wires extracted UI modules',()=>{
  assert.match(studio,/mountEditorTabs\(/);
  assert.match(studio,/from "\.\/lfo-panel-ui\.js/);
  assert.match(studio,/mountLfoPanel\(/);
- assert.match(studio,/from "\.\/voice-sound-panel\.js/);
- assert.match(studio,/mountVoiceSoundPanel\(/);
+ assert.match(studio,/from "\.\/sid-engine-panels-ui\.js/);
+ assert.match(studio,/mountSidEnginePanels\(/);
  assert.match(studio,/from "\.\/audio-timing-panel\.js/);
  assert.match(studio,/mountAudioTimingPanel\(/);
 });

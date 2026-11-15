@@ -1,11 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
- PRESET_VERSION,PRESET_STORAGE_KEY,LEGACY_PRESET_STORAGE_KEY_V3,FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,
+ PRESET_VERSION,PRESET_STORAGE_KEY,LEGACY_PRESET_STORAGE_KEY_V3,LEGACY_PRESET_STORAGE_KEY_V4,FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,
  defaultPresetSettings,validatePresetSettings,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,
  importPresetFile
 } from '../src/preset-library.js';
-import {DEFAULT_PITCH_ENVELOPE} from '../src/pitch-envelope.js';
 import {sequenceEvent} from '../src/game-step-sequencer.js';
 
 const makeStorage=()=>{
@@ -18,6 +17,16 @@ const makeStorage=()=>{
  };
 };
 
+function legacyV4Sound(base){
+ return {
+  model:base.sound.engines[0].model,
+  voice:{...base.sound.engines[0].voice},
+  instrument:{...base.sound.instrument},
+  filter:{...base.sound.engines[0].filter},
+  lfos:base.sound.lfos.map(lfo=>({...lfo}))
+ };
+}
+
 test('factory bank contains useful original sounds and complete performance settings',()=>{
  assert.ok(FACTORY_PRESETS.length>=5);
  const ids=new Set(),names=new Set();
@@ -28,7 +37,9 @@ test('factory bank contains useful original sounds and complete performance sett
   ids.add(p.id);names.add(p.name);
   const result=validatePresetSettings(p.settings);
   assert.deepEqual(result,p.settings);
+  assert.equal(result.sound.engines.length,3);
   assert.equal(result.sound.lfos.length,3);
+  assert.equal(typeof result.performance.routing.keyboard,'string');
   assert.equal(typeof result.performance.masterBpm,'number');
   assert.equal(typeof result.performance.arp.enabled,'boolean');
   assert.equal(typeof result.performance.game.style,'string');
@@ -36,15 +47,16 @@ test('factory bank contains useful original sounds and complete performance sett
 });
 test('user preset can save and reload every sound and performance setting',()=>{
  const storage=makeStorage(),settings=defaultPresetSettings();
- settings.sound.model=8580;
- settings.sound.voice.wave='noise';
- settings.sound.voice.attack=.45;
+ settings.sound.engines[0].model=8580;
+ settings.sound.engines[0].voice.wave='noise';
+ settings.sound.engines[0].voice.attack=.45;
  settings.sound.instrument.voiceCount=7;
  settings.sound.instrument.mode='poly';
  settings.sound.instrument.unisonCount=2;
- settings.sound.filter.cutoff=2300;
+ settings.sound.engines[0].filter.cutoff=2300;
  settings.sound.lfos[2]={...settings.sound.lfos[2],enabled:true,wave:'sample-hold',rate:2.25,depth:.45,target:'volume'};
  settings.performance.masterBpm=147;
+ settings.performance.routing={keyboard:'sid2',arp:'layer',game:'all'};
  settings.performance.arp={enabled:true,latch:true,pattern:'updown',rate:8,sync:false,localBpm:98};
  settings.performance.game={...settings.performance.game,enabled:true,style:'adventure',rate:8};
  const saved=writeUserPresets(storage,[{id:'abc123',name:'My 8580',settings}]);
@@ -66,9 +78,9 @@ test('invalid file, unsupported version, duplicate names and invalid slider valu
  assert.throws(()=>importPresetFile('not JSON'));
  assert.throws(()=>importPresetFile(exportPresetBank([good,{...good,name:'GOOD'}])),/Duplicate name/);
  const invalid=defaultPresetSettings();
- invalid.sound.filter.cutoff=-100;
+ invalid.sound.engines[0].filter.cutoff=-100;
  assert.throws(()=>validatePresetSettings(invalid),/cutoff/);
- invalid.sound.filter.cutoff=4000;
+ invalid.sound.engines[0].filter.cutoff=4000;
  invalid.performance.masterBpm=500;
  assert.throws(()=>validatePresetSettings(invalid),/BPM/);
  invalid.performance.masterBpm=120;
@@ -101,15 +113,15 @@ test('C64-inspired prototype bank covers four distinct categories without changi
   const p=FACTORY_PRESETS.find(p=>p.id===id);
   assert.ok(p,'missing prototype '+id);
   assert.equal(p.category,category);
-  assert.equal(p.settings.sound.voice.wave,wave);
+  assert.equal(p.settings.sound.engines[0].voice.wave,wave);
   assert.equal(p.settings.performance.game.enabled,false);
   assert.deepEqual(importPresetFile(exportPreset(p)),[{name:p.name,settings:p.settings}]);
  }
  const legacy=['deep-bass','arcade-lead','chiptune-pluck','pulsing-pad','soft-flute','filter-motion'];
  for(const id of [...legacy,...prototypes.map(([id])=>id)])
   assert.ok(FACTORY_PRESETS.some(p=>p.id===id),'legacy or prototype factory sound removed: '+id);
- assert.equal(PRESET_VERSION,4);
- assert.equal(FACTORY_PRESETS[0].settings.sound.voice.pitchEnvelope.enabled,false);
+ assert.equal(PRESET_VERSION,5);
+ assert.equal(FACTORY_PRESETS[0].settings.sound.engines[0].voice.pitchEnvelope.enabled,false);
 });
 
 test('expanded C64 factory bank retains legacy sounds and has six originals per new category',()=>{
@@ -141,7 +153,7 @@ test('expanded C64 factory bank retains legacy sounds and has six originals per 
  }
  for(const preset of FACTORY_PRESETS)
   assert.ok(FACTORY_GROUPS.includes(factoryGroup(preset.category)),preset.id+' has no browser group');
- assert.equal(PRESET_VERSION,4);
+ assert.equal(PRESET_VERSION,5);
 });
 
 test('octave presets use explicit Game Arp patterns and do not change global neutral reset',()=>{
@@ -170,46 +182,62 @@ test('legacy factory category labels group with the expanded bank without rewrit
 
 test('version 3 preset files import with default disabled pitch envelope',()=>{
  const base=defaultPresetSettings();
- const voice={...base.sound.voice};
+ const voice={...base.sound.engines[0].voice};
  delete voice.pitchEnvelope;
- const settings={sound:{...base.sound,voice},performance:base.performance};
+ const settings={sound:legacyV4Sound({...base,sound:{...base.sound,engines:base.sound.engines}}),performance:base.performance};
+ delete settings.sound.engines;
  const raw=JSON.stringify({type:'project6581-preset',version:3,preset:{name:'Legacy',settings}});
  const [imported]=importPresetFile(raw);
- assert.equal(imported.settings.sound.voice.pitchEnvelope.enabled,false);
+ assert.equal(imported.settings.sound.engines[0].voice.pitchEnvelope.enabled,false);
  assert.equal(JSON.parse(exportPreset(imported)).version,PRESET_VERSION);
 });
 
-test('local v3 bank migrates to v4 storage on read',()=>{
+test('local v3 bank migrates to v5 storage on read',()=>{
  const storage=makeStorage();
  const base=defaultPresetSettings();
- const voice={...base.sound.voice};
+ const voice={...base.sound.engines[0].voice};
  delete voice.pitchEnvelope;
+ const legacySound=legacyV4Sound(base);
  storage.setItem(LEGACY_PRESET_STORAGE_KEY_V3,JSON.stringify({
   version:3,
-  presets:[{id:'keep-me',name:'Keep',settings:{sound:{...base.sound,voice},performance:base.performance}}]
+  presets:[{id:'keep-me',name:'Keep',settings:{sound:legacySound,performance:base.performance}}]
  }));
  const items=readUserPresets(storage);
  assert.equal(items.length,1);
  assert.equal(items[0].name,'Keep');
- assert.equal(items[0].settings.sound.voice.pitchEnvelope.enabled,false);
+ assert.equal(items[0].settings.sound.engines[0].voice.pitchEnvelope.enabled,false);
  assert.ok(storage.getItem(PRESET_STORAGE_KEY));
  assert.equal(storage.getItem(LEGACY_PRESET_STORAGE_KEY_V3),null);
 });
 
+test('local v4 bank migrates to v5 storage on read',()=>{
+ const storage=makeStorage();
+ const base=defaultPresetSettings();
+ const legacySound=legacyV4Sound(base);
+ storage.setItem(LEGACY_PRESET_STORAGE_KEY_V4,JSON.stringify({
+  version:4,
+  presets:[{id:'v4',name:'V4',settings:{sound:legacySound,performance:base.performance}}]
+ }));
+ const items=readUserPresets(storage);
+ assert.equal(items.length,1);
+ assert.equal(items[0].settings.sound.engines.length,3);
+ assert.equal(storage.getItem(LEGACY_PRESET_STORAGE_KEY_V4),null);
+});
+
 test('enabled pitch envelope validates and round-trips',()=>{
  const settings=defaultPresetSettings();
- settings.sound.voice.pitchEnvelope={
+ settings.sound.engines[0].voice.pitchEnvelope={
   enabled:true,interpolation:'curve',end:'zero',
   points:[{ms:0,semitones:12},{ms:80,semitones:0}]
  };
  const validated=validatePresetSettings(settings);
  const [imported]=importPresetFile(exportPreset({name:'Sweep',settings:validated}));
- assert.deepEqual(imported.settings.sound.voice.pitchEnvelope,validated.sound.voice.pitchEnvelope);
+ assert.deepEqual(imported.settings.sound.engines[0].voice.pitchEnvelope,validated.sound.engines[0].voice.pitchEnvelope);
 });
 
 test('invalid pitch envelope times reject preset settings',()=>{
  const settings=defaultPresetSettings();
- settings.sound.voice.pitchEnvelope={
+ settings.sound.engines[0].voice.pitchEnvelope={
   enabled:true,interpolation:'linear',end:'hold',
   points:[{ms:0,semitones:0},{ms:0,semitones:5}]
  };

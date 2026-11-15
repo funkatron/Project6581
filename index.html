@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#d6cfbd"><title>Project6581 | SID Studio</title>
 <link rel="stylesheet" href="./src/studio-core.css?v=__BUILD_ID__">
-<link rel="stylesheet" href="./src/seq-ui.css?v=__BUILD_ID__"><link rel="stylesheet" href="./src/seq-ui.css?v=__BUILD_ID__"></head><body><main>
+<link rel="stylesheet" href="./src/seq-ui.css?v=__BUILD_ID__"></head><body><main>
 <header><div><h1>Project6581</h1><p class="subtitle">SID Studio · reSIDfp</p></div><div class="controls"><button id="presetOpen" type="button" aria-haspopup="dialog" aria-controls="presetDialog" aria-label="Open preset library"><span id="presetCurrent">Current sound</span><span aria-hidden="true">▾</span></button><button id="sidStart" class="primary" hidden>Retry SID</button><button id="sidUnlock" hidden>Enable audio</button><label class="master-tempo">Master BPM <input id="masterBpm" type="range" min="40" max="240" step="1" value="120" aria-label="Master tempo in beats per minute"><output id="masterBpmValue" for="masterBpm">120</output></label><label class="record-format">Format <select id="recordFormat" aria-label="Recording format"><option value="wav">WAV</option><option value="m4a">M4A</option></select></label><button id="recordToggle" type="button" disabled>● Record</button><button id="panic">Stop all</button></div></header>
 <dialog id="presetDialog" aria-labelledby="presetDialogTitle">
  <div class="preset-dialog-header"><h2 id="presetDialogTitle">Preset library</h2><button id="presetClose" type="button" aria-label="Close preset library">Close</button></div>
@@ -25,16 +25,24 @@
  <h3>Voice allocation</h3>
  <div class="allocation-selectors">
   <label>Assign <select id="voiceAssign" aria-label="Voice assignment"><option value="mono" selected>Mono</option><option value="legato">Legato</option><option value="duo">Duo</option><option value="poly">Poly</option></select></label>
-  <label>Voices <select id="voiceCount" aria-label="Total SID oscillators"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label>
+  <label>Voices <select id="voiceCount" aria-label="Total SID oscillators"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option></select></label>
   <label>Unison <select id="unisonCount" aria-label="Oscillators per note"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label>
  </div>
  <label class="allocation-detune">Detune <input id="detune" type="range" min="0" max="100" value="12" step="1" aria-label="Unison pitch detune"><output id="detuneValue" class="base-value">12¢</output></label>
  <small id="voiceCapacity" class="voice-capacity" role="status" aria-live="polite">Up to 1 note · 1 oscillator</small>
 </div>
-<div class="voice-grid"><label>Chip <select id="chip"><option value="6581">MOS 6581</option><option value="8580">MOS 8580</option></select></label><label>Volume <input id="volume" type="range" min="0" max="100" value="55"><output class="base-value">55%</output></label><label>Cutoff <input id="cutoff" type="range" min="50" max="10000" value="7000"><output class="base-value">7000 Hz</output></label><label>Resonance <input id="resonance" type="range" min="0" max="100" value="10"><output class="base-value">10%</output></label><label>Filter <select id="mode"><option value="lowpass">Low-pass</option><option value="bandpass">Band-pass</option><option value="highpass">High-pass</option></select></label></div>
-<div class="section-divider"></div><div id="voices" class="voices"></div>
+<div class="sid-engines-toolbar"><button id="sidEngineAdd" type="button">+ Add SID</button></div>
+<div id="sidEngines" class="sid-engines" aria-label="SID engine panels"></div>
+<select id="chip" hidden aria-hidden="true"><option value="6581">6581</option><option value="8580">8580</option></select>
+<input type="range" id="volume" hidden aria-hidden="true"><input type="range" id="cutoff" hidden aria-hidden="true"><input type="range" id="resonance" hidden aria-hidden="true"><select id="mode" hidden aria-hidden="true"><option value="lowpass">Low-pass</option></select>
 </section>
 <section class="panel performance-panel" id="playPanel" hidden role="tabpanel" aria-labelledby="tabPlay" aria-label="Arpeggiator controls">
+<div class="note-routing controls" aria-label="Note routing">
+ <h3>Note routing</h3>
+ <label>Keyboard <select id="keyboardRoute"><option value="all">All enabled</option><option value="sid1">SID 1</option><option value="sid2">SID 2</option><option value="sid3">SID 3</option><option value="layer">Layer</option></select></label>
+ <label>Root Arp <select id="arpRoute"><option value="all">All enabled</option><option value="sid1">SID 1</option><option value="sid2">SID 2</option><option value="sid3">SID 3</option><option value="layer">Layer</option></select></label>
+ <label>Game Arp <select id="gameRoute"><option value="sid1" selected>SID 1</option><option value="all">All enabled</option><option value="sid2">SID 2</option><option value="sid3">SID 3</option><option value="layer">Layer</option></select></label>
+</div>
 <div class="arp-global controls" aria-label="Latch for Game Arp and Root Arp">
  <label>Latch <input id="arpLatch" type="checkbox" aria-describedby="arpLatchHint"></label>
  <small id="arpLatchHint">Held notes stay for Game Arp and Root Arp.</small>

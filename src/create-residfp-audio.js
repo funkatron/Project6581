@@ -29,7 +29,7 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
     node=new AudioWorkletNode(context,'residfp-processor',{outputChannelCount:[2]});
     node.connect(context.destination);
     eventLog?.add('sid-worklet-connected',{contextId,model});
-    let capture=null,stopResolve=null,stopReject=null,modelReady=null;
+    let capture=null,stopResolve=null,stopReject=null,modelReady=null,chipModelReady=null;
     let probeId=0,lastProbeAt=-Infinity,timingEnabled=false;
     const pendingProbes=new Map(),pendingEvents=new Map();
     let eventLogEnabled=false;
@@ -79,10 +79,23 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
         pending?.resolve(data.model);
         return;
       }
+      if(data?.type==='chip-model-ready'){
+        const pending=chipModelReady;chipModelReady=null;
+        pending?.resolve(data);
+        return;
+      }
       if(data?.type==='record-started')return;
-      if(data?.type==='error'&&modelReady){
-        const pending=modelReady;modelReady=null;
-        pending.reject(new Error(data.message||'SID model switch failed'));
+      if(data?.type==='error'){
+        if(modelReady){
+          const pending=modelReady;modelReady=null;
+          pending.reject(new Error(data.message||'SID model switch failed'));
+          return;
+        }
+        if(chipModelReady){
+          const pending=chipModelReady;chipModelReady=null;
+          pending.reject(new Error(data.message||'SID chip model switch failed'));
+          return;
+        }
       }
       onStatus(data);
     };
@@ -130,6 +143,21 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
           node.port.postMessage({type:'set-model',model:nextModel});
         });
       },
+      setChipModel(chip,nextModel){
+        if(closed||!node)return Promise.reject(new Error('SID engine is closed'));
+        return new Promise((resolve,reject)=>{
+          const timer=setTimeout(()=>{
+            if(chipModelReady){chipModelReady=null;reject(new Error('SID chip model switch timed out'))}
+          },4000);
+          chipModelReady={
+            resolve:value=>{clearTimeout(timer);resolve(value)},
+            reject:error=>{clearTimeout(timer);reject(error)}
+          };
+          node.port.postMessage({type:'set-chip-model',chip,model:nextModel});
+        });
+      },
+      setPan(chip,pan){if(!closed&&node)node.port.postMessage({type:'set-pan',chip,pan:Math.round(pan)});},
+      setModulationConfig(config){if(!closed&&node)node.port.postMessage({type:'modulation-config',...config});},
       startPitchEnvelope(slot,note,envelope){
         if(!Number.isInteger(slot)||slot<0||slot>=8||!Number.isFinite(note))return;
         const register=Math.floor(slot/3)*0x20+(slot%3)*7;

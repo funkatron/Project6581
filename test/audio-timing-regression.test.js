@@ -23,8 +23,9 @@ test('immediate note-on flush preserves register ordering and does not double-po
 });
 
 test('keyboard and Game Arp note-ons use the same immediate dispatch path',()=>{
- assert.match(code,/const token=sidController\.noteOn\(note,\(\)=>currentSidSettings\);/);
- assert.match(code,/sidAudio\?\.noteDispatched\?\.\(source\.startsWith\('key:'\)\?'keyboard':source\)/);
+ assert.match(code,/const token=sidController\.noteOn\(note,voiceSettingsForSlot,\{chipMask\}\)/);
+ assert.match(code,/sidAudio\?\.noteDispatched\?\.\(ownerKey\.startsWith\('key:'\)\?'keyboard':ownerKey\.split\('@'\)\[0\]\)/);
+ assert.match(code,/function playOne\(note,ownerKey,chipMask\)/);
  assert.match(bridge,/noteDispatched\(source='keyboard'\)\{\s*batcher\.flush\(\)/);
  assert.match(bridge,/if\(now-lastProbeAt<500\|\|pendingProbes\.size>=4\)\{/);
  assert.match(bridge,/onStatus\(\{type:'latency-probe-skipped',source\}\)/);
@@ -40,6 +41,7 @@ test('Worklet probe is acknowledged only after a render block',()=>{
  const energyAt=worklet.indexOf("this.port.postMessage({type:'first-energy'");
  assert.ok(renderAt>=0&&replyAt>renderAt,'probe reply must follow sid_render');
  assert.ok(energyAt>renderAt,'first loud sample is measured after sid_render');
+ assert.match(worklet,/first-energy',hit:sampleOffset>=0,sampleOffset,blocks:this\.energyBlocks,sampleRate,frames/);
  assert.match(worklet,/if\(this\.timingEnabled&&queuedWrites>0\)/);
  assert.match(worklet,/renderBudgetMs:frames\*1000\/sampleRate/);
  assert.match(worklet,/this\.renderMsTotal\+=elapsed/);
@@ -49,7 +51,9 @@ test('Worklet probe is acknowledged only after a render block',()=>{
 test('optional timing display is clearly labeled and never claims speaker latency',()=>{
  assert.match(html,/<details id="audioTimingDetails"><summary>Audio timing<\/summary>/);
  assert.match(html,/id="audioTimingReport"/);
- assert.match(timingPanel,/Key to first loud sample:/);
+ assert.match(timingPanel,/Key → loud PCM in worklet:/);
+ assert.match(timingPanel,/Estimated key → device output:/);
+ assert.match(timingPanel,/Main thread ↔ worklet control ping/);
  assert.match(timingPanel,/This note kept the previous acknowledgment/);
  assert.match(timingPanel,/Screen recording A\/V sync can differ\./);
  assert.match(timingPanel,/Browser base\/output latency:/);

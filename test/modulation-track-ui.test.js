@@ -7,7 +7,7 @@ import {readStudioCss} from './studio-css.mjs';
 
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const script=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
-const voicePanel=readFileSync(new URL('../src/voice-sound-panel.js',import.meta.url),'utf8');
+const enginePanels=readFileSync(new URL('../src/sid-engine-panels-ui.js',import.meta.url),'utf8');
 const studioCss=readStudioCss();
 const targetNames=['volume','cutoff','resonance','detune','attack','decay','sustain','release','pulse','pwmDepth','pwmRate'];
 
@@ -19,11 +19,9 @@ test('the module script remains valid JavaScript with the track presentation hel
 });
 
 test('eleven continuous sound controls have numeric base values that remain visible',()=>{
- assert.match(html,/id="detune"[^>]*><output id="detuneValue" class="base-value"/);
- for(const name of ['volume','cutoff','resonance']){
-  assert.match(html,new RegExp('id="'+name+'"[^>]*><output class="base-value">'));
- }
- assert.match(voicePanel,/ranges\.map\(\(\[p,name,min,max,step\]\)=>[\s\S]*?class="base-value"/);
+ assert.match(html,/id="detune"[\s\S]*?<output id="detuneValue" class="base-value"/);
+ assert.match(enginePanels,/ranges\.map\(\(\[p,name,min,max,step\]\)=>[\s\S]*?class="base-value"/);
+ assert.match(enginePanels,/row\.dataset\.filter=key/);
  assert.match(script,/if\(baseDisplay\.textContent!==baseText\)baseDisplay\.textContent=baseText/);
  assert.deepEqual(new Set(targetNames).size,11);
 });

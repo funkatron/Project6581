@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {createSidEventLog,formatSidDiagnosticReport} from '../src/sid-event-log.js';
+import {routeMask,routingKeyForSource,DEFAULT_ROUTING} from '../src/sid-engines.js';
 import {createSidWriteBatcher} from '../src/sid-write-batcher.js';
 import {closeSidContext} from '../src/sid-audio-lifecycle.js';
 import {canDispatchNote,needsAudioResume,shouldBlockMusicalInput} from '../src/sid-note-gate.js';
@@ -123,10 +124,13 @@ test('bridge caps unanswered events and expires old ones without delaying playba
 
 test('actual app note commands retain their physical input parent and tag on/off writes',()=>{
  const log=createSidEventLog();log.setEnabled(true);const tagged=[];
+ const engines=[{enabled:true,voice:{enabled:true}},{enabled:false,voice:{enabled:true}},{enabled:false,voice:{enabled:true}}];
  const scope=vm.createContext({sidEventLog:log,sidInputEvent:null,sidContext:{state:'running'},settings:[{enabled:true}],activeSeqStep:-1,
   sidController:{noteOn:()=>1,noteOff(){}},sidAudio:{beginNoteTrace:()=>0,endNoteTrace:id=>tagged.push(id),noteDispatched(){}},
   canDispatchNote,shouldBlockMusicalInput,needsAudioResume,restoreSidOutput(){},
-  pendingSidStartup:null,pendingSidClose:null,presetLoading:false,sidCleanupBlocked:false,sidStarting:false});
+  pendingSidStartup:null,pendingSidClose:null,presetLoading:false,sidCleanupBlocked:false,sidStarting:false,
+  engines,currentSidSettings:{enabled:true},$:id=>({value:'all'}),
+  routingKeyForSource,routeMask,DEFAULT_ROUTING,readRoutingFromDom:()=>({...DEFAULT_ROUTING})});
  const trace=html.slice(html.indexOf('function traceInput('),html.indexOf('// Let the browser release'));
  const notes=html.slice(html.indexOf('const activeOwners=new Map();'),html.indexOf('function updateUnison(){'));
  vm.runInContext(trace+'\n'+notes,scope);

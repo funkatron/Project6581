@@ -6,17 +6,25 @@ export function mountAudioTimingPanel({
  if(!$||!sidEventLog||!audioTiming)throw new TypeError('mountAudioTimingPanel requires $, sidEventLog, and audioTiming');
  function updateAudioTimingReport(){
   const show=value=>Number.isFinite(value)?value.toFixed(1)+' ms':'not reported';
-  const keyLine=audioTiming.keyEnergyMissed?'Key to first loud sample: no loud sample.':'Key to first loud sample: '+show(audioTiming.keyEnergyMs)+'.';
+  const keyLine=audioTiming.keyEnergyMissed
+   ?'Key → loud PCM in worklet: no loud sample within 16 render blocks.'
+   :'Key → loud PCM in worklet: '+show(audioTiming.keyEnergyMs)+'.';
+  const outputLine=audioTiming.keyEnergyMissed||!Number.isFinite(audioTiming.keyToOutputEstimateMs)
+   ?null
+   :'Estimated key → device output: '+show(audioTiming.keyToOutputEstimateMs)
+    +' (includes '+show(audioTiming.keyBufferRemainderMs)+' in current block + '+show(audioTiming.outputMs)+' output buffer).';
   const lines=[
    keyLine,
-   'Note dispatch → AudioWorklet acknowledgment: '+show(audioTiming.roundTripMs)+(audioTiming.source?' ('+audioTiming.source+')':'')
+   ...(outputLine?[outputLine]:[]),
+   'Main thread ↔ worklet control ping (not note audio): '+show(audioTiming.roundTripMs)
+    +(audioTiming.source?' ('+audioTiming.source+')':'')
   ];
   if(audioTiming.probeSkipped)lines.push('This note kept the previous acknowledgment. The probe runs at most twice a second.');
   lines.push(
    'WASM render per block: '+show(audioTiming.renderAvgMs)+' average / '+show(audioTiming.renderMaxMs)+' max',
    'Audio render block budget: '+show(audioTiming.renderBudgetMs),
    'Browser base/output latency: '+show(audioTiming.baseMs)+' / '+show(audioTiming.outputMs),
-   'Processing measurements only, not speaker latency. Screen recording A/V sync can differ.',
+   'Device output line is an estimate from loud PCM + AudioContext.outputLatency; not a DAC measurement. Screen recording A/V sync can differ.',
    ...sidStartupLog
   );
   $('audioTimingSummary').textContent=lines.join('\n');

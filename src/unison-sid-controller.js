@@ -8,12 +8,12 @@ export class UnisonSidController {
   this.onPitchStart=onPitchStart;this.onPitchStop=onPitchStop;this.onPitchRetune=onPitchRetune;
   this.voiceCount=1;this.unisonCount=1;this.mode='mono';
   this.detune=0;this.liveDetune=0;this.held=[];this.monoTokens=new Map();
-  this.current=null;this.currentToken=null;this.settings=null;
+  this.current=null;this.currentToken=null;this.settings=null;this.currentSlotMap=null;
   this.polyNotes=new Map();this.sequence=0;
   this.configure({voiceCount,unisonCount,mode,detune});
  }
  configure({voiceCount=this.voiceCount,unisonCount=this.unisonCount,mode=this.mode,detune=this.detune}={}){
-  const count=Math.max(1,Math.min(8,Math.round(Number(voiceCount)||1)));
+  const count=Math.max(1,Math.min(9,Math.round(Number(voiceCount)||1)));
   const layers=Math.max(1,Math.min(count,Math.round(Number(unisonCount)||1)));
   const assignment=['mono','legato','duo','poly'].includes(mode)?mode:'mono';
   const cents=Math.max(0,Math.min(100,Number(detune)||0));
@@ -27,22 +27,38 @@ export class UnisonSidController {
   this.voiceCount=count;this.unisonCount=layers;this.mode=assignment;
   this.detune=cents;this.liveDetune=cents;
  }
- get capacity(){
-  const available=Math.floor(this.voiceCount/this.unisonCount);
+ buildSlotMap(chipMask){
+  if(!Array.isArray(chipMask)||!chipMask.length)
+   return Array.from({length:this.voiceCount},(_,slot)=>slot);
+  const slots=[];
+  for(const chip of [...chipMask].sort((a,b)=>a-b)){
+   for(let voice=0;voice<3;voice++)slots.push(chip*3+voice);
+   if(slots.length>=this.voiceCount)break;
+  }
+  return slots.slice(0,this.voiceCount);
+ }
+ stackSlots(index,slotMap){
+  const map=slotMap??this.buildSlotMap(null);
+  const start=index*this.unisonCount;
+  return map.slice(start,Math.min(start+this.unisonCount,map.length));
+ }
+ capacityFor(slotMap){
+  const voices=slotMap.length;
+  const available=Math.floor(voices/this.unisonCount);
   return this.mode==='mono'||this.mode==='legato'?1:
    this.mode==='duo'?Math.min(2,available):available;
  }
- chip(slot){return this.chips[Math.floor(slot/3)]}
+ get capacity(){return this.capacityFor(this.buildSlotMap(null))}
+  chip(slot){return this.chips[Math.min(2,Math.floor(slot/3))]}
  voice(slot){return slot%3}
  offset(index){
   return this.unisonCount===1?0:
    (index-(this.unisonCount-1)/2)*2*this.liveDetune/(this.unisonCount-1)/100;
  }
- stackSlots(index){return Array.from({length:this.unisonCount},(_,i)=>index*this.unisonCount+i)}
  trigger(slots,note,settings){
   const getter=typeof settings==='function'?settings:()=>settings;
-  const parameters=getter(0);
   slots.forEach((slot,i)=>{
+   const parameters=typeof settings==='function'?getter(slot):getter(0);
    const tuned=note+this.offset(i);
    this.onPitchStop(slot);
    this.chip(slot).noteOn(this.voice(slot),tuned,parameters);
@@ -56,34 +72,37 @@ export class UnisonSidController {
   this.onPitchRetune(slot,tuned);
   this.chip(slot).setFrequency(this.voice(slot),tuned);
  })}
- noteOn(note,settings){
+ noteOn(note,settings,{chipMask=null}={}){
   if(!Number.isFinite(note))throw new RangeError('MIDI note');
   const token=++this.sequence;
   const getter=typeof settings==='function'?settings:()=>settings;
+  const slotMap=this.buildSlotMap(chipMask);
+  const capacity=this.capacityFor(slotMap);
   if(this.mode==='mono'||this.mode==='legato'){
    this.held=this.held.filter(pitch=>pitch!==note);this.held.push(note);
-   this.monoTokens.set(note,{token,getter});
+   this.monoTokens.set(note,{token,getter,slotMap});
    if(this.mode==='legato'&&this.current!==null){
-    this.current=note;this.currentToken=token;this.settings=getter;
-    this.retuneSlots(this.stackSlots(0),note);
+    this.current=note;this.currentToken=token;this.settings=getter;this.currentSlotMap=slotMap;
+    this.retuneSlots(this.stackSlots(0,slotMap),note);
    }else{
     this.releaseVoices();
-    this.current=note;this.currentToken=token;
-    this.settings=this.trigger(this.stackSlots(0),note,getter);
+    this.current=note;this.currentToken=token;this.currentSlotMap=slotMap;
+    this.settings=this.trigger(this.stackSlots(0,slotMap),note,getter);
    }
    return token;
   }
   if(this.polyNotes.has(note))this.releasePoly(note);
-  while(this.polyNotes.size>=this.capacity)this.releasePoly(this.polyNotes.keys().next().value);
+  while(this.polyNotes.size>=capacity)this.releasePoly(this.polyNotes.keys().next().value);
   const used=new Set([...this.polyNotes.values()].map(entry=>entry.index));
   let index=0;while(used.has(index))index++;
-  const slots=this.stackSlots(index);
-  this.polyNotes.set(note,{token,index,slots,getter:this.trigger(slots,note,getter)});
+  const slots=this.stackSlots(index,slotMap);
+  this.polyNotes.set(note,{token,index,slots,slotMap,getter:this.trigger(slots,note,getter)});
   return token;
  }
  releaseVoices(){
   if(this.current===null)return;
-  this.releaseSlots(this.stackSlots(0));this.current=null;this.currentToken=null;
+  this.releaseSlots(this.stackSlots(0,this.currentSlotMap));
+  this.current=null;this.currentToken=null;this.currentSlotMap=null;
  }
  releasePoly(note){
   const entry=this.polyNotes.get(note);if(!entry)return;
@@ -97,12 +116,13 @@ export class UnisonSidController {
    if(this.current!==note||this.currentToken!==owner.token)return;
    if(this.held.length){
     const fallback=this.held[this.held.length-1],next=this.monoTokens.get(fallback);
+    this.currentSlotMap=next.slotMap;
     if(this.mode==='legato'){
      this.current=fallback;this.currentToken=next.token;this.settings=next.getter;
-     this.retuneSlots(this.stackSlots(0),fallback);
+     this.retuneSlots(this.stackSlots(0,next.slotMap),fallback);
     }else{
      this.releaseVoices();this.current=fallback;this.currentToken=next.token;
-     this.settings=this.trigger(this.stackSlots(0),fallback,next.getter);
+     this.settings=this.trigger(this.stackSlots(0,next.slotMap),fallback,next.getter);
     }
    }else this.releaseVoices();
    return;
@@ -121,17 +141,20 @@ export class UnisonSidController {
   const next=Math.max(0,Math.min(100,Number(cents)||0));
   if(next===this.liveDetune)return;this.liveDetune=next;
   if(this.unisonCount<=1)return;
-  if(this.current!==null)this.retuneSlots(this.stackSlots(0),this.current);
+  if(this.current!==null)this.retuneSlots(this.stackSlots(0,this.currentSlotMap),this.current);
   for(const [note,entry] of this.polyNotes)this.retuneSlots(entry.slots,note);
  }
  setEnvelope(settings){
-  const slots=this.current!==null?this.stackSlots(0):
+  const slots=this.current!==null?this.stackSlots(0,this.currentSlotMap):
    [...this.polyNotes.values()].flatMap(entry=>entry.slots);
   for(const slot of slots)this.chip(slot).setEnvelope(this.voice(slot),settings);
  }
- setFilter(settings){for(const chip of this.chips)chip.setFilter(settings)}
+ setFilter(settings,chipIndex){
+  if(Number.isInteger(chipIndex)&&chipIndex>=0&&chipIndex<3)this.chips[chipIndex].setFilter(settings);
+  else for(const chip of this.chips)chip.setFilter(settings);
+ }
  setPulse(_voice,percent){
-  const slots=this.current!==null?this.stackSlots(0):
+  const slots=this.current!==null?this.stackSlots(0,this.currentSlotMap):
    [...this.polyNotes.values()].flatMap(entry=>entry.slots);
   for(const slot of slots)this.chip(slot).setPulse(this.voice(slot),percent);
  }
