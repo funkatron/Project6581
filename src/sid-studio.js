@@ -14,6 +14,7 @@ import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from "./pitch-envelope.js?
 import {mountEditorTabs} from "./editor-tabs.js?v=__BUILD_ID__";
 import {mountLfoPanel} from "./lfo-panel-ui.js?v=__BUILD_ID__";
 import {mountAudioTimingPanel} from "./audio-timing-panel.js?v=__BUILD_ID__";
+import {applyFirstEnergyTiming} from "./audio-timing-metrics.js?v=__BUILD_ID__";
 import {createDefaultEngines,clampVoiceCount,maxVoicesForEngines,DEFAULT_ROUTING} from "./sid-engines.js?v=__BUILD_ID__";
 import {mountSidEnginePanels} from "./sid-engine-panels-ui.js?v=__BUILD_ID__";
 
@@ -22,7 +23,8 @@ const $=id=>document.getElementById(id);
 const sidStartupLog=[];
 const sidEventLog=createSidEventLog();
 let sidInputEvent=null;
-const audioTiming={source:null,roundTripMs:null,renderAvgMs:null,renderMaxMs:null,renderBudgetMs:null,baseMs:null,outputMs:null,keyAt:null,keyEnergyMs:null,keyEnergyMissed:false,probeSkipped:false};
+const audioTiming={source:null,roundTripMs:null,renderAvgMs:null,renderMaxMs:null,renderBudgetMs:null,baseMs:null,outputMs:null,
+ keyAt:null,keyEnergyMs:null,keyBufferRemainderMs:null,keyToOutputEstimateMs:null,keyEnergyMissed:false,probeSkipped:false};
 let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null,activeSidModel=null;
 const {updateAudioTimingReport}=mountAudioTimingPanel({
  $,sidEventLog,audioTiming,sidStartupLog,
@@ -439,17 +441,8 @@ async function startSid({gesture=false}={}){
         return;
       }
       if(event.type==='first-energy'){
-        if(audioTiming.keyAt!==null){
-          if(event.hit){
-            audioTiming.keyEnergyMs=performance.now()-audioTiming.keyAt;
-            audioTiming.keyEnergyMissed=false;
-          }else{
-            audioTiming.keyEnergyMs=null;
-            audioTiming.keyEnergyMissed=true;
-          }
-          audioTiming.keyAt=null;
-          updateAudioTimingReport();
-        }
+        applyFirstEnergyTiming(audioTiming,event,context);
+        if(audioTiming.keyEnergyMs!==null||audioTiming.keyEnergyMissed)updateAudioTimingReport();
         return;
       }
       if(event.type==='audio-stats'){

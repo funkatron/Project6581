@@ -333,7 +333,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
         if(sample>655){sampleOffset=i;break}
       }
       if(sampleOffset>=0||this.energyBlocks>=16){
-        this.port.postMessage({type:'first-energy',hit:sampleOffset>=0,sampleOffset,blocks:this.energyBlocks,sampleRate});
+        this.port.postMessage({type:'first-energy',hit:sampleOffset>=0,sampleOffset,blocks:this.energyBlocks,sampleRate,frames});
         this.energyArmed=false;
       }
     }

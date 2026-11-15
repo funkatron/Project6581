@@ -19,6 +19,8 @@ export function createKeyGesture({
   if(!fromQueue){
    audioTiming.keyAt=performance.now();
    audioTiming.keyEnergyMs=null;
+   audioTiming.keyBufferRemainderMs=null;
+   audioTiming.keyToOutputEstimateMs=null;
    audioTiming.keyEnergyMissed=false;
   }
   if(sidMusicalInputBlocked()){
