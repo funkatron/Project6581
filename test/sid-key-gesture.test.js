@@ -4,53 +4,66 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {needsAudioResume} from '../src/sid-note-gate.js';
 
-const html=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
-const keys=html.slice(html.indexOf('let queuedKeyNotes=[]'),html.indexOf('function keyUp(note){'));
-const resume=html.slice(html.indexOf('function armSidResume(){'),html.indexOf('function unlockSidAudio(){'));
+const source=readFileSync(new URL('../src/keyboard-input.js',import.meta.url),'utf8')
+ .replace(/^import .*\n/gm,'')
+ .replace(/^export /gm,'');
 
-function harness({state,resumeHangs=true}){
+function harness({state}){
  const played=[];
  let resumeCalls=0;
  const elements=new Map();
  const $=id=>{
-  if(!elements.has(id))elements.set(id,{textContent:'',checked:false});
+  if(!elements.has(id))elements.set(id,{textContent:'',checked:false,value:'up'});
   return elements.get(id);
  };
- const context={
-  state,
-  resume(){
-   resumeCalls++;
-   return resumeHangs?new Promise(()=>{}):Promise.resolve();
-  }
- };
+ const context={state};
+ const audioTiming={keyAt:null,keyEnergyMs:null,keyEnergyMissed:false};
  const scope=vm.createContext({
-  $,sidContext:context,sidContextRetired:false,sidAttempt:1,needsAudioResume,
-  sidMusicalInputBlocked:()=>false,sidEventLog:{enabled:false,add(){}},
-  sidController:{},sidKeys:0,sidAudio:{},activeSidModel:6581,
-  audioTiming:{keyAt:null,keyEnergyMs:null,keyEnergyMissed:false},
+  needsAudioResume,
   performance:{now:()=>0},
-  activeNotes:()=>[],arp:{held:new Set(),latched:new Set()},
-  gameEnabled:()=>false,arpEnabled:()=>false,directOwned:new Set(),
-  play(note){played.push(note)},restartGenerators(){},
-  refreshEngineStatus(){},updateSidActivation(){}
+  matchMedia:()=>({matches:false})
  });
- vm.runInContext(keys+'\n'+resume,scope);
- return {scope,played,context,resumeCalls:()=>resumeCalls};
+ vm.runInContext(source,scope);
+ const gesture=scope.createKeyGesture({
+  audioTiming,
+  sidEventLog:{enabled:false,add(){}},
+  getSidContext:()=>context,
+  sidMusicalInputBlocked:()=>false,
+  armSidResume(){resumeCalls++},
+  hasController:()=>true,
+  countKeyPress(){},
+  activeNotes:()=>[],
+  arp:{held:new Set(),latched:new Set()},
+  game:{timer:null},
+  gameEnabled:()=>false,
+  arpEnabled:()=>false,
+  directOwned:new Set(),
+  play(note){played.push(note)},
+  stop(){},
+  restartGenerators(){},
+  stopGenerators(){},
+  gameRestart(){},
+  arpStopVoice(){},
+  arpNotes:()=>[],
+  isSeqPreview:()=>false,
+  $
+ });
+ return {gesture,played,context,resumeCalls:()=>resumeCalls};
 }
 
 test('a running context plays on the same turn even if an older resume never settles',()=>{
  const h=harness({state:'running'});
- h.scope.keyDown(60);
+ h.gesture.keyDown(60);
  assert.deepEqual(h.played,[60]);
  assert.equal(h.resumeCalls(),0);
 });
 
 test('a suspended press resumes without waiting, then plays once the context is running',()=>{
  const h=harness({state:'suspended'});
- h.scope.keyDown(60);
+ h.gesture.keyDown(60);
  assert.deepEqual(h.played,[]);
  assert.equal(h.resumeCalls(),1);
  h.context.state='running';
- h.scope.flushQueuedKeys();
+ h.gesture.flushQueuedKeys();
  assert.deepEqual(h.played,[60]);
 });
