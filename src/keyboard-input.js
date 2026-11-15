@@ -124,7 +124,10 @@ export function mountKeyboard(deps){
   $('keyboardToggle').textContent=visible?'Hide keyboard ▲':'Show keyboard ▼';
   try{window.localStorage.setItem('project6581.keyboard-visible',visible?'yes':'no')}catch{}
  }
- $('keyboardToggle').addEventListener('click',()=>setKeyboardVisible($('keyboard').hidden));
+ $('keyboardToggle').addEventListener('click',()=>{
+  const visible=!$('keyboard').hidden;
+  setKeyboardVisible(!visible);
+ });
  try{if(window.localStorage.getItem('project6581.keyboard-visible')==='no')setKeyboardVisible(false)}catch{}
  const layout='awsedftgyhujkolp;';
  window.addEventListener('keydown',e=>{if(e.repeat||e.target.matches('input,select,button,textarea,[contenteditable="true"]'))return;const idx=layout.indexOf(e.key.toLowerCase());if(idx>=0){const note=(keyboardState.octave+1)*12+idx;const key=keys.get(note);if(key){e.preventDefault();key.classList.add('down');traceInput(note,'keyboard','down',()=>keyDown(note))}}});

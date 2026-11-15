@@ -4,6 +4,7 @@ import {canDispatchNote,needsAudioResume,shouldBlockMusicalInput} from './sid-no
 import {closeSidContext} from './sid-audio-lifecycle.js?v=__BUILD_ID__';
 import {createArpKeyVisual} from "./arp-key-visual.js?v=__BUILD_ID__";
 import {modulationTrack,formatControlValue,SLIDER_TARGETS} from "./modulation-track.js?v=__BUILD_ID__";
+import {lfosForEngine} from "./lfo-modulation.js?v=__BUILD_ID__";
 import {createSidRecorder,prepareRecordingDownload} from "./sid-recorder.js?v=__BUILD_ID__";
 import {defaultSequence,validateSequence} from "./game-step-sequencer.js?v=__BUILD_ID__";
 import {mountPerformance} from "./performance-play.js?v=__BUILD_ID__";
@@ -70,6 +71,7 @@ const engines=createDefaultEngines(6581);
 engines[1].enabled=false;engines[2].enabled=false;
 const settings=[engines[0].voice];
 let currentSidSettings={...settings[0]};
+const engineLiveSettings=[null,null,null];
 const useAudioClockLfo=true;
 let enginePanelsUi=null;
 let chipPeakLevels=[0,0,0];
@@ -131,6 +133,8 @@ mountEditorTabs({$});
 const activeOwners=new Map();
 function voiceSettingsForSlot(slot){
  const chip=Math.floor(slot/3);
+ const live=engineLiveSettings[chip];
+ if(live)return live;
  if(chip===0)return currentSidSettings;
  const voice=engines[chip].voice;
  return {...voice,pitchEnvelope:voice.pitchEnvelope};
@@ -283,14 +287,55 @@ function updateSidFilter(overrides={},engineIndex=0){
     mode,volume:Math.round(volumePct*15/100)
   },engineIndex);
 }
-function pushAudioModulationConfig(values){
+function pushAudioModulationConfig(){
  if(!sidAudio?.setModulationConfig)return;
  sidAudio.setModulationConfig({
   bpm:Number($('masterBpm').value),
-  engines:engines.map(engine=>({enabled:engine.enabled,filter:{...engine.filter,volume:values?.volume??engine.filter.volume,
-   cutoff:values?.cutoff??engine.filter.cutoff,resonance:values?.resonance??engine.filter.resonance}})),
+  engines:engines.map(engine=>({enabled:engine.enabled,filter:{...engine.filter},voice:{wave:engine.voice.wave}})),
   lfos:lfoState.map(lfo=>({...lfo,engines:lfo.engines??'all'}))
  });
+}
+function modulationBaseForEngine(chip){
+ const engine=engines[chip];
+ return {
+  cutoff:Number(engine.filter.cutoff),resonance:Number(engine.filter.resonance),volume:Number(engine.filter.volume),
+  pulse:Number(engine.voice.pulse),detune:Number($('detune').value),
+  attack:Number(engine.voice.attack),decay:Number(engine.voice.decay),sustain:Number(engine.voice.sustain),
+  release:Number(engine.voice.release),pwmDepth:Number(engine.voice.pwmDepth),pwmRate:Number(engine.voice.pwmRate)
+ };
+}
+function modulationTargetEnabled(chipLfos,values,target,pulseActive,unisonActive){
+ const active=chipLfos.some(lfo=>lfo.enabled&&lfo.depth>0);
+ return ((active&&chipLfos.some(lfo=>lfo.enabled&&lfo.depth>0&&lfo.target===target))
+   ||(target==='pulse'&&pulseActive&&values.pwmDepth>0))
+  &&(!['pulse','pwmDepth','pwmRate'].includes(target)||pulseActive)
+  &&(target!=='detune'||unisonActive);
+}
+function presentModulatedSlider(root,target,baseValue,effectiveValue,enabled){
+ if(!root&&target!=='detune')return;
+ let input=null;
+ if(root)input=root.querySelector('[data-prop="'+target+'"],[data-filter="'+target+'"]');
+ if(!input&&target==='detune')input=$('detune');
+ const label=input?.closest('label')??(target==='detune'?document.querySelector('.allocation-detune'):null);
+ if(!label)return;
+ let baseDisplay=label.querySelector('output:not(.modulated-value)');
+ if(!baseDisplay){
+  baseDisplay=document.createElement('output');baseDisplay.className='base-value';label.append(baseDisplay);
+ }
+ baseDisplay.classList.add('base-value');
+ const baseText=formatControlValue(target,baseValue);
+ if(baseDisplay.textContent!==baseText)baseDisplay.textContent=baseText;
+ let display=label.querySelector('.modulated-value');
+ if(!display){
+  display=document.createElement('output');display.className='modulated-value';
+  display.setAttribute('aria-label',target+' effective value');label.append(display);
+ }
+ display.hidden=!enabled;
+ if(input)setModulationTrack(input,baseValue,effectiveValue,enabled);
+ if(enabled){
+  const effectiveText=formatControlValue(target,effectiveValue);
+  if(display.textContent!==effectiveText)display.textContent=effectiveText;
+ }
 }
 // Overlay a noninteractive range thumb: the actual input retains the base value.
 function setModulationTrack(input,base,effective,enabled){
@@ -317,63 +362,62 @@ function setModulationTrack(input,base,effective,enabled){
 function updateModulation(){
  syncLegacyFilterInputs();
  Object.assign(settings[0],engines[0].voice);
- const sound=settings[0],pulseActive=sound.wave==='square',unisonActive=Number($('unisonCount').value)>1;
- // Preserve the actual slider positions as the editable base/center values.
- const base={
-  cutoff:Number($('cutoff').value),resonance:Number($('resonance').value),volume:Number($('volume').value),
-  pulse:sound.pulse,detune:Number($('detune').value),
-  attack:sound.attack,decay:sound.decay,sustain:sound.sustain,release:sound.release,
-  pwmDepth:sound.pwmDepth,pwmRate:sound.pwmRate
- };
- const active=lfoState.some(lfo=>lfo.enabled&&lfo.depth>0);
+ const unisonActive=Number($('unisonCount').value)>1;
  const bpm=Number($('masterBpm').value);
  const effectiveLfos=lfoState.map(lfo=>lfo.sync&&modulation
   ?{...lfo,rate:modulation.syncedLfoHz(bpm,lfo.syncDivision)}:lfo);
  const time=(performance.now()-lfoStarted)/1000;
- const values=active&&modulation
-  ?modulation.modulate(base,effectiveLfos,time,{pulseActive,unisonActive}):base;
- // PWM depth/rate are now audible: apply their LFO-controlled settings to
- // the pulse width only while the hardware Pulse waveform is selected.
- const livePulse=pulseActive&&modulation
-  ?modulation.pulseWithPwm(values.pulse,values.pwmDepth,values.pwmRate,time):values.pulse;
- currentSidSettings={...sound,pitchEnvelope:settings[0].pitchEnvelope,
-  pulse:livePulse,attack:values.attack,decay:values.decay,
-  sustain:values.sustain,release:values.release};
- for(const target of SLIDER_TARGETS){
-  const input=['cutoff','resonance','volume','detune'].includes(target)
-   ?$(target):document.querySelector('[data-prop="'+target+'"]');
-  const label=input?.closest('label');
-  if(!label)continue;
-  let baseDisplay=label.querySelector('output:not(.modulated-value)');
-  if(!baseDisplay){
-   baseDisplay=document.createElement('output');baseDisplay.className='base-value';label.append(baseDisplay);
-  }
-  baseDisplay.classList.add('base-value');
-  const baseText=formatControlValue(target,base[target]);
-  if(baseDisplay.textContent!==baseText)baseDisplay.textContent=baseText;
-  let display=label.querySelector('.modulated-value');
-  if(!display){
-   display=document.createElement('output');display.className='modulated-value';
-   display.setAttribute('aria-label',target+' effective value');label.append(display);
-  }
-  const targetEnabled=((active&&lfoState.some(lfo=>lfo.enabled&&lfo.depth>0&&lfo.target===target))
-    ||(target==='pulse'&&pulseActive&&values.pwmDepth>0))
-   &&(!['pulse','pwmDepth','pwmRate'].includes(target)||pulseActive)
-   &&(target!=='detune'||unisonActive);
-  const effectiveValue=target==='pulse'?livePulse:values[target];
-  display.hidden=!targetEnabled;
-  setModulationTrack(input,base[target],effectiveValue,targetEnabled);
-  if(targetEnabled){
-   const effectiveText=formatControlValue(target,effectiveValue);
-   if(display.textContent!==effectiveText)display.textContent=effectiveText;
+ const detuneBase={detune:Number($('detune').value)};
+ for(let chip=0;chip<3;chip++){
+  if(!engines[chip].enabled){engineLiveSettings[chip]=null;continue;}
+  const sound=engines[chip].voice;
+  const pulseActive=sound.wave==='square';
+  const base=modulationBaseForEngine(chip);
+  const chipLfos=lfosForEngine(effectiveLfos,chip);
+  const active=chipLfos.some(lfo=>lfo.enabled&&lfo.depth>0);
+  const values=active&&modulation
+   ?modulation.modulate(base,chipLfos,time,{pulseActive,unisonActive}):base;
+  const livePulse=pulseActive&&modulation
+   ?modulation.pulseWithPwm(values.pulse,values.pwmDepth,values.pwmRate,time):values.pulse;
+  const live={...sound,pitchEnvelope:sound.pitchEnvelope,pulse:livePulse,
+   attack:values.attack,decay:values.decay,sustain:values.sustain,release:values.release};
+  engineLiveSettings[chip]=live;
+  if(chip===0)currentSidSettings=live;
+  const card=$('sidEngines')?.querySelector('[data-engine="'+chip+'"]');
+  for(const target of SLIDER_TARGETS){
+   if(target==='detune')continue;
+   const enabled=modulationTargetEnabled(chipLfos,values,target,pulseActive,unisonActive);
+   const effective=target==='pulse'?livePulse:values[target];
+   presentModulatedSlider(card,target,base[target],effective,enabled);
   }
  }
+ const detuneRoot=document.querySelector('.allocation-detune');
+ const globalDetuneLfos=effectiveLfos.filter(lfo=>lfo.enabled&&lfo.depth>0&&lfo.target==='detune'&&(lfo.engines??'all')==='all');
+ const detuneEnabled=unisonActive&&globalDetuneLfos.length>0&&modulation;
+ const globalDetune=detuneEnabled
+  ?modulation.modulate({...detuneBase,cutoff:0,volume:0,resonance:0,pulse:50,attack:0,decay:0,sustain:0,release:.01,pwmDepth:0,pwmRate:1},
+   globalDetuneLfos,time,{pulseActive:false,unisonActive}).detune
+  :detuneBase.detune;
+ presentModulatedSlider(detuneRoot,'detune',detuneBase.detune,globalDetune,detuneEnabled);
  if(!sidController)return;
- if(useAudioClockLfo)pushAudioModulationConfig(values);
- else for(let chip=0;chip<3;chip++)if(engines[chip].enabled)updateSidFilter(values,chip);
- sidController.setLiveDetune(values.detune);
- sidController.setEnvelope(currentSidSettings);
- if(pulseActive)sidController.setPulse(0,livePulse);
+ if(useAudioClockLfo)pushAudioModulationConfig();
+ else{
+  for(let chip=0;chip<3;chip++){
+   if(!engines[chip].enabled)continue;
+   const base=modulationBaseForEngine(chip);
+   const chipLfos=lfosForEngine(effectiveLfos,chip);
+   const values=chipLfos.some(lfo=>lfo.enabled&&lfo.depth>0)&&modulation
+    ?modulation.modulate(base,chipLfos,time,{pulseActive:engines[chip].voice.wave==='square',unisonActive}):base;
+   updateSidFilter(values,chip);
+  }
+ }
+ sidController.setLiveDetune(globalDetune);
+ for(let chip=0;chip<3;chip++){
+  if(!engines[chip].enabled)continue;
+  const live=engineLiveSettings[chip];
+  sidController.setEnvelope(live,chip);
+  if(engines[chip].voice.wave==='square')sidController.setPulse(0,live.pulse,chip);
+ }
 }
 $('masterBpm').addEventListener('input',()=>{const n=Number($('masterBpm').value);if(!Number.isFinite(n)||n<40||n>240)return;$('masterBpmValue').textContent=String(n);updateModulation();if($('arpSync').checked)restartGenerators();});
 $('arpSync').addEventListener('change',()=>{document.querySelector('.arp-local-bpm').hidden=$('arpSync').checked;restartGenerators();});
@@ -472,6 +516,21 @@ async function startSid({gesture=false}={}){
       if(event.type==='latency-probe-skipped'){
         audioTiming.probeSkipped=true;
         updateAudioTimingReport();
+        return;
+      }
+      if(event.type==='modulation-display'){
+        for(const entry of event.engines??[]){
+          const chip=entry.chip;
+          if(!Number.isInteger(chip)||chip<0||chip>2)continue;
+          const card=$('sidEngines')?.querySelector('[data-engine="'+chip+'"]');
+          if(!card)continue;
+          for(const key of ['volume','cutoff','resonance']){
+            const base=Number(engines[chip].filter[key]);
+            const effective=Number(entry.filter?.[key]);
+            if(!Number.isFinite(effective))continue;
+            presentModulatedSlider(card,key,base,effective,Math.abs(effective-base)>1e-6);
+          }
+        }
         return;
       }
       if(event.type==='first-energy'){

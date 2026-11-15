@@ -32,17 +32,18 @@ test('modulation colors the track, not an extra moving thumb or the slider value
  assert.match(studioCss,/::-webkit-slider-thumb\{/);
  assert.match(studioCss,/::-moz-range-thumb\{/);
  assert.doesNotMatch(html,/modulation-thumb/);
- assert.match(script,/const effectiveValue=target==='pulse'\?livePulse:values\[target\]/);
- assert.match(script,/setModulationTrack\(input,base\[target\],effectiveValue,targetEnabled\)/);
+ assert.match(script,/setModulationTrack\(input,baseValue,effectiveValue,enabled\)/);
+ assert.match(script,/const effective=target==='pulse'\?livePulse:values\[target\]/);
  assert.doesNotMatch(script,/input\.value\s*=\s*values\[target\]/);
  assert.match(script,/band\.setAttribute\('aria-hidden','true'\)/);
  assert.match(script,/band\.hidden=!track\.active/);
 });
 
 test('base and effective readouts are both retained when a target is modulated',()=>{
+ assert.match(script,/function presentModulatedSlider/);
  assert.match(script,/label\.querySelector\('output:not\(\.modulated-value\)'\)/);
- assert.match(script,/label\.querySelector\('\.modulated-value'\)/);
- assert.match(script,/display\.hidden=!targetEnabled/);
+ assert.match(script,/display\.hidden=!enabled/);
  assert.match(script,/formatControlValue\(target,effectiveValue\)/);
+ assert.match(script,/lfosForEngine\(effectiveLfos,chip\)/);
  assert.match(script,/SLIDER_TARGETS/);
 });

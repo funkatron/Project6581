@@ -10,6 +10,14 @@ export function lfoValue(wave,phase,seed=0){
  throw new RangeError('Unknown LFO waveform');
 }
 // Add all modulation contributions before clamping. Never mutate base slider values.
+export function lfosForEngine(lfos,chipIndex){
+ return lfos.filter(lfo=>{
+  const scope=lfo.engines??'all';
+  if(scope==='all')return true;
+  return Number(scope)===chipIndex+1;
+ });
+}
+
 export function modulate(base,lfos,time,{pulseActive=true,unisonActive=true}={}){
  const result={...base},offsets={};
  for(const lfo of lfos){
