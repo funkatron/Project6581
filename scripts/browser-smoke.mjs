@@ -37,9 +37,9 @@ for (const engine of engines) {
     assert.equal(await page.locator('#lfoPanel').isVisible(), false);
     assert.equal(await page.locator('#keyboard').isVisible(), true);
     await page.locator('#keyboardToggle').click();
-    assert.equal(await page.locator('#keyboardToggle').getAttribute('aria-expanded'), 'false');
+    await page.waitForFunction(()=>document.querySelector('#keyboardToggle')?.getAttribute('aria-expanded')==='false');
     await page.locator('#keyboardToggle').click();
-    assert.equal(await page.locator('#keyboardToggle').getAttribute('aria-expanded'), 'true');
+    await page.waitForFunction(()=>document.querySelector('#keyboardToggle')?.getAttribute('aria-expanded')==='true');
     // The engine must actually finish initialization, not merely display its UI.
     const waitReady = async (model, timeout = 25000) => {
       await page.waitForFunction(expected => {
@@ -100,14 +100,14 @@ for (const engine of engines) {
     };
     await switchModel(8580);
     await switchModel(6581);
-    // Create a valid v4 user preset using the application's own schema.
+    // Create a valid v5 user preset using the application's own schema.
     // Exercise the actual preset picker, rather than only changing #chip.
     await page.evaluate(async () => {
       const { defaultPresetSettings } = await import('./src/preset-library.js');
       const settings = defaultPresetSettings();
-      settings.sound.model = 8580;
-      localStorage.setItem('project6581.user-presets.v4', JSON.stringify({
-        version: 4, presets: [{ id: 'smoke-8580', name: 'Smoke 8580', settings }]
+      settings.sound.engines[0].model = 8580;
+      localStorage.setItem('project6581.user-presets.v5', JSON.stringify({
+        version: 5, presets: [{ id: 'smoke-8580', name: 'Smoke 8580', settings }]
       }));
     });
     await page.reload({ waitUntil: 'domcontentloaded' });
