@@ -35,11 +35,15 @@ for (const engine of engines) {
     assert.equal(await page.locator('#voicePanel').isVisible(), true);
     assert.equal(await page.locator('#playPanel').isVisible(), false);
     assert.equal(await page.locator('#lfoPanel').isVisible(), false);
+    await page.waitForFunction(()=>document.querySelectorAll('#keyboard .key').length>=12,
+      null,{timeout:20000});
     assert.equal(await page.locator('#keyboard').isVisible(), true);
     await page.locator('#keyboardToggle').click();
-    await page.waitForFunction(()=>document.querySelector('#keyboardToggle')?.getAttribute('aria-expanded')==='false');
+    await page.waitForFunction(()=>document.getElementById('keyboard')?.hidden===true,null,{timeout:10000});
+    assert.equal(await page.locator('#keyboardToggle').getAttribute('aria-expanded'), 'false');
     await page.locator('#keyboardToggle').click();
-    await page.waitForFunction(()=>document.querySelector('#keyboardToggle')?.getAttribute('aria-expanded')==='true');
+    await page.waitForFunction(()=>document.getElementById('keyboard')?.hidden===false,null,{timeout:10000});
+    assert.equal(await page.locator('#keyboardToggle').getAttribute('aria-expanded'), 'true');
     // The engine must actually finish initialization, not merely display its UI.
     const waitReady = async (model, timeout = 25000) => {
       await page.waitForFunction(expected => {
