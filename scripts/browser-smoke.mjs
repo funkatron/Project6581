@@ -14,9 +14,10 @@ for (const engine of engines) {
     const page = await context.newPage();
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    page.on('crash', () => errors.push('Browser page crashed'));
+    page.on('crash', () => { errors.push('Browser page crashed'); console.error(engine + ' browser page CRASHED'); });
     page.on('close', () => console.log(engine + ' page closed'));
     page.on('console', message => { if (message.type() === 'error') console.log(engine + ' console error: ' + message.text()); });
+    console.log(engine + ' browser launched');
     await page.goto(url, { waitUntil: 'domcontentloaded' });
     await page.locator('#tabLfos').click();
     assert.equal(await page.locator('#workspace').getAttribute('data-tab'), 'lfos');
@@ -54,6 +55,9 @@ for (const engine of engines) {
       assert.ok(['on', 'ready'].includes(state), 'SID failed to initialize: ' + status);
     };
     await waitReady(6581);
+    const initialWasmFetches = await page.evaluate(() => performance.getEntriesByType('resource')
+      .filter(entry => entry.name.includes('/dist/residfp.wasm')).length);
+    assert.equal(initialWasmFetches, 1, 'initial SID startup must fetch WASM once');
     const timings = { to8580: [], to6581: [], preset8580: [] };
     const wasmFetches = async () => page.evaluate(() => performance.getEntriesByType('resource')
       .filter(entry => entry.name.includes('/dist/residfp.wasm')).length);
@@ -61,6 +65,7 @@ for (const engine of engines) {
     // This measures engine readiness, not physical speaker latency.
     const switchModel = async model => {
       const wasmBefore = await wasmFetches();
+      console.log(engine + ' switching SID to ' + model + '; WASM fetches before=' + wasmBefore);
       const started = Date.now();
       await page.locator('#chip').selectOption(String(model));
       try {
@@ -88,6 +93,7 @@ for (const engine of engines) {
       const elapsed = Date.now() - started;
       const wasmAfter = await wasmFetches();
       console.log(engine + ' SID ' + model + ' additional WASM resource fetches: ' + (wasmAfter - wasmBefore));
+      assert.equal(wasmAfter - wasmBefore, 0, 'SID model switch must reuse cached WASM');
       timings[model === 8580 ? 'to8580' : 'to6581'].push(elapsed);
       console.log(engine + ' SID ' + model + ' model switch ready in ' + elapsed + ' ms');
       assert.equal(await page.locator('#chip').inputValue(), String(model));

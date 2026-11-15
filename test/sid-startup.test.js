@@ -4,11 +4,12 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {closeSidContext} from '../src/sid-audio-lifecycle.js';
 import {createSidWriteBatcher} from '../src/sid-write-batcher.js';
+import {needsAudioResume} from '../src/sid-note-gate.js';
 
-const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const html=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
 const startup=html.slice(html.indexOf('function updateSidLed(){'),html.indexOf('async function stopAndSaveRecording(){'))
  .replaceAll('import(', 'loadModule(');
-const unlock=html.slice(html.indexOf('function unlockSidAudio(){'),html.indexOf("document.addEventListener('pointerdown',unlockSidAudio"));
+const unlock=html.slice(html.indexOf('function armSidResume(){'),html.indexOf("document.addEventListener('pointerdown',unlockSidAudio"));
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b});return {promise,resolve,reject}};
 const settle=async()=>{for(let i=0;i<30;i++)await Promise.resolve()};
 
@@ -26,11 +27,12 @@ function app({closeHangs=false,closeRejects=false,moduleHang=false,engineError=f
  }
  const lifecycle=readFileSync(new URL('../src/sid-audio-lifecycle.js',import.meta.url),'utf8').replace('export function','function');
  const statusUi=readFileSync(new URL('../src/sid-engine-status-ui.js',import.meta.url),'utf8').replace(/export function/g,'function');
- const scope=vm.createContext({$,AudioContext:Context,performance:{now:()=>0},
+ const scope=vm.createContext({$,AudioContext:Context,performance:{now:()=>0},needsAudioResume,
   setTimeout(fn,ms){const id=++timerId;timers.set(id,{fn,ms});return id},clearTimeout:id=>timers.delete(id),
   sidAudio:null,sidContext:null,sidController:null,sidRecorder:null,activeSidModel:null,sidStarting:false,
   sidEventLog:{enabled:false,add(){}},sidKeys:0,lfoTimer:1,modulation:null,sidStartupLog:[],audioTiming:{},
   panic(){},updateModulation(){},updateAudioTimingReport(){},createSidRecorder:()=>({supportsM4a:false}),
+  flushQueuedKeys(){},refreshEngineStatus(){},needsAudioResume,
   stopAndSaveRecording(){},
   loadModule:async path=>moduleHang?new Promise(()=>{}):path.includes('create-residfp')?{createReSidFpAudio:async options=>{
    if(engineError)throw Error('SID engine download failed');
@@ -45,9 +47,9 @@ function app({closeHangs=false,closeRejects=false,moduleHang=false,engineError=f
  return {scope,$,contexts,attempts,timers,fire};
 }
 
-test('startup creates/resumes synchronously, deduplicates calls and becomes ready while suspended',async()=>{
+test('startup creates one suspended context without an ungestured resume, and deduplicates calls',async()=>{
  const a=app(),first=a.scope.startSid(),second=a.scope.startSid();
- assert.equal(a.contexts.length,1);assert.equal(a.contexts[0].resumeCalls,1);
+ assert.equal(a.contexts.length,1);assert.equal(a.contexts[0].resumeCalls,0);
  await settle();assert.equal(a.attempts.length,1);
  a.attempts[0].options.onStatus({type:'ready',renderer:true});await Promise.all([first,second]);
  assert.equal(a.$('sidSpinner').hidden,true);assert.equal(a.$('sidUnlock').hidden,false);
@@ -63,6 +65,7 @@ test('readiness timeout cleans up, shows Retry, and stale callbacks cannot affec
  assert.equal(a.$('sidStart').disabled,false);
  pending=a.scope.startSid();await settle();assert.equal(a.contexts.length,2);
  old.onProgress('obsolete');old.onStatus({type:'error',message:'obsolete'});
+ a.contexts[0].resumeResult.promise.catch(()=>{});
  a.contexts[0].resumeResult.reject(Error('obsolete resume'));await settle();
  assert.doesNotMatch(a.$('sidEngineStatus').textContent,/obsolete/);
  a.attempts[1].options.onStatus({type:'ready',renderer:true});await pending;
@@ -93,7 +96,7 @@ test('rejected cleanup also blocks new contexts and preserves failure detail',as
 
 test('trusted activation resumes pending initialization; stale resume never overwrites retry status',async()=>{
  const a=app();const pending=a.scope.startSid();await settle();
- a.scope.unlockSidAudio();assert.equal(a.contexts[0].resumeCalls,2);
+ a.scope.unlockSidAudio();assert.equal(a.contexts[0].resumeCalls,1);
  a.fire(12000);await pending;
  const retry=a.scope.startSid();await settle();
  a.contexts[0].resumeResult.resolve();await settle();
@@ -139,7 +142,8 @@ test('bridge forwards progress/errors, preserves note flushing and silences obso
  const source=readFileSync(new URL('../src/create-residfp-audio.js',import.meta.url),'utf8')
   .replace(/^import .*;\n/gm,'').replace('export async function','async function');
  const scope=vm.createContext({AbortController,AudioWorkletNode:Node,createSidWriteBatcher,closeSidContext,setTimeout,clearTimeout,
-  performance,fetch:async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(0)}),WebAssembly:{compile:async()=>({}),Module:{imports:()=>[]}}});
+  performance,loadSidWasm:async()=>new ArrayBuffer(8),
+  fetch:async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(0)}),WebAssembly:{compile:async()=>({}),Module:{imports:()=>[]}}});
  vm.runInContext(source,scope);
  const audio=await scope.createReSidFpAudio({context,onStatus:e=>statuses.push(e),onProgress:m=>progress.push(m)});
  const old=node.port.onmessage;
@@ -161,12 +165,18 @@ test('worklet acknowledges each initialization stage and reports WASM rejection'
  assert.deepEqual(messages.map(m=>m.type),[...Array(6).fill('init-progress'),'ready']);
  assert.match(messages[1].message,/Instantiating/);assert.match(messages[4].message,/chip/);
  reject=true;await processor.load(new ArrayBuffer(0),6581);assert.equal(messages.at(-1).type,'error');assert.match(messages.at(-1).message,/bad WASM/);
+ messages.length=0;reject=false;
+ const live=new Processor();
+ live.exports={sid_init(model){live.model=model;return 1},sid_reset(){live.reset=true}};
+ live.switchModel(8580);
+ assert.equal(live.model,8580);assert.equal(live.reset,true);
+ assert.equal(messages.at(-1).type,'model-ready');
 });
 
 test('gestures cannot resume a retired context during or after stalled cleanup',async()=>{
  const a=app({closeHangs:true}),pending=a.scope.startSid();await settle();
- a.fire(12000);await settle();a.scope.unlockSidAudio();assert.equal(a.contexts[0].resumeCalls,1);
- a.fire(2000);await pending;a.scope.unlockSidAudio();assert.equal(a.contexts[0].resumeCalls,1);
+ a.fire(12000);await settle();a.scope.unlockSidAudio();assert.equal(a.contexts[0].resumeCalls,0);
+ a.fire(2000);await pending;a.scope.unlockSidAudio();assert.equal(a.contexts[0].resumeCalls,0);
 });
 
 test('error after ready but before factory return prevents assigning a failed engine',async()=>{

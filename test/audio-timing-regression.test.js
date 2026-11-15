@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {createSidWriteBatcher} from '../src/sid-write-batcher.js';
 
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
-const code=html.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1]??'';
+const code=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
 const bridge=readFileSync(new URL('../src/create-residfp-audio.js',import.meta.url),'utf8');
 const worklet=readFileSync(new URL('../src/residfp-worklet.js',import.meta.url),'utf8');
 const css=readFileSync(new URL('../src/seq-ui.css',import.meta.url),'utf8');
@@ -24,7 +24,8 @@ test('keyboard and Game Arp note-ons use the same immediate dispatch path',()=>{
  assert.match(code,/const token=sidController\.noteOn\(note,\(\)=>currentSidSettings\);/);
  assert.match(code,/sidAudio\?\.noteDispatched\?\.\(source\.startsWith\('key:'\)\?'keyboard':source\)/);
  assert.match(bridge,/noteDispatched\(source='keyboard'\)\{\s*batcher\.flush\(\)/);
- assert.match(bridge,/if\(now-lastProbeAt<500\|\|pendingProbes\.size>=4\)return/);
+ assert.match(bridge,/if\(now-lastProbeAt<500\|\|pendingProbes\.size>=4\)\{/);
+ assert.match(bridge,/onStatus\(\{type:'latency-probe-skipped',source\}\)/);
  assert.match(bridge,/if\(now-probe\.at>3000\)pendingProbes\.delete\(id\)/);
  assert.match(bridge,/if\(context\.state!=='running'\)return/);
  assert.match(bridge,/node\.port\.postMessage\(\{type:'latency-probe',id\}\)/);
@@ -34,7 +35,10 @@ test('Worklet probe is acknowledged only after a render block',()=>{
  assert.match(worklet,/else if\(data\?\.type==='latency-probe'\)/);
  const renderAt=worklet.indexOf('if(e.sid_render(frames)!==frames)return true;');
  const replyAt=worklet.indexOf("this.port.postMessage({type:'latency-probe-result',id})");
+ const energyAt=worklet.indexOf("this.port.postMessage({type:'first-energy'");
  assert.ok(renderAt>=0&&replyAt>renderAt,'probe reply must follow sid_render');
+ assert.ok(energyAt>renderAt,'first loud sample is measured after sid_render');
+ assert.match(worklet,/if\(this\.timingEnabled&&queuedWrites>0\)/);
  assert.match(worklet,/renderBudgetMs:frames\*1000\/sampleRate/);
  assert.match(worklet,/this\.renderMsTotal\+=elapsed/);
  assert.match(bridge,/dispatchToWorkletRoundTripMs:performance\.now\(\)-pending\.at/);
@@ -43,8 +47,12 @@ test('Worklet probe is acknowledged only after a render block',()=>{
 test('optional timing display is clearly labeled and never claims speaker latency',()=>{
  assert.match(html,/<details id="audioTimingDetails"><summary>Audio timing<\/summary>/);
  assert.match(html,/id="audioTimingReport"/);
+ assert.match(code,/Key to first loud sample:/);
+ assert.match(code,/This note kept the previous acknowledgment/);
  assert.match(code,/Screen recording A\/V sync can differ\./);
  assert.match(code,/Browser base\/output latency:/);
+ assert.match(html,/import \{startSidStudio\} from '\.\/src\/sid-studio\.js\?v=__BUILD_ID__';/);
+ assert.match(html,/startSidStudio\(\);/);
  assert.match(code,/if\(event\.type==='latency-probe'\)/);
  assert.match(code,/if\(event\.type==='audio-stats'\)/);
  assert.match(css,/#audioTimingReport\{position:absolute/);

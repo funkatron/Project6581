@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const app=readFileSync(new URL('../src/keyboard-input.js',import.meta.url),'utf8');
 const css=html.slice(html.indexOf('<style>')+7,html.indexOf('</style>'));
 
 function blackKeyRule(source){
@@ -46,9 +47,9 @@ test('13-note iPad layout retains the same black-to-white width ratio',()=>{
 });
 
 test('keyboard retains note ordering and one-pointer-per-key ownership',()=>{
- assert.match(html,/const count=compactKeyboard\(\)\?13:25/);
- assert.match(html,/className='key'\+\(names\[note%12\]\.includes\('♯'\)\?' black':''\)/);
- assert.match(html,/key\.setPointerCapture\(e\.pointerId\)/);
- assert.match(html,/if\(activePointer!==e\.pointerId\)return/);
- assert.match(html,/key\.addEventListener\('pointercancel',end\)/);
+ assert.match(app,/const count=compactKeyboard\(\)\?13:25/);
+ assert.match(app,/className='key'\+\(names\[note%12\]\.includes\('♯'\)\?' black':''\)/);
+ assert.match(app,/key\.setPointerCapture\(e\.pointerId\)/);
+ assert.match(app,/if\(activePointer!==e\.pointerId\)return/);
+ assert.match(app,/key\.addEventListener\('pointercancel',end\)/);
 });

@@ -10,6 +10,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     this.blocks=0;this.lastPeak=0;this.writes=0;
     this.pendingNoteEvents=[];this.eventLogEnabled=false;
     this.pendingLatencyProbes=[];this.timingEnabled=false;
+    this.energyArmed=false;this.energyBlocks=0;
     this.renderMsTotal=0;this.renderMsMax=0;this.timedRenderBlocks=0;
     this.recording=false;this.recordSamples=new Int16Array(4096);this.recordLength=0;
     // Audio-rendered frames, rather than throttled page timers, cap capture.
@@ -19,12 +20,18 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
         this.traceFirstRender=data.traceFirstRender===true;
         this.load(data.bytes,data.model??6581);
       }
+      else if(data?.type==='set-model'){
+        this.switchModel(data.model);
+      }
       else if(data?.type==='event-log-enable'){
         this.eventLogEnabled=data.enabled===true;this.pendingNoteEvents.length=0;
       }
       else if(data?.type==='timing-enable'){
         this.timingEnabled=data.enabled===true;
-        if(!this.timingEnabled)this.pendingLatencyProbes.length=0;
+        if(!this.timingEnabled){
+          this.pendingLatencyProbes.length=0;
+          this.energyArmed=false;
+        }
       }
       else if(data?.type==='latency-probe'){
         if(this.timingEnabled&&Number.isInteger(data.id)&&this.pendingLatencyProbes.length<8)
@@ -105,6 +112,19 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       this.port.postMessage({type:'ready',renderer:true});
     }catch(err){this.port.postMessage({type:'error',message:String(err)})}
   }
+  switchModel(model){
+    const e=this.exports;
+    try{
+      if(!e?.sid_init)throw Error('SID engine is not ready');
+      this.queue.length=0;
+      this.pitchEnvelopes.clear();
+      e.sid_reset?.();
+      if(!e.sid_init(model,sampleRate)){
+        throw Error('SID model switch failed at stage '+(e.sid_init_stage?.()??'unknown'));
+      }
+      this.port.postMessage({type:'model-ready',model});
+    }catch(err){this.port.postMessage({type:'error',message:String(err)})}
+  }
   // Transfer buffers every ~85 ms at 48 kHz, never posting one message per audio quantum.
   flushRecording(){
     if(this.recordLength===0)return;
@@ -116,9 +136,13 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     const channels=outputs[0];
     for(const channel of channels)channel.fill(0);
     const e=this.exports;if(!e)return true;
+    const queuedWrites=this.queue.length;
     for(const [reg,value] of this.queue)e.sid_write(reg,value);
     this.writes+=this.queue.length;
     this.queue.length=0;
+    if(this.timingEnabled&&queuedWrites>0){
+      this.energyArmed=true;this.energyBlocks=0;
+    }
     // Frequency updates occur at render-block boundaries, using the audio frame
     // clock. Max scheduling granularity is one render quantum (128 frames).
     for(const [register,state] of this.pitchEnvelopes){
@@ -198,6 +222,17 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       this.port.postMessage({type:'note-rendered',eventIds:this.pendingNoteEvents,
         audioFrame:typeof currentFrame==='number'?currentFrame:null,frames,sampleRate});
       this.pendingNoteEvents=[];
+    }
+    if(this.energyArmed){
+      this.energyBlocks++;
+      let sampleOffset=-1;
+      for(let i=0;i<frames;i++){
+        if(Math.abs(pcm[i])>655){sampleOffset=i;break}
+      }
+      if(sampleOffset>=0||this.energyBlocks>=16){
+        this.port.postMessage({type:'first-energy',hit:sampleOffset>=0,sampleOffset,blocks:this.energyBlocks,sampleRate});
+        this.energyArmed=false;
+      }
     }
     this.lastPeak=Math.max(this.lastPeak,peak);
     if(++this.blocks%128===0){

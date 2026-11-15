@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const app=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
 const css=readFileSync(new URL('../src/seq-ui.css',import.meta.url),'utf8');
 test('each editor tab hides both inactive panels and retains the existing controls',()=>{
  const events=new Map(),nodes=new Map();
@@ -14,7 +15,7 @@ test('each editor tab hides both inactive panels and retains the existing contro
   nodes.set(panels[i],{hidden:i!==0,getAttribute:()=>id,control:{value:17}});
  }
  nodes.set('workspace',{dataset:{tab:'voice'},querySelectorAll:()=>panels.map(id=>nodes.get(id))});
- const block=html.match(/for\(const \[name,id\] of \[\['voice','tabVoice'\][\s\S]*?\n\}\nconst activeOwners/)?.[0].replace(/\nconst activeOwners$/,'');
+ const block=app.match(/for\(const \[name,id\] of \[\['voice','tabVoice'\][\s\S]*?\n\}\nconst activeOwners/)?.[0].replace(/\nconst activeOwners$/,'');
  assert.ok(block,'Execute the production tab bindings');
  vm.runInNewContext(block,{$:id=>nodes.get(id)});
  for(const selected of [2,0,1,2,1,0]){
