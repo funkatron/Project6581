@@ -106,9 +106,13 @@ enginePanelsUi=mountSidEnginePanels({
  onEngineChange:(_index,kind)=>{
   syncLegacyFilterInputs();
   syncEnginePans();
-  if(kind==='model'&&sidAudio){
-   const chip=_index;
-   sidAudio.setChipModel(chip,engines[chip].model).catch(()=>{});
+  if(kind==='model'){
+   if(_index===0){
+    $('chip').value=String(engines[0].model);
+    void ensureSidModel(engines[0].model);
+   }else if(sidAudio){
+    sidAudio.setChipModel(_index,engines[_index].model).catch(()=>{});
+   }
   }
   refreshPresetDirty();
   updateModulation();
@@ -339,7 +343,7 @@ function presentModulatedSlider(root,target,baseValue,effectiveValue,enabled){
 }
 // Overlay a noninteractive range thumb: the actual input retains the base value.
 function setModulationTrack(input,base,effective,enabled){
- if(!input)return;
+ if(!input||input.type!=='range')return;
  let stack=input.parentElement;
  if(!stack?.classList.contains('slider-stack')){
   stack=document.createElement('span');stack.className='slider-stack';
@@ -350,7 +354,9 @@ function setModulationTrack(input,base,effective,enabled){
   band=document.createElement('span');band.className='modulation-band';
   band.setAttribute('aria-hidden','true');stack.prepend(band);
  }
- const track=modulationTrack(base,effective,input.min,input.max,enabled);
+ const lo=Number(input.min),hi=Number(input.max);
+ if(!Number.isFinite(lo)||!Number.isFinite(hi)||hi<=lo)return;
+ const track=modulationTrack(base,effective,lo,hi,enabled);
  if(stack.style.getPropertyValue('--center')!==track.center)
   stack.style.setProperty('--center',track.center);
  if(band.style.getPropertyValue('--band-start')!==track.start)
