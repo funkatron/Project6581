@@ -93,6 +93,14 @@ test('Detune retunes active polyphonic stacks without restarting envelopes',()=>
  assert.equal(envelopeSlots.size,8,'ADSR updates both registers for four active oscillators');
 });
 
+test('chip mask limits register writes to the routed SID',()=>{
+ const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:3,unisonCount:1,mode:'poly'});
+ const token=sid.noteOn(69,sound,{chipMask:[1]});
+ assert.equal(gateOns(writes).length,1);
+ assert.ok(gateOns(writes).every(([reg])=>Math.floor(reg/32)===1));
+ sid.noteOff(69,token);
+});
+
 test('capacity respects full stacks and changes release active voices',()=>{
  const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:3,unisonCount:2,mode:'duo'});
  assert.equal(sid.capacity,1);

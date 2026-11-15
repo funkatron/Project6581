@@ -50,10 +50,11 @@ test('preset loading restores performance settings without stored notes or autop
  assert.match(script,/\$\('voiceAssign'\)\.value=next\.sound\.instrument\.mode/);
  assert.match(script,/\$\('gameRate'\)\.value=String\(next\.performance\.game\.rate\)/);
  assert.match(script,/enginePanelsUi\?\.render\(\);renderLfos\(\);updateUnison\(\);updateModulation\(\)/);
- assert.match(script,/await ensureSidModel\(next\.sound\.model\)/);
+ assert.match(script,/await ensureSidModel\(presetModel\)/);
+ assert.match(script,/const presetModel=next\.sound\.engines\[0\]\.model/);
  assert.match(script,/if\(pendingSidStartup\)await pendingSidStartup/);
  assert.match(script,/activeSidModel=requestedModel/);
- assert.match(script,/await ensureSidModel\(previous\.sound\.model\)/);
+ assert.match(script,/await ensureSidModel\(previous\.sound\.engines\[0\]\.model\)/);
  assert.match(script,/setPresetLoading\(true\)/);
  assert.match(library,/\$\('presetDialog'\)\.close\(\)/);
  assert.match(library,/if\(presetDirty&&!window\.confirm\('Discard unsaved changes to this preset\?'\)\)return/);
@@ -119,9 +120,11 @@ test('chip selection switches the live engine and restores the previous model on
 
 test('empty live Arp selections snapshot as Up and Action so presets can still load',()=>{
  const source=script.slice(script.indexOf('function snapshotPresetSettings()'),script.indexOf('function applyPresetControls('));
+ const engines=[{enabled:true,model:6581,pan:0,voice:{enabled:true},filter:{}},{enabled:false,model:6581,pan:0,voice:{enabled:true},filter:{}},{enabled:false,model:6581,pan:0,voice:{enabled:true},filter:{}}];
  const app={
   $:id=>({value:['arpPattern','gameArpStyle'].includes(id)?'':'1',checked:false}),
-  validatePresetSettings:value=>value,settings:[{}],lfoState:[],seqState:{}
+  validatePresetSettings:value=>value,engines,lfoState:[],seqState:{},
+  readRoutingFromDom:()=>({keyboard:'all',arp:'all',game:'sid1'})
  };
  const {arp,game}=runInNewContext(source+'snapshotPresetSettings()',app).performance;
  assert.equal(arp.pattern,'up');

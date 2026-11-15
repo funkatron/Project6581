@@ -1,10 +1,12 @@
 import {defaultSequence,validateSequence} from './game-step-sequencer.js';
 import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from './pitch-envelope.js';
-// Project6581 preset format v4: adds per-voice pitchEnvelope (v3 imports upgrade with envelope off).
-export const PRESET_VERSION=4;
-export const PRESET_STORAGE_KEY='project6581.user-presets.v4';
+import {createDefaultEngines,DEFAULT_ROUTING,ROUTE_OPTIONS,defaultEngineSettings} from './sid-engines.js';
+// Project6581 preset format v5: per-engine sound blocks and performance.routing (v4 imports upgrade).
+export const PRESET_VERSION=5;
+export const PRESET_STORAGE_KEY='project6581.user-presets.v5';
+export const LEGACY_PRESET_STORAGE_KEY_V4='project6581.user-presets.v4';
 export const LEGACY_PRESET_STORAGE_KEY_V3='project6581.user-presets.v3';
-export const IMPORTABLE_PRESET_VERSIONS=Object.freeze([3,4]);
+export const IMPORTABLE_PRESET_VERSIONS=Object.freeze([3,4,5]);
 export const MAX_USER_PRESETS=100;
 const WAVES=['triangle','sawtooth','square','noise'];
 const MODES=['lowpass','bandpass','highpass'];
@@ -34,24 +36,75 @@ function choice(v,name,options){
  if(!options.includes(v))throw new RangeError('Invalid '+name);
  return v;
 }
+function defaultEngineBank(){
+ const engines=createDefaultEngines(6581);
+ engines[1].enabled=false;
+ engines[2].enabled=false;
+ return engines;
+}
 export function defaultPresetSettings(){
- return {
+ return validatePresetSettings({
   sound:{
-   model:6581,
-   voice:{
-    enabled:true,wave:'square',attack:.002,decay:.12,sustain:.8,release:.12,pulse:50,pwmDepth:0,pwmRate:1,
-    pitchEnvelope:validatePitchEnvelope(DEFAULT_PITCH_ENVELOPE)
-   },
+   engines:defaultEngineBank(),
    instrument:{voiceCount:1,unisonCount:1,mode:'mono',detune:12},
-   filter:{cutoff:7000,resonance:10,volume:55,mode:'lowpass'},
    lfos:Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',phase:0,seed:i,engines:'all'}))
   },
   performance:{
    masterBpm:120,
+   routing:{...DEFAULT_ROUTING},
    arp:{enabled:false,latch:false,pattern:'up',rate:4,sync:true,localBpm:120},
    game:{enabled:true,style:'action',rate:4,sequence:defaultSequence()}
   }
+ });
+}
+function validateEngine(engine,index){
+ const e=object(engine,'SID '+(index+1));
+ const voice=attachDefaultPitchEnvelope(e.voice??{});
+ const filter=object(e.filter??defaultEngineSettings().filter,'filter');
+ return {
+  enabled:boolean(e.enabled??index===0,'enabled'),
+  model:choice(e.model,'chip model',[6581,8580]),
+  pan:numeric(e.pan??0,'pan',-100,100),
+  voice:{
+   enabled:boolean(voice.enabled,'enabled'),wave:choice(voice.wave,'waveform',WAVES),
+   attack:numeric(voice.attack,'attack',0,2),decay:numeric(voice.decay,'decay',0,3),
+   sustain:numeric(voice.sustain,'sustain',0,1),release:numeric(voice.release,'release',.01,4),
+   pulse:numeric(voice.pulse,'pulse width',5,95),pwmDepth:numeric(voice.pwmDepth,'PWM depth',0,45),
+   pwmRate:numeric(voice.pwmRate,'PWM rate',.1,12),
+   pitchEnvelope:validatePitchEnvelope(voice.pitchEnvelope)
+  },
+  filter:{
+   cutoff:numeric(filter.cutoff,'cutoff',50,10000),
+   resonance:numeric(filter.resonance,'resonance',0,100),
+   volume:numeric(filter.volume,'volume',0,100),mode:choice(filter.mode,'filter mode',MODES)
+  }
  };
+}
+function migrateLegacySound(sound){
+ if(Array.isArray(sound.engines)&&sound.engines.length===3){
+  return sound.engines.map((engine,i)=>validateEngine(engine,i));
+ }
+ const model=choice(sound.model??6581,'chip model',[6581,8580]);
+ const engines=defaultEngineBank();
+ engines[0].model=model;
+ const v=attachDefaultPitchEnvelope(sound.voice);
+ const filter=object(sound.filter??engines[0].filter,'filter');
+ Object.assign(engines[0].voice,{
+  enabled:boolean(v.enabled,'enabled'),wave:choice(v.wave,'waveform',WAVES),
+  attack:numeric(v.attack,'attack',0,2),decay:numeric(v.decay,'decay',0,3),
+  sustain:numeric(v.sustain,'sustain',0,1),release:numeric(v.release,'release',.01,4),
+  pulse:numeric(v.pulse,'pulse width',5,95),pwmDepth:numeric(v.pwmDepth,'PWM depth',0,45),
+  pwmRate:numeric(v.pwmRate,'PWM rate',.1,12),
+  pitchEnvelope:validatePitchEnvelope(v.pitchEnvelope)
+ });
+ Object.assign(engines[0].filter,{
+  cutoff:numeric(filter.cutoff,'cutoff',50,10000),
+  resonance:numeric(filter.resonance,'resonance',0,100),
+  volume:numeric(filter.volume,'volume',0,100),mode:choice(filter.mode,'filter mode',MODES)
+ });
+ engines[1].enabled=false;
+ engines[2].enabled=false;
+ return engines.map((engine,i)=>validateEngine(engine,i));
 }
 export function attachDefaultPitchEnvelope(voice){
  const source=object(voice,'voice');
@@ -60,32 +113,20 @@ export function attachDefaultPitchEnvelope(voice){
 }
 export function validatePresetSettings(value){
  const root=object(value,'settings'),sound=object(root.sound,'sound');
- const v=attachDefaultPitchEnvelope(sound.voice);
- const ins=object(sound.instrument,'instrument'),filter=object(sound.filter,'filter');
+ const ins=object(sound.instrument,'instrument');
  if(!Array.isArray(sound.lfos)||sound.lfos.length!==3)throw new RangeError('Exactly three LFOs are required');
+ const engines=migrateLegacySound(sound);
  const perf=object(root.performance,'performance');
  const arp=object(perf.arp,'arpeggiator'),game=object(perf.game,'Game Arp');
+ const routing=object(perf.routing??DEFAULT_ROUTING,'routing');
  return {
   sound:{
-   model:choice(sound.model,'chip model',[6581,8580]),
-   voice:{
-    enabled:boolean(v.enabled,'enabled'),wave:choice(v.wave,'waveform',WAVES),
-    attack:numeric(v.attack,'attack',0,2),decay:numeric(v.decay,'decay',0,3),
-    sustain:numeric(v.sustain,'sustain',0,1),release:numeric(v.release,'release',.01,4),
-    pulse:numeric(v.pulse,'pulse width',5,95),pwmDepth:numeric(v.pwmDepth,'PWM depth',0,45),
-    pwmRate:numeric(v.pwmRate,'PWM rate',.1,12),
-    pitchEnvelope:validatePitchEnvelope(v.pitchEnvelope)
-   },
+   engines,
    instrument:{
     voiceCount:integer(ins.voiceCount,'voice count',1,9),
     unisonCount:integer(ins.unisonCount,'unison layers',1,integer(ins.voiceCount,'voice count',1,9)),
     mode:choice(ins.mode,'voice assignment',ASSIGNMENTS),
     detune:numeric(ins.detune,'detune',0,100)
-   },
-   filter:{
-    cutoff:numeric(filter.cutoff,'cutoff',50,10000),
-    resonance:numeric(filter.resonance,'resonance',0,100),
-    volume:numeric(filter.volume,'volume',0,100),mode:choice(filter.mode,'filter mode',MODES)
    },
    lfos:sound.lfos.map((lfo,i)=>{
     object(lfo,'LFO '+(i+1));
@@ -101,6 +142,11 @@ export function validatePresetSettings(value){
   },
   performance:{
    masterBpm:integer(perf.masterBpm,'master BPM',40,240),
+   routing:{
+    keyboard:choice(routing.keyboard??DEFAULT_ROUTING.keyboard,'keyboard route',ROUTE_OPTIONS),
+    arp:choice(routing.arp??DEFAULT_ROUTING.arp,'Root Arp route',ROUTE_OPTIONS),
+    game:choice(routing.game??DEFAULT_ROUTING.game,'Game Arp route',ROUTE_OPTIONS)
+   },
    arp:{
     enabled:boolean(arp.enabled,'Arp enabled'),latch:boolean(arp.latch,'Arp latch'),
     pattern:choice(arp.pattern,'Arp pattern',PATTERNS),rate:choice(arp.rate,'Arp rate',DIVISIONS),
@@ -130,15 +176,15 @@ export function validatePreset(value,{requireId=false}={}){
 }
 function factory(id,name,category,patch={}){
  const settings=defaultPresetSettings();
- if(patch.voice)Object.assign(settings.sound.voice,patch.voice);
+ if(patch.voice)Object.assign(settings.sound.engines[0].voice,patch.voice);
  if(patch.instrument){
   Object.assign(settings.sound.instrument,patch.instrument);
   // Existing factory sound design stacked all its selected oscillators.
   if(patch.instrument.voiceCount&&!('unisonCount' in patch.instrument))
    settings.sound.instrument.unisonCount=settings.sound.instrument.voiceCount;
  }
- if(patch.filter)Object.assign(settings.sound.filter,patch.filter);
- if(patch.model)settings.sound.model=patch.model;
+ if(patch.filter)Object.assign(settings.sound.engines[0].filter,patch.filter);
+ if(patch.model)settings.sound.engines[0].model=patch.model;
  if(patch.lfos)patch.lfos.forEach((lfo,i)=>Object.assign(settings.sound.lfos[i],lfo));
  if(patch.performance){
   if(patch.performance.masterBpm)settings.performance.masterBpm=patch.performance.masterBpm;
@@ -216,6 +262,14 @@ function readStoredPresetBank(storage,key,expectedVersion){
 export function readUserPresets(storage){
  let items=readStoredPresetBank(storage,PRESET_STORAGE_KEY,PRESET_VERSION);
  if(items!==null){unique(items);return items}
+ const v4=readStoredPresetBank(storage,LEGACY_PRESET_STORAGE_KEY_V4,4);
+ if(v4!==null){
+  items=v4.map(p=>({...p,settings:validatePresetSettings(p.settings)}));
+  unique(items);
+  writeUserPresets(storage,items);
+  storage.removeItem(LEGACY_PRESET_STORAGE_KEY_V4);
+  return items;
+ }
  const legacy=readStoredPresetBank(storage,LEGACY_PRESET_STORAGE_KEY_V3,3);
  if(legacy===null)return [];
  items=legacy.map(p=>({...p,settings:validatePresetSettings(p.settings)}));
@@ -248,7 +302,7 @@ export function importPresetFile(raw){
  if(typeof raw!=='string'||raw.length>2*1024*1024)throw new RangeError('Preset file is too large');
  const file=object(JSON.parse(raw),'preset file');
  if(!IMPORTABLE_PRESET_VERSIONS.includes(file.version))
-  throw new RangeError('Unsupported preset version. Import v3 or v4 JSON only; older formats are not supported.');
+  throw new RangeError('Unsupported preset version. Import v3, v4, or v5 JSON only; older formats are not supported.');
  const rawPresets=file.type==='project6581-preset'?[file.preset]
   :file.type==='project6581-preset-bank'&&Array.isArray(file.presets)?file.presets:null;
  const presets=rawPresets?rawPresets.map(normalizeImportedPreset):null;

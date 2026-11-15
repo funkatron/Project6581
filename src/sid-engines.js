@@ -45,3 +45,19 @@ export function routeMask(route,engines){
  if(route==='sid3')return enabled.includes(2)?[2]:[];
  return enabled;
 }
+
+export function routingKeyForSource(source){
+ if(source==='game')return 'game';
+ if(source==='arp')return 'arp';
+ if(typeof source==='string'&&source.startsWith('key:'))return 'keyboard';
+ return 'keyboard';
+}
+
+export function readRoutingFromDom($,routing=DEFAULT_ROUTING){
+ const pick=(value,fallback)=>ROUTE_OPTIONS.includes(value)?value:fallback;
+ return {
+  keyboard:pick($('keyboardRoute')?.value,routing.keyboard),
+  arp:pick($('arpRoute')?.value,routing.arp),
+  game:pick($('gameRoute')?.value,routing.game)
+ };
+}

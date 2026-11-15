@@ -15,7 +15,7 @@ import {mountEditorTabs} from "./editor-tabs.js?v=__BUILD_ID__";
 import {mountLfoPanel} from "./lfo-panel-ui.js?v=__BUILD_ID__";
 import {mountAudioTimingPanel} from "./audio-timing-panel.js?v=__BUILD_ID__";
 import {applyFirstEnergyTiming} from "./audio-timing-metrics.js?v=__BUILD_ID__";
-import {createDefaultEngines,clampVoiceCount,maxVoicesForEngines,DEFAULT_ROUTING} from "./sid-engines.js?v=__BUILD_ID__";
+import {createDefaultEngines,clampVoiceCount,maxVoicesForEngines,DEFAULT_ROUTING,routeMask,routingKeyForSource,readRoutingFromDom} from "./sid-engines.js?v=__BUILD_ID__";
 import {mountSidEnginePanels} from "./sid-engine-panels-ui.js?v=__BUILD_ID__";
 
 export function startSidStudio(){
@@ -129,13 +129,23 @@ const syncedRates=[{value:0.25,label:'4/1'},{value:0.5,label:'2/1'},...([1,2,4,8
 const {renderLfos}=mountLfoPanel({$,lfoState,lfoTargets,lfoTargetNames,syncedRates,onChange:()=>updateModulation()});
 mountEditorTabs({$});
 const activeOwners=new Map();
-function play(note,source='key:'+note){
- restoreSidOutput();
- const eventId=sidEventLog.enabled?sidEventLog.begin('note-command',{note,source,action:'on',inputEventId:sidInputEvent,stepIndex:source==='game'&&activeSeqStep>=0?activeSeqStep:null,contextState:sidContext?.state??'unavailable'}):null;
+function voiceSettingsForSlot(slot){
+ const chip=Math.floor(slot/3);
+ if(chip===0)return currentSidSettings;
+ const voice=engines[chip].voice;
+ return {...voice,pitchEnvelope:voice.pitchEnvelope};
+}
+function routingSelectForSource(source){
+ const key=routingKeyForSource(source);
+ const routing=readRoutingFromDom($,DEFAULT_ROUTING);
+ return routing[key];
+}
+function playOne(note,ownerKey,chipMask){
+ const eventId=sidEventLog.enabled?sidEventLog.begin('note-command',{note,source:ownerKey,action:'on',inputEventId:sidInputEvent,stepIndex:ownerKey==='game'&&activeSeqStep>=0?activeSeqStep:null,contextState:sidContext?.state??'unavailable',chipMask}):null;
  const gate=canDispatchNote({
   blocked:sidMusicalInputBlocked(),
   hasController:Boolean(sidController),
-  voiceEnabled:settings[0].enabled,
+  voiceEnabled:chipMask.some(chip=>engines[chip]?.voice?.enabled),
   contextState:sidContext?.state??null
  });
  if(!gate.ok){
@@ -143,17 +153,41 @@ function play(note,source='key:'+note){
   return;
  }
  const traceStart=sidAudio?.beginNoteTrace();
- const prior=activeOwners.get(source);
+ const prior=activeOwners.get(ownerKey);
  if(prior)sidController.noteOff(prior.note,prior.token);
- const token=sidController.noteOn(note,()=>currentSidSettings);
+ const token=sidController.noteOn(note,voiceSettingsForSlot,{chipMask});
  sidAudio?.endNoteTrace(eventId,traceStart);
- // Deliver complete note-on registers before yielding the input handler.
- // The diagnostic distinguishes message/render delays from output buffering.
- sidAudio?.noteDispatched?.(source.startsWith('key:')?'keyboard':source);
- activeOwners.set(source,{note,token});
+ sidAudio?.noteDispatched?.(ownerKey.startsWith('key:')?'keyboard':ownerKey.split('@')[0]);
+ activeOwners.set(ownerKey,{note,token});
+}
+function play(note,source='key:'+note){
+ restoreSidOutput();
+ const route=routingSelectForSource(source);
+ const chips=routeMask(route,engines);
+ if(route==='layer'){
+  for(const chip of chips)playOne(note,source+'@'+chip,[chip]);
+  return;
+ }
+ playOne(note,source,chips);
 }
 function stop(note,source='key:'+note){
  const eventId=sidEventLog.enabled?sidEventLog.begin('note-command',{note,source,action:'off',inputEventId:sidInputEvent}):null;
+ const route=routingSelectForSource(source);
+ if(route==='layer'){
+  let stopped=false;
+  for(const chip of routeMask(route,engines)){
+   const key=source+'@'+chip;
+   const owner=activeOwners.get(key);
+   if(!owner||owner.note!==note)continue;
+   const traceStart=sidAudio?.beginNoteTrace();
+   activeOwners.delete(key);
+   sidController?.noteOff(note,owner.token);
+   sidAudio?.endNoteTrace(eventId,traceStart);
+   stopped=true;
+  }
+  if(!stopped&&eventId!==null)sidEventLog.add('note-skipped',{eventId,reason:'no matching owner'});
+  return;
+ }
  const owner=activeOwners.get(source);
  if(!owner||owner.note!==note){if(eventId!==null)sidEventLog.add('note-skipped',{eventId,reason:'no matching owner'});return;}
  const traceStart=sidAudio?.beginNoteTrace();
@@ -649,15 +683,14 @@ function snapshotPresetSettings(){
  const arpPattern=$('arpPattern').value||'up';
  return validatePresetSettings({
   sound:{
-   model:Number($('chip').value),
-   voice:{...settings[0]},
+   engines:engines.map(engine=>({enabled:engine.enabled,model:engine.model,pan:engine.pan,
+    voice:{...engine.voice},filter:{...engine.filter}})),
    instrument:{voiceCount:Number($('voiceCount').value),unisonCount:Number($('unisonCount').value),mode:$('voiceAssign').value,detune:Number($('detune').value)},
-   filter:{cutoff:Number($('cutoff').value),resonance:Number($('resonance').value),
-    volume:Number($('volume').value),mode:$('mode').value},
    lfos:lfoState.map(lfo=>({...lfo}))
   },
   performance:{
    masterBpm:Number($('masterBpm').value),
+   routing:readRoutingFromDom($),
    arp:{enabled:$('arpOn').checked,latch:$('arpLatch').checked,pattern:arpPattern,
     rate:Number($('arpRate').value),sync:$('arpSync').checked,localBpm:Number($('arpBpm').value)},
    game:{enabled:$('gameArpOn').checked,style:$('gameArpStyle').value||'action',
@@ -670,11 +703,18 @@ function applyPresetControls(next){
  panic();arp.held.clear();arp.latched.clear();arp.step=0;
  game.step=0;arp.root=null;seqPreview=false;setSeqTransportLabel();
  for(const key of keys.values())key.classList.remove('down');
- Object.assign(engines[0].voice,next.sound.voice);
+ next.sound.engines.forEach((engine,index)=>{
+  engines[index].enabled=engine.enabled;
+  engines[index].model=engine.model;
+  engines[index].pan=engine.pan;
+  Object.assign(engines[index].voice,engine.voice);
+  Object.assign(engines[index].filter,engine.filter);
+ });
  Object.assign(settings[0],engines[0].voice);
- Object.assign(engines[0].filter,next.sound.filter);
- engines[0].model=next.sound.model;
- $('chip').value=String(next.sound.model);
+ $('chip').value=String(engines[0].model);
+ $('keyboardRoute').value=next.performance.routing.keyboard;
+ $('arpRoute').value=next.performance.routing.arp;
+ $('gameRoute').value=next.performance.routing.game;
  $('voiceCount').value=String(clampVoiceCount(next.sound.instrument.voiceCount,engines));
  $('unisonCount').value=String(next.sound.instrument.unisonCount);
  $('voiceAssign').value=next.sound.instrument.mode;
@@ -704,15 +744,17 @@ async function applyPresetSettings(value){
  if(sidRecorder?.recording||recordBusy)throw new Error('Finish recording before loading a preset');
  const next=validatePresetSettings(value);
  const previous=snapshotPresetSettings();
- sidEventLog.add('preset-apply',{contextId:sidAudio?sidAttempt:null,activeModel:activeSidModel,requestedModel:next.sound.model});
+ const presetModel=next.sound.engines[0].model;
+ sidEventLog.add('preset-apply',{contextId:sidAudio?sidAttempt:null,activeModel:activeSidModel,requestedModel:presetModel});
  applyPresetControls(next);
  try{
-  await ensureSidModel(next.sound.model);
-  if(activeSidModel!==next.sound.model)throw new Error('SID chip model does not match the selected preset');
+  await ensureSidModel(presetModel);
+  for(let chip=0;chip<3;chip++)if(engines[chip].enabled)sidAudio?.setChipModel?.(chip,engines[chip].model).catch(()=>{});
+  if(activeSidModel!==presetModel)throw new Error('SID chip model does not match the selected preset');
  }catch(error){
   // Loading is transactional even if a device fails to initialize.
   applyPresetControls(previous);
-  try{await ensureSidModel(previous.sound.model)}
+  try{await ensureSidModel(previous.sound.engines[0].model)}
   catch(recoveryError){
     throw new Error('Could not load preset: '+error.message+
       '. Previous controls restored, but audio recovery failed: '+recoveryError.message);
