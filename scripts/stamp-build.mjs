@@ -1,12 +1,9 @@
 import {readFileSync,writeFileSync,readdirSync} from 'node:fs';
-import {execFileSync} from 'node:child_process';
-import {calculateVersion,BASELINE} from './version-policy.mjs';
-const {version:baseVersion}=JSON.parse(readFileSync('package.json','utf8'));
-let version=baseVersion;
+import {resolveVersion} from './version-policy.mjs';
+let version;
 try {
-  const commits=execFileSync('git',['log','--first-parent','--format=%s%n%b%x00',BASELINE+'..HEAD'],{encoding:'utf8'}).split('\0').filter(Boolean);
-  version=calculateVersion(baseVersion,commits);
-} catch(err) { console.warn('Version history unavailable; using package.json version:',err.message); }
+  version=resolveVersion();
+} catch(err) { console.warn('Version history unavailable; using package.json version:',err.message); version=JSON.parse(readFileSync('package.json','utf8')).version; }
 if(!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version))throw Error('Invalid semantic version');
 const builtAt=new Date().toISOString();
 const buildId=version+'+'+builtAt.replace(/[-:.]/g,'');
