@@ -318,7 +318,7 @@ function modulationTargetEnabled(chipLfos,values,target,pulseActive,unisonActive
 function presentModulatedSlider(root,target,baseValue,effectiveValue,enabled){
  if(!root&&target!=='detune')return;
  let input=null;
- if(root)input=root.querySelector('[data-prop="'+target+'"],[data-filter="'+target+'"]');
+ if(root)input=root.querySelector('[data-prop="'+target+'"],input[data-filter="'+target+'"],select[data-filter="'+target+'"]');
  if(!input&&target==='detune')input=$('detune');
  const label=input?.closest('label')??(target==='detune'?document.querySelector('.allocation-detune'):null);
  if(!label)return;

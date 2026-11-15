@@ -278,8 +278,8 @@ label:has(.slider-stack){gap:4px}
 .sid-engine-card{padding:10px 12px}
 .sid-engine-header{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px}
 .sid-engine-header h3{margin:0;font-size:14px;flex:1}
-.sid-rainbow-meter{width:12px;height:52px;border:1px solid #4c3b2d;background:linear-gradient(180deg,#e35a4f 0%,#f3a23c 18%,#f7d24f 36%,#4bc067 54%,#2cb4c2 72%,#4a6fe3 86%,#8a4dc9 100%);position:relative;overflow:hidden;border-radius:2px}
-.sid-rainbow-meter-fill{position:absolute;left:0;right:0;bottom:0;background:rgba(8,12,16,.82);transition:height .08s linear}
+.sid-rainbow-meter{width:12px;height:52px;border:1px solid #4c3b2d;background:#120e0a;position:relative;overflow:hidden;border-radius:2px}
+.sid-rainbow-meter-fill{position:absolute;left:0;right:0;bottom:0;height:0;background:linear-gradient(0deg,#e35a4f 0%,#f3a23c 18%,#f7d24f 36%,#4bc067 54%,#2cb4c2 72%,#4a6fe3 86%,#8a4dc9 100%);transition:height .08s linear;box-shadow:0 0 8px rgba(243,162,60,.25)}
 .sid-engine-pan{display:flex;gap:8px;align-items:center;margin:6px 0}
 .note-routing{display:flex;flex-wrap:wrap;gap:8px 12px;margin-bottom:10px}
 .note-routing h3{width:100%;margin:0 0 4px;font-size:13px}

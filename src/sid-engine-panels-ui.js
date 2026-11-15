@@ -7,6 +7,10 @@ export function mountSidEnginePanels({
  $,engines,getEngines,ranges,formatControlValue,onEngineChange,syncVoiceSelectOptions,getMeterLevels
 }={}){
  if(!$||!engines)throw new TypeError('mountSidEnginePanels requires $ and engines');
+ function meterHeight(level){
+  const normalized=Math.max(0,Math.min(1,Number(level)||0));
+  return (Math.sqrt(normalized)*100).toFixed(1)+'%';
+ }
  function visibleCount(){
   const manual=engines.filter(engine=>engine.enabled).length;
   const floor=requiredEnginePanels(Number($('voiceCount').value));
@@ -19,7 +23,7 @@ export function mountSidEnginePanels({
   wrap.setAttribute('aria-label','SID output level');
   const fill=document.createElement('div');
   fill.className='sid-rainbow-meter-fill';
-  fill.style.height=(Math.max(0,Math.min(1,level))*100).toFixed(1)+'%';
+  fill.style.height=meterHeight(level);
   wrap.append(fill);
   return wrap;
  }
@@ -64,7 +68,6 @@ export function mountSidEnginePanels({
   ];
   for(const [key,label,min,max,step] of filterFields){
    const row=document.createElement('label');
-   row.dataset.filter=key;
    row.innerHTML=label+' <input type="range" data-filter="'+key+'" min="'+min+'" max="'+max+'" step="'+step+'"><output class="base-value"></output>';
    const input=row.querySelector('input');
    input.value=String(engine.filter[key]);
@@ -103,11 +106,15 @@ export function mountSidEnginePanels({
    if(inp.dataset.prop==='wave')updatePulse();
    onEngineChange?.(index);
   }));
-  card.querySelectorAll('[data-filter]').forEach(inp=>inp.addEventListener('input',()=>{
+  card.querySelectorAll('input[data-filter]').forEach(inp=>inp.addEventListener('input',()=>{
    const key=inp.dataset.filter;
-   engine.filter[key]=key==='mode'?inp.value:Number(inp.value);
+   engine.filter[key]=Number(inp.value);
    const out=inp.closest('label')?.querySelector('output');
-   if(out&&key!=='mode')out.textContent=formatControlValue(key,engine.filter[key]);
+   if(out)out.textContent=formatControlValue(key,engine.filter[key]);
+   onEngineChange?.(index);
+  }));
+  card.querySelectorAll('select[data-filter]').forEach(inp=>inp.addEventListener('change',()=>{
+   engine.filter.mode=inp.value;
    onEngineChange?.(index);
   }));
   panRow.querySelector('[data-prop="pan"]').addEventListener('input',e=>{
@@ -144,9 +151,12 @@ export function mountSidEnginePanels({
   if(add)add.disabled=count>=3;
  }
  function updateMeters(levels){
-  $('sidEngines')?.querySelectorAll('.sid-rainbow-meter-fill').forEach((fill,idx)=>{
-   const level=levels?.[idx]??0;
-   fill.style.height=(Math.max(0,Math.min(1,level))*100).toFixed(1)+'%';
+  $('sidEngines')?.querySelectorAll('.sid-rainbow-meter').forEach(meter=>{
+   const chip=Number(meter.dataset.chip);
+   if(!Number.isInteger(chip)||chip<0||chip>2)return;
+   const fill=meter.querySelector('.sid-rainbow-meter-fill');
+   if(!fill)return;
+   fill.style.height=meterHeight(levels?.[chip]);
   });
  }
  render();

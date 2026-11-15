@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
+    "build:wasm": "bash scripts/build-residfp.sh",
     "version:resolve": "node scripts/resolve-version.mjs"
   }
 }
