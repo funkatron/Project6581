@@ -20,6 +20,13 @@ test('the Arp/Seq workspace is usable and the original Sound controls remain',()
  assert.match(html,/src\/seq-ui\.css\?v=__BUILD_ID__/);
  assert.match(css,/\.workspace\[data-tab="play"\] \.voice-panel\{display:none!important\}/);
  assert.match(css,/\.keyboard-panel\{grid-row:4/);
+ const play=html.slice(html.indexOf('id="playPanel"'),html.indexOf('id="lfoPanel"'));
+ const latchAt=play.indexOf('id="arpLatch"');
+ const gameAt=play.indexOf('id="gameArpTitle"');
+ const rootAt=play.indexOf('>Arpeggiator · Root<');
+ assert.ok(latchAt>=0&&latchAt<gameAt&&gameAt<rootAt,'latch sits above both arpeggiators');
+ assert.equal(play.includes('LFO'),false,'the Arp panel does not mention LFOs');
+ assert.equal(play.includes('<details'),false,'the Root Arp stays visible');
 });
 
 test('the step editor provides exactly one dynamic control per step and per lane',()=>{
