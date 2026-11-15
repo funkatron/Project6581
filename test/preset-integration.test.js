@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {runInNewContext} from 'node:vm';
+import {readStudioCss} from './studio-css.mjs';
 
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const studioCss=readStudioCss();
 const script=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
 const library=readFileSync(new URL('../src/preset-library-ui.js',import.meta.url),'utf8');
 
@@ -24,8 +26,8 @@ test('preset editor provides factory/user collections, save, export, import and 
  assert.match(html,/My presets/);
  assert.doesNotMatch(html,/id="presetPicker"/);
  assert.match(html,/<dialog id="presetDialog" aria-labelledby="presetDialogTitle"/);
- assert.match(html,/\.preset-columns\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
- assert.match(html,/@media\(max-width:560px\)\{\.preset-columns\{grid-template-columns:minmax\(0,1fr\)\}/);
+ assert.match(studioCss,/\.preset-columns\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ assert.match(studioCss,/@media\(max-width:560px\)\{\.preset-columns\{grid-template-columns:minmax\(0,1fr\)\}/);
  assert.match(library,/\$\('presetDialog'\)\.showModal\(\)/);
  assert.match(library,/loadSelectedPreset\(button\.dataset\.kind,button\.dataset\.id\)/);
  assert.match(library,/button\.setAttribute\('aria-current',String\(selected===kind\+':'\+preset\.id\)\)/);
@@ -70,8 +72,8 @@ test('preset actions cannot mutate settings while loading a different sound or i
  assert.match(library,/finally\{input\.value='';setPresetLoading\(false\)\}/);
 });
 test('modal text overrides light-theme global heading and description colors',()=>{
- assert.match(html,/#presetDialog h2,#presetDialog h3\{color:#f3f5fa\}/);
- assert.match(html,/#presetDialog small,#presetDialog \.preset-empty,#presetDialog \.preset-item-category\{color:#c8d6e5\}/);
+ assert.match(studioCss,/#presetDialog h2,#presetDialog h3\{color:#f3f5fa\}/);
+ assert.match(studioCss,/#presetDialog small,#presetDialog \.preset-empty,#presetDialog \.preset-item-category\{color:#c8d6e5\}/);
 });
 
 
@@ -136,6 +138,6 @@ test('factory preset browser groups the expanded bank without changing the user 
  assert.match(library,/heading\.setAttribute\('role','heading'\)/);
  assert.match(library,/button\.dataset\.kind=kind;button\.dataset\.id=preset\.id/);
  assert.match(library,/button\.setAttribute\('aria-current',String\(selected===kind\+':'\+preset\.id\)\)/);
- assert.match(html,/\.preset-category-heading\{position:sticky/);
+ assert.match(studioCss,/\.preset-category-heading\{position:sticky/);
  assert.match(library,/\['factory',FACTORY_PRESETS,'factoryPresetList'\],\['user',userPresets,'userPresetList'\]/);
 });

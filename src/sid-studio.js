@@ -1,4 +1,4 @@
-import {createSidEventLog,formatSidDiagnosticReport} from './sid-event-log.js?v=__BUILD_ID__';
+import {createSidEventLog} from './sid-event-log.js?v=__BUILD_ID__';
 import {formatActiveSidStatus,formatBrowserLatencyStatus,formatSidProgressMessage,shouldShowSidUnlock,sidLedAriaLabel,sidLedState} from './sid-engine-status-ui.js?v=__BUILD_ID__';
 import {canDispatchNote,needsAudioResume,shouldBlockMusicalInput} from './sid-note-gate.js?v=__BUILD_ID__';
 import {closeSidContext} from './sid-audio-lifecycle.js?v=__BUILD_ID__';
@@ -11,7 +11,10 @@ import {validatePresetSettings} from "./preset-library.js?v=__BUILD_ID__";
 import {mountPresetLibrary} from "./preset-library-ui.js?v=__BUILD_ID__";
 import {mountKeyboard} from "./keyboard-input.js?v=__BUILD_ID__";
 import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from "./pitch-envelope.js?v=__BUILD_ID__";
-import {mountPitchEnvelopeEditor} from "./pitch-envelope-editor.js?v=__BUILD_ID__";
+import {mountEditorTabs} from "./editor-tabs.js?v=__BUILD_ID__";
+import {mountLfoPanel} from "./lfo-panel-ui.js?v=__BUILD_ID__";
+import {mountVoiceSoundPanel} from "./voice-sound-panel.js?v=__BUILD_ID__";
+import {mountAudioTimingPanel} from "./audio-timing-panel.js?v=__BUILD_ID__";
 
 export function startSidStudio(){
 const $=id=>document.getElementById(id);
@@ -19,56 +22,18 @@ const sidStartupLog=[];
 const sidEventLog=createSidEventLog();
 let sidInputEvent=null;
 const audioTiming={source:null,roundTripMs:null,renderAvgMs:null,renderMaxMs:null,renderBudgetMs:null,baseMs:null,outputMs:null,keyAt:null,keyEnergyMs:null,keyEnergyMissed:false,probeSkipped:false};
-function updateAudioTimingReport(){
- const show=value=>Number.isFinite(value)?value.toFixed(1)+' ms':'not reported';
- const keyLine=audioTiming.keyEnergyMissed?'Key to first loud sample: no loud sample.':'Key to first loud sample: '+show(audioTiming.keyEnergyMs)+'.';
- const lines=[
-  keyLine,
-  'Note dispatch → AudioWorklet acknowledgment: '+show(audioTiming.roundTripMs)+(audioTiming.source?' ('+audioTiming.source+')':'')
- ];
- if(audioTiming.probeSkipped)lines.push('This note kept the previous acknowledgment. The probe runs at most twice a second.');
- lines.push(
-  'WASM render per block: '+show(audioTiming.renderAvgMs)+' average / '+show(audioTiming.renderMaxMs)+' max',
-  'Audio render block budget: '+show(audioTiming.renderBudgetMs),
-  'Browser base/output latency: '+show(audioTiming.baseMs)+' / '+show(audioTiming.outputMs),
-  'Processing measurements only, not speaker latency. Screen recording A/V sync can differ.',
-  ...sidStartupLog
- );
- $('audioTimingSummary').textContent=lines.join('\n');
-}
-updateAudioTimingReport();
-$('audioTimingDetails').addEventListener('toggle',()=>{
- sidAudio?.setTimingEnabled?.($('audioTimingDetails').open);
- if($('audioTimingDetails').open)updateAudioTimingReport();
-});
-$('sidEventLogging').addEventListener('change',()=>{
- sidEventLog.setEnabled($('sidEventLogging').checked);
- sidAudio?.setEventLogging(sidEventLog.enabled);
- sidEventLog.add('logging-enabled',{contextState:sidContext?.state??'unavailable'});
- $('sidCopyStatus').textContent=sidEventLog.enabled?'Logging recent note events locally.':'Logging paused; captured events remain available.';
-});
-$('sidClearLog').addEventListener('click',()=>{
- sidEventLog.clear();sidAudio?.setEventLogging(sidEventLog.enabled);
- $('sidReportFallback').hidden=true;$('sidReportFallback').value='';
- $('sidCopyStatus').textContent='Event log cleared.';
-});
-$('sidCopyReport').addEventListener('click',async()=>{
- const report=formatSidDiagnosticReport(sidEventLog,{
+let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null,activeSidModel=null;
+const {updateAudioTimingReport}=mountAudioTimingPanel({
+ $,sidEventLog,audioTiming,sidStartupLog,
+ getSidAudio:()=>sidAudio,getSidContext:()=>sidContext,
+ getReportContext:()=>({
   build:$('buildInfo').textContent,browser:navigator.userAgent,route:location.pathname,
   selectedSidModel:Number($('chip').value),activeSidModel,
   contextState:sidContext?.state??'unavailable',sampleRate:sidContext?.sampleRate??null,
   baseLatencyMs:Number.isFinite(sidContext?.baseLatency)?sidContext.baseLatency*1000:null,
   outputLatencyMs:Number.isFinite(sidContext?.outputLatency)?sidContext.outputLatency*1000:null,
   timing:{...audioTiming},startup:[...sidStartupLog]
- });
- try{
-  await navigator.clipboard.writeText(report);
-  $('sidReportFallback').hidden=true;$('sidReportFallback').value='';
-  $('sidCopyStatus').textContent='Diagnostic report copied.';
- }catch{
-  const field=$('sidReportFallback');field.value=report;field.hidden=false;field.focus();field.select();
-  $('sidCopyStatus').textContent='Clipboard unavailable. Select and copy the report below.';
- }
+ })
 });
 function traceInput(note,source,action,run){
  if(!sidEventLog.enabled)return run();
@@ -98,11 +63,9 @@ function restoreSidOutput(){
  updateSidFilter();
 }
 // Let the browser release export URLs on unload. Safari may still be resolving a download at pagehide.
-let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null,activeSidModel=null;
 const settings=[{wave:'square',attack:0.002,decay:0.12,sustain:0.8,release:0.12,pulse:50,pwmDepth:0,pwmRate:1,enabled:true,
  pitchEnvelope:validatePitchEnvelope(DEFAULT_PITCH_ENVELOPE)}];
 let currentSidSettings={...settings[0]};
-let pitchEnvelopeEditorUi=null;
 function applyPitchEnvelope(envelope){
  settings[0].pitchEnvelope=validatePitchEnvelope(envelope);
  refreshPresetDirty();
@@ -110,29 +73,9 @@ function applyPitchEnvelope(envelope){
 }
 
 const ranges=[['attack','Attack',0,2,.01],['decay','Decay',0,3,.01],['sustain','Sustain',0,1,.01],['release','Release',.01,4,.01],['pulse','Pulse width',5,95,1],['pwmDepth','PWM depth',0,45,1],['pwmRate','PWM rate (Hz)',.1,12,.1]];
-function renderVoiceControls(){
-  const s=settings[0],el=document.createElement('section');
-  el.className='panel';
-  el.innerHTML='<h2>SID voice</h2><div class="voice-grid"><label>Enabled <input type="checkbox" data-prop="enabled"></label><label>Waveform <select data-prop="wave"><option value="triangle">Triangle</option><option value="sawtooth">Sawtooth</option><option value="square">Pulse</option><option value="noise">Noise</option></select></label>'+ranges.map(([p,name,min,max,step])=>'<label data-control="'+p+'">'+name+' <input data-prop="'+p+'" type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+s[p]+'"><output class="base-value">'+formatControlValue(p,s[p])+'</output></label>').join('')+'</div>';
-  $('voices').replaceChildren(el);
-  el.querySelector('[data-prop="enabled"]').checked=s.enabled;
-  el.querySelector('[data-prop="wave"]').value=s.wave;
-  const updatePulse=()=>el.querySelectorAll('[data-control="pulse"],[data-control="pwmDepth"],[data-control="pwmRate"]').forEach(label=>{label.hidden=s.wave!=='square'});
-  el.querySelectorAll('[data-prop]').forEach(inp=>inp.addEventListener('input',()=>{
-    s[inp.dataset.prop]=inp.type==='checkbox'?inp.checked:inp.type==='range'?Number(inp.value):inp.value;
-    const baseOutput=inp.closest('label')?.querySelector('output:not(.modulated-value)');
-    if(baseOutput)baseOutput.textContent=formatControlValue(inp.dataset.prop,Number(inp.value));
-    if(inp.dataset.prop==='wave')updatePulse();
-    // Always restore the base settings immediately when a waveform or slider changes.
-    updateModulation();
-  }));
-  updatePulse();
-  pitchEnvelopeEditorUi=mountPitchEnvelopeEditor($('voices'),{
-   getEnvelope:()=>settings[0].pitchEnvelope,
-   applyEnvelope:applyPitchEnvelope
-  });
-}
-renderVoiceControls();
+const {renderVoiceControls}=mountVoiceSoundPanel({
+ $,settings,ranges,formatControlValue,applyPitchEnvelope,onVoiceChange:()=>updateModulation()
+});
 const lfoState=Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',phase:0,seed:i}));
 const lfoTargets=['cutoff','resonance','volume','pulse','detune','attack','decay','sustain','release','pwmDepth','pwmRate'];
 const lfoTargetNames={
@@ -141,52 +84,8 @@ const lfoTargetNames={
  pwmDepth:'PWM depth',pwmRate:'PWM rate'
 };
 const syncedRates=[{value:0.25,label:'4/1'},{value:0.5,label:'2/1'},...([1,2,4,8,16,32].map(value=>({value,label:'1/'+value})))];
-function renderLfos(){
- const root=$('lfoControls');root.replaceChildren();
- lfoState.forEach((lfo,index)=>{
-  const group=document.createElement('fieldset');group.className='lfo-controls';
-  const legend=document.createElement('legend');legend.textContent='LFO '+(index+1);group.append(legend);
-  const fields=[['enabled','On'],['sync','Sync'],['wave','Wave'],['target','Target'],['rate','Rate'],['depth','Depth']];
-  for(const [prop,label] of fields){
-   const row=document.createElement('label');row.textContent=label+' ';
-   const isSwitch=prop==='enabled'||prop==='sync';
-   const isSelect=prop==='wave'||prop==='target'||(prop==='rate'&&lfo.sync);
-   const input=document.createElement(isSelect?'select':'input');
-   if(isSwitch){input.type='checkbox';input.checked=Boolean(lfo[prop]);}
-   else if(isSelect){
-    const choices=prop==='wave'?['sine','triangle','sawtooth','square','sample-hold']:prop==='target'?lfoTargets:syncedRates;
-    choices.forEach(value=>{const option=document.createElement('option');option.value=String(prop==='rate'?value.value:value);option.textContent=prop==='rate'?value.label:prop==='target'?lfoTargetNames[value]||value:value;input.append(option)});
-    input.value=String(prop==='rate'?lfo.syncDivision:lfo[prop]);
-   }else{
-    input.type='range';input.min=prop==='rate'?'0.05':'0';input.max=prop==='rate'?'20':'100';input.step=prop==='rate'?'0.05':'1';input.value=prop==='rate'?lfo.rate:lfo.depth*100;
-   }
-   input.setAttribute('aria-label','LFO '+(index+1)+' '+label+(prop==='rate'?(lfo.sync?' division':' Hz'):''));
-   const output=isSwitch||isSelect?null:document.createElement('output');
-   if(output)output.textContent=prop==='rate'?Number(input.value).toFixed(2)+' Hz':input.value+'%';
-   input.addEventListener(isSwitch||isSelect?'change':'input',()=>{
-    if(isSwitch)lfo[prop]=input.checked;
-    else if(prop==='rate'&&lfo.sync)lfo.syncDivision=Number(input.value);
-    else if(prop==='depth')lfo.depth=Number(input.value)/100;
-    else lfo[prop]=isSelect?input.value:Number(input.value);
-    if(output)output.textContent=prop==='rate'?Number(input.value).toFixed(2)+' Hz':input.value+'%';
-    if(prop==='sync'){renderLfos();}
-    updateModulation();
-   });
-   row.append(input);if(output)row.append(output);group.append(row);
-  }
-  root.append(group);
- });
-}
-renderLfos();
-for(const [name,id] of [['voice','tabVoice'],['play','tabPlay'],['lfos','tabLfos']]){
-  $(id).addEventListener('click',()=>{
-    $('workspace').dataset.tab=name;
-    for(const panel of $('workspace').querySelectorAll(':scope > [role="tabpanel"]'))panel.hidden=panel.getAttribute('aria-labelledby')!==id;
-    $('tabVoice').setAttribute('aria-selected',String(name==='voice'));
-    $('tabPlay').setAttribute('aria-selected',String(name==='play'));
-    $('tabLfos').setAttribute('aria-selected',String(name==='lfos'));
-  });
-}
+const {renderLfos}=mountLfoPanel({$,lfoState,lfoTargets,lfoTargetNames,syncedRates,onChange:()=>updateModulation()});
+mountEditorTabs({$});
 const activeOwners=new Map();
 function play(note,source='key:'+note){
  restoreSidOutput();

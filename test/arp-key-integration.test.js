@@ -2,8 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
+import {readStudioCss} from './studio-css.mjs';
 
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const studioCss=readStudioCss();
 const script=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
 const keyboard=readFileSync(new URL('../src/keyboard-input.js',import.meta.url),'utf8');
 const performance=readFileSync(new URL('../src/performance-play.js',import.meta.url),'utf8');
@@ -39,16 +41,16 @@ test('all arpeggiator release paths remove the visual highlight',()=>{
 });
 
 test('visual style remains independent from pressed keys and contains no animation',()=>{
- assert.match(html,/\.key\.arp-playing:not\(\.down\)/);
- assert.match(html,/\.key\.down\.arp-playing/);
+ assert.match(studioCss,/\.key\.arp-playing:not\(\.down\)/);
+ assert.match(studioCss,/\.key\.down\.arp-playing/);
  assert.doesNotMatch(html,/id="arpVisualNote"|class="arp-visual-note"/);
  assert.doesNotMatch(script,/showLabel:|noteName:|arpVisualNote/);
  assert.doesNotMatch(html,/\.key\.arp-playing[^\{]*\{[^}]*animation\s*:/);
 });
 
 test('changing note text cannot move the keyboard octave controls',()=>{
- assert.match(html,/\.keyboard-heading\s*\{[^}]*display:grid;grid-template-columns:minmax\(0,1fr\) max-content max-content/);
- assert.match(html,/\.keyboard-heading \.octave-controls\s*\{[^}]*min-width:max-content/);
+ assert.match(studioCss,/\.keyboard-heading\s*\{[^}]*display:grid;grid-template-columns:minmax\(0,1fr\) max-content max-content/);
+ assert.match(studioCss,/\.keyboard-heading \.octave-controls\s*\{[^}]*min-width:max-content/);
  assert.doesNotMatch(html,/\.arp-visual-note\s*\{/);
 });
 

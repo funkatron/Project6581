@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
-const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
-const css=html.slice(html.indexOf('<style>')+7,html.indexOf('</style>'));
+import {readStudioCoreCss} from './studio-css.mjs';
+
+const css=readStudioCoreCss();
 
 function property(selector,name){
  const needle=selector+'{';
