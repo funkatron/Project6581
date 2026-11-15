@@ -1,6 +1,6 @@
 // When package.json is bumped for an intentional release, set BASELINE to that
 // release commit on main so stamp-build only auto-increments from the new floor.
-export const BASELINE='deed6c67e846064119200b116b126b68822f23cf';
+export const BASELINE='fe8344497f1ce00817291e4afdd27c803d9b540e';
 export function calculateVersion(base,commits){
   let [major,minor,patch]=base.split('.').map(Number);
   for(const message of commits.slice().reverse()){
