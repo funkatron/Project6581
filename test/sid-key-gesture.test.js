@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {needsAudioResume} from '../src/sid-note-gate.js';
 
-const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const html=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
 const keys=html.slice(html.indexOf('let queuedKeyNotes=[]'),html.indexOf('function keyUp(note){'));
 const resume=html.slice(html.indexOf('function armSidResume(){'),html.indexOf('function unlockSidAudio(){'));
 
@@ -27,6 +27,8 @@ function harness({state,resumeHangs=true}){
   $,sidContext:context,sidContextRetired:false,sidAttempt:1,needsAudioResume,
   sidMusicalInputBlocked:()=>false,sidEventLog:{enabled:false,add(){}},
   sidController:{},sidKeys:0,sidAudio:{},activeSidModel:6581,
+  audioTiming:{keyAt:null,keyEnergyMs:null,keyEnergyMissed:false},
+  performance:{now:()=>0},
   activeNotes:()=>[],arp:{held:new Set(),latched:new Set()},
   gameEnabled:()=>false,arpEnabled:()=>false,directOwned:new Set(),
   play(note){played.push(note)},restartGenerators(){},

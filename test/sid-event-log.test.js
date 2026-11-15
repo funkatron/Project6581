@@ -7,7 +7,7 @@ import {createSidWriteBatcher} from '../src/sid-write-batcher.js';
 import {closeSidContext} from '../src/sid-audio-lifecycle.js';
 import {canDispatchNote,needsAudioResume,shouldBlockMusicalInput} from '../src/sid-note-gate.js';
 
-const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const html=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
 
 test('disabled log does not call the clock; ring stays bounded and retains chronological order',()=>{
  let time=0;const log=createSidEventLog({capacity:3,now:()=>++time});

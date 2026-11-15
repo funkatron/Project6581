@@ -10,6 +10,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     this.blocks=0;this.lastPeak=0;this.writes=0;
     this.pendingNoteEvents=[];this.eventLogEnabled=false;
     this.pendingLatencyProbes=[];this.timingEnabled=false;
+    this.energyArmed=false;this.energyBlocks=0;
     this.renderMsTotal=0;this.renderMsMax=0;this.timedRenderBlocks=0;
     this.recording=false;this.recordSamples=new Int16Array(4096);this.recordLength=0;
     // Audio-rendered frames, rather than throttled page timers, cap capture.
@@ -27,7 +28,10 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       }
       else if(data?.type==='timing-enable'){
         this.timingEnabled=data.enabled===true;
-        if(!this.timingEnabled)this.pendingLatencyProbes.length=0;
+        if(!this.timingEnabled){
+          this.pendingLatencyProbes.length=0;
+          this.energyArmed=false;
+        }
       }
       else if(data?.type==='latency-probe'){
         if(this.timingEnabled&&Number.isInteger(data.id)&&this.pendingLatencyProbes.length<8)
@@ -132,9 +136,13 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     const channels=outputs[0];
     for(const channel of channels)channel.fill(0);
     const e=this.exports;if(!e)return true;
+    const queuedWrites=this.queue.length;
     for(const [reg,value] of this.queue)e.sid_write(reg,value);
     this.writes+=this.queue.length;
     this.queue.length=0;
+    if(this.timingEnabled&&queuedWrites>0){
+      this.energyArmed=true;this.energyBlocks=0;
+    }
     // Frequency updates occur at render-block boundaries, using the audio frame
     // clock. Max scheduling granularity is one render quantum (128 frames).
     for(const [register,state] of this.pitchEnvelopes){
@@ -214,6 +222,17 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       this.port.postMessage({type:'note-rendered',eventIds:this.pendingNoteEvents,
         audioFrame:typeof currentFrame==='number'?currentFrame:null,frames,sampleRate});
       this.pendingNoteEvents=[];
+    }
+    if(this.energyArmed){
+      this.energyBlocks++;
+      let sampleOffset=-1;
+      for(let i=0;i<frames;i++){
+        if(Math.abs(pcm[i])>655){sampleOffset=i;break}
+      }
+      if(sampleOffset>=0||this.energyBlocks>=16){
+        this.port.postMessage({type:'first-energy',hit:sampleOffset>=0,sampleOffset,blocks:this.energyBlocks,sampleRate});
+        this.energyArmed=false;
+      }
     }
     this.lastPeak=Math.max(this.lastPeak,peak);
     if(++this.blocks%128===0){

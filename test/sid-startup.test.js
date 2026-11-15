@@ -6,7 +6,7 @@ import {closeSidContext} from '../src/sid-audio-lifecycle.js';
 import {createSidWriteBatcher} from '../src/sid-write-batcher.js';
 import {needsAudioResume} from '../src/sid-note-gate.js';
 
-const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const html=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
 const startup=html.slice(html.indexOf('function updateSidLed(){'),html.indexOf('async function stopAndSaveRecording(){'))
  .replaceAll('import(', 'loadModule(');
 const unlock=html.slice(html.indexOf('function armSidResume(){'),html.indexOf("document.addEventListener('pointerdown',unlockSidAudio"));

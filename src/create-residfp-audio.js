@@ -163,7 +163,10 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
         for(const [id,probe] of pendingProbes){
           if(now-probe.at>3000)pendingProbes.delete(id);
         }
-        if(now-lastProbeAt<500||pendingProbes.size>=4)return;
+        if(now-lastProbeAt<500||pendingProbes.size>=4){
+          onStatus({type:'latency-probe-skipped',source});
+          return;
+        }
         lastProbeAt=now;
         const id=++probeId;
         pendingProbes.set(id,{at:now,source});
