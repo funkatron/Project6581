@@ -127,7 +127,7 @@ test('actual app note commands retain their physical input parent and tag on/off
   sidController:{noteOn:()=>1,noteOff(){}},sidAudio:{beginNoteTrace:()=>0,endNoteTrace:id=>tagged.push(id),noteDispatched(){}},
   canDispatchNote,shouldBlockMusicalInput,needsAudioResume,restoreSidOutput(){},
   pendingSidStartup:null,pendingSidClose:null,presetLoading:false,sidCleanupBlocked:false,sidStarting:false});
- const trace=html.slice(html.indexOf('function traceInput('),html.indexOf('let sidController=null,'));
+ const trace=html.slice(html.indexOf('function traceInput('),html.indexOf('// Let the browser release'));
  const notes=html.slice(html.indexOf('const activeOwners=new Map();'),html.indexOf('function updateUnison(){'));
  vm.runInContext(trace+'\n'+notes,scope);
  scope.traceInput(60,'pointer','down',()=>scope.play(60));
@@ -148,10 +148,19 @@ test('Copy diagnostic report exports a snapshot and provides selectable text if 
  };
  const log=createSidEventLog();log.setEnabled(true);log.begin('input',{note:60});
  $('chip').value='8580';
- const source=html.slice(html.indexOf("$('sidCopyReport').addEventListener"),html.indexOf('function traceInput('));
- const scope=vm.createContext({$,sidEventLog:log,formatSidDiagnosticReport,activeSidModel:6581,sidContext:{state:'running',sampleRate:48000,baseLatency:0.01},
+ const timingPanel=readFileSync(new URL('../src/audio-timing-panel.js',import.meta.url),'utf8');
+ const start=timingPanel.indexOf("$('sidCopyReport').addEventListener");
+ const end=timingPanel.indexOf('});',start)+3;
+ const source=timingPanel.slice(start,end);
+ const scope=vm.createContext({$,sidEventLog:log,formatSidDiagnosticReport,
+  getReportContext:()=>({
+   build:$('buildInfo').textContent,browser:'test browser',route:'/pr-59/',
+   selectedSidModel:Number($('chip').value),activeSidModel:6581,
+   contextState:'running',sampleRate:48000,baseLatencyMs:10,outputLatencyMs:null,
+   timing:{},startup:['ready']
+  }),
   navigator:{userAgent:'test browser',clipboard:{writeText:async text=>{if(fail)throw Error('denied');copied=text}}},
-  location:{pathname:'/pr-59/'},audioTiming:{},sidStartupLog:['ready']});
+  location:{pathname:'/pr-59/'}});
  vm.runInContext(source,scope);await callbacks.get('sidCopyReport')();
  const report=JSON.parse(copied);assert.equal(report.environment.baseLatencyMs,10);assert.equal(report.entries[0].note,60);
  assert.equal(report.environment.selectedSidModel,8580);assert.equal(report.environment.activeSidModel,6581);

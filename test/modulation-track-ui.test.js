@@ -3,8 +3,12 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 
+import {readStudioCss} from './studio-css.mjs';
+
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const script=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
+const voicePanel=readFileSync(new URL('../src/voice-sound-panel.js',import.meta.url),'utf8');
+const studioCss=readStudioCss();
 const targetNames=['volume','cutoff','resonance','detune','attack','decay','sustain','release','pulse','pwmDepth','pwmRate'];
 
 test('the module script remains valid JavaScript with the track presentation helper',()=>{
@@ -19,16 +23,16 @@ test('eleven continuous sound controls have numeric base values that remain visi
  for(const name of ['volume','cutoff','resonance']){
   assert.match(html,new RegExp('id="'+name+'"[^>]*><output class="base-value">'));
  }
- assert.match(script,/ranges\.map\(\(\[p,name,min,max,step\]\)=>[\s\S]*?class="base-value"/);
+ assert.match(voicePanel,/ranges\.map\(\(\[p,name,min,max,step\]\)=>[\s\S]*?class="base-value"/);
  assert.match(script,/if\(baseDisplay\.textContent!==baseText\)baseDisplay\.textContent=baseText/);
  assert.deepEqual(new Set(targetNames).size,11);
 });
 
 test('modulation colors the track, not an extra moving thumb or the slider value',()=>{
- assert.match(html,/\.modulation-band\{/);
- assert.match(html,/\.slider-stack::before\{/);
- assert.match(html,/::-webkit-slider-thumb\{/);
- assert.match(html,/::-moz-range-thumb\{/);
+ assert.match(studioCss,/\.modulation-band\{/);
+ assert.match(studioCss,/\.slider-stack::before\{/);
+ assert.match(studioCss,/::-webkit-slider-thumb\{/);
+ assert.match(studioCss,/::-moz-range-thumb\{/);
  assert.doesNotMatch(html,/modulation-thumb/);
  assert.match(script,/const effectiveValue=target==='pulse'\?livePulse:values\[target\]/);
  assert.match(script,/setModulationTrack\(input,base\[target\],effectiveValue,targetEnabled\)/);

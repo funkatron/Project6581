@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {readStudioCss} from './studio-css.mjs';
 
-const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const app=readFileSync(new URL('../src/keyboard-input.js',import.meta.url),'utf8');
-const css=html.slice(html.indexOf('<style>')+7,html.indexOf('</style>'));
+const css=readStudioCss();
 
 function blackKeyRule(source){
  const match=source.match(/\.key\.black\{([^}]*)\}/);

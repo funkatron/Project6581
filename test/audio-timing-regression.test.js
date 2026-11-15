@@ -5,6 +5,8 @@ import {createSidWriteBatcher} from '../src/sid-write-batcher.js';
 
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const code=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
+const timingPanel=readFileSync(new URL('../src/audio-timing-panel.js',import.meta.url),'utf8');
+const bootstrap=readFileSync(new URL('../src/studio-bootstrap.js',import.meta.url),'utf8');
 const bridge=readFileSync(new URL('../src/create-residfp-audio.js',import.meta.url),'utf8');
 const worklet=readFileSync(new URL('../src/residfp-worklet.js',import.meta.url),'utf8');
 const css=readFileSync(new URL('../src/seq-ui.css',import.meta.url),'utf8');
@@ -47,12 +49,13 @@ test('Worklet probe is acknowledged only after a render block',()=>{
 test('optional timing display is clearly labeled and never claims speaker latency',()=>{
  assert.match(html,/<details id="audioTimingDetails"><summary>Audio timing<\/summary>/);
  assert.match(html,/id="audioTimingReport"/);
- assert.match(code,/Key to first loud sample:/);
- assert.match(code,/This note kept the previous acknowledgment/);
- assert.match(code,/Screen recording A\/V sync can differ\./);
- assert.match(code,/Browser base\/output latency:/);
- assert.match(html,/import \{startSidStudio\} from '\.\/src\/sid-studio\.js\?v=__BUILD_ID__';/);
- assert.match(html,/startSidStudio\(\);/);
+ assert.match(timingPanel,/Key to first loud sample:/);
+ assert.match(timingPanel,/This note kept the previous acknowledgment/);
+ assert.match(timingPanel,/Screen recording A\/V sync can differ\./);
+ assert.match(timingPanel,/Browser base\/output latency:/);
+ assert.match(html,/import \{bootSidStudio\} from '\.\/src\/studio-bootstrap\.js\?v=__BUILD_ID__';/);
+ assert.match(html,/bootSidStudio\(\);/);
+ assert.match(bootstrap,/import \{startSidStudio\} from '\.\/sid-studio\.js/);
  assert.match(code,/if\(event\.type==='latency-probe'\)/);
  assert.match(code,/if\(event\.type==='audio-stats'\)/);
  assert.match(css,/#audioTimingReport\{position:absolute/);
@@ -64,8 +67,8 @@ test('timing instrumentation is disabled during ordinary music playback',()=>{
  assert.match(bridge,/setTimingEnabled\(enabled\)\{/);
  assert.match(worklet,/this\.pendingLatencyProbes=\[\];this\.timingEnabled=false/);
  assert.match(worklet,/const clock=this\.timingEnabled&&typeof performance/);
- assert.match(code,/audioTimingDetails'\)\.addEventListener\('toggle'/);
- assert.match(code,/audio\.setTimingEnabled\(\$\('audioTimingDetails'\)\.open\)/);
+ assert.match(timingPanel,/audioTimingDetails'\)\.addEventListener\('toggle'/);
+ assert.match(timingPanel,/setTimingEnabled\?\.\(\$\('audioTimingDetails'\)\.open\)/);
 });
 
 test('optional timing control is reachable on narrow screens',()=>{

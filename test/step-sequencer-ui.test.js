@@ -17,6 +17,8 @@ test('the Arp/Seq workspace is usable and the original Sound controls remain',()
   'seqLength','seqReset','gameArpOn','gameArpStyle','arpSync','arpLatch','gameRate',
   'keyboardPanel','keyboardToggle','keyboard','presetOpen','sidStart','recordToggle'])
   assert.match(html,new RegExp('id="'+id+'"'));
+ assert.doesNotMatch(html,/<style>/);
+ assert.match(html,/src\/studio-core\.css\?v=__BUILD_ID__/);
  assert.match(html,/src\/seq-ui\.css\?v=__BUILD_ID__/);
  assert.match(css,/\.workspace\[data-tab="play"\] \.voice-panel\{display:none!important\}/);
  assert.match(css,/\.keyboard-panel\{grid-row:4/);
