@@ -1,9 +1,11 @@
-// Baseline is the main commit before automatic versioning was introduced.
-export const BASELINE='c128e7d63ef74933ac6020dcf17535352f25a875';
+// When package.json is bumped for an intentional release, set BASELINE to that
+// release commit on main so stamp-build only auto-increments from the new floor.
+export const BASELINE='deed6c67e846064119200b116b126b68822f23cf';
 export function calculateVersion(base,commits){
   let [major,minor,patch]=base.split('.').map(Number);
   for(const message of commits.slice().reverse()){
     const subject=message.split('\n')[0].trim();
+    if(!subject)continue;
     // Merged pull requests retain the PR title in the merge commit body.
     const title=subject.startsWith('Merge pull request')
       ?message.split('\n').map(s=>s.trim()).filter(Boolean).at(-1)??subject

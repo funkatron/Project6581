@@ -1,10 +1,10 @@
 # Project6581 release versioning
 
-## Next milestone: v0.2.0 (planned)
+## Current release: v0.3.0
 
-Project6581 has gained substantial functionality since the original 0.1 series, including the Game Arp step sequencer, expanded arpeggiator, three LFOs, voice allocation/unison, preset management, recording, and major interface improvements. **v0.2.0 is the next intentional minor release**, once the current work (including PR #59's Safari audio verification) is sufficiently validated and a merge/release is explicitly authorized.
+**v0.2.0** shipped triple SID engines, routing, preset format v5, and improved audio timing diagnostics. **v0.3.0** adds per-engine LFO/modulation, live voice settings per chip, and WebKit browser smoke fixes for the new engine panel UI.
 
-This document records a decision, **not an immediate version bump, merge, or production deployment**. Retain the known-good PR #59 preview and its exact build stamp as a diagnostic comparison.
+This document records release decisions. Build stamps still carry a UTC timestamp and derived cache-bust id separate from the semantic version.
 
 ## Versioning conventions
 
@@ -14,8 +14,6 @@ This document records a decision, **not an immediate version bump, merge, or pro
 - Do not confuse application version numbers with independent formats such as the user-preset JSON schema version.
 - For a release, record the version, notable user-facing changes, relevant device checks, and exact source commit. Confirm CI, Copilot comments, actual iPad playback where applicable, and production deployment independently.
 
-## Implementation follow-up
+## Build stamping
 
-The current build logic in `scripts/version-policy.mjs` derives a version from commit messages, including patch increments for documentation and other routine commits. This **does not yet implement** the intentional-release policy above. In a separate, reviewed change, align `package.json`, build stamping, tests, and release documentation with this policy. Preserve a unique build identifier for previews; do not modify the audio engine merely to change the version number.
-
-**Next action:** Plan/approve the v0.2.0 release after PR #59 verification; do not merge or deploy on the strength of this documentation change alone.
+`package.json` holds the intentional release floor. `scripts/version-policy.mjs` defines `BASELINE` (the main commit at that release). `scripts/stamp-build.mjs` may advance the displayed version from conventional commits **after** `BASELINE` only. When cutting a new release, bump `package.json` and move `BASELINE` to the release commit on main in the same change.
