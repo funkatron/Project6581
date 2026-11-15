@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {calculateVersion} from '../scripts/version-policy.mjs';
+import {calculateVersion,countsTowardVersion,resolveVersion} from '../scripts/version-policy.mjs';
 
 test('patch for fixes and documentation',()=>{
   assert.equal(calculateVersion('0.1.0',['fix: resolve audio startup']),'0.1.1');
@@ -23,4 +23,11 @@ test('merge commit uses PR title',()=>{
 });
 test('empty git log fragments are ignored',()=>{
   assert.equal(calculateVersion('0.3.0',["Merge branch 'release/v0.3.0'\n",'\n']),'0.3.0');
+});
+test('release floor commits do not auto-increment',()=>{
+  assert.equal(countsTowardVersion('chore: release v0.4.0\n'),false);
+  assert.equal(calculateVersion('0.3.0',['chore: release v0.4.0','feat: new panel']),'0.4.0');
+});
+test('resolveVersion matches stamped build on this checkout',()=>{
+  assert.match(resolveVersion(),/^\d+\.\d+\.\d+$/);
 });
