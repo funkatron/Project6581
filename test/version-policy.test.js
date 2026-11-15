@@ -21,3 +21,6 @@ test('breaking changes stay pre-1.0 until explicitly promoted',()=>{
 test('merge commit uses PR title',()=>{
   assert.equal(calculateVersion('0.1.0',['Merge pull request #20 from org/branch\n\nfeat: new oscillator']),'0.2.0');
 });
+test('empty git log fragments are ignored',()=>{
+  assert.equal(calculateVersion('0.3.0',["Merge branch 'release/v0.3.0'\n",'\n']),'0.3.0');
+});
