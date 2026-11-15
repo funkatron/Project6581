@@ -144,7 +144,11 @@ export class UnisonSidController {
   if(this.current!==null)this.retuneSlots(this.stackSlots(0,this.currentSlotMap),this.current);
   for(const [note,entry] of this.polyNotes)this.retuneSlots(entry.slots,note);
  }
- setEnvelope(settings){
+ setEnvelope(settings,chipIndex){
+  if(Number.isInteger(chipIndex)&&chipIndex>=0&&chipIndex<3){
+   for(let voice=0;voice<3;voice++)this.chips[chipIndex].setEnvelope(voice,settings);
+   return;
+  }
   const slots=this.current!==null?this.stackSlots(0,this.currentSlotMap):
    [...this.polyNotes.values()].flatMap(entry=>entry.slots);
   for(const slot of slots)this.chip(slot).setEnvelope(this.voice(slot),settings);
@@ -153,7 +157,11 @@ export class UnisonSidController {
   if(Number.isInteger(chipIndex)&&chipIndex>=0&&chipIndex<3)this.chips[chipIndex].setFilter(settings);
   else for(const chip of this.chips)chip.setFilter(settings);
  }
- setPulse(_voice,percent){
+ setPulse(_voice,percent,chipIndex){
+  if(Number.isInteger(chipIndex)&&chipIndex>=0&&chipIndex<3){
+   for(let voice=0;voice<3;voice++)this.chips[chipIndex].setPulse(voice,percent);
+   return;
+  }
   const slots=this.current!==null?this.stackSlots(0,this.currentSlotMap):
    [...this.polyNotes.values()].flatMap(entry=>entry.slots);
   for(const slot of slots)this.chip(slot).setPulse(this.voice(slot),percent);

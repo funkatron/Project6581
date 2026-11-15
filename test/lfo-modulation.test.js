@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {lfoValue,modulate,LFO_WAVES,LFO_TARGETS,syncedLfoHz,SYNCED_LFO_DIVISIONS,pulseWithPwm} from '../src/lfo-modulation.js';
+import {lfoValue,modulate,lfosForEngine,LFO_WAVES,LFO_TARGETS,syncedLfoHz,SYNCED_LFO_DIVISIONS,pulseWithPwm} from '../src/lfo-modulation.js';
 
 test('all modulation waveforms produce bounded values',()=>{
  for(const wave of LFO_WAVES)for(const phase of [0,.1,.25,.5,.75,1,3.3]){
@@ -83,6 +83,17 @@ test('detune modulation is disabled outside Unison without changing other target
  assert.equal(result.detune,25);
  assert.notEqual(result.cutoff,5000);
  assert.notEqual(modulate(base,lfos,0,{unisonActive:true}).detune,25);
+});
+
+test('lfosForEngine keeps only matching or global LFO scopes',()=>{
+ const lfos=[
+  {enabled:true,depth:.5,target:'cutoff',engines:'all'},
+  {enabled:true,depth:.5,target:'volume',engines:'2'},
+  {enabled:true,depth:.5,target:'resonance',engines:'1'}
+ ];
+ assert.deepEqual(lfosForEngine(lfos,0).map(lfo=>lfo.target),['cutoff','resonance']);
+ assert.deepEqual(lfosForEngine(lfos,1).map(lfo=>lfo.target),['cutoff','volume']);
+ assert.deepEqual(lfosForEngine(lfos,2).map(lfo=>lfo.target),['cutoff']);
 });
 
 test('audible PWM sweeps around the pulse center and clips safely',()=>{
