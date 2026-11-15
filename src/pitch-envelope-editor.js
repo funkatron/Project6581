@@ -1,10 +1,20 @@
 import {
  DEFAULT_PITCH_ENVELOPE,
  MAX_PITCH_POINTS,
+ pitchOffsetAt,
  validatePitchEnvelope
 } from './pitch-envelope.js';
+import {
+ pitchGraphAxes,
+ pointToGraph,
+ graphToPoint,
+ clampDraggedPoint,
+ proposePitchPoint
+} from './pitch-envelope-graph.js';
 
 export const PITCH_EDITOR_MAX_POINTS=4;
+const GRAPH_SAMPLES=64;
+const HANDLE_INSET=22;
 
 export function pitchEnvelopeTemplates(){
  return {
@@ -60,19 +70,38 @@ export function mountPitchEnvelopeEditor(parent,{getEnvelope,applyEnvelope,maxPo
    '<div class="pitch-custom-row"><label>Interpolation <select data-pitch-interp><option value="linear">Linear</option>'+
     '<option value="curve">Curve</option></select></label>'+
    '<label>After last point <select data-pitch-end><option value="hold">Hold</option><option value="zero">Return to 0 st</option></select></label></div>'+
-   '<div class="pitch-point-list" data-pitch-points role="group" aria-label="Pitch envelope breakpoints"></div>'+
-   '<div class="pitch-point-actions"><button type="button" data-pitch-add>Add point</button></div>'+
+   '<div class="pitch-graph-frame" data-pitch-graph role="group" aria-label="Pitch envelope breakpoints">'+
+    '<svg class="pitch-graph" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Pitch envelope graph">'+
+     '<line class="pitch-zero" data-pitch-zero></line>'+
+     '<polyline class="pitch-curve" data-pitch-curve></polyline>'+
+    '</svg>'+
+   '</div>'+
+   '<div class="pitch-inspector" data-pitch-inspector>'+
+    '<label>Time (ms) <input type="number" min="0" max="10000" step="1" data-pitch-ms aria-label="Selected breakpoint time"></label>'+
+    '<label>Pitch (st) <input type="number" min="-48" max="48" step="1" data-pitch-st aria-label="Selected breakpoint pitch"></label>'+
+    '<button type="button" class="pitch-point-remove" data-pitch-remove>Remove</button>'+
+   '</div>'+
   '</div>'+
-  '<small class="pitch-envelope-hint">Saved with presets (v4). Applies to newly played notes.</small>';
+  '<small class="pitch-envelope-hint">Saved with presets (v4). Applies to newly played notes. Drag a point, or tap the graph to add one.</small>';
  parent.append(host);
  const templateSelect=host.querySelector('[data-pitch-template]');
  const customPanel=host.querySelector('[data-pitch-custom]');
  const interpSelect=host.querySelector('[data-pitch-interp]');
  const endSelect=host.querySelector('[data-pitch-end]');
- const pointList=host.querySelector('[data-pitch-points]');
- const addButton=host.querySelector('[data-pitch-add]');
+ const frame=host.querySelector('[data-pitch-graph]');
+ const zeroLine=host.querySelector('[data-pitch-zero]');
+ const curve=host.querySelector('[data-pitch-curve]');
+ const msInput=host.querySelector('[data-pitch-ms]');
+ const stInput=host.querySelector('[data-pitch-st]');
+ const removeButton=host.querySelector('[data-pitch-remove]');
  let draft=draftFromEnvelope(getEnvelope());
  let applying=false;
+ let selected=0;
+ let dragIndex=-1;
+
+ function pointLimit(){
+  return Math.min(maxPoints,MAX_PITCH_POINTS);
+ }
 
  function tryApply(){
   if(applying)return;
@@ -90,91 +119,115 @@ export function mountPitchEnvelopeEditor(parent,{getEnvelope,applyEnvelope,maxPo
  }
 
  function removePoint(index){
-  if(draft.points.length<=1)return;
+  if(index<=0||draft.points.length<=1)return;
   draft.points.splice(index,1);
   draft.points[0].ms=0;
+  if(selected>index)selected-=1;
+  else if(selected===index)selected=index-1;
+  templateSelect.value='custom';
   tryApply();
  }
 
- function addPoint(){
-  if(draft.points.length>=Math.min(maxPoints,MAX_PITCH_POINTS))return;
-  const last=draft.points[draft.points.length-1];
-  const ms=Math.min(10000,last.ms+40);
-  draft.points.push({ms,semitones:last.semitones});
-  tryApply();
+ function selectEditablePoint(){
+  if(draft.points.length>1)selected=1;
+  else selected=0;
  }
 
- function buildPointRow(point,index,total){
-  const row=document.createElement('div');
-  row.className='pitch-point-row';
-  const msId='pitch-ms-'+index;
-  const stId='pitch-st-'+index;
-  row.innerHTML=
-   '<label for="'+msId+'">Time (ms) <input id="'+msId+'" type="number" min="0" max="10000" step="1" data-pitch-ms value="'+point.ms+'"'+
-    (index===0?' readonly aria-readonly="true"':'')+'></label>'+
-   '<label for="'+stId+'">Pitch (st) <input id="'+stId+'" type="number" min="-48" max="48" step="1" data-pitch-st value="'+point.semitones+'"></label>';
-  if(total>1&&index>0){
-   const remove=document.createElement('button');
-   remove.type='button';
-   remove.className='pitch-point-remove';
-   remove.textContent='Remove';
-   remove.setAttribute('aria-label','Remove breakpoint '+(index+1));
-   remove.addEventListener('click',()=>removePoint(index));
-   row.append(remove);
-  }
-  const msInput=row.querySelector('[data-pitch-ms]');
-  const stInput=row.querySelector('[data-pitch-st]');
-  const onInput=()=>{
-   point.ms=index===0?0:Number(msInput.value);
-   point.semitones=Number(stInput.value);
-   draft.points[0].ms=0;
-   templateSelect.value='custom';
-   tryApply();
+ function localGraphPoint(event){
+  const rect=frame.getBoundingClientRect();
+  return {
+   x:event.clientX-rect.left-HANDLE_INSET,
+   y:event.clientY-rect.top-HANDLE_INSET,
+   width:rect.width-HANDLE_INSET*2,
+   height:rect.height-HANDLE_INSET*2
   };
-  msInput.addEventListener('input',onInput);
-  stInput.addEventListener('change',onInput);
-  msInput.addEventListener('change',onInput);
-  stInput.addEventListener('input',onInput);
-  return row;
  }
 
- function paintPoints(){
-  pointList.replaceChildren(...draft.points.map((point,index)=>buildPointRow(point,index,draft.points.length)));
-  addButton.disabled=!draft.enabled||draft.points.length>=Math.min(maxPoints,MAX_PITCH_POINTS);
+ function paintCurve(envelope){
+  const axes=pitchGraphAxes(envelope.points);
+  const zero=pointToGraph({ms:0,semitones:0},axes,100,100);
+  zeroLine.setAttribute('x1','0');
+  zeroLine.setAttribute('x2','100');
+  zeroLine.setAttribute('y1',String(zero.y));
+  zeroLine.setAttribute('y2',String(zero.y));
+  const parts=[];
+  for(let i=0;i<GRAPH_SAMPLES;i++){
+   const ms=axes.timeMax*(i/(GRAPH_SAMPLES-1));
+   const semitones=pitchOffsetAt(envelope,ms);
+   const placed=pointToGraph({ms,semitones},axes,100,100);
+   parts.push(placed.x+','+placed.y);
+  }
+  curve.setAttribute('points',parts.join(' '));
+  frame.querySelectorAll('.pitch-handle').forEach(node=>node.remove());
+  const handles=envelope.points.map((point,index)=>{
+   const placed=pointToGraph(point,axes,100,100);
+   const button=document.createElement('button');
+   button.type='button';
+   button.className='pitch-handle';
+   if(index===selected)button.classList.add('is-selected');
+   button.dataset.index=String(index);
+   const across=placed.x/100;
+   const down=placed.y/100;
+   button.style.left='calc('+HANDLE_INSET+'px + '+across+' * (100% - '+(HANDLE_INSET*2)+'px))';
+   button.style.top='calc('+HANDLE_INSET+'px + '+down+' * (100% - '+(HANDLE_INSET*2)+'px))';
+   button.setAttribute('aria-label','Breakpoint '+(index+1)+', '+point.ms+' ms, '+point.semitones+' semitones');
+   if(index===selected)button.setAttribute('aria-pressed','true');
+   else button.setAttribute('aria-pressed','false');
+   return button;
+  });
+  frame.append(...handles);
+ }
+
+ function paintInspector(){
+  const point=draft.points[selected];
+  const timeLocked=selected===0;
+  msInput.readOnly=timeLocked;
+  if(timeLocked)msInput.setAttribute('aria-readonly','true');
+  else msInput.removeAttribute('aria-readonly');
+  if(document.activeElement!==msInput)msInput.value=String(point.ms);
+  if(document.activeElement!==stInput)stInput.value=String(point.semitones);
+  removeButton.disabled=selected<=0||draft.points.length<=1;
  }
 
  function paint(){
   if(applying)return;
   const env=getEnvelope();
   draft=draftFromEnvelope(env);
-  const templateId=detectPitchTemplate(env,templates);
-  templateSelect.value=templateId;
+  if(selected>=draft.points.length)selected=draft.points.length-1;
+  if(selected<0)selected=0;
+  templateSelect.value=detectPitchTemplate(env,templates);
   customPanel.hidden=!draft.enabled;
   interpSelect.value=draft.interpolation;
   endSelect.value=draft.end;
-  paintPoints();
+  if(draft.enabled)paintCurve(env);
+  else{
+   frame.querySelectorAll('.pitch-handle').forEach(node=>node.remove());
+   curve.removeAttribute('points');
+  }
+  paintInspector();
  }
 
  templateSelect.addEventListener('change',()=>{
   const choice=templateSelect.value;
   if(choice==='off'){
    draft=draftFromEnvelope(templates.off);
+   selected=0;
    tryApply();
    return;
   }
   if(choice==='custom'){
    if(!draft.enabled){
-    draft=validatePitchEnvelope({
+    draft=draftFromEnvelope(validatePitchEnvelope({
      enabled:true,interpolation:'linear',end:'hold',
      points:[{ms:0,semitones:12},{ms:120,semitones:0}]
-    });
-    draft=draftFromEnvelope(draft);
+    }));
    }
-   paintPoints();
+   selectEditablePoint();
    tryApply();
    return;
   }
   draft=draftFromEnvelope(templates[choice]);
+  selectEditablePoint();
   tryApply();
  });
 
@@ -188,10 +241,64 @@ export function mountPitchEnvelopeEditor(parent,{getEnvelope,applyEnvelope,maxPo
   templateSelect.value='custom';
   tryApply();
  });
- addButton.addEventListener('click',()=>{
+
+ function onInspectorInput(){
+  const point=draft.points[selected];
+  if(!point)return;
+  if(selected===0)point.ms=0;
+  else point.ms=Number(msInput.value);
+  point.semitones=Number(stInput.value);
+  draft.points[0].ms=0;
   templateSelect.value='custom';
-  addPoint();
+  tryApply();
+ }
+ msInput.addEventListener('input',onInspectorInput);
+ stInput.addEventListener('input',onInspectorInput);
+ msInput.addEventListener('change',onInspectorInput);
+ stInput.addEventListener('change',onInspectorInput);
+ removeButton.addEventListener('click',()=>removePoint(selected));
+
+ frame.addEventListener('pointerdown',event=>{
+  const local=localGraphPoint(event);
+  if(local.width<=0||local.height<=0)return;
+  frame.setPointerCapture(event.pointerId);
+  const handle=event.target.closest('.pitch-handle');
+  if(handle){
+   selected=Number(handle.dataset.index);
+   dragIndex=selected;
+   paint();
+   return;
+  }
+  const axes=pitchGraphAxes(draft.points);
+  const proposed=proposePitchPoint(local.x,local.y,draft.points,axes,local.width,local.height,pointLimit());
+  if(!proposed){
+   dragIndex=-1;
+   return;
+  }
+  draft.points.splice(proposed.index,0,proposed.point);
+  selected=proposed.index;
+  dragIndex=selected;
+  templateSelect.value='custom';
+  tryApply();
  });
+ frame.addEventListener('pointermove',event=>{
+  if(dragIndex<0)return;
+  const local=localGraphPoint(event);
+  if(local.width<=0||local.height<=0)return;
+  const axes=pitchGraphAxes(draft.points);
+  const raw=graphToPoint(local.x,local.y,axes,local.width,local.height);
+  const clamped=clampDraggedPoint(dragIndex,raw.ms,raw.semitones,draft.points);
+  let ms=clamped.ms;
+  if(dragIndex===0)ms=0;
+  else ms=Math.round(clamped.ms);
+  const rounded=clampDraggedPoint(dragIndex,ms,Math.round(clamped.semitones),draft.points);
+  draft.points[dragIndex]={ms:rounded.ms,semitones:rounded.semitones};
+  templateSelect.value='custom';
+  tryApply();
+ });
+ function endDrag(){dragIndex=-1}
+ frame.addEventListener('pointerup',endDrag);
+ frame.addEventListener('pointercancel',endDrag);
 
  paint();
  return {refresh:paint};
