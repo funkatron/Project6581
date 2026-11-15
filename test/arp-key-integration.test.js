@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
-const script=html.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1];
+const script=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
 
 test('inline keyboard application remains valid JavaScript after adding the visual module',()=>{
  assert.ok(script,'module script must exist');

@@ -5,13 +5,15 @@ import {spawnSync} from 'node:child_process';
 import {runInNewContext} from 'node:vm';
 
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
-const script=html.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1];
+const script=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
+const library=readFileSync(new URL('../src/preset-library-ui.js',import.meta.url),'utf8');
 
 test('preset UI compiles without changing SID native code',()=>{
  assert.ok(script,'inline app module exists');
  const result=spawnSync(process.execPath,['--check','--input-type=module'],{input:script,encoding:'utf8'});
  assert.equal(result.status,0,result.stderr);
- assert.match(script,/import \{FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,PRESET_VERSION,cleanPresetName/);
+ assert.match(script,/import \{mountPresetLibrary\} from "\.\/preset-library-ui\.js\?v=__BUILD_ID__";/);
+ assert.match(library,/import \{FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,PRESET_VERSION,cleanPresetName/);
 });
 test('preset editor provides factory/user collections, save, export, import and backup',()=>{
  for(const id of ['presetOpen','presetCurrent','presetDialog','presetClose','factoryPresetList','userPresetList',
@@ -24,12 +26,12 @@ test('preset editor provides factory/user collections, save, export, import and 
  assert.match(html,/<dialog id="presetDialog" aria-labelledby="presetDialogTitle"/);
  assert.match(html,/\.preset-columns\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
  assert.match(html,/@media\(max-width:560px\)\{\.preset-columns\{grid-template-columns:minmax\(0,1fr\)\}/);
- assert.match(script,/\$\('presetDialog'\)\.showModal\(\)/);
- assert.match(script,/loadSelectedPreset\(button\.dataset\.kind,button\.dataset\.id\)/);
- assert.match(script,/button\.setAttribute\('aria-current',String\(selected===kind\+':'\+preset\.id\)\)/);
- assert.match(script,/writeUserPresets\(window\.localStorage,next\)/);
- assert.match(script,/importPresetFile\(await file\.text\(\)\)/);
- assert.match(script,/window\.confirm\('Replace '/);
+ assert.match(library,/\$\('presetDialog'\)\.showModal\(\)/);
+ assert.match(library,/loadSelectedPreset\(button\.dataset\.kind,button\.dataset\.id\)/);
+ assert.match(library,/button\.setAttribute\('aria-current',String\(selected===kind\+':'\+preset\.id\)\)/);
+ assert.match(library,/writeUserPresets\(window\.localStorage,next\)/);
+ assert.match(library,/importPresetFile\(await file\.text\(\)\)/);
+ assert.match(library,/window\.confirm\('Replace '/);
 });
 test('preset loading restores performance settings without stored notes or autoplay',()=>{
  assert.match(script,/masterBpm:Number\(\$\('masterBpm'\)\.value\)/);
@@ -51,9 +53,9 @@ test('preset loading restores performance settings without stored notes or autop
  assert.match(script,/activeSidModel=requestedModel/);
  assert.match(script,/await ensureSidModel\(previous\.sound\.model\)/);
  assert.match(script,/setPresetLoading\(true\)/);
- assert.match(script,/\$\('presetDialog'\)\.close\(\)/);
- assert.match(script,/if\(presetDirty&&!window\.confirm\('Discard unsaved changes to this preset\?'\)\)return/);
- assert.match(script,/presetDirty=Boolean\(selected\)&&JSON\.stringify\(snapshotPresetSettings\(\)\)/);
+ assert.match(library,/\$\('presetDialog'\)\.close\(\)/);
+ assert.match(library,/if\(presetDirty&&!window\.confirm\('Discard unsaved changes to this preset\?'\)\)return/);
+ assert.match(library,/presetDirty=Boolean\(selected\)&&JSON\.stringify\(snapshotPresetSettings\(\)\)/);
 });
 
 test('preset actions cannot mutate settings while loading a different sound or importing files',()=>{
@@ -61,11 +63,11 @@ test('preset actions cannot mutate settings while loading a different sound or i
  assert.match(script,/presetLoading=busy/);
  assert.match(script,/for\(const \[id,available\] of \[/);
  assert.match(script,/for\(const id of \['factoryPresetList','userPresetList'\]\)/);
- assert.match(script,/if\(presetLoading\)return null/);
- assert.match(script,/setPresetLoading\(true\);\s*try\{\s*await applyPresetSettings\(preset\.settings\)/);
- assert.match(script,/finally\{\s*setPresetLoading\(false\)/);
- assert.match(script,/if\(presetLoading\)\{input\.value='';return\}/);
- assert.match(script,/finally\{input\.value='';setPresetLoading\(false\)\}/);
+ assert.match(library,/if\(isLoading\(\)\)return null/);
+ assert.match(library,/setPresetLoading\(true\);\s*try\{\s*await applyPresetSettings\(preset\.settings\)/);
+ assert.match(library,/finally\{\s*setPresetLoading\(false\)/);
+ assert.match(library,/if\(isLoading\(\)\)\{input\.value='';return\}/);
+ assert.match(library,/finally\{input\.value='';setPresetLoading\(false\)\}/);
 });
 test('modal text overrides light-theme global heading and description colors',()=>{
  assert.match(html,/#presetDialog h2,#presetDialog h3\{color:#f3f5fa\}/);
@@ -114,7 +116,7 @@ test('chip selection switches the live engine and restores the previous model on
 
 
 test('empty live Arp selections snapshot as Up and Action so presets can still load',()=>{
- const source=script.slice(script.indexOf('function snapshotPresetSettings()'),script.indexOf('function currentPreset()'));
+ const source=script.slice(script.indexOf('function snapshotPresetSettings()'),script.indexOf('function applyPresetControls('));
  const app={
   $:id=>({value:['arpPattern','gameArpStyle'].includes(id)?'':'1',checked:false}),
   validatePresetSettings:value=>value,settings:[{}],lfoState:[],seqState:{}
@@ -127,13 +129,13 @@ test('empty live Arp selections snapshot as Up and Action so presets can still l
 });
 
 test('factory preset browser groups the expanded bank without changing the user collection',()=>{
- assert.match(script,/FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,PRESET_VERSION/);
- assert.match(script,/kind==='factory'\s*\?\[\.\.\.presets\]\.sort/);
- assert.match(script,/factoryGroup\(preset\.category\)/);
- assert.match(script,/heading\.className='preset-category-heading'/);
- assert.match(script,/heading\.setAttribute\('role','heading'\)/);
- assert.match(script,/button\.dataset\.kind=kind;button\.dataset\.id=preset\.id/);
- assert.match(script,/button\.setAttribute\('aria-current',String\(selected===kind\+':'\+preset\.id\)\)/);
+ assert.match(library,/FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,PRESET_VERSION/);
+ assert.match(library,/kind==='factory'\s*\?\[\.\.\.presets\]\.sort/);
+ assert.match(library,/factoryGroup\(preset\.category\)/);
+ assert.match(library,/heading\.className='preset-category-heading'/);
+ assert.match(library,/heading\.setAttribute\('role','heading'\)/);
+ assert.match(library,/button\.dataset\.kind=kind;button\.dataset\.id=preset\.id/);
+ assert.match(library,/button\.setAttribute\('aria-current',String\(selected===kind\+':'\+preset\.id\)\)/);
  assert.match(html,/\.preset-category-heading\{position:sticky/);
- assert.match(script,/\['factory',FACTORY_PRESETS,'factoryPresetList'\],\['user',userPresets,'userPresetList'\]/);
+ assert.match(library,/\['factory',FACTORY_PRESETS,'factoryPresetList'\],\['user',userPresets,'userPresetList'\]/);
 });

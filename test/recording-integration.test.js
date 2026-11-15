@@ -5,7 +5,8 @@ import {spawnSync} from 'node:child_process';
 
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const worklet=readFileSync(new URL('../src/residfp-worklet.js',import.meta.url),'utf8');
-const script=html.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1];
+const script=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
+const presetLibrary=readFileSync(new URL('../src/preset-library-ui.js',import.meta.url),'utf8');
 
 test('recording UI script compiles and exports a persistent link',()=>{
  assert.ok(script);
@@ -44,6 +45,6 @@ test('generated files remain available during Safari download navigation',()=>{
  assert.match(script,/if\(!sidRecorder\.supportsM4a\)\$\('recordFormat'\)\.value='wav'/);
  assert.doesNotMatch(script,/addEventListener\('pagehide'/);
  assert.match(script,/if\(recordDownloadUrl\)URL\.revokeObjectURL\(recordDownloadUrl\)/);
- assert.match(script,/if\(presetDownloadUrl\)URL\.revokeObjectURL\(presetDownloadUrl\)/);
+ assert.match(presetLibrary,/if\(presetDownloadUrl\)URL\.revokeObjectURL\(presetDownloadUrl\)/);
  assert.match(html,/id="recordDownload" hidden/);
 });

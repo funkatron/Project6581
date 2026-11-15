@@ -21,6 +21,7 @@ test('progress and active messages include Safari unlock guidance',()=>{
  assert.equal(formatSidProgressMessage('Ready','running'),'Ready');
  assert.match(formatActiveSidStatus('suspended',6581),/Enable audio/);
  assert.match(formatActiveSidStatus('suspended',6581,{afterInit:true}),/touch a key/);
+ assert.match(formatActiveSidStatus('running',8580,{outputLatencyMs:12.4}),/Output latency 12 ms/);
 });
 
 test('latency formatter reports base and output when available',()=>{

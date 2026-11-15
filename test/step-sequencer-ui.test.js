@@ -5,7 +5,7 @@ import {spawnSync} from 'node:child_process';
 
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const css=readFileSync(new URL('../src/seq-ui.css',import.meta.url),'utf8');
-const script=html.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1];
+const script=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
 
 test('the Arp/Seq workspace is usable and the original Sound controls remain',()=>{
  assert.ok(script,'App module must exist');

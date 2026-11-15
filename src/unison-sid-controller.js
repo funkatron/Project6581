@@ -116,6 +116,7 @@ export class UnisonSidController {
   for(const note of [...this.polyNotes.keys()])this.releasePoly(note);
   this.held=[];this.monoTokens.clear();this.settings=null;
  }
+ forceSilent(){this.panic();for(const chip of this.chips)chip.forceSilent()}
  setLiveDetune(cents){
   const next=Math.max(0,Math.min(100,Number(cents)||0));
   if(next===this.liveDetune)return;this.liveDetune=next;

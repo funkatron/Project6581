@@ -18,13 +18,14 @@ export function formatSidProgressMessage(message,contextState){
  return message;
 }
 
-export function formatActiveSidStatus(contextState,model,{afterInit=false}={}){
- if(contextState==='running')return 'Authentic reSIDfp active · SID '+model+'.';
- if(contextState==='suspended'){
-  if(afterInit)return 'SID ready · touch a key to unlock audio.';
-  return 'SID ready · tap Enable audio to resume.';
- }
- return 'SID ready · touch a key to unlock audio.';
+export function formatActiveSidStatus(contextState,model,{afterInit=false,outputLatencyMs=null}={}){
+ let text;
+ if(contextState==='running')text='Authentic reSIDfp active · SID '+model+'.';
+ else if(contextState==='suspended'){
+  text=afterInit?'SID ready · touch a key to unlock audio.':'SID ready · tap Enable audio to resume.';
+ }else text='SID ready · touch a key to unlock audio.';
+ if(Number.isFinite(outputLatencyMs))text+=' Output latency '+Math.round(outputLatencyMs)+' ms.';
+ return text;
 }
 
 export function formatBrowserLatencyStatus(baseLatencySeconds,outputLatencySeconds){

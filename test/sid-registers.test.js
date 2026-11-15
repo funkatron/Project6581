@@ -7,6 +7,17 @@ test('ADSR rates select closest SID timing',()=>{assert.equal(closestRate(.002),
 test('note writes frequency, PW, ADSR and gates on',()=>{const writes=[];const sid=new SidRegisters((r,v)=>writes.push([r,v]));sid.noteOn(1,69,{wave:'pulse',pulse:50,attack:.002,decay:.008,sustain:1,release:.08});assert.deepEqual(writes.slice(0,4),[[7,0x45],[8,0x1d],[9,0],[10,8]]);assert.deepEqual(writes.slice(-2),[[11,0x40],[11,0x41]]);sid.noteOff(1);assert.deepEqual(writes.at(-1),[11,0x40]);});
 test('filter writes shared registers',()=>{const writes=[];new SidRegisters((r,v)=>writes.push([r,v])).setFilter({cutoff:2047,resonance:15,mode:'highpass'});assert.deepEqual(writes,[[21,7],[22,255],[23,247],[24,79]])});
 test('reject invalid voice',()=>assert.throws(()=>new SidRegisters(()=>{}).noteOff(3),RangeError));
+test('forceSilent clears every gate and mutes the filter',()=>{
+ const writes=[];const sid=new SidRegisters((r,v)=>writes.push([r,v]));
+ sid.noteOn(0,60,{wave:'square',pulse:50,attack:0,decay:0.1,sustain:0,release:0.01});
+ sid.noteOn(1,60,{wave:'square',pulse:50,attack:0,decay:0.1,sustain:0,release:0.01});
+ sid.noteOn(2,60,{wave:'square',pulse:50,attack:0,decay:0.1,sustain:0,release:0.01});
+ writes.length=0;
+ sid.forceSilent();
+ assert.deepEqual(writes.filter(([register])=>register===4||register===11||register===18),[[4,0],[11,0],[18,0]]);
+ assert.equal(writes.at(-1)[0],0x18);
+ assert.equal(writes.at(-1)[1]&15,0);
+});
 
 test('live pitch, ADSR and pulse updates avoid retriggering active SID notes',()=>{
  const writes=[],sid=new SidRegisters((r,v)=>writes.push([r,v]));

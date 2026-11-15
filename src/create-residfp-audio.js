@@ -1,22 +1,20 @@
 import {closeSidContext} from './sid-audio-lifecycle.js?v=__BUILD_ID__';
+import {loadSidWasm} from './sid-wasm-cache.js?v=__BUILD_ID__';
 import {createSidWriteBatcher} from './sid-write-batcher.js?v=__BUILD_ID__';
 // Preload on page load; unlock audio separately during a trusted user gesture.
 export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=()=>{},onProgress=()=>{},eventLog=null,contextId=null,context=new AudioContext({latencyHint:'interactive'})}={}){
   let node=null,batcher=null,closed=false;
-  const download=new AbortController();
   const dispose=()=>{
     if(closed)return;
     closed=true;
-    download.abort();
     batcher?.close();
     if(node){node.port.onmessage=null;node.onprocessorerror=null;node.port.close();node.disconnect();eventLog?.add('sid-worklet-disconnected',{contextId,model})}
   };
   try {
     onContext(context);
-    // Desktop browsers may permit autoplay. Never await this promise:
-    // Safari can leave it pending until a trusted gesture occurs.
-    void context.resume().catch(()=>{});
-    const version=Date.now().toString(36);
+    // Do not resume here. A resume started outside a user gesture can stay
+    // pending on iPad and swallow later presses that wait on that promise.
+    const version='__BUILD_ID__';
     const deadline=async(promise,label)=>{
       let timer;
       try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label+' timed out after 15 seconds')),15000)})])}
@@ -24,19 +22,14 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
     };
     onProgress('Loading SID audio worklet…');
     await deadline(context.audioWorklet.addModule('./src/residfp-worklet.js?v='+version),'Audio worklet loading');
-    onProgress('Downloading SID engine…');
-    const response=await deadline(fetch('./dist/residfp.wasm?v='+version,{cache:'no-store',signal:download.signal}),'SID engine download');
-    if(!response.ok)throw Error('reSIDfp WASM unavailable (build artifact not deployed)');
-    const bytes=await deadline(response.arrayBuffer(),'SID engine download');
-    onProgress('Compiling SID engine…');
-    const imports=WebAssembly.Module.imports(await deadline(WebAssembly.compile(bytes),'SID engine compilation'));
-    const unsupported=imports.filter(({module,name})=>module==='env'&&/^invoke_|^dynCall_/.test(name));
-    if(unsupported.length)throw Error('Downloaded WASM has unsupported imports: '+unsupported.map(x=>x.module+'.'+x.name).join(', ')+'. The deployed binary is incompatible.');
+    onProgress('Preparing SID engine…');
+    const bytes=await deadline(loadSidWasm('./dist/residfp.wasm?v='+version),'SID engine preparation');
+    if(closed)throw Error('SID engine closed before initialization');
     onProgress('Initializing SID audio processor…');
     node=new AudioWorkletNode(context,'residfp-processor',{outputChannelCount:[2]});
     node.connect(context.destination);
     eventLog?.add('sid-worklet-connected',{contextId,model});
-    let capture=null,stopResolve=null,stopReject=null;
+    let capture=null,stopResolve=null,stopReject=null,modelReady=null;
     let probeId=0,lastProbeAt=-Infinity,timingEnabled=false;
     const pendingProbes=new Map(),pendingEvents=new Map();
     let eventLogEnabled=false;
@@ -81,10 +74,20 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
         capture=null;const done=stopResolve;stopResolve=null;stopReject=null;
         done?.();return;
       }
+      if(data?.type==='model-ready'){
+        const pending=modelReady;modelReady=null;
+        pending?.resolve(data.model);
+        return;
+      }
       if(data?.type==='record-started')return;
+      if(data?.type==='error'&&modelReady){
+        const pending=modelReady;modelReady=null;
+        pending.reject(new Error(data.message||'SID model switch failed'));
+      }
       onStatus(data);
     };
-    node.port.postMessage({type:'load',bytes,model,traceFirstRender:eventLog?.enabled===true},[bytes]);
+    const transferable=bytes.slice(0);
+    node.port.postMessage({type:'load',bytes:transferable,model,traceFirstRender:eventLog?.enabled===true},[transferable]);
     batcher=createSidWriteBatcher(message=>{
       if(eventLogEnabled&&message.diagnostics){
         const now=performance.now();
@@ -114,6 +117,19 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
         node.port.postMessage({type:'event-log-enable',enabled:eventLogEnabled});
       },
       write:(register,value)=>batcher.write(register,value),
+      setModel(nextModel){
+        if(closed||!node)return Promise.reject(new Error('SID engine is closed'));
+        return new Promise((resolve,reject)=>{
+          const timer=setTimeout(()=>{
+            if(modelReady){modelReady=null;reject(new Error('SID model switch timed out'))}
+          },4000);
+          modelReady={
+            resolve:model=>{clearTimeout(timer);resolve(model)},
+            reject:error=>{clearTimeout(timer);reject(error)}
+          };
+          node.port.postMessage({type:'set-model',model:nextModel});
+        });
+      },
       startPitchEnvelope(slot,note,envelope){
         if(!Number.isInteger(slot)||slot<0||slot>=8||!Number.isFinite(note))return;
         const register=Math.floor(slot/3)*0x20+(slot%3)*7;
@@ -147,7 +163,10 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
         for(const [id,probe] of pendingProbes){
           if(now-probe.at>3000)pendingProbes.delete(id);
         }
-        if(now-lastProbeAt<500||pendingProbes.size>=4)return;
+        if(now-lastProbeAt<500||pendingProbes.size>=4){
+          onStatus({type:'latency-probe-skipped',source});
+          return;
+        }
         lastProbeAt=now;
         const id=++probeId;
         pendingProbes.set(id,{at:now,source});
