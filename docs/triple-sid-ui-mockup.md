@@ -32,7 +32,7 @@ Annotations reference Commodore 64C enclosure styling already in [`src/studio-co
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Rainbow meter:** vertical strip beside the title — fixed C64 stripe order (red → orange → yellow → green → cyan → blue → violet). Fill height uses a **logarithmic** map of per-chip peaks (`sid-meter-display.js`) so typical loud SID activity reaches the top without pegging every note. Meters stay visible when card body is collapsed on narrow screens.
+**Rainbow meter:** horizontal bar under the engine title row (same Plus/4 stripe order as the header master meter). Fill **width** uses the shared logarithmic map in `sid-meter-display.js` so typical loud SID activity reaches the end without pegging every note. Full-width within each card so meters stay visible when body controls wrap on narrow screens.
 
 **Pan:** bipolar **L ← ● → R** under each engine header (not stereo spread of one voice — **per-engine bus pan** before the master mix).
 
