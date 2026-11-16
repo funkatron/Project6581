@@ -1,5 +1,6 @@
-import {formatSidDiagnosticReport,formatSidEventLogText} from './sid-event-log.js?v=__BUILD_ID__';
-import {formatStudioTraceText,formatStudioTraceReport} from './studio-trace-log.js?v=__BUILD_ID__';
+import {formatSidDiagnosticReport} from './sid-event-log.js?v=__BUILD_ID__';
+import {formatStudioTraceReport} from './studio-trace-log.js?v=__BUILD_ID__';
+import {formatDiagnosticActivityText} from './diagnostics-format.js?v=__BUILD_ID__';
 
 const EDITOR_TABS=['voice','play','lfos'];
 
@@ -25,9 +26,7 @@ function buildBundle(studioTrace,sidEventLog,getReportContext){
  const environment=getReportContext?.()??{};
  return JSON.stringify({
   studioTrace:JSON.parse(formatStudioTraceReport(studioTrace.snapshot(),environment)),
-  noteEvents:sidEventLog.enabled&&sidEventLog.snapshot().entries.length
-   ?JSON.parse(formatSidDiagnosticReport(sidEventLog,environment))
-   :null
+  noteEvents:sidEventLog.enabled?JSON.parse(formatSidDiagnosticReport(sidEventLog,environment)):null
  },null,2);
 }
 
@@ -50,25 +49,15 @@ export function mountDiagnosticsPanel({
  if(!$||!studioTrace||!sidEventLog)throw new TypeError('mountDiagnosticsPanel requires $, studioTrace, and sidEventLog');
  const panel=$('diagPanel');
  if(!panel)return {refresh:()=>{},isVisible:()=>false};
- const traceView=$('diagnosticsTraceView');
- const noteView=$('diagnosticsNoteView');
+ const activityView=$('diagnosticsActivityView');
  const timingView=$('diagnosticsTimingView');
  const status=$('diagnosticsStatus');
  let returnTab='voice';
+ let tailTimer=null;
  function isVisible(){return $('workspace')?.dataset.tab==='diag'}
  function refresh(){
-  const traceText=formatStudioTraceText(studioTrace.snapshot(),{
-   headerLines:['Studio trace (newest first):'],
-   newestFirst:true
-  });
-  if(traceView)traceView.textContent=traceText;
-  if(noteView){
-   const noteText=formatSidEventLogText(sidEventLog.snapshot(),{
-    headerLines:['Note events (newest first):'],
-    newestFirst:true
-   });
-   noteView.textContent=noteText;
-  }
+  const activityText=formatDiagnosticActivityText(studioTrace.snapshot(),sidEventLog.snapshot());
+  if(activityView)activityView.textContent=activityText;
   updateAudioTimingReport?.();
   if(timingView&&$('audioTimingSummary'))timingView.textContent=$('audioTimingSummary').textContent;
  }
@@ -83,9 +72,12 @@ export function mountDiagnosticsPanel({
    $('diagnosticsNoteLogging').checked=$('sidEventLogging').checked;
   refresh();
   setWorkspaceTab($,'diag');
+  if(tailTimer)clearInterval(tailTimer);
+  tailTimer=setInterval(()=>{if(isVisible())refresh()},500);
   panel.scrollTop=0;
  }
  function closePanel(){
+  if(tailTimer){clearInterval(tailTimer);tailTimer=null}
   const tab=EDITOR_TABS.includes(returnTab)?returnTab:'voice';
   setWorkspaceTab($,tab);
   if(status)status.textContent='';

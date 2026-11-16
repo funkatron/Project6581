@@ -334,8 +334,8 @@ label:has(.slider-stack){gap:4px}
 .help-popover-body{font-size:13px;line-height:1.45;color:#d8e2ee}
 .help-popover-body ul{margin:0;padding-left:1.2em}
 .help-popover-go{margin-top:12px;min-height:40px}
-.diag-panel{display:grid;grid-template-rows:auto auto auto minmax(100px,.9fr) minmax(100px,.9fr) auto minmax(72px,.35fr) auto auto;gap:6px;min-height:0}
-.diagnostics-note-view{max-height:28dvh}
+.diag-panel{display:grid;grid-template-rows:auto auto auto minmax(160px,1.2fr) auto minmax(72px,.35fr) auto auto;gap:6px;min-height:0}
+.diagnostics-activity-view{max-height:min(52dvh,520px)}
 .diag-panel-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .diag-panel-header h2{margin:0;font-size:clamp(14px,1.5vw,18px)}
 .diag-back-btn{min-height:40px;padding:6px 10px;font-size:12px}
