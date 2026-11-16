@@ -10,5 +10,8 @@ export const HELP_CONTENT={
  'voice-allocation':{title:'Voice allocation',relatedTab:'voice',focusId:'voiceAssign',bullets:['Assign mode, voice count, unison, detune.','Up to nine oscillators across three chips.']},
  keyboard:{title:'Keyboard',relatedTab:'voice',focusId:'keyboardPanel',bullets:['Octave controls shift range.','LEDs show generator state (after P8).']},
  'pitch-envelope':{title:'Pitch envelope',relatedTab:'voice',bullets:['Pitch glide per voice while held.','Drag points or use templates.']},
- meters:{title:'Level meters',bullets:['Header: mixed output.','SID cards: per-chip bus level.']}
+ meters:{title:'Level meters',bullets:['Header: mixed output.','SID cards: per-chip bus level.']},
+ 'generator-led-root':{title:'Root generator LED',relatedTab:'play',focusId:'rootArpTitle',bullets:['On when Root Arp is enabled.','Tap: jump to Root Arp. Long-press: help.']},
+ 'generator-led-game':{title:'Game generator LED',relatedTab:'play',focusId:'gameArpTitle',bullets:['On when Game Arp is enabled.','Tap: jump to Game Arp. Long-press: help.']},
+ 'generator-led-latch':{title:'Latch LED',relatedTab:'play',focusId:'arpLatch',bullets:['On when latch holds notes.','Tap: jump to latch. Long-press: help.']}
 };
