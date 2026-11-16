@@ -1,6 +1,6 @@
 import {createSidEventLog} from './sid-event-log.js?v=__BUILD_ID__';
 import {createStudioTraceLog} from './studio-trace-log.js?v=__BUILD_ID__';
-import {mountDiagnosticsDialog} from './diagnostics-dialog.js?v=__BUILD_ID__';
+import {mountDiagnosticsPanel} from './diagnostics-panel.js?v=__BUILD_ID__';
 import {formatActiveSidStatus,formatPlaybackLatencyStatus,formatSidProgressMessage,shouldShowSidUnlock,sidLedAriaLabel,sidLedState} from './sid-engine-status-ui.js?v=__BUILD_ID__';
 import {canDispatchNote,needsAudioResume,shouldBlockMusicalInput} from './sid-note-gate.js?v=__BUILD_ID__';
 import {closeSidContext} from './sid-audio-lifecycle.js?v=__BUILD_ID__';
@@ -46,7 +46,7 @@ const {updateAudioTimingReport}=mountAudioTimingPanel({
   timing:{...audioTiming},startup:[...sidStartupLog]
  })
 });
-const {refresh:refreshDiagnosticsDialog}=mountDiagnosticsDialog({
+const diagnosticsUi=mountDiagnosticsPanel({
  $,studioTrace,sidEventLog,getReportContext:()=>({
   build:$('buildInfo').textContent,browser:navigator.userAgent,route:location.pathname,
   selectedSidModel:Number($('chip').value),activeSidModel,
@@ -58,7 +58,7 @@ const {refresh:refreshDiagnosticsDialog}=mountDiagnosticsDialog({
 });
 function traceStudio(type,details={}){
  studioTrace.add(type,details);
- if($('studioDiagnostics')?.open)refreshDiagnosticsDialog();
+ if(diagnosticsUi.isVisible?.())diagnosticsUi.refresh();
 }
 function traceInput(note,source,action,run){
  if(!sidEventLog.enabled)return run();

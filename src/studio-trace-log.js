@@ -28,10 +28,11 @@ function formatTraceDetail(details){
  return parts.join(' · ');
 }
 
-export function formatStudioTraceText(snapshot,{headerLines=[]}={}){
+export function formatStudioTraceText(snapshot,{headerLines=[],newestFirst=false}={}){
  const lines=[...headerLines];
  if(snapshot.overwritten)lines.push('('+snapshot.overwritten+' earlier trace lines dropped)');
- for(const entry of snapshot.entries){
+ const entries=newestFirst?[...snapshot.entries].reverse():snapshot.entries;
+ for(const entry of entries){
   const ms=Number.isFinite(entry.atMs)?entry.atMs.toFixed(1):'?';
   const detail=formatTraceDetail(entry);
   lines.push(ms+' ms · '+entry.type+(detail?': '+detail:''));

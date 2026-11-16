@@ -7,7 +7,7 @@ test('studio trace keeps newest lines and formats readable text',()=>{
  log.add('boot');
  log.add('unison-update',{voices:9,unison:9,mode:'poly'});
  log.add('panic',{reason:'unison-config'});
- const text=formatStudioTraceText(log.snapshot());
+ const text=formatStudioTraceText(log.snapshot(),{newestFirst:true});
  assert.match(text,/unison-update/);
  assert.match(text,/panic.*unison-config/);
  assert.match(text,/1000\.0 ms/);

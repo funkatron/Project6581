@@ -82,15 +82,23 @@ input[type=checkbox]:checked::before{transform:translateX(17px)}
    Equal negative side margins keep each black key centered at its white-key boundary. */
 .key.black{background:#202c3b;color:white;flex:0 0 4.2%;height:61%;min-width:0;margin:0 -2.1%;z-index:2;border:1px solid #75869a;padding-bottom:7px}
 .key.down{background:#e8a759;color:#151b24}
-footer{font-size:10px;color:#9fadc1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+footer{font-size:10px;color:#9fadc1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
 footer p{display:inline;margin:0}footer strong,footer strong~*{display:none}
+.footer-diagnostics-link{font:inherit;font-size:10px;font-weight:700;color:#7bcabb;background:transparent;border:0;border-radius:0;min-height:32px;padding:4px 2px;text-decoration:underline;text-underline-offset:2px;touch-action:manipulation}
+.footer-diagnostics-link:hover,.footer-diagnostics-link:focus-visible{color:#a8e6d6}
+footer details{flex-basis:100%}
 .diagnostics{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 @media(max-width:900px),(max-height:620px){
  main{grid-template-rows:auto auto auto minmax(0,1fr) auto auto;gap:6px;padding:6px}
  .workspace{grid-template-columns:1fr;display:block}
  .workspace .panel{height:100%;overflow-y:auto;overflow-x:hidden}
- .voice-panel,.performance-panel,.workspace .lfo-panel{display:none}
+ .voice-panel,.performance-panel,.workspace .lfo-panel,.workspace .diag-panel{display:none}
  .workspace[data-tab="voice"] .voice-panel,.workspace[data-tab="play"] .performance-panel,.workspace[data-tab="lfos"] .lfo-panel{display:block}
+ .workspace[data-tab="diag"] .voice-panel,.workspace[data-tab="diag"] .performance-panel,.workspace[data-tab="diag"] .lfo-panel{display:none!important}
+ .workspace[data-tab="diag"] .diag-panel{display:block}
+ .workspace .diag-panel{display:none}
+ .workspace[data-tab="diag"] .voice-panel,.workspace[data-tab="diag"] .performance-panel,.workspace[data-tab="diag"] .lfo-panel{display:none!important}
+ .workspace[data-tab="diag"] .diag-panel{display:block}
  .tabbar{display:flex!important;gap:6px}
  .tabbar button{flex:1;min-height:40px}
  .tabbar button[aria-selected="true"]{background:#a96730;border-color:#e6a65f}
@@ -107,7 +115,7 @@ footer p{display:inline;margin:0}footer strong,footer strong~*{display:none}
 @media(max-width:520px){.voice-grid{gap:0 6px}label{font-size:10px}label>output{min-width:25px}.keyboard-heading small{display:none}.performance-panel .controls{gap:3px 6px}}
 /* Extremely short landscape viewports cannot fit all controls; keep them reachable. */
 @media(max-height:520px){.workspace .panel{overflow-y:auto;overscroll-behavior:contain}.keyboard-panel{height:108px}.keyboard{min-height:64px}.keyboard-heading small{display:none}}
-@media(min-width:901px) and (min-height:621px){.tabbar{display:flex!important}.tabbar button{min-height:40px}.workspace{grid-template-columns:minmax(0,1fr)}.workspace .voice-panel,.workspace .performance-panel,.workspace .lfo-panel{display:none}.workspace[data-tab="voice"] .voice-panel,.workspace[data-tab="play"] .performance-panel,.workspace[data-tab="lfos"] .lfo-panel{display:block}.keyboard-panel{height:clamp(150px,28dvh,300px)}}
+@media(min-width:901px) and (min-height:621px){.tabbar{display:flex!important}.tabbar button{min-height:40px}.workspace{grid-template-columns:minmax(0,1fr)}.workspace .voice-panel,.workspace .performance-panel,.workspace .lfo-panel,.workspace .diag-panel{display:none}.workspace[data-tab="voice"] .voice-panel,.workspace[data-tab="play"] .performance-panel,.workspace[data-tab="lfos"] .lfo-panel{display:block}.workspace[data-tab="diag"] .voice-panel,.workspace[data-tab="diag"] .performance-panel,.workspace[data-tab="diag"] .lfo-panel{display:none!important}.workspace[data-tab="diag"] .diag-panel{display:block}.keyboard-panel{height:clamp(150px,28dvh,300px)}}
 @media(prefers-reduced-motion:reduce){.sid-spinner{animation:none}}
 
 
@@ -326,11 +334,10 @@ label:has(.slider-stack){gap:4px}
 .help-popover-body{font-size:13px;line-height:1.45;color:#d8e2ee}
 .help-popover-body ul{margin:0;padding-left:1.2em}
 .help-popover-go{margin-top:12px;min-height:40px}
-#studioDiagnostics{width:min(820px,calc(100vw - 20px));max-height:calc(100dvh - 24px);margin:auto;padding:clamp(12px,2vw,18px);color:#f3f5fa;background:#1b2736;border:1px solid #52647d;border-radius:13px;box-shadow:0 20px 65px #0009;overflow:hidden;display:grid;grid-template-rows:auto auto auto auto minmax(120px,1fr) auto minmax(72px,.35fr) auto auto;gap:6px}
-#studioDiagnostics:not([open]){display:none}
-#studioDiagnostics::backdrop{background:#090f18c9}
-.diagnostics-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.diagnostics-dialog-header h2{margin:0;font-size:16px}
+.diag-panel{display:grid;grid-template-rows:auto auto auto minmax(120px,1fr) auto minmax(72px,.35fr) auto auto;gap:6px;min-height:0}
+.diag-panel-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.diag-panel-header h2{margin:0;font-size:clamp(14px,1.5vw,18px)}
+.diag-back-btn{min-height:40px;padding:6px 10px;font-size:12px}
 .diagnostics-lead{margin:0;font-size:12px;line-height:1.4;color:#c8d6e5}
 .diagnostics-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .diagnostics-actions button{min-height:40px;padding:6px 10px;font-size:12px}
