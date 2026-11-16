@@ -19,6 +19,12 @@ header button,header select{box-shadow:0 1px 1px #786c5938}
 .workspace .panel small{color:#4d524b}
 .workspace .panel .section-divider{background:#d8ad89}
 .performance-panel{container-type:inline-size}
+:root{--root-teal:#2d7465;--root-teal-accent:#7bcabb}
+#rootArpTitle{display:flex;align-items:center;gap:10px;margin:0 0 8px;color:var(--root-teal)}
+#rootArpTitle::before{content:"⌃";color:var(--root-teal-accent);font-size:22px;font-weight:900}
+#rootArpTitle::after{content:"";height:3px;flex:1;background:repeating-linear-gradient(180deg,var(--root-teal) 0 1px,transparent 1px 3px)}
+.root-arp-panel{margin:0 0 12px;padding:10px 12px;border:2px solid var(--root-teal);border-radius:11px;background:linear-gradient(#f0f5f3,#e5ebe8);box-shadow:inset 0 1px #fff}
+.root-arp-transport{margin:4px 0}
 #gameArpTitle{display:flex;align-items:center;gap:10px;margin:0 0 8px}
 #gameArpTitle::before{content:"▦";color:var(--seq-orange);font-size:24px}
 #gameArpTitle::after{content:"";height:3px;flex:1;background:repeating-linear-gradient(180deg,var(--seq-orange) 0 1px,transparent 1px 3px)}

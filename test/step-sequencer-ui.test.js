@@ -25,8 +25,8 @@ test('the Arp/Seq workspace is usable and the original Sound controls remain',()
  const play=html.slice(html.indexOf('id="playPanel"'),html.indexOf('id="lfoPanel"'));
  const latchAt=play.indexOf('id="arpLatch"');
  const gameAt=play.indexOf('id="gameArpTitle"');
- const rootAt=play.indexOf('>Arpeggiator · Root<');
- assert.ok(latchAt>=0&&latchAt<gameAt&&gameAt<rootAt,'latch sits above both arpeggiators');
+ const rootAt=play.indexOf('id="rootArpTitle"');
+ assert.ok(latchAt>=0&&latchAt<rootAt&&rootAt<gameAt,'latch, Root Arp, then Game Arp');
  assert.equal(play.includes('LFO'),false,'the Arp panel does not mention LFOs');
  assert.equal(play.includes('<details'),false,'the Root Arp stays visible');
 });
