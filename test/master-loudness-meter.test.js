@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {normalizeMasterPeak,mountMasterLoudnessMeter} from '../src/master-loudness-meter-ui.js';
+import {readStudioCoreCss} from './studio-css.mjs';
 
 function masterPeakWorkletHarness(){
  let Processor;
@@ -58,6 +59,12 @@ test('master loudness meter updates fill width',()=>{
  meter.update(0.2);
  assert.notEqual(fill.style.width,'');
  assert.match(fill.style.width,/\d+\.\d%/);
+});
+
+test('header master meter is a wide horizontal rainbow bar',()=>{
+ const css=readStudioCoreCss();
+ assert.match(css,/\.master-rainbow-meter\{[^}]*width:min\(300px,100%\)/);
+ assert.match(css,/\.master-rainbow-meter-fill\{[^}]*width:0/);
 });
 
 test('header includes Plus/4 style master meter markup',()=>{
