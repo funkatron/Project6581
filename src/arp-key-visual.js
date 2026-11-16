@@ -1,23 +1,27 @@
 // DOM-only presentation state for arpeggiator notes. Physical key presses use
 // a separate CSS class; this never sends SID register writes or schedules audio.
+const SOURCES = Object.freeze(['root', 'game']);
 const SOURCE_CLASS = Object.freeze({root: 'arp-playing-root', game: 'arp-playing-game'});
-const ALL_CLASSES = Object.values(SOURCE_CLASS);
 
 export function createArpKeyVisual({getKey}) {
- let note = null;
- let source = null;
- let highlightedKey = null;
+ /** @type {Record<'root'|'game', {note: number|null, key: Element|null}>} */
+ const slots = {root: {note: null, key: null}, game: {note: null, key: null}};
 
- function render() {
-  highlightedKey?.classList.remove(...ALL_CLASSES);
-  highlightedKey = null;
-  if (note === null || source === null) return;
-  const key = getKey(note);
+ function applySource(source) {
+  const slot = slots[source];
   const className = SOURCE_CLASS[source];
-  if (key && className) {
+  slot.key?.classList.remove(className);
+  slot.key = null;
+  if (slot.note === null) return;
+  const key = getKey(slot.note);
+  if (key) {
    key.classList.add(className);
-   highlightedKey = key;
+   slot.key = key;
   }
+ }
+
+ function refresh() {
+  for (const source of SOURCES) applySource(source);
  }
 
  return {
@@ -28,20 +32,36 @@ export function createArpKeyVisual({getKey}) {
    if (nextSource !== 'root' && nextSource !== 'game') {
     throw new TypeError('Expected arp visual source "root" or "game"');
    }
+   const slot = slots[nextSource];
    // Avoid repainting the same key on fast or repeated arp steps.
-   if (note === nextNote && source === nextSource && highlightedKey === (getKey(nextNote) ?? null)) return;
-   note = nextNote;
-   source = nextSource;
-   render();
+   if (slot.note === nextNote && slot.key === (getKey(nextNote) ?? null)) return;
+   slot.note = nextNote;
+   applySource(nextSource);
   },
-  clear() {
-   if (note === null && highlightedKey === null) return;
-   note = null;
-   source = null;
-   render();
+  clear(source) {
+   if (source === undefined) {
+    let changed = false;
+    for (const name of SOURCES) {
+     if (slots[name].note !== null || slots[name].key !== null) {
+      slots[name].note = null;
+      applySource(name);
+      changed = true;
+     }
+    }
+    if (!changed) return;
+    return;
+   }
+   if (source !== 'root' && source !== 'game') {
+    throw new TypeError('Expected arp visual source "root" or "game"');
+   }
+   if (slots[source].note === null && slots[source].key === null) return;
+   slots[source].note = null;
+   applySource(source);
   },
-  refresh: render,
-  get note() { return note; },
-  get source() { return source; }
+  refresh,
+  getNote(source) {
+   if (source !== 'root' && source !== 'game') return null;
+   return slots[source].note;
+  }
  };
 }
