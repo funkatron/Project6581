@@ -1,6 +1,8 @@
 # Latency investigation log
 
-Working notes for **Lane D** (keyboard-to-audio latency). Measurements from footer **Audio timing**, device sessions, and code profiling belong here. Distinct from acknowledgment round-trip metrics, render cost versus block budget, and perceived speaker onset (see `docs/ipad-safari-qa.md`).
+Working notes for **Lane D** (keyboard-to-audio latency). Measurements from footer **Touch → output**, expanded **Audio timing**, device sessions, and code profiling belong here.
+
+**Footer metric (2026-11):** After each key press, `keyToOutputEstimateMs` = main-thread time to first loud PCM in the worklet + remainder of the render quantum + `AudioContext.outputLatency`. This is the best in-app estimate of touch → device output; it is not a DAC trace. Control-ping and render-cost lines remain inside the optional timing panel only.
 
 ## Findings
 

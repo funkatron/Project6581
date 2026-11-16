@@ -1,4 +1,5 @@
 import {formatSidDiagnosticReport} from './sid-event-log.js?v=__BUILD_ID__';
+import {formatPlaybackLatencyStatus} from './sid-engine-status-ui.js?v=__BUILD_ID__';
 
 export function mountAudioTimingPanel({
  $,sidEventLog,audioTiming,sidStartupLog,getSidAudio,getSidContext,getReportContext
@@ -28,6 +29,7 @@ export function mountAudioTimingPanel({
    ...sidStartupLog
   );
   $('audioTimingSummary').textContent=lines.join('\n');
+  $('sidLatencyStatus').textContent=formatPlaybackLatencyStatus(audioTiming);
  }
  updateAudioTimingReport();
  const sidAudio=()=>getSidAudio?.()??null;

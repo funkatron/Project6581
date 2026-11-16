@@ -42,13 +42,13 @@ test('Worklet probe is acknowledged only after a render block',()=>{
  assert.ok(renderAt>=0&&replyAt>renderAt,'probe reply must follow sid_render');
  assert.ok(energyAt>renderAt,'first loud sample is measured after sid_render');
  assert.match(worklet,/first-energy',hit:sampleOffset>=0,sampleOffset,blocks:this\.energyBlocks,sampleRate,frames/);
- assert.match(worklet,/if\(this\.timingEnabled&&queuedWrites>0\)/);
+ assert.match(worklet,/if\(\(this\.keyLatencyEnabled\|\|this\.timingEnabled\)&&queuedWrites>0\)/);
  assert.match(worklet,/renderBudgetMs:frames\*1000\/sampleRate/);
  assert.match(worklet,/this\.renderMsTotal\+=elapsed/);
  assert.match(bridge,/dispatchToWorkletRoundTripMs:performance\.now\(\)-pending\.at/);
 });
 
-test('optional timing display is clearly labeled and never claims speaker latency',()=>{
+test('timing panel stays honest about limits; footer shows touch to output estimate',()=>{
  assert.match(html,/<details id="audioTimingDetails"><summary>Audio timing<\/summary>/);
  assert.match(html,/id="audioTimingReport"/);
  assert.match(timingPanel,/Key → loud PCM in worklet:/);
@@ -65,7 +65,15 @@ test('optional timing display is clearly labeled and never claims speaker latenc
  assert.match(css,/#audioTimingReport\{position:absolute/);
 });
 
-test('timing instrumentation is disabled during ordinary music playback',()=>{
+test('touch-to-output measurement runs without opening the timing panel',()=>{
+ assert.match(worklet,/this\.keyLatencyEnabled=true/);
+ assert.match(worklet,/key-latency-measure/);
+ assert.match(worklet,/this\.keyLatencyEnabled\|\|this\.timingEnabled/);
+ assert.match(bridge,/setKeyLatencyMeasureEnabled/);
+ assert.match(code,/setKeyLatencyMeasureEnabled\(true\)/);
+});
+
+test('control ping and render stats stay off unless the timing panel is open',()=>{
  assert.match(bridge,/let probeId=0,lastProbeAt=-Infinity,timingEnabled=false/);
  assert.match(bridge,/batcher\.flush\(\);\s*if\(!timingEnabled\)return/);
  assert.match(bridge,/setTimingEnabled\(enabled\)\{/);
@@ -73,6 +81,8 @@ test('timing instrumentation is disabled during ordinary music playback',()=>{
  assert.match(worklet,/const clock=this\.timingEnabled&&typeof performance/);
  assert.match(timingPanel,/audioTimingDetails'\)\.addEventListener\('toggle'/);
  assert.match(timingPanel,/setTimingEnabled\?\.\(\$\('audioTimingDetails'\)\.open\)/);
+ assert.match(timingPanel,/formatPlaybackLatencyStatus/);
+ assert.match(html,/Touch → output:/);
 });
 
 test('optional timing control is reachable on narrow screens',()=>{

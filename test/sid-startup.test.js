@@ -36,7 +36,7 @@ function app({closeHangs=false,closeRejects=false,moduleHang=false,engineError=f
   stopAndSaveRecording(){},
   loadModule:async path=>moduleHang?new Promise(()=>{}):path.includes('create-residfp')?{createReSidFpAudio:async options=>{
    if(engineError)throw Error('SID engine download failed');
-   const audio={context:options.context,write(){},setTimingEnabled(){},setEventLogging(){},close:()=>scope.closeSidContext(options.context)};
+   const audio={context:options.context,write(){},setTimingEnabled(){},setKeyLatencyMeasureEnabled(){},setEventLogging(){},close:()=>scope.closeSidContext(options.context)};
    attempts.push({options,audio});
    if(earlyError){options.onStatus({type:'ready',renderer:true});options.onStatus({type:'error',message:'failed after ready'})}
    return audio;
