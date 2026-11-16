@@ -1,12 +1,29 @@
 # Project6581 roadmap
 
-> **Doc sync (2026-11-16):** Triple SID engine cards, preset format **v5**, layer routing, and the pitch-envelope audio path are on `main`. Remaining gaps below are verification, polish, and net-new milestones—not unshipped core engine work unless marked *planned*. See [docs/README.md](docs/README.md).
+> **Doc sync (2026-11-16):** Triple SID engine cards, preset format **v5**, layer routing, pitch-envelope audio path, footer **Diagnostics** (studio trace + unified **Activity log** ([#120](https://github.com/funkatron/Project6581/pull/120))), and layered **Unison/voice-budget** hardening are on `main`. Remaining gaps below are verification, polish, and net-new milestones—not unshipped core engine work unless marked *planned*. See [docs/README.md](docs/README.md).
 
 ## Delivery priorities: musical features first
 
 Prioritize features that help people **make, retain, exchange, and perform music**. Keep regression tests proportionate to the feature being shipped; defer extended audio-clock research and large architecture changes unless an observed defect requires them. Work in small, separately reviewable PRs, inspect all Copilot review findings, and verify deployment independently.
 
 **Near-term order:** **1. Factory/user presets and import/export** (polish + iPad verification) → **2. Composable Arpeggiator + Game Arp** (device checks) **and Western scale lock** (not started) → **3. MIDI input on iPad and desktop** → **4. App-like installation and offline access**. WAV/M4A recording and stationary-thumb LFO display are **shipped**; iPad validation remains. Triple-SID **UI, routing, and layer per-chip voice ownership** are **shipped** on `main` ([#94](https://github.com/funkatron/Project6581/pull/94)); confirm layer mutes on iPad still open.
+
+### How we execute: one roadmap step at a time
+
+Finish the **active step** (code, doc, or device verification) in a single focused PR before starting the next. Mark roadmap checkboxes only when that step’s **completion checks** are met—not when CI alone passes. Cross-browser work uses [desktop-chromium-qa.md](docs/desktop-chromium-qa.md) on desktop and [ipad-safari-qa.md](docs/ipad-safari-qa.md) on iPad unless the step says otherwise.
+
+| Step | Focus | Primary doc / section |
+| --- | --- | --- |
+| **A** | Desktop **Chromium** baseline (timing, layer/unison smoke, diagnostic export) | [desktop-chromium-qa.md](docs/desktop-chromium-qa.md), [Latency](#priority-reduce-keyboard-to-audio-latency) |
+| **B** | **Preset workflow** iPad verification + load-while-playing polish | [Priority 1](#priority-1-factory-presets-and-user-preset-management) |
+| **C** | **Arp + Game Arp** four-mode iPad verification | [Priority 2a](#priority-2a-composable-arpeggiator-and-game-arp) |
+| **D** | **Factory bank** listening pass (C64 references + audition) | [Priority 1 follow-up](#priority-1-follow-up-c64-game-inspired-factory-sounds) |
+| **E** | **Web MIDI** note input on desktop HTTPS | [Priority 3](#priority-3-midi-input-on-ipad-and-desktop) |
+| **F** | **PWA** shell (install, offline WASM/JS pairs, version indicator) | [Priority 4](#priority-4-package-project6581-as-an-application) |
+| **G** | **iPad MIDI** route decision (MIDI browser vs native shell) | Priority 3 + Priority 4 |
+| *later* | Western scale lock, `.sid` player, visualization, audio-clock LFO migration | Sections below |
+
+**Active step:** **A** — desktop Chromium baseline. Step **B** starts after A is recorded in a PR or device note (even if findings are “no issues”).
 
 ## Release milestones (v0.2.0+)
 
@@ -22,6 +39,7 @@ Prioritize features that help people **make, retain, exchange, and perform music
 - [x] Characterize production and PR #56 startup in Work's remote Chrome; both reach ready while suspended. The intermittent iPad failure remains unconfirmed.
 - [x] Add startup-stage acknowledgments, explicit audio activation, bounded cleanup, serialized retry and stale-callback protection without changing note scheduling or native WASM.
 - [x] Add opt-in correlated input/register/render event logging, bounded local capture, and copyable diagnostic reports.
+- [x] Footer **Diagnostics** workspace: download bundle, unified **Activity log** (studio trace + note events), live refresh while open ([#118](https://github.com/funkatron/Project6581/pull/118)–[#120](https://github.com/funkatron/Project6581/pull/120)).
 - [x] Add behavioral lifecycle regression coverage; see [evidence and limits](docs/sid-startup-investigation.md).
 - [ ] Verify the modified preview and iPad Safari startup/recovery, direct keys, sequencer, and actual perceived latency.
 - [x] Merge startup recovery to `main`; factory preset work landed separately.
@@ -167,7 +185,10 @@ SID playback + highlighted keyboard keys
 
 **Goal:** Play Project6581 from a connected controller and from another music app running on the same iPad.
 
-- [ ] **Verify iPad routes first.** Stock Safari on iPad does not expose [Web MIDI](https://caniuse.com/midi). First implement a minimal Web MIDI input adapter that calls `requestMIDIAccess()` and routes note-on/off through Project6581's existing note handling. Then test a MIDI-enabled iPad browser such as [Web MIDI Browser](https://apps.apple.com/us/app/web-midi-browser/id953846217) for both MIDI input and AudioWorklet/WASM playback. Test USB and Bluetooth controllers and a same-iPad sequencer or DAW as separate cases. Record hardware, app and OS versions, routing steps, foreground/split-view behavior and audio recovery after switching apps.
+**Delivery order (step-by-step):** **(1)** Desktop [Web MIDI](https://caniuse.com/midi) over HTTPS — Step **E** in the queue above. **(2)** Document and test iPad-capable browsers or a native shell — Step **G**. CC mapping, MIDI Learn, MIDI out, and clock are explicitly later slices.
+
+- [ ] **Desktop first — implement and verify.** Add a minimal adapter (`requestMIDIAccess()`), port/channel UI, and route note-on/off through the same path as the on-screen keyboard (see Step **E**). Verify with [desktop-chromium-qa.md](docs/desktop-chromium-qa.md) and compare MIDI onset to the keyboard latency baseline.
+- [ ] **Then verify iPad routes.** Stock Safari on iPad does not expose Web MIDI. Test a MIDI-enabled iPad browser such as [Web MIDI Browser](https://apps.apple.com/us/app/web-midi-browser/id953846217) for both MIDI input and AudioWorklet/WASM playback. Test USB and Bluetooth controllers and a same-iPad sequencer or DAW as separate cases. Record hardware, app and OS versions, routing steps, foreground/split-view behavior and audio recovery after switching apps.
 - [ ] **Prototype a native route if needed.** If a MIDI-enabled browser cannot cover both use cases reliably, try a minimal iPad shell hosting the existing synth. Use [Core MIDI](https://developer.apple.com/documentation/coremidi) for physical inputs and expose a [virtual destination](https://developer.apple.com/documentation/coremidi/mididestinationcreatewithprotocol(_:_:_:_:_:)) another app can select. Verify the complete path from MIDI event to audible SID output, including app switching. Record the chosen route and setup steps before committing to packaging.
 - [ ] **Share the performance path.** On supported desktop browsers use Web MIDI over HTTPS. Route Web MIDI or native input through the same note and arp logic as the on-screen keyboard. Add a port/channel selector and status, note-on/off including velocity-zero note-on, sustain (CC64), panic and clear handling for permission denial or unavailable MIDI. Define an intentional velocity response and preserve note ownership across sources.
 - [ ] **Verify live playing.** Measure MIDI-to-audio onset alongside the existing keyboard latency baseline. Test channel filtering, repeated notes, simultaneous touch/MIDI, both arps, latch, hot unplug/reconnect and Stop All. Verify on a physical iPad with a connected controller and with another app sending notes to Project6581.
@@ -177,7 +198,7 @@ SID playback + highlighted keyboard keys
 
 ## Priority 4: package Project6581 as an application
 
-**Goal:** Make the synthesizer feel like an installable music application on iPad and desktop while retaining the browser version.
+**Goal:** Make the synthesizer feel like an installable music application on iPad and desktop while retaining the browser version. Begins after **Step E** (desktop MIDI) unless packaging is needed earlier solely for iPad MIDI (**Step G**).
 
 - [ ] Begin with a **Progressive Web App**: manifest, app icon, standalone/home-screen display, clear install guidance, responsive safe-area layout, and an update/version indicator.
 - [ ] Cache the **app shell, JS, and reSIDfp WASM** for genuine offline use after first successful install. Keep cache invalidation and deployment updates predictable; never serve an incompatible cached JS/WASM pair.
@@ -236,10 +257,13 @@ The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) tracks ex
 
 **Goal:** Minimize the delay between touch/keyboard press and the first audible SID sample on iPad Safari and desktop browsers. Preserve authentic reSIDfp rendering, without falling back to prototype audio.
 
+Distinguish **in-app timing** (footer, Diagnostics Activity log, worklet metrics) from **perceived speaker output** and from **intermittent browser audio-path drift** (meters on time, sound late; fresh tab recovery — see [latency-investigation.md](docs/latency-investigation.md)).
+
 ### Investigation
 
+- [ ] Complete **Step A:** [desktop-chromium-qa.md](docs/desktop-chromium-qa.md) on current production; file whether lag reproduces on Chromium or is Safari/session-specific.
 - [ ] Measure touch/pointer event to SID register dispatch, AudioWorklet receipt, and first nonzero PCM sample separately.
-- [ ] Measure perceived and output latency on iPad Safari, including AudioContext `baseLatency` and `outputLatency` when available.
+- [ ] Measure perceived and output latency on iPad Safari **and desktop Chromium**, including AudioContext `baseLatency` and `outputLatency` when available.
 - [x] Inspect AudioWorklet messaging: each note currently emits multiple register writes. PR #14 batches writes into one message per JavaScript turn.
 - [ ] Check buffering, SID envelope attack, and note retrigger behavior.
 - [ ] Compare Game Arp's first note with direct keyboard playing and subsequent arp steps.
@@ -249,7 +273,8 @@ The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) tracks ex
 - [ ] Eliminate avoidable main-thread delays and redundant note-off/note-on cycles. The write batching change is not yet latency-verified.
 - [ ] Reduce or bound scheduling latency without introducing clicks, dropouts, or unstable timing.
 - [ ] Add regression tests for note dispatch and Game Arp onset.
-- [ ] Verify latency improvements with before/after measurements on iPad Safari and desktop.
+- [ ] Verify latency improvements with before/after measurements on iPad Safari and desktop Chromium.
+- [ ] If intermittent output lag persists with normal in-app metrics, document recovery steps (new tab, context resume) before engine or WASM changes.
 
 **Completion condition:** Demonstrated lower median and tail key-to-sound latency under equivalent test conditions, with reliable SID-only audio and no regression in arpeggiator timing.
 
