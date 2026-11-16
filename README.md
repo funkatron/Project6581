@@ -67,7 +67,7 @@ A preset includes the SID model, sound and filter controls, pitch envelope (when
 | **Voice Assign** | Mono retriggers a single note; Legato changes overlapping pitches without restarting envelopes; Duo plays up to two notes; Poly plays as many complete stacks as the oscillator budget permits | Choose **Poly** for chords |
 | **Voices** | Total oscillator budget, 1–9, across the three emulated SID chips | Try **6** |\n| **Unison** | Layers *per note*, from 1 up to Voices. For example, 6 Voices / 2 Unison layers permits 3 simultaneous Poly notes | Try **2** |\n| **Detune** | Changes pitch in cents between unison layers (not stereo width); inactive with 1 Unison layer | Try **12¢** |
 | **SID 1–3 panels** | Always three engine cards—each has its own filter, voice, pan, and chip model | Tune all three, then try **Layer** routing |
-| **Note routing** | Keyboard / arps: **SID 1**, **All (shared voices)**, or **Layer (per SID)** | Try factory **Complex Layer Pad**, **Layered Sub Stack**, **Brass Chord Layer**, or **Shimmer Drone Wash** |
+| **Note routing** | Keyboard / arps: **SID 1**, **All (shared voices)**, or **Layer (per SID)** | Layer factory bank includes **Nexus Skyline**, **Raid Assault**, **Heroic Storm**, **Neon Chorus**, and more |
 | **Attack / Decay / Sustain / Release** | How a note begins, changes, holds, and ends | Increase **Release** for a longer tail |
 | **Pulse width / PWM** | Pulse width sets the center of the Pulse waveform; PWM depth and rate now sweep that width continuously | Select Pulse, set depth to 20%, and vary PWM rate |
 | **Filter cutoff** | How much high-frequency sound passes through | Lower it for a darker sound |
