@@ -1,5 +1,5 @@
 import {createSidEventLog} from './sid-event-log.js?v=__BUILD_ID__';
-import {formatActiveSidStatus,formatBrowserLatencyStatus,formatSidProgressMessage,shouldShowSidUnlock,sidLedAriaLabel,sidLedState} from './sid-engine-status-ui.js?v=__BUILD_ID__';
+import {formatActiveSidStatus,formatPlaybackLatencyStatus,formatSidProgressMessage,shouldShowSidUnlock,sidLedAriaLabel,sidLedState} from './sid-engine-status-ui.js?v=__BUILD_ID__';
 import {canDispatchNote,needsAudioResume,shouldBlockMusicalInput} from './sid-note-gate.js?v=__BUILD_ID__';
 import {closeSidContext} from './sid-audio-lifecycle.js?v=__BUILD_ID__';
 import {createArpKeyVisual} from "./arp-key-visual.js?v=__BUILD_ID__";
@@ -435,12 +435,13 @@ function updateSidActivation(){
  $('sidUnlock').hidden=!shouldShowSidUnlock({contextRetired:sidContextRetired,context:sidContext});
  updateSidLed();
 }
+function refreshPlaybackLatencyFooter(){
+ $('sidLatencyStatus').textContent=formatPlaybackLatencyStatus(audioTiming);
+}
 function refreshEngineStatus(){
  if(!sidAudio||!sidContext)return;
- const output=sidContext.outputLatency;
- const outputLatencyMs=Number.isFinite(output)?output*1000:null;
- $('sidEngineStatus').textContent=formatActiveSidStatus(sidContext.state,activeSidModel,{afterInit:true,outputLatencyMs});
- $('sidLatencyStatus').textContent=formatBrowserLatencyStatus(sidContext.baseLatency,output);
+ $('sidEngineStatus').textContent=formatActiveSidStatus(sidContext.state,activeSidModel,{afterInit:true});
+ refreshPlaybackLatencyFooter();
 }
 async function startSid({gesture=false}={}){
   if(pendingSidStartup)return pendingSidStartup;
@@ -532,6 +533,7 @@ async function startSid({gesture=false}={}){
       }
       if(event.type==='first-energy'){
         applyFirstEnergyTiming(audioTiming,event,context);
+        refreshPlaybackLatencyFooter();
         if(audioTiming.keyEnergyMs!==null||audioTiming.keyEnergyMissed)updateAudioTimingReport();
         return;
       }
@@ -554,6 +556,7 @@ async function startSid({gesture=false}={}){
     timeout=setTimeout(()=>rejectReady(new Error('SID initialization timed out at: '+sidProgress+' (context: '+context.state+')')),12000);
     try{await ready;if(startupError)throw startupError}finally{clearTimeout(timeout)}
     panic();sidAudio=audio;sidKeys=0;modulation=lfoModule;updateSidLed();
+    audio.setKeyLatencyMeasureEnabled(true);
     audio.setTimingEnabled($('audioTimingDetails').open);
     audio.setEventLogging(sidEventLog.enabled);
     sidRecorder=createSidRecorder(audio);

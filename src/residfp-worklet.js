@@ -13,6 +13,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     this.mixedMeterGain=3;
     this.pendingNoteEvents=[];this.eventLogEnabled=false;
     this.pendingLatencyProbes=[];this.timingEnabled=false;
+    this.keyLatencyEnabled=true;
     this.energyArmed=false;this.energyBlocks=0;
     this.renderMsTotal=0;this.renderMsMax=0;this.timedRenderBlocks=0;
     this.recording=false;this.recordSamples=new Int16Array(4096);this.recordLength=0;
@@ -44,10 +45,11 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       }
       else if(data?.type==='timing-enable'){
         this.timingEnabled=data.enabled===true;
-        if(!this.timingEnabled){
-          this.pendingLatencyProbes.length=0;
-          this.energyArmed=false;
-        }
+        if(!this.timingEnabled)this.pendingLatencyProbes.length=0;
+      }
+      else if(data?.type==='key-latency-measure'){
+        this.keyLatencyEnabled=data.enabled!==false;
+        if(!this.keyLatencyEnabled&&!this.timingEnabled)this.energyArmed=false;
       }
       else if(data?.type==='latency-probe'){
         if(this.timingEnabled&&Number.isInteger(data.id)&&this.pendingLatencyProbes.length<8)
@@ -234,7 +236,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     for(const [reg,value] of this.queue)e.sid_write(reg,value);
     this.writes+=this.queue.length;
     this.queue.length=0;
-    if(this.timingEnabled&&queuedWrites>0){
+    if((this.keyLatencyEnabled||this.timingEnabled)&&queuedWrites>0){
       this.energyArmed=true;this.energyBlocks=0;
     }
     // Frequency updates occur at render-block boundaries, using the audio frame

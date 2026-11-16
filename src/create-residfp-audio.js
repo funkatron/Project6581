@@ -205,6 +205,9 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
         if(!timingEnabled)pendingProbes.clear();
         node.port.postMessage({type:'timing-enable',enabled:timingEnabled});
       },
+      setKeyLatencyMeasureEnabled(enabled){
+        if(!closed&&node)node.port.postMessage({type:'key-latency-measure',enabled:Boolean(enabled)});
+      },
       startWavCapture(onChunk){
         if(capture||stopResolve)throw new Error('A WAV capture is already active');
         if(typeof onChunk!=='function')throw new TypeError('Expected PCM callback');

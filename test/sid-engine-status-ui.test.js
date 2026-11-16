@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
  formatActiveSidStatus,
  formatBrowserLatencyStatus,
+ formatPlaybackLatencyStatus,
  formatSidProgressMessage,
  shouldShowSidUnlock,
  sidLedAriaLabel,
@@ -21,12 +22,24 @@ test('progress and active messages include Safari unlock guidance',()=>{
  assert.equal(formatSidProgressMessage('Ready','running'),'Ready');
  assert.match(formatActiveSidStatus('suspended',6581),/Enable audio/);
  assert.match(formatActiveSidStatus('suspended',6581,{afterInit:true}),/touch a key/);
- assert.match(formatActiveSidStatus('running',8580,{outputLatencyMs:12.4}),/Output latency 12 ms/);
+ assert.match(formatActiveSidStatus('running',8580),/SID 8580 active\./);
 });
 
-test('latency formatter reports base and output when available',()=>{
- assert.match(formatBrowserLatencyStatus(.01,.02),/base 10\.0 ms.*output 20\.0 ms/);
- assert.equal(formatBrowserLatencyStatus(null,null),'Browser audio latency: not reported.');
+test('footer playback latency prefers measured touch to output',()=>{
+ assert.match(
+  formatPlaybackLatencyStatus({keyToOutputEstimateMs:41.2,outputMs:18}),
+  /Touch → output: 41\.2 ms/
+ );
+ assert.match(
+  formatPlaybackLatencyStatus({baseMs:3,outputMs:18}),
+  /tap a key to measure/
+ );
+ assert.match(formatPlaybackLatencyStatus({keyEnergyMissed:true}),/no loud PCM/);
+});
+
+test('browser latency helper delegates to playback formatter',()=>{
+ assert.match(formatBrowserLatencyStatus(.01,.02),/browser output path: 10\.0 ms base \+ 20\.0 ms output/);
+ assert.match(formatBrowserLatencyStatus(null,null),/tap a key to measure/);
 });
 
 test('unlock button hides when running, closed, or retired',()=>{
