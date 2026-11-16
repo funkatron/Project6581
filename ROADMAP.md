@@ -6,14 +6,14 @@
 
 Prioritize features that help people **make, retain, exchange, and perform music**. Keep regression tests proportionate to the feature being shipped; defer extended audio-clock research and large architecture changes unless an observed defect requires them. Work in small, separately reviewable PRs, inspect all Copilot review findings, and verify deployment independently.
 
-**Near-term order:** **1. Factory/user presets and import/export** (polish + iPad verification) → **2. Composable Arpeggiator + Game Arp** (device checks) **and Western scale lock** (not started) → **3. MIDI input on iPad and desktop** → **4. App-like installation and offline access**. WAV/M4A recording and stationary-thumb LFO display are **shipped**; iPad validation remains. Triple-SID **UI and engine routing** are **shipped**; layer voice-ownership hardening is in [PR #94](https://github.com/funkatron/Project6581/pull/94).
+**Near-term order:** **1. Factory/user presets and import/export** (polish + iPad verification) → **2. Composable Arpeggiator + Game Arp** (device checks) **and Western scale lock** (not started) → **3. MIDI input on iPad and desktop** → **4. App-like installation and offline access**. WAV/M4A recording and stationary-thumb LFO display are **shipped**; iPad validation remains. Triple-SID **UI, routing, and layer per-chip voice ownership** are **shipped** on `main` ([#94](https://github.com/funkatron/Project6581/pull/94)); confirm layer mutes on iPad still open.
 
 ## Release milestones (v0.2.0+)
 
 - [x] Agree that the expanded feature set merits **v0.2.0** rather than continuing the 0.1.x series indefinitely.
 - [x] Ship **v0.2.0** scope on `main`: triple SID panels, routing, preset **v5**, startup recovery, timing diagnostics (see [docs/versioning.md](docs/versioning.md)).
 - [x] Record **v0.3.0** release floor: per-engine modulation targets and live per-chip settings.
-- [ ] Bump `package.json` / `BASELINE` to match commit-derived **0.4.0** (or next milestone) when explicitly authorized, with device-validation notes for layer presets and PR #94.
+- [ ] Bump `package.json` / `BASELINE` to match commit-derived **0.4.0** (or next milestone) when explicitly authorized, with device-validation notes for layer presets (including post-#94 layer mutes).
 - [x] Commit-derived version stamper aligned with milestone floors; ordinary builds use timestamps + SHAs for exact identification.
 - [ ] Check CI, Copilot reviews, release notes, and production deployment separately before calling a milestone *released* to users.
 
@@ -325,7 +325,8 @@ The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) tracks ex
 - [x] Route keyboard and arpeggiators per `performance.routing`; layer mode stacks chips (see layer factory presets).
 - [x] Independent per-engine 6581/8580 and filters without resetting siblings (live register path).
 - [x] Automated tests: engine panels, routing, presets, polyphony; CI deploy on `main`.
-- [ ] **PR #94:** independent per-chip voice ownership in Layer mode (mute one engine without stealing voices).
+- [x] **Layer voice ownership** ([#94](https://github.com/funkatron/Project6581/pull/94)): `layerStacks` / `noteOnLayer` per chip in Layer mode—muting or disabling one engine does not steal voices on siblings (regression tests in `test/unison-sid-controller.test.js`).
+- [ ] **iPad:** Layer mode with one engine Voice off—chip mutes without promoting another (manual row from #94 test plan).
 - [ ] iPad Safari: all routing modes, pan/clip, tab switching with held notes, CPU under layer stacks.
 - [ ] Future: optional “single focused SID” compact layout (roadmap UI refinement), not a return to one hidden engine.
 

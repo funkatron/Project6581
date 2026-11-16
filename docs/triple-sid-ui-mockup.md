@@ -1,6 +1,6 @@
 # Triple SID UI mockup (design gate)
 
-**Status:** **Implemented on `main` (2026-11).** This file remains the design reference for layout and scope labels. Outstanding work: iPad verification, [PR #94](https://github.com/funkatron/Project6581/pull/94) layer voice ownership, and optional UI density refinements (see ROADMAP).
+**Status:** **Implemented on `main` (2026-11).** Layer per-chip voice ownership shipped in [#94](https://github.com/funkatron/Project6581/pull/94). Outstanding work: iPad verification and optional UI density refinements (see ROADMAP).
 
 Annotations reference Commodore 64C enclosure styling already in [`src/studio-core.css`](../src/studio-core.css) and [`src/seq-ui.css`](../src/seq-ui.css).
 
