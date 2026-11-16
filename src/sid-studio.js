@@ -13,6 +13,7 @@ import {mountPresetLibrary} from "./preset-library-ui.js?v=__BUILD_ID__";
 import {mountKeyboard} from "./keyboard-input.js?v=__BUILD_ID__";
 import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from "./pitch-envelope.js?v=__BUILD_ID__";
 import {mountEditorTabs} from "./editor-tabs.js?v=__BUILD_ID__";
+import {mountGeneratorLeds} from "./generator-led-ui.js?v=__BUILD_ID__";
 import {mountLfoPanel} from "./lfo-panel-ui.js?v=__BUILD_ID__";
 import {mountAudioTimingPanel} from "./audio-timing-panel.js?v=__BUILD_ID__";
 import {applyFirstEnergyTiming} from "./audio-timing-metrics.js?v=__BUILD_ID__";
@@ -135,9 +136,15 @@ const lfoTargetNames={
 };
 const syncedRates=[{value:0.25,label:'4/1'},{value:0.5,label:'2/1'},...([1,2,4,8,16,32].map(value=>({value,label:'1/'+value})))];
 const {renderLfos}=mountLfoPanel({$,lfoState,lfoTargets,lfoTargetNames,syncedRates,onChange:()=>updateModulation()});
-mountEditorTabs({$});
+const editorTabs=mountEditorTabs({$});
 const helpUi=mountHelpDialog($);
 mountHelpTriggers($,{openHelp:helpUi.openHelp});
+mountGeneratorLeds($,{
+ focusPlaySection:id=>{
+  editorTabs.activateTab('play');
+  requestAnimationFrame(()=>$(id)?.scrollIntoView?.({block:'nearest',behavior:'smooth'}));
+ }
+});
 const activeOwners=new Map();
 function voiceSettingsForSlot(slot){
  const chip=Math.floor(slot/3);

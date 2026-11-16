@@ -1,4 +1,10 @@
 const TAB_BINDINGS=[['voice','tabVoice'],['play','tabPlay'],['lfos','tabLfos']];
+const TAB_ID={voice:'tabVoice',play:'tabPlay',lfos:'tabLfos'};
+
+export function activateEditorTab($,name){
+ const id=TAB_ID[name];
+ id&&$(id)?.click();
+}
 
 export function mountEditorTabs({$}={}){
  if(!$)throw new TypeError('mountEditorTabs requires $');
@@ -11,4 +17,5 @@ export function mountEditorTabs({$}={}){
    $('tabLfos').setAttribute('aria-selected',String(name==='lfos'));
   });
  }
+ return {activateTab:name=>activateEditorTab($,name)};
 }
