@@ -51,6 +51,13 @@
  <span id="arpLatchHelpSr" class="sr-only">Held notes stay for Game Arp and Root Arp.</span>
  <button id="arpClear" type="button">Clear latch</button>
 </div>
+<div class="midi-input controls note-routing" aria-label="MIDI input">
+ <h3>MIDI input</h3>
+ <label><input id="midiEnable" type="checkbox"> Enable</label>
+ <label>Port <select id="midiPort"><option value="">—</option></select></label>
+ <label>Channel <select id="midiChannel"><option value="0" selected>All</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option></select></label>
+ <p id="midiStatus" class="midi-status" role="status">Web MIDI off.</p>
+</div>
 <section class="root-arp-panel" id="rootArpPanel" aria-labelledby="rootArpTitle">
 <h2 id="rootArpTitle">ROOT ARPEGGIATOR <button type="button" class="help-trigger" data-help="root-arp" aria-label="Help: root arpeggiator">?</button></h2>
 <div class="root-arp-transport controls" aria-label="Root arpeggiator transport">
