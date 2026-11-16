@@ -4,7 +4,7 @@
 
 The existing `src/pitch-envelope.js` implements geometry only. Keep it independent of audio scheduling. Apply modulation in the audio worklet using the rendered sample-frame counter, not `setTimeout`, animation frames, or main-thread wall time. A note-on event establishes an envelope origin in audio frames; compute elapsed milliseconds from `(currentFrame - noteOnFrame) * 1000 / sampleRate`. For sample-accurate updates, compute the envelope value at each rendered frame, or use bounded register updates with a documented maximum timing error and audible tests.
 
-**Status (2026-11-07):** Audio path, controller hooks, worklet protocol, and audition UI are implemented. Preset schema and factory drum refresh remain future PRs per ROADMAP.
+**Status (2026-11-16):** Audio path, controller hooks, worklet protocol, editor UI, and preset **v5** persistence are on `main`. Factory drum refresh and iPad listening remain future PRs per ROADMAP.
 
 ## Voice ownership
 
@@ -26,7 +26,7 @@ Disabled envelopes must remain neutral and should not change the current audio p
 - [x] Frequency conversion, SID register saturation, and sample-rate behavior are tested.
 - [x] Retrigger, note-off, Stop All, and stale event ordering are tested (controller + worklet; Stop All via `panic()` → slot stops).
 - [x] Unison detune and simultaneous notes remain independent (controller retune tests).
-- [x] Existing presets and imported legacy presets remain compatible (no pitch field in v3; audition excluded).
+- [x] Existing presets and imported legacy presets remain compatible (v3/v4 upgrade with pitch envelope off; v5 round-trip).
 - [ ] Browser listening checks include Safari/iPad, especially kick transients and Stop All.
 - [ ] CI and Copilot review feedback are checked before marking ready.
 
