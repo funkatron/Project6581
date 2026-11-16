@@ -267,6 +267,21 @@ label>.modulated-value{color:#236b58;font-size:10px;font-weight:700;min-width:ma
 label:has(.slider-stack){gap:4px}
 .allocation-detune .slider-stack{max-width:none}
 
+/* UI refinement tokens (header/toolbar, param rows, module chrome). */
+:root,main,header,.tabbar,.workspace{
+ --bar-h:38px;--label-w:5.5rem;--value-w:4.5rem;--help-btn:30px;
+ --root-teal:#2d7465;--root-teal-accent:#7bcabb;--game-orange:#e15a24
+}
+@media (pointer:coarse){
+ :root,main,header,.tabbar,.workspace{--bar-h:44px;--help-btn:36px}
+}
+/* Label | track | value — SID engine rows adopt in a later PR. */
+.param-row{display:grid;grid-template-columns:var(--label-w) minmax(0,1fr) var(--value-w);align-items:center;column-gap:8px;row-gap:4px;min-width:0;margin:0}
+.param-row .param-label{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;line-height:1.2}
+.param-row .param-track{min-width:0;display:flex;align-items:center}
+.param-row .param-value,.param-row > .base-value{min-width:0;max-width:var(--value-w);text-align:right;font-variant-numeric:tabular-nums;font-size:10px}
+.param-row > input[type=range],.param-row .slider-stack{grid-column:2;max-width:none;width:100%}
+
 /* Shared instrument control geometry. Preserve the full track for sliders. */
 .workspace{--control-gap:10px;--control-value-width:48px}
 .workspace .panel label{gap:var(--control-gap);min-width:0}
