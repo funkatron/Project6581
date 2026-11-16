@@ -15,7 +15,7 @@ Central index for maintainer and device-verification docs. User-facing synth hel
 
 | Doc | Purpose |
 | --- | --- |
-| [live-sid-engine.md](live-sid-engine.md) | WASM + AudioWorklet architecture |
+| [live-sid-engine.md](live-sid-engine.md) | WASM + AudioWorklet, routing, layer mode, LFO split |
 | [pitch-envelope.md](pitch-envelope.md) | Per-note pitch sweeps (worklet path, presets) |
 | [latency-investigation.md](latency-investigation.md) | Input-to-buffer diagnostics (not speaker latency) |
 | [audio-clock-lfo-investigation.md](audio-clock-lfo-investigation.md) | Future LFO scheduling research |
