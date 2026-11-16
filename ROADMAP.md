@@ -1,28 +1,31 @@
 # Project6581 roadmap
 
+> **Doc sync (2026-11-16):** Triple SID engine cards, preset format **v5**, layer routing, and the pitch-envelope audio path are on `main`. Remaining gaps below are verification, polish, and net-new milestones—not unshipped core engine work unless marked *planned*. See [docs/README.md](docs/README.md).
+
 ## Delivery priorities: musical features first
 
 Prioritize features that help people **make, retain, exchange, and perform music**. Keep regression tests proportionate to the feature being shipped; defer extended audio-clock research and large architecture changes unless an observed defect requires them. Work in small, separately reviewable PRs, inspect all Copilot review findings, and verify deployment independently.
 
-**Near-term order:** **1. Factory/user presets and import/export** → **2. Composable Arpeggiator + Game Arp and Western scale lock** → **3. MIDI input on iPad and desktop** → **4. App-like installation and offline access**. WAV/M4A recording and the stationary LFO display are already under development in separate PRs. Independent SID-device support remains **UI-design-first** before modifying the engine.
+**Near-term order:** **1. Factory/user presets and import/export** (polish + iPad verification) → **2. Composable Arpeggiator + Game Arp** (device checks) **and Western scale lock** (not started) → **3. MIDI input on iPad and desktop** → **4. App-like installation and offline access**. WAV/M4A recording and stationary-thumb LFO display are **shipped**; iPad validation remains. Triple-SID **UI and engine routing** are **shipped**; layer voice-ownership hardening is in [PR #94](https://github.com/funkatron/Project6581/pull/94).
 
-## Release milestone: v0.2.0 (planned)
+## Release milestones (v0.2.0+)
 
 - [x] Agree that the expanded feature set merits **v0.2.0** rather than continuing the 0.1.x series indefinitely.
-- [ ] After the Safari startup/audio work in PR #59 is satisfactorily verified and explicitly authorized for release, prepare an intentional v0.2.0 release, with an accurate change summary and device-validation record.
-- [ ] Align the existing commit-derived version stamper with milestone-based semantic releases; ordinary builds and documentation edits must not create new semantic releases. Continue identifying exact builds with separate timestamps and commit SHAs.
-- [ ] Check CI, Copilot reviews, release notes, and production deployment separately. This roadmap decision does not authorize a merge or deployment.
+- [x] Ship **v0.2.0** scope on `main`: triple SID panels, routing, preset **v5**, startup recovery, timing diagnostics (see [docs/versioning.md](docs/versioning.md)).
+- [x] Record **v0.3.0** release floor: per-engine modulation targets and live per-chip settings.
+- [ ] Bump `package.json` / `BASELINE` to match commit-derived **0.4.0** (or next milestone) when explicitly authorized, with device-validation notes for layer presets and PR #94.
+- [x] Commit-derived version stamper aligned with milestone floors; ordinary builds use timestamps + SHAs for exact identification.
+- [ ] Check CI, Copilot reviews, release notes, and production deployment separately before calling a milestone *released* to users.
 
-See [release versioning policy](docs/versioning.md) for rationale, version rules, and the required follow-up.
-
-## In progress: SID initialization recovery (#58)
+## SID initialization recovery (#58) — shipped; verification open
 
 - [x] Characterize production and PR #56 startup in Work's remote Chrome; both reach ready while suspended. The intermittent iPad failure remains unconfirmed.
 - [x] Add startup-stage acknowledgments, explicit audio activation, bounded cleanup, serialized retry and stale-callback protection without changing note scheduling or native WASM.
 - [x] Add opt-in correlated input/register/render event logging, bounded local capture, and copyable diagnostic reports.
 - [x] Add behavioral lifecycle regression coverage; see [evidence and limits](docs/sid-startup-investigation.md).
 - [ ] Verify the modified preview and iPad Safari startup/recovery, direct keys, sequencer, and actual perceived latency.
-- [ ] Check final CI and Copilot reviews before an authorized merge. Keep factory preset PR #56 separate.
+- [x] Merge startup recovery to `main`; factory preset work landed separately.
+- [ ] Re-verify on current production after major UI changes (triple SID, layer routing).
 
 ## Planned UI refinement: consistent control widths and dedicated LFO tab
 
@@ -56,7 +59,7 @@ See [release versioning policy](docs/versioning.md) for rationale, version rules
 
 ## Priority 1 follow-up: C64 game-inspired factory sounds
 
-**Implementation status (2026-11-07):** The initial 24 original presets are already implemented on `main`, six each in Bass, Keys, Leads and Drums, alongside six legacy factory sounds (30 total). The preset-library tests check IDs, categories, validation and JSON roundtrips. Only the first four prototypes have documented iPad listening feedback; the remaining 20 are not acoustically verified. See [factory-bank notes](docs/c64-factory-bank.md). Do not add duplicate patches to satisfy this milestone. Next work is iPad listening, useful adjustments based on evidence, and soundtrack-reference research.
+**Implementation status (2026-11-16):** The **30-sound C64-inspired bank** is on `main` (24 category presets + six legacy factory sounds). **Ten layer showcase presets** exercise **Layer (per SID)** routing (40 factory sounds total). Tests check IDs, categories, validation and JSON roundtrips. Only the first four prototypes have documented iPad listening feedback; most patches are not acoustically verified on device. See [factory-bank notes](docs/c64-factory-bank.md). Next work: iPad listening, soundtrack-reference research, and adjustments from evidence—not duplicate IDs.
 
 **Goal:** Maintain and validate the expanded bank of **24 original presets**, six per category, and expand only after listening on iPad.
 
@@ -76,25 +79,26 @@ See [release versioning policy](docs/versioning.md) for rationale, version rules
 
 **Completion checks:** At least 24 new sounds are easy to find across the four categories, with a short reference and patch-design log for each game.
 
-## Planned synthesis feature: programmable pitch envelopes
+## Programmable pitch envelopes (engine shipped; presets and drums open)
 
-**Why this is needed:** Project6581 currently has ADSR for **volume**, plus controls for timbre, PWM and LFO modulation, but no programmable *per-note pitch trajectory*. A kick's deep falling attack, a tom's descending body, laser/zap effects, and other classic SID percussion rely on rapid changes to the SID oscillator **frequency registers** after a note starts. A static note or a stepped Game Arp cannot reproduce those smooth, millisecond-scale pitch sweeps. The current factory drums are explicitly approximations rather than authentic pitch-swept drum patches. This also unlocks intentional pitch bends in basses, leads, and effects without requiring a full SID-tune player.
+**Why this matters:** Classic SID percussion and FX rely on rapid *per-note pitch* changes after note-on, not only ADSR volume. A kick's deep falling attack, a tom's descending body, laser/zap effects, and other classic SID percussion rely on rapid changes to the SID oscillator **frequency registers** after a note starts. A static note or a stepped Game Arp cannot reproduce those smooth, millisecond-scale pitch sweeps. The current factory drums are explicitly approximations rather than authentic pitch-swept drum patches. This also unlocks intentional pitch bends in basses, leads, and effects without requiring a full SID-tune player.
 
-**Implementation plan (separate PR after the 24-sound factory bank):**
+**Implementation status:**
 
-- [ ] Specify a small **editable pitch envelope** per sound: enabled/bypass, initial pitch offset in semitones, a sequence of time/value breakpoints (milliseconds and semitones relative to the played note), and selectable linear or curved interpolation. Ship useful starting shapes (kick drop, tom fall, laser rise); keep the neutral/off state equivalent to current playback.
-- [ ] Prove a bounded implementation with one-shot attack/decay sweeps first; then extend to several editable stages. Define what happens at the final point (hold or return to zero), retrigger, legato, note stealing, Stop All, and playback at very fast arpeggiator rates.
-- [ ] Schedule pitch writes against the **audio clock** at enough resolution for short transients, ideally inside or adjacent to the AudioWorklet rendering path rather than relying on a coarse main-thread interval. Convert semitone offsets to SID frequency-register values without changing the underlying reSIDfp synthesis, and clamp safely at supported pitch/frequency limits.
-- [ ] Keep envelopes **per note and per allocated voice/unison layer**. Verify independently playing notes do not change each other's pitch, and document interaction with detune, regular/Game Arp, scale lock (future), and the existing LFO system. Don't silently rewrite a held root or MIDI note identity when its audible frequency bends.
-- [ ] Add compact, touch-friendly editing with a clear envelope graph and numerical controls. Persist it through a deliberately versioned preset-schema change with an explicit compatibility/migration policy; keep application semantic versions independent.
-- [ ] Compare actual recorded SID output against the requested pitch curves, including fast kick/tom drops and slow effects; test 6581/8580 models, 44.1/48 kHz, repeated notes, concurrent voices, CPU budget, iPad Safari latency and recovery. Regression tests must prove disabled envelopes produce unchanged audio behavior.
+- [x] Editable pitch envelope per **engine voice** (enable, breakpoints, linear/curved interpolation); disabled state matches legacy playback. See [docs/pitch-envelope.md](docs/pitch-envelope.md).
+- [x] Audio-clock scheduling in the **AudioWorklet** render path; frequency writes via reSIDfp without changing the WASM synthesis core.
+- [x] Per-note / per-unison-slot ownership, legato retune, Stop All, and regression tests (`test/pitch-envelope-*.js`).
+- [x] Persist in preset schema **v4+** / **v5** (per-engine `pitchEnvelope`); import upgrades v3 with envelope off.
+- [x] Compact graph editor UI (`pitch-envelope-editor.js`).
+- [ ] Full breakpoint editor polish, iPad touch verification, and recorded curve-vs-request comparisons (kick/tom transients).
+- [ ] Compare recordings on 6581/8580, concurrent voices, and fast arp rates on iPad Safari before claiming drum validation.
 
 **Preset updates and new sounds after pitch-envelope support (follow-up PR):**
 
 - [ ] **Revisit existing drum presets first.** Audition and compare `Low Thud Kick` and `Low Tom` with fast downward pitch envelopes, then examine `Noise Snare` and `Noise Clap` for useful brief pitch movement or layered/noise alternatives. Keep hats noise-based unless pitch modulation materially improves them. The goal is audible improvement, not simply using the new feature everywhere.
 - [ ] **Preserve recognizable existing sounds.** Before changing any shipped factory preset, record its current settings and a reference audio sample. For substantial tonal changes, consider a new named variant with a new ID rather than silently replacing a well-liked patch. Do not overwrite users' saved copies or change factory IDs casually.
 - [ ] **Create new pitch-envelope presets** once the effect is tested: swept kick, descending arcade tom, laser/zap, rising or falling FX, pitch-diving bass, and a lead with a short attack scoop. Place them in the existing Drums, FX, Bass and Leads groups, using original sound designs rather than copying commercial soundtrack patches.
-- [ ] **Protect user presets across the schema change.** Define migration/defaults so older version-3 user presets import or load with the pitch envelope disabled and retain their original sound. Include any new envelope parameters in preset saving, exporting, importing, validation and backups; keep the preset-schema version independent of the application's semantic release version.
+- [x] **Protect user presets across the schema change.** v3/v4 imports upgrade with pitch envelope off; v5 round-trips per-engine envelopes (`test/preset-library.test.js`).
 - [ ] **Audition before replacing or adding to the default bank.** Compare before/after recordings, pitch trajectory, attack, sustain, levels, retrigger behavior and release tails on iPad Safari for both SID models. Retain distinct, useful sounds; reject redundant or ineffective additions. Document each patch's purpose and what the pitch envelope contributes.
 - [ ] **Extend regression coverage** to enforce unique factory IDs/names, preserve legacy sounds and user presets, verify envelope-enabled presets round-trip correctly, and confirm older saved presets retain their prior audio behavior.
 
@@ -194,7 +198,7 @@ SID playback + highlighted keyboard keys
 
 **Completion checks:** A small prototype and compatibility report establish which files play correctly, what the iPad performance costs are, and whether to proceed with an in-app player. User-selected tunes are read locally.
 
-## In development: record the SID output (WAV and M4A)
+## Record the SID output (WAV and M4A) — shipped; iPad verification open
 
 **Goal:** Let musicians record what they actually hear from the emulated SID and export a useful audio file without a microphone or external software.
 
@@ -293,22 +297,20 @@ The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) identifie
 
 **Completion checks:** The thumb remains fixed at the user-selected modulation center, a colored track visualizes the current modulation, and numeric values remain readable. Touch/keyboard edits and authentic SID playback behave as before.
 
-## Planned: up to three independently configurable SID devices (UI design first)
+## Three independently configurable SID engines (shipped; polish open)
 
-**Goal:** Allow a session to use **one, two, or three separate SID sound devices**, each with independent sound settings, while keeping a single-device experience simple and touch-friendly.
+**Goal:** Use **one, two, or three separate SID sound engines** in a session, each with independent settings, while keeping master keyboard, arpeggiators, and voice allocation understandable.
 
-**Current architecture:** The engine already emulates three SID chips to make eight Unison or polyphonic oscillators available. However, the interface exposes them as one shared instrument with common chip, filter, waveform, envelope, and modulation settings. This milestone concerns **independent instrument/device identities and control**, not simply adding three more copies of the existing engine. Before implementation, document how today's eight-oscillator behavior maps to each physical three-voice SID and preserve the intended musical capabilities.
+**Architecture (2026-11):** Three reSIDfp chips still back up to **nine** oscillators (three per chip). The UI exposes **three always-visible engine cards** with per-chip enable, model, waveform/ADSR/PWM, filter, pan, volume, meters, and pitch envelope. **Note routing:** **SID 1**, **All (shared voices)**, or **Layer (per SID)**. LFO targets can scope to **all** or **SID 1–3**. Preset format **v5** stores `sound.engines[]` and `performance.routing`.
 
-### Gate 1: design and validate the interface (required before audio changes)
+### Gate 1: design — done (see [triple-sid-ui-mockup.md](docs/triple-sid-ui-mockup.md))
 
-- [ ] Draft a compact iPad-first **SID device switcher** with **SID 1**, **SID 2**, **SID 3** tabs/cards, a clear active-device indication, and an explicit **Add SID** action (disabled at three). Start with one visible device and never require users to scroll past three full copies of every control.
-- [ ] Design two distinct control scopes: **Master** (keyboard, global tempo, stop all, overall output and transport) versus **selected SID** (enable/mute, 6581/8580 model, waveform/three hardware voices, ADSR, pulse width/PWM, filter, local output level and optional stereo pan). Visually label the scope of every editable control.
-- [ ] Design clear routing from **keyboard and both arpeggiators** to one or more SIDs. Explore selectable layers versus separate MIDI/keyboard channels, with a simple default that plays the selected device. Specify how voice assignment, Unison, held keys, latch, and per-SID note-off ownership work.
-- [ ] Decide how the three LFOs are allocated: globally routed to named device parameters, three per device, or a hybrid. Define the target selector wording (for example, **SID 2 · Cutoff**) and show the destination clearly while editing a different SID.
-- [ ] Show each device's active/muted state, model, voice activity and volume at a glance; make **remove/reset SID** actions deliberate and protect against accidental loss of a configured device.
-- [ ] Produce a **low-fidelity annotated wireframe** and a compact interaction specification for iPad portrait, iPad landscape, and desktop. Review accessibility (labels, touch targets, keyboard navigation), control density, and tab switching while notes are held.
-- [ ] Define the migration/default for the existing eight-voice Unison/polyphony experience. Do **not** silently reduce it to three voices or reinterpret existing sound settings without an explicit compatibility decision.
-- [ ] Review and approve the UI specification *before* changing SID allocation, native/WASM mixing, or oscillator assignment. No implementation or new chip controls should be considered ready until this gate is complete.
+- [x] Always-visible **SID 1–3** cards (no add/remove; max three).
+- [x] **Master** scope: voice assign, Voices/Unison/Detune, keyboard, arps, BPM, Stop all, record.
+- [x] **Per-engine** scope: enable, 6581/8580, voice, filter, pan, volume, pitch envelope.
+- [x] Routing design: shared pool vs layer vs SID-1-only; wireframe in repo docs.
+- [x] LFO allocation: global LFOs with per-engine target (`engines: '1'|'2'|'3'|'all'`).
+- [x] Migration: legacy presets upgrade to three engines with settings on SID 1.
 
 **Illustrative information architecture, not a final layout:**
 
@@ -320,16 +322,17 @@ The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) identifie
  MODULATION:  LFO 1–3  |  Target: SID 1 · Cutoff
 ```
 
-### Gate 2: implementation and evidence (only after UI approval)
+### Gate 2: implementation — mostly done; verification open
 
-- [ ] Create an explicit device model with a hard maximum of **three** independent SID instances and device-specific settings, voice ownership, filters, and output state.
-- [ ] Route note-on/note-off and arpeggiator output deterministically to the chosen devices, including simultaneous layered playback, changing selection, panic and mute behavior.
-- [ ] Support independent SID chip model configuration only after verifying whether live 6581/8580 switching is possible without resetting other devices; otherwise expose a clear reload/reinitialization requirement.
-- [ ] Test all 1/2/3-device combinations, per-device registers and LFO destinations, voice limits, unison/polyphony, touch keyboard, clipping and output gain, plus CPU/audio load in iPad Safari.
-- [ ] Avoid unnecessary native/WASM rebuilds for UI-only changes. Verify native mixer capacity before claiming three fully independent stereo or pan paths.
-- [ ] Confirm CI, actual-device audio checks, and GitHub Pages deployment separately.
+- [x] Explicit three-engine model in `sid-engines.js` / presets v5.
+- [x] Route keyboard and arpeggiators per `performance.routing`; layer mode stacks chips (see layer factory presets).
+- [x] Independent per-engine 6581/8580 and filters without resetting siblings (live register path).
+- [x] Automated tests: engine panels, routing, presets, polyphony; CI deploy on `main`.
+- [ ] **PR #94:** independent per-chip voice ownership in Layer mode (mute one engine without stealing voices).
+- [ ] iPad Safari: all routing modes, pan/clip, tab switching with held notes, CPU under layer stacks.
+- [ ] Future: optional “single focused SID” compact layout (roadmap UI refinement), not a return to one hidden engine.
 
-**Completion checks:** An approved, readable multi-device UI exists **first**. Afterwards, users can configure and play one to three independent SID devices, identify which controls affect each device, and stop/reset playback predictably without compromising the existing sound engine.
+**Completion checks:** Layer routing plays predictable stacked notes; muting or disabling one engine does not corrupt others; device QA recorded in [ipad-safari-qa.md](docs/ipad-safari-qa.md).
 
 ## Planned investigation: audio-clock LFO scheduling
 

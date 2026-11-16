@@ -4,7 +4,7 @@
 
 Project6581 is a touch-friendly synthesizer using **reSIDfp**, an emulator of the original C64 sound chip. It works with a touch-friendly screen keyboard, a choice of MOS 6581 or 8580 chip emulation, and two arpeggiator modes.
 
-> **Voice allocation:** Up to eight authentic SID oscillators. Choose Mono, Legato, Duo or Poly, and decide how many oscillators each note uses with **Unison**.
+> **Voice allocation:** Up to **nine** authentic SID oscillators (three per emulated chip). Choose Mono, Legato, Duo or Poly, and decide how many oscillators each note uses with **Unison**.
 
 **[▶ Open the synthesizer](https://funkatron.github.io/Project6581/)**
 
@@ -44,7 +44,7 @@ This release implements pitch, gates, and per-step note length. Glide, parameter
 
 Tap the **current preset name in the top bar** to open the preset library. The modal shows **Factory presets** and **My presets** side by side on wider screens and stacked on narrow screens. Choose one to load it and return to the keyboard. Factory presets are read-only.
 
-The factory collection now includes **30 original sounds**: 24 new C64-inspired presets (six each for Bass, Keys, Leads and Drums) alongside the six original factory patches. The library groups them as **Bass, Keys, Leads, Drums and FX**. The kick/tom patches currently use static tones; programmable pitch envelopes for authentic descending drum sweeps are [planned separately](ROADMAP.md#planned-synthesis-feature-programmable-pitch-envelopes).
+The factory collection includes **40 sounds**: the **30-sound C64-inspired bank** (24 category presets plus six legacy factory patches) and **10 layer-routing showcases** (per-chip stacks for **Layer (per SID)** mode). The library groups them as **Bass, Keys, Leads, Drums, Pad and FX**. Kick and tom patches still use static tones unless you enable a per-engine **pitch envelope**; factory drum refresh after listening tests remains on the [roadmap](ROADMAP.md#planned-synthesis-feature-programmable-pitch-envelopes).
 
 Inside the preset library, use **Save as…** to keep an edited sound. Your new sound appears in **My presets**, stored separately from the built-in factory collection. You can use **Save**, **Rename**, or **Delete** for your user presets. The top bar shows only the current preset name and a small dot for unsaved changes.
 
@@ -52,7 +52,7 @@ The modal also contains **Export** to download the current sound as JSON, **Expo
 
 A preset includes the SID model, sound and filter controls, pitch envelope (when enabled), all three LFOs, master BPM, and both arpeggiators' settings. Loading a preset stops any current notes but **does not automatically start playing**. Held keys and the notes stored in latches are not saved.
 
-**Storage note:** My presets are stored locally in this browser. They are not automatically shared between devices, and clearing browser data may erase them. **Export bank** provides a backup. The preset JSON format is currently **version 4**, adding an optional per-voice **pitch envelope** (disabled by default on factory sounds). Version **3** exports can still be imported and upgrade with the pitch envelope off. Versions 1–2 are not migrated or imported. Recreate those sounds manually if needed.
+**Storage note:** My presets are stored locally in this browser. They are not automatically shared between devices, and clearing browser data may erase them. **Export bank** provides a backup. The preset JSON format is currently **version 5**: three per-engine sound blocks, **performance.routing**, and per-engine **pitch envelope** data. Imports accept versions **3**, **4**, and **5** (older files upgrade with pitch envelopes off and legacy single-engine sound migrated to SID 1). Versions 1–2 are not imported. See [release versioning](docs/versioning.md).
 
 ## 🎛️ The controls, in plain language
 
@@ -165,7 +165,7 @@ That command runs the Node.js test suite. Building the WASM binary separately re
 
 ### Limitations and ongoing work
 
-- Voice Assign, Voices, Unison layers and Detune are available, but the three underlying SID chips still cannot be configured independently. Changing the allocation safely releases currently sounding notes.
+- Each of the **three SID engine cards** has independent filter, voice, pan, chip model, and pitch-envelope settings. **Note routing** chooses whether the keyboard uses SID 1 only, a shared voice pool, or **Layer** mode (one note per enabled chip). Master **Voices / Unison** still governs the shared pool in non-layer modes; changing allocation safely releases sounding notes.
 - Pulse-width modulation and live ADSR/detune update active stacks through SID registers without retriggering their envelopes. SID envelope rates and levels are quantized to hardware values. Legato pitch changes also avoid retriggering.
 - Three LFOs can route to 11 continuous sound parameters and use synchronized musical divisions. Discrete controls such as oscillator count, waveform and chip model are not modulation targets. Tempo modulation and audio-clock scheduling remain [roadmap](ROADMAP.md) items. Stationary-thumb LFO visualization is implemented; iPad Safari visual and touch verification remains pending. The main-thread 60 Hz scheduler can introduce timing jitter, particularly on busy mobile browsers.
 - Very fast arpeggiator rates depend on browser scheduling and may sound uneven.
@@ -178,7 +178,7 @@ The production application is published at **[Project6581](https://funkatron.git
 
 Previews are **not automatically removed** when their PR closes; use the workflow's manual **remove** operation. Fork pull requests are not supported for write-capable preview publication. Preview assets are maintained on the internal `preview-assets` branch and combined with the production site during Pages deployment.
 
-**Source and further reading:** [GitHub repository](https://github.com/funkatron/Project6581) · [Development roadmap](ROADMAP.md) · [Release versioning](docs/versioning.md) · [Actions](https://github.com/funkatron/Project6581/actions)
+**Source and further reading:** [GitHub repository](https://github.com/funkatron/Project6581) · [Development roadmap](ROADMAP.md) · [Documentation index](docs/README.md) · [Release versioning](docs/versioning.md) · [Actions](https://github.com/funkatron/Project6581/actions)
 
 ## 📱 iPad Safari verification
 

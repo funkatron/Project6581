@@ -21,20 +21,23 @@ Legato retune → onPitchRetune → pitch-envelope-retune (same audio-frame phas
 | `src/pitch-envelope-frames.js` | Frame-clock helpers for tests (`sidFrequencyAtFrame`) |
 | `src/residfp-worklet.js` | Audio-thread application; `reset` clears all envelopes |
 | `src/unison-sid-controller.js` | Per-slot start/stop/retune hooks when `pitchEnvelope.enabled` |
-| `src/pitch-audition-ui.js` | Temporary UI; **not** saved in preset v3 |
+| `src/pitch-envelope-editor.js` | Graph + breakpoint editing UI |
+| `src/pitch-audition-ui.js` | Legacy/simple audition helpers (being modularized) |
 
 Semitone offset applies as `baseFrequency * 2^(offset/12)` before lo/hi register writes. Updates occur at most once per render quantum (~128 samples); document this when judging kick transients.
 
 ## User-visible status
 
-- **Audition panel** (Sound tab): Enable sweep, start semitones (−24…+24), duration (10–1000 ms). Applies only to **newly played** notes; excluded from factory/user preset JSON per roadmap.
-- **Factory drums** remain static-tone approximations until a follow-up preset PR after full editor + schema work.
+- **Per-engine editor** on each SID card: enable sweep, breakpoints (time ms / semitones), interpolation. Applies to **newly triggered** notes on that engine.
+- Settings persist in **preset format v5** under each engine's `voice.pitchEnvelope`. Factory sounds default to **disabled** unless designed otherwise.
+- **Factory drums** in the core bank remain static-tone approximations until a follow-up preset PR after iPad listening (see ROADMAP).
 
-## Preset / compatibility policy (planned)
+## Preset / compatibility policy
 
-- Disabled or absent `pitchEnvelope` must leave audio unchanged (today: audition defaults to `enabled: false`).
-- Future schema bump will default imported v3 presets to envelope off with neutral points.
-- No silent overwrite of factory drum IDs until iPad listening validation (see ROADMAP).
+- Disabled envelopes leave audio unchanged (`DEFAULT_PITCH_ENVELOPE`).
+- Import **v3/v4**: migrate to v5 with `pitchEnvelope` off on every engine.
+- Import **v5**: full round-trip including routing and three engines.
+- Preset schema version is independent of app semver ([versioning.md](versioning.md)).
 
 ## Tests (automated)
 
@@ -42,10 +45,11 @@ Semitone offset applies as `baseFrequency * 2^(offset/12)` before lo/hi register
 - `test/pitch-envelope-frames.test.js` — frame clock and SID frequency quantization
 - `test/pitch-envelope-worklet.test.js` — worklet protocol, stop, reset, retune, malformed points
 - `test/pitch-envelope-controller.test.js` — unison slot start/stop, panic, detune retune
+- `test/preset-library.test.js` — v3/v4/v5 import and export
 
-## Device verification (required before preset rollout)
+## Device verification (required before factory drum rollout)
 
-- iPad Safari: fast downward sweep on low noise/pulse kick audition; Stop all mid-sweep; overlapping poly notes with different sweeps
+- iPad Safari: fast downward sweep on low pulse/noise kick; Stop all mid-sweep; overlapping poly notes with different sweeps
 - Recordings for before/after drum preset changes (separate PR)
 
 Integration checklist: `agents/pitch-envelope-integration.md`.

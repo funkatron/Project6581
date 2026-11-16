@@ -2,9 +2,15 @@
 
 ## Current release floor: v0.3.0
 
-**v0.2.0** shipped triple SID engines, routing, preset format v5, and improved audio timing diagnostics. **v0.3.0** adds per-engine LFO/modulation, live voice settings per chip, and WebKit browser smoke fixes.
+| Milestone | Shipped highlights (on `main`) |
+| --- | --- |
+| **v0.2.0** | Triple SID engine cards, note routing, preset format **v5**, audio timing diagnostics |
+| **v0.3.0** | Per-engine LFO targets, live per-chip voice settings, WebKit browser smoke fixes |
+| **After v0.3.0 floor** | Layer factory presets, rainbow meters, layer routing fixes (commit-derived semver only) |
 
-Displayed builds can read **0.3.1** (or higher) when conventional commits land after the v0.3.0 floor. That is expected automatic semver, not a manual milestone bump.
+`package.json` still records the intentional floor (**0.3.0**). `node scripts/resolve-version.mjs` may report a higher **0.x** (for example **0.4.0**) from `feat:` commits on `main` since the floor. That is expected automatic semver until you cut a new floor with `scripts/bump-release.mjs`.
+
+Displayed build stamps add a UTC timestamp and cache id (`version+timestamp`); they are not separate product releases.
 
 ## How automatic semver works
 

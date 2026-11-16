@@ -1,10 +1,10 @@
 # C64-inspired factory sound bank
 
-**Status:** 24 original new presets across Bass, Keys, Leads and Drums (six per group), plus the six original Project6581 factory sounds, for **30 total**. The first four patches have been auditioned on iPad with encouraging feedback; the other 20 are unverified sound-design starting points.
+**Status:** **30-sound core bank** — 24 original new presets across Bass, Keys, Leads and Drums (six per group), plus the six original Project6581 factory sounds. **Ten additional layer presets** (IDs `complex-layer-*`) demonstrate **Layer (per SID)** routing; see the README factory section. **40 factory sounds total** on `main`. The first four core patches have iPad listening notes; the rest are unverified starting points.
 
 These are **original patches**, not reproductions or extracted settings from commercial games. Research references for future listening: *Turrican*, *Parallax*, and *Commando*. Composer/subtune/time-range and SID register traces must be documented before associating an individual patch with a specific game.
 
-The preset browser groups sounds as **Bass / Keys / Leads / Drums / FX**. Legacy Lead, Pluck and Pad presets appear under Leads or Keys without changing their stored metadata or preset IDs. All sounds still use preset JSON **schema version 3**.
+The preset browser groups sounds as **Bass / Keys / Leads / Drums / Pad / FX**. Legacy Lead, Pluck and Pad presets appear under Leads or Keys without changing their stored metadata or preset IDs. Factory entries are defined in code and save/load through preset JSON **schema version 5** (imports still accept v3/v4).
 
 ## Expanded sound selection
 
