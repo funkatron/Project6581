@@ -10,6 +10,6 @@ test('MIDI input UI and studio hookup exist',()=>{
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.doesNotMatch(html,/playPanel[\s\S]*id="midiEnable"/);
  assert.match(studio,/import \{mountMidiInput\} from "\.\/midi-input\.js\?v=__BUILD_ID__";/);
- assert.match(studio,/mountMidiInput\(\{\$,traceInput,keyDown,keyUp,isBlocked:sidMusicalInputBlocked\}\)/);
+ assert.match(studio,/pitchPhysicallyHeld:note=>arp\.held\.has\(note\)\|\|directOwned\.has\(note\)/);
  assert.match(studio,/releaseMidiNotes\(\)/);
 });

@@ -7,83 +7,128 @@ function listInputs(access){
  return out;
 }
 
+export function midiOwnerKey(channel,note){
+ return channel+':'+note;
+}
+
+/** MIDI note routing isolated for unit tests and mountMidiInput. */
+export function createMidiInputController({
+ traceInput,keyDown,keyUp,isBlocked=()=>false,pitchPhysicallyHeld=()=>false,sourceTag='midi'
+}={}){
+ const midiKeys=new Set();
+ const midiDroveDown=new Set();
+ const sustainByChannel=new Map();
+ function sustainFor(channel){
+ let state=sustainByChannel.get(channel);
+ if(!state){state={down:false,pending:new Set()};sustainByChannel.set(channel,state)}
+ return state;
+}
+ function noteOn(channel,note){
+  const key=midiOwnerKey(channel,note);
+  if(midiKeys.has(key))return;
+  midiKeys.add(key);
+  traceInput(note,sourceTag,'down',()=>{
+   if(!pitchPhysicallyHeld(note)){
+    keyDown(note);
+    midiDroveDown.add(key);
+   }
+  });
+ }
+ function releaseMidiKey(key,note){
+  const drove=midiDroveDown.delete(key);
+  midiKeys.delete(key);
+  if(drove)traceInput(note,sourceTag,'up',()=>keyUp(note));
+ }
+ function noteOff(channel,note){
+  const key=midiOwnerKey(channel,note);
+  const sustain=sustainFor(channel);
+  if(sustain.down){
+   if(midiKeys.has(key))sustain.pending.add(key);
+   return;
+  }
+  if(!midiKeys.has(key))return;
+  releaseMidiKey(key,note);
+ }
+ function flushSustainReleases(channel){
+  const sustain=sustainFor(channel);
+  for(const key of sustain.pending)releaseMidiKey(key,Number(key.split(':')[1]));
+  sustain.pending.clear();
+ }
+ function onMidiMessage(event){
+  const msg=parseMidiMessage(event.data);
+  if(!msg)return;
+  if(msg.kind==='note-on'){
+   if(isBlocked())return;
+   noteOn(msg.channel,msg.note);
+  }else if(msg.kind==='note-off')noteOff(msg.channel,msg.note);
+  else if(msg.kind==='cc'&&msg.controller===64){
+   const sustain=sustainFor(msg.channel);
+   const down=msg.value>=64;
+   if(sustain.down&&!down)flushSustainReleases(msg.channel);
+   sustain.down=down;
+  }
+ }
+ function releaseAll(){
+  for(const key of [...midiKeys]){
+   const note=Number(key.split(':')[1]);
+   releaseMidiKey(key,note);
+  }
+  sustainByChannel.clear();
+ }
+ function setSourceTag(tag){sourceTag=tag||'midi'}
+ return {onMidiMessage,releaseAll,setSourceTag};
+}
+
 export function mountMidiInput({
- $,traceInput,keyDown,keyUp,isBlocked=()=>false
+ $,traceInput,keyDown,keyUp,isBlocked=()=>false,pitchPhysicallyHeld=()=>false
 }={}){
  const enable=$('midiEnable');
  const portSelect=$('midiPort');
  const channelSelect=$('midiChannel');
  const status=$('midiStatus');
  if(!enable||!portSelect||!channelSelect||!status)return {releaseAll:()=>{}};
- let access=null,activeInput=null,sourceTag='midi';
- const touched=new Set();
- const sustain={down:false,pendingOff:new Set()};
+ let access=null,activeInput=null;
+ const controller=createMidiInputController({traceInput,keyDown,keyUp,isBlocked,pitchPhysicallyHeld});
  function setStatus(text){status.textContent=text}
  function channelMatches(channel){
   const filter=Number(channelSelect.value);
   return !filter||filter===channel;
  }
- function noteOn(note){
-  if(touched.has(note))return;
-  touched.add(note);
-  traceInput(note,sourceTag,'down',()=>keyDown(note));
- }
- function noteOff(note){
-  if(sustain.down){
-   if(touched.has(note))sustain.pendingOff.add(note);
-   return;
-  }
-  if(!touched.delete(note))return;
-  traceInput(note,sourceTag,'up',()=>keyUp(note));
- }
- function flushSustainReleases(){
-  for(const note of sustain.pendingOff){
-   if(!touched.delete(note))continue;
-   traceInput(note,sourceTag,'up',()=>keyUp(note));
-  }
-  sustain.pendingOff.clear();
- }
- function releaseAll(){
-  for(const note of [...touched]){
-   traceInput(note,sourceTag,'up',()=>keyUp(note));
-  }
-  touched.clear();
-  sustain.pendingOff.clear();
-  sustain.down=false;
- }
  function onMidiMessage(event){
-  if(!enable?.checked||isBlocked())return;
+  if(!enable?.checked)return;
   const msg=parseMidiMessage(event.data);
   if(!msg||!channelMatches(msg.channel))return;
-  if(msg.kind==='note-on')noteOn(msg.note);
-  else if(msg.kind==='note-off')noteOff(msg.note);
-  else if(msg.kind==='cc'&&msg.controller===64){
-   const down=msg.value>=64;
-   if(sustain.down&&!down)flushSustainReleases();
-   sustain.down=down;
-  }
+  controller.onMidiMessage(event);
  }
  function bindInput(input){
   if(activeInput)activeInput.onmidimessage=null;
   activeInput=input;
-  sourceTag='midi:'+(input?.name||input?.id||'in');
+  controller.setSourceTag('midi:'+(input?.name||input?.id||'in'));
   if(activeInput)activeInput.onmidimessage=onMidiMessage;
  }
  function fillPorts(selectedId){
-  const options=['<option value="">— Select input —</option>'];
+  portSelect.replaceChildren();
+  const blank=document.createElement('option');
+  blank.value='';
+  blank.textContent='— Select input —';
+  portSelect.append(blank);
   if(access){
-   for(const input of listInputs(access))
-    options.push('<option value="'+input.id+'">'+(input.name||input.id)+'</option>');
+   for(const input of listInputs(access)){
+    const option=document.createElement('option');
+    option.value=input.id;
+    option.textContent=input.name||input.id;
+    portSelect.append(option);
+   }
   }
-  portSelect.innerHTML=options.join('');
   if(selectedId&&[...portSelect.options].some(o=>o.value===selectedId))portSelect.value=selectedId;
-  else if(portSelect.options[1])portSelect.value=portSelect.options[1].value;
+  else if(portSelect.options.length>1)portSelect.value=portSelect.options[1].value;
  }
  async function connectPort(id){
   if(!access){bindInput(null);return}
   const input=id?access.inputs.get(id):null;
+  if(!input||(activeInput&&activeInput!==input))controller.releaseAll();
   bindInput(input||null);
-  setStatus(input?'Listening on '+input.name:'Choose a MIDI input port.');
+  setStatus(input?'Listening on '+(input.name||input.id):'Choose a MIDI input port.');
  }
  async function requestAccess(){
   if(!navigator.requestMIDIAccess){
@@ -95,6 +140,7 @@ export function mountMidiInput({
    access=await navigator.requestMIDIAccess({sysex:false});
    access.onstatechange=()=>{
     const prev=portSelect.value;
+    if(activeInput&&!access.inputs.has(activeInput.id))controller.releaseAll();
     fillPorts(prev);
     void connectPort(portSelect.value);
    };
@@ -108,17 +154,17 @@ export function mountMidiInput({
  enable.addEventListener('change',()=>{
   if(enable.checked)void requestAccess();
   else{
-   releaseAll();
+   controller.releaseAll();
    bindInput(null);
    setStatus('MIDI input off.');
   }
  });
  portSelect.addEventListener('change',()=>{
-  releaseAll();
+  controller.releaseAll();
   void connectPort(portSelect.value);
  });
- channelSelect.addEventListener('change',()=>releaseAll());
+ channelSelect.addEventListener('change',()=>controller.releaseAll());
  if(!navigator.requestMIDIAccess)setStatus('Web MIDI is not available in this browser (try desktop Chrome or Edge).');
  else setStatus('Enable MIDI and allow access when prompted.');
- return {releaseAll};
+ return {releaseAll:()=>controller.releaseAll()};
 }

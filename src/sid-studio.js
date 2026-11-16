@@ -376,7 +376,10 @@ const arpKeyVisual=createArpKeyVisual({getKey:note=>keys.get(note)});
  traceInput,panic
 }));
 mountPreferencesDialog($);
-({releaseAll:releaseMidiNotes}=mountMidiInput({$,traceInput,keyDown,keyUp,isBlocked:sidMusicalInputBlocked}));
+({releaseAll:releaseMidiNotes}=mountMidiInput({
+ $,traceInput,keyDown,keyUp,isBlocked:sidMusicalInputBlocked,
+ pitchPhysicallyHeld:note=>arp.held.has(note)||directOwned.has(note)
+}));
 
 function updateSidFilter(overrides={},engineIndex=0){
   if(!sidController)return;
