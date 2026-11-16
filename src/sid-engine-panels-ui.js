@@ -1,5 +1,6 @@
 import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=__BUILD_ID__';
 import {maxVoicesForEngines,requiredEnginePanels} from './sid-engines.js';
+import {meterDisplayHeight} from './sid-meter-display.js?v=__BUILD_ID__';
 
 const FILTER_MODES=['lowpass','bandpass','highpass'];
 
@@ -7,10 +8,6 @@ export function mountSidEnginePanels({
  $,engines,getEngines,ranges,formatControlValue,onEngineChange,syncVoiceSelectOptions,getMeterLevels
 }={}){
  if(!$||!engines)throw new TypeError('mountSidEnginePanels requires $ and engines');
- function meterHeight(level){
-  const normalized=Math.max(0,Math.min(1,Number(level)||0));
-  return (Math.sqrt(normalized)*100).toFixed(1)+'%';
- }
  function visibleCount(){
   const manual=engines.filter(engine=>engine.enabled).length;
   const floor=requiredEnginePanels(Number($('voiceCount').value));
@@ -23,7 +20,7 @@ export function mountSidEnginePanels({
   wrap.setAttribute('aria-label','SID output level');
   const fill=document.createElement('div');
   fill.className='sid-rainbow-meter-fill';
-  fill.style.height=meterHeight(level);
+  fill.style.height=meterDisplayHeight(level);
   wrap.append(fill);
   return wrap;
  }
@@ -156,7 +153,7 @@ export function mountSidEnginePanels({
    if(!Number.isInteger(chip)||chip<0||chip>2)return;
    const fill=meter.querySelector('.sid-rainbow-meter-fill');
    if(!fill)return;
-   fill.style.height=meterHeight(levels?.[chip]);
+   fill.style.height=meterDisplayHeight(levels?.[chip]);
   });
  }
  render();

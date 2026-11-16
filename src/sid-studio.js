@@ -544,6 +544,11 @@ async function startSid({gesture=false}={}){
         if(audioTiming.keyEnergyMs!==null||audioTiming.keyEnergyMissed)updateAudioTimingReport();
         return;
       }
+      if(event.type==='meter-levels'){
+        if(Array.isArray(event.chipPeaks))chipPeakLevels=event.chipPeaks;
+        enginePanelsUi?.updateMeters(chipPeakLevels);
+        return;
+      }
       if(event.type==='audio-stats'){
         audioTiming.renderAvgMs=event.renderAvgMs;
         audioTiming.renderMaxMs=event.renderMaxMs;

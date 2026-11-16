@@ -8,6 +8,9 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     this.queue=[];
     this.pitchEnvelopes=new Map();
     this.blocks=0;this.lastPeak=0;this.writes=0;
+    this.chipPeakHold=[0,0,0];this.chipPeakInterval=[0,0,0];
+    this.meterBlocks=0;
+    this.mixedMeterGain=3;
     this.pendingNoteEvents=[];this.eventLogEnabled=false;
     this.pendingLatencyProbes=[];this.timingEnabled=false;
     this.energyArmed=false;this.energyBlocks=0;
@@ -338,15 +341,30 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       }
     }
     this.lastPeak=Math.max(this.lastPeak,peak);
+    let blockPeaks=null;
+    if(Array.isArray(chipPeaks))blockPeaks=chipPeaks;
+    else{
+      const estimate=Math.min(1,peak*this.mixedMeterGain);
+      blockPeaks=[estimate,estimate,estimate];
+    }
+    for(let i=0;i<3;i++){
+      const sample=blockPeaks[i]||0;
+      this.chipPeakHold[i]=Math.max(this.chipPeakHold[i],sample);
+      this.chipPeakInterval[i]=Math.max(this.chipPeakInterval[i],sample);
+    }
+    if(++this.meterBlocks%16===0){
+      this.port.postMessage({type:'meter-levels',chipPeaks:[...this.chipPeakHold]});
+      this.chipPeakHold=[0,0,0];
+    }
     if(++this.blocks%128===0){
-      const statsPeaks=Array.isArray(chipPeaks)?chipPeaks:[this.lastPeak,this.lastPeak,this.lastPeak];
       this.port.postMessage({
-        type:'audio-stats',peak:this.lastPeak,chipPeaks:statsPeaks,writes:this.writes,frames:frames*128,
+        type:'audio-stats',peak:this.lastPeak,chipPeaks:[...this.chipPeakInterval],writes:this.writes,frames:frames*128,
         renderAvgMs:this.timedRenderBlocks?this.renderMsTotal/this.timedRenderBlocks:null,
         renderMaxMs:this.timedRenderBlocks?this.renderMsMax:null,
         renderBudgetMs:frames*1000/sampleRate
       });
       this.lastPeak=0;this.writes=0;
+      this.chipPeakInterval=[0,0,0];
       this.renderMsTotal=0;this.renderMsMax=0;this.timedRenderBlocks=0;
     }
     return true;
