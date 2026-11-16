@@ -1,6 +1,6 @@
 import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=__BUILD_ID__';
 import {SID_ENGINE_COUNT} from './sid-engines.js';
-import {meterDisplayHeight} from './sid-meter-display.js?v=__BUILD_ID__';
+import {meterDisplayWidth} from './sid-meter-display.js?v=__BUILD_ID__';
 
 const FILTER_MODES=['lowpass','bandpass','highpass'];
 
@@ -12,11 +12,15 @@ export function mountSidEnginePanels({
   const wrap=document.createElement('div');
   wrap.className='sid-rainbow-meter';
   wrap.setAttribute('role','img');
-  wrap.setAttribute('aria-label','SID output level');
+  const width=meterDisplayWidth(level);
+  wrap.setAttribute('aria-label','SID output level '+width);
+  const track=document.createElement('div');
+  track.className='sid-rainbow-meter-track';
+  track.setAttribute('aria-hidden','true');
   const fill=document.createElement('div');
   fill.className='sid-rainbow-meter-fill';
-  fill.style.height=meterDisplayHeight(level);
-  wrap.append(fill);
+  fill.style.width=width;
+  wrap.append(track,fill);
   return wrap;
  }
  function renderEngineCard(index){
@@ -134,7 +138,9 @@ export function mountSidEnginePanels({
    if(!Number.isInteger(chip)||chip<0||chip>2)return;
    const fill=meter.querySelector('.sid-rainbow-meter-fill');
    if(!fill)return;
-   fill.style.height=meterDisplayHeight(levels?.[chip]);
+   const width=meterDisplayWidth(levels?.[chip]);
+   fill.style.width=width;
+   meter.setAttribute('aria-label','SID output level '+width);
   });
  }
  render();
