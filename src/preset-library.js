@@ -37,10 +37,7 @@ function choice(v,name,options){
  return v;
 }
 function defaultEngineBank(){
- const engines=createDefaultEngines(6581);
- engines[1].enabled=false;
- engines[2].enabled=false;
- return engines;
+ return createDefaultEngines(6581);
 }
 export function defaultPresetSettings(){
  return validatePresetSettings({
@@ -62,7 +59,6 @@ function validateEngine(engine,index){
  const voice=attachDefaultPitchEnvelope(e.voice??{});
  const filter=object(e.filter??defaultEngineSettings().filter,'filter');
  return {
-  enabled:boolean(e.enabled??index===0,'enabled'),
   model:choice(e.model,'chip model',[6581,8580]),
   pan:numeric(e.pan??0,'pan',-100,100),
   voice:{
@@ -102,8 +98,6 @@ function migrateLegacySound(sound){
   resonance:numeric(filter.resonance,'resonance',0,100),
   volume:numeric(filter.volume,'volume',0,100),mode:choice(filter.mode,'filter mode',MODES)
  });
- engines[1].enabled=false;
- engines[2].enabled=false;
  return engines.map((engine,i)=>validateEngine(engine,i));
 }
 export function attachDefaultPitchEnvelope(voice){
@@ -174,6 +168,12 @@ export function validatePreset(value,{requireId=false}={}){
  }
  return out;
 }
+function applyEnginePatch(engine,patch={}){
+ if(patch.voice)Object.assign(engine.voice,patch.voice);
+ if(patch.filter)Object.assign(engine.filter,patch.filter);
+ if(patch.model)engine.model=patch.model;
+ if(patch.pan!==undefined)engine.pan=patch.pan;
+}
 function factory(id,name,category,patch={}){
  const settings=defaultPresetSettings();
  if(patch.voice)Object.assign(settings.sound.engines[0].voice,patch.voice);
@@ -185,11 +185,18 @@ function factory(id,name,category,patch={}){
  }
  if(patch.filter)Object.assign(settings.sound.engines[0].filter,patch.filter);
  if(patch.model)settings.sound.engines[0].model=patch.model;
+ if(Array.isArray(patch.engines)){
+  patch.engines.forEach((enginePatch,index)=>{
+   if(!enginePatch||index>2)return;
+   applyEnginePatch(settings.sound.engines[index],enginePatch);
+  });
+ }
  if(patch.lfos)patch.lfos.forEach((lfo,i)=>Object.assign(settings.sound.lfos[i],lfo));
  if(patch.performance){
   if(patch.performance.masterBpm)settings.performance.masterBpm=patch.performance.masterBpm;
   if(patch.performance.arp)Object.assign(settings.performance.arp,patch.performance.arp);
   if(patch.performance.game)Object.assign(settings.performance.game,patch.performance.game);
+  if(patch.performance.routing)Object.assign(settings.performance.routing,patch.performance.routing);
  }
  return Object.freeze({id,name,category,settings:validatePresetSettings(settings)});
 }
@@ -210,6 +217,16 @@ export const FACTORY_PRESETS=Object.freeze([
  factory('arcade-lead','Arcade Lead','Lead',{voice:{wave:'sawtooth',decay:.1,release:.14},instrument:{voiceCount:2,detune:11},filter:{cutoff:6800,resonance:16,volume:65},performance:{game:{enabled:true,style:'arcade'}}}),
  factory('chiptune-pluck','Chiptune Pluck','Pluck',{voice:{wave:'triangle',decay:.08,sustain:0,release:.08},instrument:{detune:0},filter:{cutoff:8000,resonance:0,volume:75},performance:{game:{enabled:false}}}),
  factory('pulsing-pad','Pulsing Pad','Pad',{voice:{attack:.5,decay:.42,sustain:.65,release:1.2,pwmDepth:28,pwmRate:.7},instrument:{voiceCount:3,detune:16},filter:{cutoff:5000,resonance:20,volume:70},performance:{game:{enabled:false}}}),
+ factory('complex-layer-pad','Complex Layer Pad','Pad',{
+  instrument:{voiceCount:6,unisonCount:2,mode:'poly',detune:16},
+  engines:[
+   {pan:-38,voice:{wave:'triangle',attack:.45,decay:.5,sustain:.72,release:1.4},filter:{cutoff:2800,resonance:14,volume:58}},
+   {pan:0,voice:{wave:'sawtooth',attack:.38,decay:.45,sustain:.68,release:1.2},filter:{cutoff:5200,resonance:18,volume:62}},
+   {pan:38,voice:{wave:'square',attack:.42,decay:.48,sustain:.65,release:1.3,pulse:52,pwmDepth:9,pwmRate:.45},filter:{cutoff:6400,resonance:22,volume:55}}
+  ],
+  lfos:[{enabled:true,wave:'triangle',rate:.22,depth:.42,target:'cutoff',engines:'3'}],
+  performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false}}
+ }),
  factory('soft-flute','Soft Flute','Lead',{voice:{wave:'triangle',attack:.08,decay:.24,sustain:.86,release:.35},instrument:{detune:0},filter:{cutoff:4300,resonance:5,volume:80},performance:{game:{enabled:false}}}),
  factory('filter-motion','Filter Motion','FX',{filter:{cutoff:4200,resonance:55,volume:60},lfos:[{enabled:true,wave:'triangle',rate:.35,depth:.55,target:'cutoff'}],performance:{game:{enabled:false}}}),
  // Original C64-inspired prototypes. These are sound-design starting points, not transcriptions.

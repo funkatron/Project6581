@@ -68,7 +68,6 @@ function restoreSidOutput(){
 }
 // Let the browser release export URLs on unload. Safari may still be resolving a download at pagehide.
 const engines=createDefaultEngines(6581);
-engines[1].enabled=false;engines[2].enabled=false;
 const settings=[engines[0].voice];
 let currentSidSettings={...settings[0]};
 const engineLiveSettings=[null,null,null];
@@ -84,9 +83,9 @@ function syncLegacyFilterInputs(){
  $('mode').value=filter.mode;
 }
 function syncVoiceCountOptions(){
- const max=maxVoicesForEngines(engines);
+ const max=maxVoicesForEngines();
  const select=$('voiceCount');
- const value=clampVoiceCount(select.value,engines);
+ const value=clampVoiceCount(select.value);
  select.replaceChildren();
  for(let option=1;option<=max;option++){
   const el=document.createElement('option');
@@ -102,7 +101,6 @@ const ranges=[['attack','Attack',0,2,.01],['decay','Decay',0,3,.01],['sustain','
 enginePanelsUi=mountSidEnginePanels({
  $,engines,getEngines:()=>engines,ranges,formatControlValue,
  getMeterLevels:()=>chipPeakLevels,
- syncVoiceSelectOptions:syncVoiceCountOptions,
  onEngineChange:(_index,kind)=>{
   syncLegacyFilterInputs();
   syncEnginePans();
@@ -119,11 +117,6 @@ enginePanelsUi=mountSidEnginePanels({
  }
 });
 syncVoiceCountOptions();
-$('sidEngineAdd')?.addEventListener('click',()=>{
- for(const engine of engines){
-  if(!engine.enabled){engine.enabled=true;enginePanelsUi.render();syncVoiceCountOptions();updateModulation();return}
- }
-});
 const lfoState=Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',engines:'all',phase:0,seed:i}));
 const lfoTargets=['cutoff','resonance','volume','pulse','detune','attack','decay','sustain','release','pwmDepth','pwmRate'];
 const lfoTargetNames={
@@ -171,7 +164,7 @@ function playOne(note,ownerKey,chipMask){
 function play(note,source='key:'+note){
  restoreSidOutput();
  const route=routingSelectForSource(source);
- const chips=routeMask(route,engines);
+ const chips=routeMask(route);
  if(route==='layer'){
   for(const chip of chips)playOne(note,source+'@'+chip,[chip]);
   return;
@@ -183,7 +176,7 @@ function stop(note,source='key:'+note){
  const route=routingSelectForSource(source);
  if(route==='layer'){
   let stopped=false;
-  for(const chip of routeMask(route,engines)){
+  for(const chip of routeMask(route)){
    const key=source+'@'+chip;
    const owner=activeOwners.get(key);
    if(!owner||owner.note!==note)continue;
@@ -295,7 +288,7 @@ function pushAudioModulationConfig(){
  if(!sidAudio?.setModulationConfig)return;
  sidAudio.setModulationConfig({
   bpm:Number($('masterBpm').value),
-  engines:engines.map(engine=>({enabled:engine.enabled,filter:{...engine.filter},voice:{wave:engine.voice.wave}})),
+  engines:engines.map(engine=>({filter:{...engine.filter},voice:{wave:engine.voice.wave}})),
   lfos:lfoState.map(lfo=>({...lfo,engines:lfo.engines??'all'}))
  });
 }
@@ -375,7 +368,6 @@ function updateModulation(){
  const time=(performance.now()-lfoStarted)/1000;
  const detuneBase={detune:Number($('detune').value)};
  for(let chip=0;chip<3;chip++){
-  if(!engines[chip].enabled){engineLiveSettings[chip]=null;continue;}
   const sound=engines[chip].voice;
   const pulseActive=sound.wave==='square';
   const base=modulationBaseForEngine(chip);
@@ -409,7 +401,6 @@ function updateModulation(){
  if(useAudioClockLfo)pushAudioModulationConfig();
  else{
   for(let chip=0;chip<3;chip++){
-   if(!engines[chip].enabled)continue;
    const base=modulationBaseForEngine(chip);
    const chipLfos=lfosForEngine(effectiveLfos,chip);
    const values=chipLfos.some(lfo=>lfo.enabled&&lfo.depth>0)&&modulation
@@ -419,7 +410,6 @@ function updateModulation(){
  }
  sidController.setLiveDetune(globalDetune);
  for(let chip=0;chip<3;chip++){
-  if(!engines[chip].enabled)continue;
   const live=engineLiveSettings[chip];
   sidController.setEnvelope(live,chip);
   if(engines[chip].voice.wave==='square')sidController.setPulse(0,live.pulse,chip);
@@ -753,7 +743,7 @@ function snapshotPresetSettings(){
  const arpPattern=$('arpPattern').value||'up';
  return validatePresetSettings({
   sound:{
-   engines:engines.map(engine=>({enabled:engine.enabled,model:engine.model,pan:engine.pan,
+   engines:engines.map(engine=>({model:engine.model,pan:engine.pan,
     voice:{...engine.voice},filter:{...engine.filter}})),
    instrument:{voiceCount:Number($('voiceCount').value),unisonCount:Number($('unisonCount').value),mode:$('voiceAssign').value,detune:Number($('detune').value)},
    lfos:lfoState.map(lfo=>({...lfo}))
@@ -774,7 +764,6 @@ function applyPresetControls(next){
  game.step=0;arp.root=null;seqPreview=false;setSeqTransportLabel();
  for(const key of keys.values())key.classList.remove('down');
  next.sound.engines.forEach((engine,index)=>{
-  engines[index].enabled=engine.enabled;
   engines[index].model=engine.model;
   engines[index].pan=engine.pan;
   Object.assign(engines[index].voice,engine.voice);
@@ -785,7 +774,7 @@ function applyPresetControls(next){
  $('keyboardRoute').value=next.performance.routing.keyboard;
  $('arpRoute').value=next.performance.routing.arp;
  $('gameRoute').value=next.performance.routing.game;
- $('voiceCount').value=String(clampVoiceCount(next.sound.instrument.voiceCount,engines));
+ $('voiceCount').value=String(clampVoiceCount(next.sound.instrument.voiceCount));
  $('unisonCount').value=String(next.sound.instrument.unisonCount);
  $('voiceAssign').value=next.sound.instrument.mode;
  $('detune').value=String(next.sound.instrument.detune);
@@ -819,7 +808,7 @@ async function applyPresetSettings(value){
  applyPresetControls(next);
  try{
   await ensureSidModel(presetModel);
-  for(let chip=0;chip<3;chip++)if(engines[chip].enabled)sidAudio?.setChipModel?.(chip,engines[chip].model).catch(()=>{});
+  for(let chip=0;chip<3;chip++)sidAudio?.setChipModel?.(chip,engines[chip].model).catch(()=>{});
   if(activeSidModel!==presetModel)throw new Error('SID chip model does not match the selected preset');
  }catch(error){
   // Loading is transactional even if a device fails to initialize.

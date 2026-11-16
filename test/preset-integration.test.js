@@ -120,7 +120,7 @@ test('chip selection switches the live engine and restores the previous model on
 
 test('empty live Arp selections snapshot as Up and Action so presets can still load',()=>{
  const source=script.slice(script.indexOf('function snapshotPresetSettings()'),script.indexOf('function applyPresetControls('));
- const engines=[{enabled:true,model:6581,pan:0,voice:{enabled:true},filter:{}},{enabled:false,model:6581,pan:0,voice:{enabled:true},filter:{}},{enabled:false,model:6581,pan:0,voice:{enabled:true},filter:{}}];
+ const engines=[{model:6581,pan:0,voice:{enabled:true},filter:{}},{model:6581,pan:0,voice:{enabled:true},filter:{}},{model:6581,pan:0,voice:{enabled:true},filter:{}}];
  const app={
   $:id=>({value:['arpPattern','gameArpStyle'].includes(id)?'':'1',checked:false}),
   validatePresetSettings:value=>value,engines,lfoState:[],seqState:{},

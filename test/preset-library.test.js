@@ -124,6 +124,17 @@ test('C64-inspired prototype bank covers four distinct categories without changi
  assert.equal(FACTORY_PRESETS[0].settings.sound.engines[0].voice.pitchEnvelope.enabled,false);
 });
 
+test('complex layer pad stacks three engine timbres with layer routing',()=>{
+ const preset=FACTORY_PRESETS.find(p=>p.id==='complex-layer-pad');
+ assert.ok(preset);
+ assert.equal(preset.settings.sound.instrument.mode,'poly');
+ assert.equal(preset.settings.performance.routing.keyboard,'layer');
+ assert.equal(preset.settings.performance.routing.arp,'layer');
+ assert.notEqual(preset.settings.sound.engines[0].pan,preset.settings.sound.engines[1].pan);
+ assert.notEqual(preset.settings.sound.engines[0].voice.wave,preset.settings.sound.engines[2].voice.wave);
+ assert.equal(preset.settings.sound.lfos[0].engines,'3');
+});
+
 test('expanded C64 factory bank retains legacy sounds and has six originals per new category',()=>{
  const newIds={
   Bass:['tight-pulse-bass','pwm-drive-bass','filtered-saw-bass','hollow-square-bass','octave-runner-bass','warm-triangle-bass'],
@@ -134,9 +145,9 @@ test('expanded C64 factory bank retains legacy sounds and has six originals per 
  const legacy=['deep-bass','arcade-lead','chiptune-pluck','pulsing-pad','soft-flute','filter-motion'];
  const allNew=Object.values(newIds).flat();
  assert.equal(allNew.length,24);
- assert.equal(FACTORY_PRESETS.length,30);
- assert.deepEqual(new Set(FACTORY_PRESETS.map(p=>p.id)),new Set([...legacy,...allNew]));
- assert.equal(new Set(FACTORY_PRESETS.map(p=>p.name.toLowerCase())).size,30);
+ assert.equal(FACTORY_PRESETS.length,31);
+ assert.deepEqual(new Set(FACTORY_PRESETS.map(p=>p.id)),new Set([...legacy,...allNew,'complex-layer-pad']));
+ assert.equal(new Set(FACTORY_PRESETS.map(p=>p.name.toLowerCase())).size,31);
  assert.deepEqual(FACTORY_GROUPS,['Bass','Keys','Leads','Drums','FX']);
  for(const [category,ids] of Object.entries(newIds)){
   assert.equal(ids.length,6);

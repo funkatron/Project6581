@@ -16,19 +16,19 @@ Annotations reference Commodore 64C enclosure styling already in [`src/studio-co
 │  Detune [────────●────────] 12¢                                        │
 │  Up to 3 notes · 6 oscillators  (Voices max **9** = 3 per SID chip)        │
 ├─────────────────────────────────────────────────────────────────────────┤
-│ SID engines                                    [ + Add SID ] (max 3)      │
+│ SID 1 · SID 2 · SID 3 (always visible)                                   │
 ├─────────────────────────────────────────────────────────────────────────┤
 │ ┌─ SID 1 ──────────────────────────────────────────────────────────────┐ │
-│ │ ▓▓▓ Rainbow VU ▓▓▓   MOS [6581 ▾]   [× Remove] (if allowed)         │ │
+│ │ ▓▓▓ Rainbow VU ▓▓▓   MOS [6581 ▾]                                      │ │
 │ │ Pan  L [──────●──] R    Vol [────●──]  Cutoff [──●────]  Res [─●──]   │ │
 │ │ Filter [Low-pass ▾]                                                   │ │
 │ │ ── Voice ──  On ☑  Wave [Pulse ▾]  ADSR / PWM (existing voice grid)  │ │
 │ │ Pitch envelope (compact graph, same as today)                        │ │
 │ └──────────────────────────────────────────────────────────────────────┘ │
-│ ┌─ SID 2 ── (visible when Voices≥4 or manually added) ────────────────┐ │
+│ ┌─ SID 2 ─────────────────────────────────────────────────────────
 │ │ … same structure, independent values …                              │ │
 │ └──────────────────────────────────────────────────────────────────────┘ │
-│ (SID 3 card when Voices≥7 or manually added; Voices **9** uses all HW)   │
+│ ┌─ SID 3 ──────────────────────────────────────────────────────────────┐ │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -45,10 +45,10 @@ Placed above latch / Game Arp / Root Arp blocks so routing is set before enablin
 │ ARP / SEQ (tab)                                                          │
 ├─────────────────────────────────────────────────────────────────────────┤
 │ Note routing (MASTER)                                                    │
-│  Keyboard      → [ SID 1 ▾ | SID 2 | SID 3 | All enabled | Layer* ]     │
-│  Root Arp      → [ SID 1 ▾ | SID 2 | SID 3 | All enabled | Layer* ]     │
-│  Game Arp      → [ SID 1 ▾ | SID 2 | SID 3 | All enabled | Layer* ]     │
-│  * Layer = one note dispatched to each selected engine (default All)     │
+│  Keyboard      → [ SID 1 ▾ | SID 2 | SID 3 | All (shared) | Layer (per SID) ] │
+│  Root Arp      → [ SID 1 ▾ | SID 2 | SID 3 | All (shared) | Layer (per SID) ] │
+│  Game Arp      → [ SID 1 ▾ | SID 2 | SID 3 | All (shared) | Layer (per SID) ] │
+│  All = one noteOn, Voices split across chips · Layer = one noteOn per chip   │
 ├─────────────────────────────────────────────────────────────────────────┤
 │ Latch …  Game Arp …  Root Arp …  (existing controls below)               │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -56,9 +56,11 @@ Placed above latch / Game Arp / Root Arp blocks so routing is set before enablin
 
 | Source | Default | Meaning |
 |--------|---------|---------|
-| Keyboard | All enabled | Physical keys play through each enabled engine (separate voices per engine budget). |
-| Root Arp | All enabled | Root-arp pattern notes use same routing; `play(note,'arp')` tagged with engine set. |
-| Game Arp | SID 1 | Game phrase on primary SID by default; user can move to 2/3 or All for thickness. |
+| Keyboard | SID 1 (default) | Single chip until user picks All or Layer. |
+| Root Arp | SID 1 (default) | Same as keyboard. |
+| Game Arp | SID 1 | Game phrase on primary SID by default. |
+| All (shared voices) | — | One voice pool across chips for that note. |
+| Layer (per SID) | — | Three parallel noteOns; tune each engine card (factory **Complex Layer Pad**). |
 
 **Ownership:** Each `play`/`stop` source becomes `engineMask + source` so panic, latch, and preset load clear the right stacks.
 
