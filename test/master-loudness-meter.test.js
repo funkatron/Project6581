@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {normalizeMasterPeak,mountMasterLoudnessMeter} from '../src/master-loudness-meter-ui.js';
+import {readStudioCoreCss} from './studio-css.mjs';
 
 function masterPeakWorkletHarness(){
  let Processor;
@@ -60,10 +61,18 @@ test('master loudness meter updates fill width',()=>{
  assert.match(fill.style.width,/\d+\.\d%/);
 });
 
-test('status strip includes Plus/4 style master meter markup',()=>{
+test('header master meter is a wide horizontal rainbow bar',()=>{
+ const css=readStudioCoreCss();
+ assert.match(css,/\.master-rainbow-meter\{[^}]*width:min\(300px,100%\)/);
+ assert.match(css,/\.master-rainbow-meter-fill\{[^}]*width:0/);
+});
+
+test('header includes Plus/4 style master meter markup',()=>{
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  assert.match(html,/id="masterLoudnessMeter"/);
  assert.match(html,/master-rainbow-meter-fill/);
+ assert.match(html,/class="controls"><div id="masterLoudnessMeter"/);
+ assert.doesNotMatch(html,/class="statusbar"[^>]*>[\s\S]*?masterLoudnessMeter/);
 });
 
 test('worklet publishes mixed master peak with chip meter levels',()=>{
