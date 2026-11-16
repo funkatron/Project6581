@@ -61,10 +61,11 @@ function traceStudio(type,details={}){
  if(diagnosticsUi.isVisible?.())diagnosticsUi.refresh();
 }
 function traceInput(note,source,action,run){
+ traceStudio('input',{note,source,action});
  if(!sidEventLog.enabled)return run();
  const previous=sidInputEvent;
  sidInputEvent=sidEventLog.begin('input',{note,source,action,contextState:sidContext?.state??'unavailable'});
- try{return run()}finally{sidInputEvent=previous}
+ try{return run()}finally{sidInputEvent=previous;diagnosticsUi.afterNoteEvent?.()}
 }
 function sidMusicalInputBlocked(){
  return shouldBlockMusicalInput({
@@ -218,7 +219,9 @@ function playOne(note,ownerKey,chipMask,{layer=false}={}){
   contextState:sidContext?.state??null
  });
  if(!gate.ok){
+  traceStudio('note-skipped',{note,source:ownerKey,reason:gate.reason});
   if(eventId!==null)sidEventLog.add('note-skipped',{eventId,reason:gate.reason,contextState:sidContext?.state??'unavailable'});
+  diagnosticsUi.afterNoteEvent?.();
   return;
  }
  const traceStart=sidAudio?.beginNoteTrace();
@@ -229,6 +232,8 @@ function playOne(note,ownerKey,chipMask,{layer=false}={}){
  sidAudio?.endNoteTrace(eventId,traceStart);
  sidAudio?.noteDispatched?.(ownerKey.startsWith('key:')?'keyboard':ownerKey.split('@')[0]);
  activeOwners.set(ownerKey,{note,token});
+ traceStudio('note-on',{note,source:ownerKey,chipMask});
+ diagnosticsUi.afterNoteEvent?.();
 }
 function play(note,source='key:'+note){
  restoreSidOutput();
@@ -253,17 +258,29 @@ function stop(note,source='key:'+note){
    activeOwners.delete(key);
    sidController?.noteOff(note,owner.token);
    sidAudio?.endNoteTrace(eventId,traceStart);
+   traceStudio('note-off',{note,source:key});
    stopped=true;
   }
-  if(!stopped&&eventId!==null)sidEventLog.add('note-skipped',{eventId,reason:'no matching owner'});
+  if(!stopped){
+   traceStudio('note-skipped',{note,source,reason:'no matching owner'});
+   if(eventId!==null)sidEventLog.add('note-skipped',{eventId,reason:'no matching owner'});
+  }
+  diagnosticsUi.afterNoteEvent?.();
   return;
  }
  const owner=activeOwners.get(source);
- if(!owner||owner.note!==note){if(eventId!==null)sidEventLog.add('note-skipped',{eventId,reason:'no matching owner'});return;}
+ if(!owner||owner.note!==note){
+  traceStudio('note-skipped',{note,source,reason:'no matching owner'});
+  if(eventId!==null)sidEventLog.add('note-skipped',{eventId,reason:'no matching owner'});
+  diagnosticsUi.afterNoteEvent?.();
+  return;
+ }
  const traceStart=sidAudio?.beginNoteTrace();
  activeOwners.delete(source);
  sidController?.noteOff(note,owner.token);
  sidAudio?.endNoteTrace(eventId,traceStart);
+ traceStudio('note-off',{note,source});
+ diagnosticsUi.afterNoteEvent?.();
 }
 function updateUnison(){
  if(unisonUpdating)return;

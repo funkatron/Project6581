@@ -1,4 +1,4 @@
-import {formatSidDiagnosticReport} from './sid-event-log.js?v=__BUILD_ID__';
+import {formatSidDiagnosticReport,formatSidEventLogText} from './sid-event-log.js?v=__BUILD_ID__';
 import {formatStudioTraceText,formatStudioTraceReport} from './studio-trace-log.js?v=__BUILD_ID__';
 
 const EDITOR_TABS=['voice','play','lfos'];
@@ -25,7 +25,9 @@ function buildBundle(studioTrace,sidEventLog,getReportContext){
  const environment=getReportContext?.()??{};
  return JSON.stringify({
   studioTrace:JSON.parse(formatStudioTraceReport(studioTrace.snapshot(),environment)),
-  noteEvents:sidEventLog.enabled?JSON.parse(formatSidDiagnosticReport(sidEventLog,environment)):null
+  noteEvents:sidEventLog.enabled&&sidEventLog.snapshot().entries.length
+   ?JSON.parse(formatSidDiagnosticReport(sidEventLog,environment))
+   :null
  },null,2);
 }
 
@@ -49,6 +51,7 @@ export function mountDiagnosticsPanel({
  const panel=$('diagPanel');
  if(!panel)return {refresh:()=>{},isVisible:()=>false};
  const traceView=$('diagnosticsTraceView');
+ const noteView=$('diagnosticsNoteView');
  const timingView=$('diagnosticsTimingView');
  const status=$('diagnosticsStatus');
  let returnTab='voice';
@@ -59,6 +62,13 @@ export function mountDiagnosticsPanel({
    newestFirst:true
   });
   if(traceView)traceView.textContent=traceText;
+  if(noteView){
+   const noteText=formatSidEventLogText(sidEventLog.snapshot(),{
+    headerLines:['Note events (newest first):'],
+    newestFirst:true
+   });
+   noteView.textContent=noteText;
+  }
   updateAudioTimingReport?.();
   if(timingView&&$('audioTimingSummary'))timingView.textContent=$('audioTimingSummary').textContent;
  }
@@ -66,7 +76,10 @@ export function mountDiagnosticsPanel({
   const workspace=$('workspace');
   const current=workspace?.dataset.tab;
   if(current&&EDITOR_TABS.includes(current))returnTab=current;
-  if($('diagnosticsNoteLogging')&&$('sidEventLogging'))
+  if($('diagnosticsNoteLogging')&&!$('sidEventLogging').checked){
+   $('diagnosticsNoteLogging').checked=true;
+   syncNoteLogging();
+  }else if($('diagnosticsNoteLogging')&&$('sidEventLogging'))
    $('diagnosticsNoteLogging').checked=$('sidEventLogging').checked;
   refresh();
   setWorkspaceTab($,'diag');
@@ -117,5 +130,5 @@ export function mountDiagnosticsPanel({
  // Main editor tabs exit diagnostics without leaving a stale data-tab value.
  for(const id of ['tabVoice','tabPlay','tabLfos'])
   $(id)?.addEventListener('click',()=>{if(isVisible())if(status)status.textContent=''});
- return {refresh,isVisible:()=>isVisible()};
+ return {refresh,isVisible:()=>isVisible(),afterNoteEvent:()=>{if(isVisible())refresh()}};
 }
