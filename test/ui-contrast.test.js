@@ -40,6 +40,8 @@ const samples=[
  ['recording status','#recordStatus','.statusbar'],
  ['download recording','#recordDownload','.statusbar'],
  ['preset dialog title','#presetDialog h2,#presetDialog h3','#presetDialog'],
+ ['preferences dialog title','#preferencesDialog h2,#preferencesDialog h3','#preferencesDialog'],
+ ['preferences hint','#preferencesDialog .preferences-hint','#preferencesDialog'],
  ['preset dialog descriptions','#presetDialog small,#presetDialog .preset-empty,#presetDialog .preset-item-category','.preset-group'],
  ['preset status','#presetStatus','#presetDialog'],
  ['preset export link','#presetExportLink:not([hidden])','#presetDialog'],

@@ -132,5 +132,5 @@ export function mountKeyboard(deps){
  const layout='awsedftgyhujkolp;';
  window.addEventListener('keydown',e=>{if(e.repeat||e.target.matches('input,select,button,textarea,[contenteditable="true"]'))return;const idx=layout.indexOf(e.key.toLowerCase());if(idx>=0){const note=(keyboardState.octave+1)*12+idx;const key=keys.get(note);if(key){e.preventDefault();key.classList.add('down');traceInput(note,'keyboard','down',()=>keyDown(note))}}});
  window.addEventListener('keyup',e=>{const idx=layout.indexOf(e.key.toLowerCase());if(idx>=0){const note=(keyboardState.octave+1)*12+idx;keys.get(note)?.classList.remove('down');if(arp.held.has(note))traceInput(note,'keyboard','up',()=>keyUp(note));else keyUp(note)}});
- return {flushQueuedKeys};
+ return {flushQueuedKeys,keyDown,keyUp};
 }

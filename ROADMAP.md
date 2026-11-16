@@ -23,7 +23,9 @@ Finish the **active step** (code, doc, or device verification) in a single focus
 | **G** | **iPad MIDI** route decision (MIDI browser vs native shell) | Priority 3 + Priority 4 |
 | *later* | Western scale lock, `.sid` player, visualization, audio-clock LFO migration | Sections below |
 
-**Active step:** **B** — preset load-while-playing polish + iPad preset workflow QA. Step **A** owner checklist: [desktop-chromium-qa.md](docs/desktop-chromium-qa.md); agent smoke notes in [agents/roadmap-step-a-chromium.md](agents/roadmap-step-a-chromium.md).
+**Active step:** **E** — desktop Web MIDI note input (ARP/SEQ tab).
+
+**Deferred (owner, 2026-11-16):** Step **A** [desktop-chromium-qa.md](docs/desktop-chromium-qa.md) and Step **B** iPad load-while-playing / full preset workflow pass—may return before a release milestone. Step **B** code shipped in [#122](https://github.com/funkatron/Project6581/pull/122).
 
 ## Release milestones (v0.2.0+)
 
@@ -187,7 +189,7 @@ SID playback + highlighted keyboard keys
 
 **Delivery order (step-by-step):** **(1)** Desktop [Web MIDI](https://caniuse.com/midi) over HTTPS — Step **E** in the queue above. **(2)** Document and test iPad-capable browsers or a native shell — Step **G**. CC mapping, MIDI Learn, MIDI out, and clock are explicitly later slices.
 
-- [ ] **Desktop first — implement and verify.** Add a minimal adapter (`requestMIDIAccess()`), port/channel UI, and route note-on/off through the same path as the on-screen keyboard (see Step **E**). Verify with [desktop-chromium-qa.md](docs/desktop-chromium-qa.md) and compare MIDI onset to the keyboard latency baseline.
+- [x] **Desktop first — implement** minimal `requestMIDIAccess()` adapter, port/channel UI, note on/off + velocity-zero off + CC64 sustain, routed through keyboard `keyDown`/`keyUp` (ARP/SEQ tab). **Verify** on desktop HTTPS with [desktop-chromium-qa.md](docs/desktop-chromium-qa.md) (optional per owner).
 - [ ] **Then verify iPad routes.** Stock Safari on iPad does not expose Web MIDI. Test a MIDI-enabled iPad browser such as [Web MIDI Browser](https://apps.apple.com/us/app/web-midi-browser/id953846217) for both MIDI input and AudioWorklet/WASM playback. Test USB and Bluetooth controllers and a same-iPad sequencer or DAW as separate cases. Record hardware, app and OS versions, routing steps, foreground/split-view behavior and audio recovery after switching apps.
 - [ ] **Prototype a native route if needed.** If a MIDI-enabled browser cannot cover both use cases reliably, try a minimal iPad shell hosting the existing synth. Use [Core MIDI](https://developer.apple.com/documentation/coremidi) for physical inputs and expose a [virtual destination](https://developer.apple.com/documentation/coremidi/mididestinationcreatewithprotocol(_:_:_:_:_:)) another app can select. Verify the complete path from MIDI event to audible SID output, including app switching. Record the chosen route and setup steps before committing to packaging.
 - [ ] **Share the performance path.** On supported desktop browsers use Web MIDI over HTTPS. Route Web MIDI or native input through the same note and arp logic as the on-screen keyboard. Add a port/channel selector and status, note-on/off including velocity-zero note-on, sustain (CC64), panic and clear handling for permission denial or unavailable MIDI. Define an intentional velocity response and preserve note ownership across sources.
