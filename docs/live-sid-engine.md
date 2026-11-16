@@ -48,10 +48,16 @@ Presets and the UI store routing under `performance.routing`:
 `src/sid-studio.js`:
 
 - **`play` / `stop`** read the route for the event source (`keyboard`, `arp`, `game`, or `key:<note>`).
-- **`layer`:** calls `playOne` / per-chip `stop` with owner keys `source@0`, `source@1`, `source@2` so release on one chip does not steal another.
-- **`playOne`:** passes `chipMask` into `sidController.noteOn`; per-engine **voice enable** skips disabled cards.
+- **`layer`:** calls `playOne` once per chip with owner keys `source@0`, `source@1`, `source@2` so release on one chip does not steal another.
+- **`playOne`:** passes `chipMask` and `layerChip` into `sidController.noteOn`; per-engine **voice enable** skips disabled cards.
 
-Layer factory presets set `routing: { keyboard: 'layer', arp: 'layer', game: 'sid1' }`. Independent layer voice ownership is tightened in [PR #94](https://github.com/funkatron/Project6581/pull/94).
+**Layer allocation** (`unison-sid-controller.js`, merged in [#94](https://github.com/funkatron/Project6581/pull/94)):
+
+- Each chip keeps its own `layerStacks[chip]` / `layerPoly` map instead of sharing the global poly map.
+- `noteOnLayer` allocates at most one stack per chip; `noteOff` targets the correct chip when `layerChip` is set.
+- Mono/legato/duo/poly rules apply **inside each chip** for layer routing.
+
+Layer factory presets set `routing: { keyboard: 'layer', arp: 'layer', game: 'sid1' }`.
 
 ## WASM boundary (actual exports)
 
