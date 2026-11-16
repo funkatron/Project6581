@@ -46,7 +46,10 @@ export class UnisonSidController {
  }
  capacityFor(slotMap){
   const voices=slotMap.length;
-  const available=Math.floor(voices/this.unisonCount);
+  if(!voices)return 0;
+  // Layer routes use at most three oscillators per chip even when the global unison budget is higher.
+  const stackSpan=Math.min(this.unisonCount,voices);
+  const available=Math.floor(voices/stackSpan);
   return this.mode==='mono'||this.mode==='legato'?1:
    this.mode==='duo'?Math.min(2,available):available;
  }
@@ -102,7 +105,7 @@ export class UnisonSidController {
   }
   const poly=this.layerPoly[chip];
   if(poly.has(note))this.releaseLayerPoly(chip,note);
-  while(poly.size>=capacity)this.releaseLayerPoly(chip,poly.keys().next().value);
+  while(capacity>0&&poly.size>=capacity)this.releaseLayerPoly(chip,poly.keys().next().value);
   const used=new Set([...poly.values()].map(entry=>entry.index));
   let index=0;while(used.has(index))index++;
   const slots=this.stackSlots(index,slotMap);
@@ -152,7 +155,7 @@ export class UnisonSidController {
    return token;
   }
   if(this.polyNotes.has(note))this.releasePoly(note);
-  while(this.polyNotes.size>=capacity)this.releasePoly(this.polyNotes.keys().next().value);
+  while(capacity>0&&this.polyNotes.size>=capacity)this.releasePoly(this.polyNotes.keys().next().value);
   const used=new Set([...this.polyNotes.values()].map(entry=>entry.index));
   let index=0;while(used.has(index))index++;
   const slots=this.stackSlots(index,slotMap);
