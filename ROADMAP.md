@@ -23,7 +23,7 @@ Finish the **active step** (code, doc, or device verification) in a single focus
 | **G** | **iPad MIDI** route decision (MIDI browser vs native shell) | Priority 3 + Priority 4 |
 | *later* | Western scale lock, `.sid` player, visualization, audio-clock LFO migration | Sections below |
 
-**Active step:** **C** — Arp + Game Arp four-mode verification (CI + desktop Chromium; iPad Safari pending). Desktop Web MIDI shipped in [#124](https://github.com/funkatron/Project6581/pull/124)–[#125](https://github.com/funkatron/Project6581/pull/125).
+**Active step:** **D** — factory bank listening pass (HVSC references + iPad audition). Step **C** CI/docs merged in [#123](https://github.com/funkatron/Project6581/pull/123); iPad arp checks still open.
 
 **Deferred (owner, 2026-11-16):** Step **A** [desktop-chromium-qa.md](docs/desktop-chromium-qa.md) and Step **B** iPad load-while-playing / full preset workflow pass—may return before a release milestone. Step **B** code shipped in [#122](https://github.com/funkatron/Project6581/pull/122).
 
@@ -90,11 +90,11 @@ Finish the **active step** (code, doc, or device verification) in a single focus
 | Leads | Bright pulse, nasal PWM, smooth legato, vibrato, octave lead and filtered saw |
 | Drums | Kick, snare, closed hat, open hat, clap and tom |
 
-- [ ] Start with the original C64 releases of [Turrican](https://www.lemon64.com/game/turrican) (Chris Hülsbeck, Ramiro Vaca and Stefan Hartwig), [Parallax](https://www.slayradio.org/sidinfo/MUSICIANS%2FG%2FGalway_Martin%2FParallax.sid) (Martin Galway), and [Commando](https://www.slayradio.org/sidinfo/MUSICIANS%2FH%2FHubbard_Rob%2FCommando.sid) (Rob Hubbard). Use [HVSC](https://www.hvsc.c64.org/search) to identify the C64 tunes and subtunes. For each reference, log composer, subtune, time range, audible characteristics and any register behavior we can verify.
+- [x] HVSC reference log for [Turrican](https://www.lemon64.com/game/turrican), [Parallax](https://www.slayradio.org/sidinfo/MUSICIANS%2FG%2FGalway_Martin%2FParallax.sid), and [Commando](https://www.slayradio.org/sidinfo/MUSICIANS%2FH%2FHubbard_Rob%2FCommando.sid): composer, subtune, time range, traits, factory mapping — [c64-soundtrack-references.md](docs/c64-soundtrack-references.md); audition phrases in [factory-audition-matrix.js](src/factory-audition-matrix.js).
 - [ ] Listen for short, articulate bass and percussion, slow modulation and evolving keys, and clear pulse leads. Use isolated voices or a SID register trace where available to distinguish the patch from the melody, sequencing and effects. Build original patches using the existing waveform, envelope, filter, PWM and LFO controls.
 - [ ] Prototype one patch per category first. For drums, start with one playable hit per preset. If a convincing hit needs a fast pitch sweep or timed waveform changes beyond the current controls, document the gap and scope that work separately.
 - [x] Group the existing and new factory presets in the preset browser while retaining My Presets and version-3 import compatibility.
-- [ ] Complete soundtrack-reference research (composer, subtune, time range, audible characteristics and verified SID-register behavior) and document original patch-design notes and audition phrases.
+- [x] Soundtrack reference research and per-preset audition phrases (register traces still **manual** when tuning). Agent sheet: [agents/roadmap-step-d-factory.md](agents/roadmap-step-d-factory.md).
 - [ ] Audition every preset on iPad with a consistent set of low, middle and high notes. Check that sounds are distinct, levels are usable, drums stop cleanly, and loading a patch leaves playback idle.
 
 **Completion checks:** At least 24 new sounds are easy to find across the four categories, with a short reference and patch-design log for each game.
@@ -115,7 +115,7 @@ Finish the **active step** (code, doc, or device verification) in a single focus
 
 **Preset updates and new sounds after pitch-envelope support (follow-up PR):**
 
-- [ ] **Revisit existing drum presets first.** Audition and compare `Low Thud Kick` and `Low Tom` with fast downward pitch envelopes, then examine `Noise Snare` and `Noise Clap` for useful brief pitch movement or layered/noise alternatives. Keep hats noise-based unless pitch modulation materially improves them. The goal is audible improvement, not simply using the new feature everywhere.
+- [ ] **Revisit existing drum presets first.** `Low Thud Kick` / `Low Tom` now use kick/tom pitch templates (Step D tuning PR); iPad audition still open. Next: `Noise Snare` / `Noise Clap` listening pass. Keep hats noise-based unless pitch modulation materially improves them. The goal is audible improvement, not simply using the new feature everywhere.
 - [ ] **Preserve recognizable existing sounds.** Before changing any shipped factory preset, record its current settings and a reference audio sample. For substantial tonal changes, consider a new named variant with a new ID rather than silently replacing a well-liked patch. Do not overwrite users' saved copies or change factory IDs casually.
 - [ ] **Create new pitch-envelope presets** once the effect is tested: swept kick, descending arcade tom, laser/zap, rising or falling FX, pitch-diving bass, and a lead with a short attack scoop. Place them in the existing Drums, FX, Bass and Leads groups, using original sound designs rather than copying commercial soundtrack patches.
 - [x] **Protect user presets across the schema change.** v3/v4 imports upgrade with pitch envelope off; v5 round-trips per-engine envelopes (`test/preset-library.test.js`).

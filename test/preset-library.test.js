@@ -6,6 +6,7 @@ import {
  importPresetFile,presetLoadRequiresSilence,
 } from '../src/preset-library.js';
 import {sequenceEvent} from '../src/game-step-sequencer.js';
+import {pitchEnvelopeTemplates} from '../src/pitch-envelope-editor.js';
 
 const makeStorage=()=>{
  const values=new Map();
@@ -269,4 +270,19 @@ test('invalid pitch envelope times reject preset settings',()=>{
   points:[{ms:0,semitones:0},{ms:0,semitones:5}]
  };
  assert.throws(()=>validatePresetSettings(settings),/Pitch point/);
+});
+
+test('every factory preset validates after tuning',()=>{
+ for(const preset of FACTORY_PRESETS)
+  assert.deepEqual(validatePresetSettings(preset.settings),preset.settings,preset.id);
+});
+
+test('Step D drum presets use shipped kick and tom pitch envelope templates',()=>{
+ const templates=pitchEnvelopeTemplates();
+ for(const [id,key] of [['low-thud-kick','kick'],['low-tom','tom']]){
+  const preset=FACTORY_PRESETS.find(p=>p.id===id);
+  const envelope=preset.settings.sound.engines[0].voice.pitchEnvelope;
+  assert.equal(envelope.enabled,true,id);
+  assert.deepEqual(envelope,templates[key],id+' template');
+ }
 });
