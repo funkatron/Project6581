@@ -120,8 +120,11 @@ export function mountPresetLibrary({$,snapshotSettings,applySettings,setLoading,
   if(presetDirty&&!window.confirm('Discard unsaved changes to this preset?'))return;
   setPresetLoading(true);
   try{
-   await applyPresetSettings(preset.settings);
+   const outcome=await applyPresetSettings(preset.settings);
    selectedPreset={kind,id};presetDirty=false;renderPresetLibrary();
+   presetMessage(outcome.silenced
+    ?'Loaded '+preset.name+' · held notes stopped (routing or voices changed)'
+    :'Loaded '+preset.name+' · held notes may continue');
    $('presetDialog').close();
   }catch(error){presetMessage('Could not load preset: '+(error.message||error))}
   finally{

@@ -10,7 +10,7 @@ import {lfosForEngine} from "./lfo-modulation.js?v=__BUILD_ID__";
 import {createSidRecorder,prepareRecordingDownload} from "./sid-recorder.js?v=__BUILD_ID__";
 import {defaultSequence,validateSequence} from "./game-step-sequencer.js?v=__BUILD_ID__";
 import {mountPerformance} from "./performance-play.js?v=__BUILD_ID__";
-import {validatePresetSettings} from "./preset-library.js?v=__BUILD_ID__";
+import {presetLoadRequiresSilence,validatePresetSettings} from "./preset-library.js?v=__BUILD_ID__";
 import {mountPresetLibrary} from "./preset-library-ui.js?v=__BUILD_ID__";
 import {mountKeyboard} from "./keyboard-input.js?v=__BUILD_ID__";
 import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from "./pitch-envelope.js?v=__BUILD_ID__";
@@ -864,11 +864,18 @@ function snapshotPresetSettings(){
   }
  });
 }
-function applyPresetControls(next){
- // Silence old voices and clear transient notes, but retain the saved arp switches.
- panic();arp.held.clear();arp.latched.clear();arp.step=0;
+function resetPerformanceGenerators(){
+ gameStop();
+ if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}
+ arpStopVoice();
+ arp.held.clear();arp.latched.clear();arp.step=0;
  game.step=0;arp.root=null;seqPreview=false;setSeqTransportLabel();
  for(const key of keys.values())key.classList.remove('down');
+}
+function applyPresetControls(next,{silenceAudio=true}={}){
+ // Stop arp/seq state always; full panic only when routing, voices, or chip models require it.
+ if(silenceAudio)panic();
+ else resetPerformanceGenerators();
  next.sound.engines.forEach((engine,index)=>{
   engines[index].model=engine.model;
   engines[index].pan=engine.pan;
@@ -904,25 +911,27 @@ function applyPresetControls(next){
  renderSequenceSteps();
  loadBuiltInPhrase($('gameArpStyle').value);
  enginePanelsUi?.render();renderLfos();updateUnison();updateModulation();
- $('arpStatus').textContent='Preset ready · press a key';
+ $('arpStatus').textContent=silenceAudio?'Preset ready · press a key':'Preset ready · held notes may continue';
 }
 async function applyPresetSettings(value){
  if(sidRecorder?.recording||recordBusy)throw new Error('Finish recording before loading a preset');
  const next=validatePresetSettings(value);
  const previous=snapshotPresetSettings();
+ const silenceAudio=presetLoadRequiresSilence(previous,next);
  const presetModel=next.sound.engines[0].model;
- sidEventLog.add('preset-apply',{contextId:sidAudio?sidAttempt:null,activeModel:activeSidModel,requestedModel:presetModel});
+ sidEventLog.add('preset-apply',{contextId:sidAudio?sidAttempt:null,activeModel:activeSidModel,requestedModel:presetModel,silenceAudio});
  traceStudio('preset-apply',{name:$('presetCurrent')?.textContent??'preset',model:presetModel,
   voices:next.sound.instrument.voiceCount,unison:next.sound.instrument.unisonCount,mode:next.sound.instrument.mode,
-  keyboardRoute:next.performance.routing.keyboard});
- applyPresetControls(next);
+  keyboardRoute:next.performance.routing.keyboard,silenceAudio});
+ applyPresetControls(next,{silenceAudio});
+ syncLegacyFilterInputs();syncEnginePans();
  try{
   await ensureSidModel(presetModel);
   for(let chip=0;chip<3;chip++)sidAudio?.setChipModel?.(chip,engines[chip].model).catch(()=>{});
   if(activeSidModel!==presetModel)throw new Error('SID chip model does not match the selected preset');
  }catch(error){
   // Loading is transactional even if a device fails to initialize.
-  applyPresetControls(previous);
+  applyPresetControls(previous,{silenceAudio:true});
   try{await ensureSidModel(previous.sound.engines[0].model)}
   catch(recoveryError){
     throw new Error('Could not load preset: '+error.message+
@@ -930,6 +939,7 @@ async function applyPresetSettings(value){
   }
   throw new Error('Could not load preset: '+error.message+'. Previous sound restored.');
  }
+ return {silenced:silenceAudio};
 }
 let presetLoading=false;
 let presetLibrary;

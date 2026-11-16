@@ -159,6 +159,21 @@ export function cleanPresetName(name){
   throw new RangeError('Preset name must be 1–64 characters without control characters');
  return trimmed;
 }
+/** True when loading `next` over `previous` must silence active voices (routing, allocation, or chip model). */
+export function presetLoadRequiresSilence(previous,next){
+ const a=validatePresetSettings(previous);
+ const b=validatePresetSettings(next);
+ const pr=a.performance.routing, nr=b.performance.routing;
+ if(pr.keyboard!==nr.keyboard||pr.arp!==nr.arp||pr.game!==nr.game)return true;
+ const pi=a.sound.instrument, ni=b.sound.instrument;
+ if(pi.voiceCount!==ni.voiceCount||pi.unisonCount!==ni.unisonCount||pi.mode!==ni.mode)return true;
+ for(let i=0;i<3;i++){
+  const pe=a.sound.engines[i], ne=b.sound.engines[i];
+  if(pe.model!==ne.model)return true;
+  if(Boolean(pe.voice?.enabled)!==Boolean(ne.voice?.enabled))return true;
+ }
+ return false;
+}
 export function validatePreset(value,{requireId=false}={}){
  const p=object(value,'preset');
  const out={name:cleanPresetName(p.name),settings:validatePresetSettings(p.settings)};
