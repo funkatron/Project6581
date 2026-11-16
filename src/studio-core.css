@@ -282,4 +282,5 @@ label:has(.slider-stack){gap:4px}
 .sid-rainbow-meter-fill{position:absolute;left:0;right:0;bottom:0;height:0;background:linear-gradient(0deg,#e35a4f 0%,#f3a23c 18%,#f7d24f 36%,#4bc067 54%,#2cb4c2 72%,#4a6fe3 86%,#8a4dc9 100%);transition:height .08s linear;box-shadow:0 0 8px rgba(243,162,60,.25)}
 .sid-engine-pan{display:flex;gap:8px;align-items:center;margin:6px 0}
 .note-routing{display:flex;flex-wrap:wrap;gap:8px 12px;margin-bottom:10px}
+.note-routing-hint{width:100%;margin:2px 0 0;font-size:12px;opacity:.85;line-height:1.35}
 .note-routing h3{width:100%;margin:0 0 4px;font-size:13px}

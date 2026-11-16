@@ -124,7 +124,7 @@ test('bridge caps unanswered events and expires old ones without delaying playba
 
 test('actual app note commands retain their physical input parent and tag on/off writes',()=>{
  const log=createSidEventLog();log.setEnabled(true);const tagged=[];
- const engines=[{enabled:true,voice:{enabled:true}},{enabled:false,voice:{enabled:true}},{enabled:false,voice:{enabled:true}}];
+ const engines=[{voice:{enabled:true}},{voice:{enabled:true}},{voice:{enabled:true}}];
  const scope=vm.createContext({sidEventLog:log,sidInputEvent:null,sidContext:{state:'running'},settings:[{enabled:true}],activeSeqStep:-1,
   sidController:{noteOn:()=>1,noteOff(){}},sidAudio:{beginNoteTrace:()=>0,endNoteTrace:id=>tagged.push(id),noteDispatched(){}},
   canDispatchNote,shouldBlockMusicalInput,needsAudioResume,restoreSidOutput(){},

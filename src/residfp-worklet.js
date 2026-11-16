@@ -179,7 +179,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     });
     for(let chip=0;chip<3;chip++){
       const engine=config.engines[chip];
-      if(!engine?.enabled)continue;
+      if(!engine)continue;
       const base={
         volume:Number(engine.filter.volume),
         cutoff:Number(engine.filter.cutoff),

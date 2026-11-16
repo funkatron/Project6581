@@ -1,18 +1,13 @@
 import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=__BUILD_ID__';
-import {maxVoicesForEngines,requiredEnginePanels} from './sid-engines.js';
+import {SID_ENGINE_COUNT} from './sid-engines.js';
 import {meterDisplayHeight} from './sid-meter-display.js?v=__BUILD_ID__';
 
 const FILTER_MODES=['lowpass','bandpass','highpass'];
 
 export function mountSidEnginePanels({
- $,engines,getEngines,ranges,formatControlValue,onEngineChange,syncVoiceSelectOptions,getMeterLevels
+ $,engines,getEngines,ranges,formatControlValue,onEngineChange,getMeterLevels
 }={}){
  if(!$||!engines)throw new TypeError('mountSidEnginePanels requires $ and engines');
- function visibleCount(){
-  const manual=engines.filter(engine=>engine.enabled).length;
-  const floor=requiredEnginePanels(Number($('voiceCount').value));
-  return Math.max(manual,floor);
- }
  function renderRainbowMeter(level=0){
   const wrap=document.createElement('div');
   wrap.className='sid-rainbow-meter';
@@ -29,7 +24,6 @@ export function mountSidEnginePanels({
   const card=document.createElement('article');
   card.className='sid-engine-card panel';
   card.dataset.engine=String(index);
-  card.hidden=!engine.enabled;
   const header=document.createElement('header');
   header.className='sid-engine-header';
   const title=document.createElement('h3');
@@ -49,10 +43,7 @@ export function mountSidEnginePanels({
   }
   model.value=String(engine.model);
   modelLabel.append(model);
-  const remove=document.createElement('button');
-  remove.type='button';remove.className='sid-engine-remove';remove.textContent='Remove';
-  remove.hidden=visibleCount()<=requiredEnginePanels(Number($('voiceCount').value));
-  header.append(title,meter,modelLabel,remove);
+  header.append(title,meter,modelLabel);
   const panRow=document.createElement('label');
   panRow.className='sid-engine-pan';
   panRow.innerHTML='Pan L <input type="range" data-prop="pan" min="-100" max="100" step="1"><output class="base-value"></output> R';
@@ -123,7 +114,6 @@ export function mountSidEnginePanels({
    onEngineChange?.(index);
   });
   model.addEventListener('change',()=>{engine.model=Number(model.value);onEngineChange?.(index,'model');});
-  remove.addEventListener('click',()=>{engine.enabled=false;render();syncVoiceSelectOptions?.();onEngineChange?.(index,'remove');});
   mountPitchEnvelopeEditor(voiceHost,{
    getEnvelope:()=>engine.voice.pitchEnvelope,
    applyEnvelope:envelope=>{engine.voice.pitchEnvelope=envelope;onEngineChange?.(index);}
@@ -134,18 +124,9 @@ export function mountSidEnginePanels({
   const root=$('sidEngines');
   if(!root)return;
   root.replaceChildren();
-  const count=visibleCount();
-  for(let index=0;index<count;index++){
-   const engine=engines[index];
-   engine.enabled=true;
+  for(let index=0;index<SID_ENGINE_COUNT;index++){
    root.append(renderEngineCard(index));
   }
-  for(let index=count;index<3;index++){
-   const engine=engines[index];
-   if(engine.enabled)root.append(renderEngineCard(index));
-  }
-  const add=$('sidEngineAdd');
-  if(add)add.disabled=count>=3;
  }
  function updateMeters(levels){
   $('sidEngines')?.querySelectorAll('.sid-rainbow-meter').forEach(meter=>{
@@ -157,5 +138,5 @@ export function mountSidEnginePanels({
   });
  }
  render();
- return {render,updateMeters,visibleCount};
+ return {render,updateMeters};
 }

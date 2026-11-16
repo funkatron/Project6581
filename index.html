@@ -31,7 +31,6 @@
  <label class="allocation-detune">Detune <input id="detune" type="range" min="0" max="100" value="12" step="1" aria-label="Unison pitch detune"><output id="detuneValue" class="base-value">12¢</output></label>
  <small id="voiceCapacity" class="voice-capacity" role="status" aria-live="polite">Up to 1 note · 1 oscillator</small>
 </div>
-<div class="sid-engines-toolbar"><button id="sidEngineAdd" type="button">+ Add SID</button></div>
 <div id="sidEngines" class="sid-engines" aria-label="SID engine panels"></div>
 <select id="chip" hidden aria-hidden="true"><option value="6581">6581</option><option value="8580">8580</option></select>
 <input type="range" id="volume" hidden aria-hidden="true"><input type="range" id="cutoff" hidden aria-hidden="true"><input type="range" id="resonance" hidden aria-hidden="true"><select id="mode" hidden aria-hidden="true"><option value="lowpass">Low-pass</option></select>
@@ -39,9 +38,10 @@
 <section class="panel performance-panel" id="playPanel" hidden role="tabpanel" aria-labelledby="tabPlay" aria-label="Arpeggiator controls">
 <div class="note-routing controls" aria-label="Note routing">
  <h3>Note routing</h3>
- <label>Keyboard <select id="keyboardRoute"><option value="all">All enabled</option><option value="sid1">SID 1</option><option value="sid2">SID 2</option><option value="sid3">SID 3</option><option value="layer">Layer</option></select></label>
- <label>Root Arp <select id="arpRoute"><option value="all">All enabled</option><option value="sid1">SID 1</option><option value="sid2">SID 2</option><option value="sid3">SID 3</option><option value="layer">Layer</option></select></label>
- <label>Game Arp <select id="gameRoute"><option value="sid1" selected>SID 1</option><option value="all">All enabled</option><option value="sid2">SID 2</option><option value="sid3">SID 3</option><option value="layer">Layer</option></select></label>
+ <label>Keyboard <select id="keyboardRoute"><option value="sid1" selected>SID 1</option><option value="sid2">SID 2</option><option value="sid3">SID 3</option><option value="all">All (shared voices)</option><option value="layer">Layer (per SID)</option></select></label>
+ <label>Root Arp <select id="arpRoute"><option value="sid1" selected>SID 1</option><option value="sid2">SID 2</option><option value="sid3">SID 3</option><option value="all">All (shared voices)</option><option value="layer">Layer (per SID)</option></select></label>
+ <label>Game Arp <select id="gameRoute"><option value="sid1" selected>SID 1</option><option value="sid2">SID 2</option><option value="sid3">SID 3</option><option value="all">All (shared voices)</option><option value="layer">Layer (per SID)</option></select></label>
+ <p class="note-routing-hint">Layer: one key plays SID&nbsp;1, 2, and 3 together—tune each engine card, then choose Layer.</p>
 </div>
 <div class="arp-global controls" aria-label="Latch for Game Arp and Root Arp">
  <label>Latch <input id="arpLatch" type="checkbox" aria-describedby="arpLatchHint"></label>

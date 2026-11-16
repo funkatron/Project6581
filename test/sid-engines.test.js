@@ -1,31 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {clampVoiceCount,maxVoicesForEngines,requiredEnginePanels,createDefaultEngines,routeMask,routingKeyForSource,DEFAULT_ROUTING} from '../src/sid-engines.js';
+import {clampVoiceCount,maxVoicesForEngines,createDefaultEngines,routeMask,routingKeyForSource,DEFAULT_ROUTING,MAX_SID_OSCILLATORS} from '../src/sid-engines.js';
 
-test('dynamic voice cap follows enabled engine count',()=>{
- const engines=createDefaultEngines();
- engines[1].enabled=false;engines[2].enabled=false;
- assert.equal(maxVoicesForEngines(engines),3);
- engines[1].enabled=true;
- assert.equal(maxVoicesForEngines(engines),6);
- engines[2].enabled=true;
- assert.equal(maxVoicesForEngines(engines),9);
- assert.equal(clampVoiceCount(8,engines),8);
- assert.equal(clampVoiceCount(99,engines),9);
+test('voice cap is always nine oscillators across three chips',()=>{
+ assert.equal(maxVoicesForEngines(),MAX_SID_OSCILLATORS);
+ assert.equal(clampVoiceCount(8),8);
+ assert.equal(clampVoiceCount(99),9);
+ assert.equal(clampVoiceCount('2'),2);
 });
 
-test('auto engine panels follow voice count',()=>{
- assert.equal(requiredEnginePanels(3),1);
- assert.equal(requiredEnginePanels(4),2);
- assert.equal(requiredEnginePanels(9),3);
+test('route mask always addresses three chips for all and layer',()=>{
+ assert.deepEqual(routeMask('all'),[0,1,2]);
+ assert.deepEqual(routeMask('layer'),[0,1,2]);
+ assert.deepEqual(routeMask('sid1'),[0]);
+ assert.deepEqual(routeMask('sid2'),[1]);
+ assert.deepEqual(routeMask('sid3'),[2]);
 });
 
-test('route mask follows enabled engines and routing presets',()=>{
- const engines=createDefaultEngines();
- engines[2].enabled=false;
- assert.deepEqual(routeMask('all',engines),[0,1]);
- assert.deepEqual(routeMask('sid3',engines),[]);
- assert.deepEqual(routeMask('sid2',engines),[1]);
+test('default routing keeps keyboard and arp on SID 1',()=>{
  assert.equal(routingKeyForSource('key:60'),'keyboard');
- assert.deepEqual(DEFAULT_ROUTING,{keyboard:'all',arp:'all',game:'sid1'});
+ assert.deepEqual(DEFAULT_ROUTING,{keyboard:'sid1',arp:'sid1',game:'sid1'});
+});
+
+test('default engine bank always has three entries',()=>{
+ assert.equal(createDefaultEngines().length,3);
 });
