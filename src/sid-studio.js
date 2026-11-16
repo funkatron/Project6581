@@ -120,8 +120,10 @@ function syncUnisonCountOptions(){
  }
  const layers=Math.max(1,Math.min(voices,Math.round(Number(select.value)||1)));
  for(const option of select.options)option.disabled=Number(option.value)>voices;
- select.value=String(layers);
+ const next=String(layers);
+ if(select.value!==next)select.value=next;
 }
+let unisonUpdating=false;
 let pendingUnisonFrame=null;
 function scheduleUnisonFollowUp(run){
  if(pendingUnisonFrame!=null)cancelAnimationFrame(pendingUnisonFrame);
@@ -247,6 +249,9 @@ function stop(note,source='key:'+note){
  sidAudio?.endNoteTrace(eventId,traceStart);
 }
 function updateUnison(){
+ if(unisonUpdating)return;
+ unisonUpdating=true;
+ try{
  const voices=Number($('voiceCount').value);
  const layers=Math.max(1,Math.min(voices,Math.round(Number($('unisonCount').value)||1)));
  const mode=$('voiceAssign').value;
@@ -264,8 +269,10 @@ function updateUnison(){
   syncUnisonCountOptions();
   updateModulation();
  });
+ }finally{unisonUpdating=false}
 }
-['voiceAssign','voiceCount','unisonCount','detune'].forEach(id=>$(id).addEventListener('input',updateUnison));
+['voiceAssign','voiceCount','unisonCount'].forEach(id=>{$(id).addEventListener('change',updateUnison);$(id).addEventListener('input',updateUnison)});
+$('detune').addEventListener('input',updateUnison);
 updateUnison();
 function panic(){gameStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.root=null;directOwned.clear();activeOwners.clear();arpKeyVisual.clear();sidController?.panic()}
 $('panic').addEventListener('click',()=>{

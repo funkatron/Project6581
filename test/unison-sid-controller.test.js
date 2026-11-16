@@ -24,6 +24,16 @@ test('nine voices with eight unison layers in Poly allow one sounding pitch',()=
  assert.equal(sid.voiceCount,9);assert.equal(sid.unisonCount,4);assert.equal(sid.polyNotes.size,0);
 });
 
+test('layer poly with nine global unison does not hang on a three-voice chip',()=>{
+ const started=performance.now();
+ const sid=new UnisonSidController(()=>{},{voiceCount:9,unisonCount:9,mode:'poly'});
+ const token=sid.noteOn(60,sound,{chipMask:[0],layerChip:0});
+ assert.ok(Number.isInteger(token));
+ assert.equal(sid.layerPoly[0].size,1);
+ assert.ok(performance.now()-started<50,'noteOn should return immediately');
+ sid.noteOff(60,token);
+});
+
 test('nine unison layers use every SID oscillator in Mono',()=>{
  const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:9,unisonCount:9,mode:'mono'});
  const token=sid.noteOn(69,sound);
