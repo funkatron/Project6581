@@ -141,7 +141,7 @@ function routingSelectForSource(source){
  const routing=readRoutingFromDom($,DEFAULT_ROUTING);
  return routing[key];
 }
-function playOne(note,ownerKey,chipMask){
+function playOne(note,ownerKey,chipMask,{layer=false}={}){
  const eventId=sidEventLog.enabled?sidEventLog.begin('note-command',{note,source:ownerKey,action:'on',inputEventId:sidInputEvent,stepIndex:ownerKey==='game'&&activeSeqStep>=0?activeSeqStep:null,contextState:sidContext?.state??'unavailable',chipMask}):null;
  const gate=canDispatchNote({
   blocked:sidMusicalInputBlocked(),
@@ -156,7 +156,8 @@ function playOne(note,ownerKey,chipMask){
  const traceStart=sidAudio?.beginNoteTrace();
  const prior=activeOwners.get(ownerKey);
  if(prior)sidController.noteOff(prior.note,prior.token);
- const token=sidController.noteOn(note,voiceSettingsForSlot,{chipMask});
+ const layerChip=layer&&chipMask.length===1?chipMask[0]:null;
+ const token=sidController.noteOn(note,voiceSettingsForSlot,{chipMask,layerChip});
  sidAudio?.endNoteTrace(eventId,traceStart);
  sidAudio?.noteDispatched?.(ownerKey.startsWith('key:')?'keyboard':ownerKey.split('@')[0]);
  activeOwners.set(ownerKey,{note,token});
@@ -166,7 +167,7 @@ function play(note,source='key:'+note){
  const route=routingSelectForSource(source);
  const chips=routeMask(route);
  if(route==='layer'){
-  for(const chip of chips)playOne(note,source+'@'+chip,[chip]);
+  for(const chip of chips)playOne(note,source+'@'+chip,[chip],{layer:true});
   return;
  }
  playOne(note,source,chips);
