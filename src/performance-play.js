@@ -132,7 +132,7 @@ export function mountPerformance({
    return;
   }
   game.last=event.note;
-  play(game.last,'game');getArpKeyVisual().show(game.last);
+  play(game.last,'game');getArpKeyVisual().show(game.last,'game');
   $('arpStatus').textContent=phraseLabel()+' step '+(event.index+1)+' · '+names[root%12]+(Math.floor(root/12)-1);
   if(event.duration<100){
    const sounding=event.note,clock=game.step;
@@ -154,7 +154,7 @@ export function mountPerformance({
   arp.root=note;
   if(gameEnabled())return; // The separate Game Arp clock voices this root.
   arpStopVoice();
-  arp.last=note;play(note,'arp');getArpKeyVisual().show(note);
+  arp.last=note;play(note,'arp');getArpKeyVisual().show(note,'root');
   $('arpStatus').textContent='Root Arp · '+names[note%12]+(Math.floor(note/12)-1)+
    ' · '+notes.length+' notes';
  }

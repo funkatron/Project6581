@@ -43,7 +43,8 @@ const samples=[
  ['preset dialog descriptions','#presetDialog small,#presetDialog .preset-empty,#presetDialog .preset-item-category','.preset-group'],
  ['preset status','#presetStatus','#presetDialog'],
  ['preset export link','#presetExportLink:not([hidden])','#presetDialog'],
- ['highlighted black piano keys','.key.black.arp-playing:not(.down)','.key.black.arp-playing:not(.down)'],
+ ['highlighted black piano keys (root arp)','.key.black.arp-playing-root:not(.down)','.key.black.arp-playing-root:not(.down)'],
+ ['highlighted black piano keys (game arp)','.key.black.arp-playing-game:not(.down)','.key.black.arp-playing-game:not(.down)'],
  ['modulated slider readout','label>.modulated-value','.panel,.keyboard-panel'],
  ['LFO legends','.lfo-controls legend','.lfo-controls'],
  ['master BPM number','.master-tempo output','header'],
@@ -52,7 +53,7 @@ const samples=[
 ];
 for(const [label,foregroundSelector,backgroundSelector] of samples){
  test('normal-size text contrast: '+label,()=>{
-  const color=(label==='highlighted black piano keys'||label==='normal buttons'||label==='selected preset')
+  const color=(label.startsWith('highlighted black piano keys')||label==='normal buttons'||label==='selected preset')
    ?'#ffffff':property(foregroundSelector,'color');
   const background=property(backgroundSelector,'background');
   const actual=ratio(color,background);
