@@ -43,6 +43,6 @@ export function formatStudioTraceText(snapshot,{headerLines=[],newestFirst=false
 
 export function formatStudioTraceReport(snapshot,environment){
  return JSON.stringify({schemaVersion:1,kind:'studio-trace',
-  notice:'Always-on local studio trace. Does not include opt-in note events unless copied via the full diagnostic bundle.',
+  notice:'Always-on local studio trace (includes compact note lines). Full register detail lives in noteEvents when logging is enabled.',
   environment,trace:snapshot},null,2);
 }
