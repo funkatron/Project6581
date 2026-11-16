@@ -105,6 +105,31 @@ function syncVoiceCountOptions(){
  }
  select.value=String(value);
 }
+function syncUnisonCountOptions(){
+ const voices=clampVoiceCount($('voiceCount')?.value??1);
+ const select=$('unisonCount');
+ if(!select)return;
+ const max=maxVoicesForEngines();
+ if(select.options.length!==max){
+  select.replaceChildren();
+  for(let option=1;option<=max;option++){
+   const el=document.createElement('option');
+   el.value=String(option);el.textContent=String(option);
+   select.append(el);
+  }
+ }
+ const layers=Math.max(1,Math.min(voices,Math.round(Number(select.value)||1)));
+ for(const option of select.options)option.disabled=Number(option.value)>voices;
+ select.value=String(layers);
+}
+let pendingUnisonFrame=null;
+function scheduleUnisonFollowUp(run){
+ if(pendingUnisonFrame!=null)cancelAnimationFrame(pendingUnisonFrame);
+ pendingUnisonFrame=requestAnimationFrame(()=>{
+  pendingUnisonFrame=null;
+  run();
+ });
+}
 function syncEnginePans(){
  for(let chip=0;chip<3;chip++)sidAudio?.setPan?.(chip,engines[chip].pan);
 }
@@ -128,6 +153,7 @@ enginePanelsUi=mountSidEnginePanels({
  }
 });
 syncVoiceCountOptions();
+syncUnisonCountOptions();
 const lfoState=Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',engines:'all',phase:0,seed:i}));
 const lfoTargets=['cutoff','resonance','volume','pulse','detune','attack','decay','sustain','release','pwmDepth','pwmRate'];
 const lfoTargetNames={
@@ -221,10 +247,9 @@ function stop(note,source='key:'+note){
  sidAudio?.endNoteTrace(eventId,traceStart);
 }
 function updateUnison(){
- const voices=Number($('voiceCount').value),selector=$('unisonCount');
- for(const option of selector.options)option.disabled=Number(option.value)>voices;
- if(Number(selector.value)>voices)selector.value=String(voices);
- const layers=Number(selector.value),mode=$('voiceAssign').value;
+ const voices=Number($('voiceCount').value);
+ const layers=Math.max(1,Math.min(voices,Math.round(Number($('unisonCount').value)||1)));
+ const mode=$('voiceAssign').value;
  if(sidController&&(sidController.voiceCount!==voices||sidController.unisonCount!==layers||sidController.mode!==mode)){
   // Assignments change only after releasing owned notes and running generators.
   panic();arp.held.clear();arp.latched.clear();
@@ -234,7 +259,11 @@ function updateUnison(){
  $('detuneValue').textContent=formatControlValue('detune',Number($('detune').value));
  const max=mode==='mono'||mode==='legato'?1:mode==='duo'?Math.min(2,Math.floor(voices/layers)):Math.floor(voices/layers);
  $('voiceCapacity').textContent='Up to '+max+' '+(max===1?'note':'notes')+' · '+voices+' '+(voices===1?'oscillator':'oscillators');
- updateModulation();
+ // Defer modulation and option.disabled so Safari/iPad can finish closing the native <select> picker.
+ scheduleUnisonFollowUp(()=>{
+  syncUnisonCountOptions();
+  updateModulation();
+ });
 }
 ['voiceAssign','voiceCount','unisonCount','detune'].forEach(id=>$(id).addEventListener('input',updateUnison));
 updateUnison();
@@ -246,7 +275,11 @@ $('panic').addEventListener('click',()=>{
  panic();arp.held.clear();arp.latched.clear();arp.step=0;game.step=0;seqPreview=false;setSeqTransportLabel();
  sidController?.panic();
  $('arpStatus').textContent='Arps and LFOs off';
-});window.addEventListener('blur',()=>{panic();arp.held.clear();seqPreview=false;setSeqTransportLabel()});
+});window.addEventListener('blur',()=>{
+ // Native pickers can blur the window without meaning navigation away.
+ if(document.activeElement?.tagName==='SELECT')return;
+ panic();arp.held.clear();seqPreview=false;setSeqTransportLabel();
+});
 const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 const arp={held:new Set(),latched:new Set(),timer:null,step:0,root:null,last:null};
 const directOwned=new Set(); // Physical notes sounding independently of either generator.
@@ -808,6 +841,7 @@ function applyPresetControls(next){
  $('voiceAssign').value=next.sound.instrument.mode;
  $('detune').value=String(next.sound.instrument.detune);
  syncVoiceCountOptions();
+ syncUnisonCountOptions();
  next.sound.lfos.forEach((lfo,i)=>Object.assign(lfoState[i],lfo));
  $('masterBpm').value=String(next.performance.masterBpm);
  $('masterBpmValue').textContent=String(next.performance.masterBpm);

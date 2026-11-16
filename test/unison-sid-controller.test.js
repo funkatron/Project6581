@@ -14,6 +14,24 @@ test('eight unison layers sound across all three SID chips in Mono',()=>{
  sid.noteOff(69,token);assert.equal(sid.current,null);assert.equal(gateOffs(writes.slice(offAt)).length,8);
 });
 
+test('nine voices with eight unison layers in Poly allow one sounding pitch',()=>{
+ const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:9,unisonCount:8,mode:'poly'});
+ assert.equal(sid.capacity,1);
+ const token=sid.noteOn(60,sound);
+ assert.equal(sid.polyNotes.size,1);
+ assert.equal(gateOns(writes).length,8);
+ sid.configure({unisonCount:4,voiceCount:9,mode:'poly'});
+ assert.equal(sid.voiceCount,9);assert.equal(sid.unisonCount,4);assert.equal(sid.polyNotes.size,0);
+});
+
+test('nine unison layers use every SID oscillator in Mono',()=>{
+ const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:9,unisonCount:9,mode:'mono'});
+ const token=sid.noteOn(69,sound);
+ assert.equal(gateOns(writes).length,9);
+ assert.deepEqual([...new Set(gateOns(writes).map(([r])=>Math.floor(r/32)))],[0,1,2]);
+ sid.noteOff(69,token);
+});
+
 test('six Voices and two Unison layers allow three Poly pitches',()=>{
  const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:6,unisonCount:2,mode:'poly',detune:40});
  const owners=[60,64,67].map(n=>sid.noteOn(n,sound));

@@ -178,6 +178,7 @@ button,select,.master-tempo input{font-family:inherit}
 .sid-led[data-state="loading"],.sid-led[data-state="ready"]{background:#e5a43b;border-color:#85612d;box-shadow:inset 0 1px 2px #fff2bd,0 0 5px #d9a64e}
 .sid-led[data-state="on"]{background:#43ed77;border-color:#237b45;box-shadow:inset 0 1px 2px #d3ffe0,0 0 7px #42e978,0 0 2px #247c46}
 /* Hardware-style unison switch; preserve voices selection in both modes. */
+.allocation-selectors select{touch-action:auto}
 .voice-allocation{margin:4px 0 9px;min-width:0}
 .voice-allocation h3{font-size:12px;font-weight:650;margin:0 0 4px;color:inherit}
 .allocation-selectors{display:flex;flex-wrap:wrap;align-items:center;gap:4px 15px}
