@@ -115,7 +115,7 @@ Finish the **active step** (code, doc, or device verification) in a single focus
 
 **Preset updates and new sounds after pitch-envelope support (follow-up PR):**
 
-- [ ] **Revisit existing drum presets first.** Audition and compare `Low Thud Kick` and `Low Tom` with fast downward pitch envelopes, then examine `Noise Snare` and `Noise Clap` for useful brief pitch movement or layered/noise alternatives. Keep hats noise-based unless pitch modulation materially improves them. The goal is audible improvement, not simply using the new feature everywhere.
+- [ ] **Revisit existing drum presets first.** `Low Thud Kick` / `Low Tom` now use kick/tom pitch templates (Step D tuning PR); iPad audition still open. Next: `Noise Snare` / `Noise Clap` listening pass. Keep hats noise-based unless pitch modulation materially improves them. The goal is audible improvement, not simply using the new feature everywhere.
 - [ ] **Preserve recognizable existing sounds.** Before changing any shipped factory preset, record its current settings and a reference audio sample. For substantial tonal changes, consider a new named variant with a new ID rather than silently replacing a well-liked patch. Do not overwrite users' saved copies or change factory IDs casually.
 - [ ] **Create new pitch-envelope presets** once the effect is tested: swept kick, descending arcade tom, laser/zap, rising or falling FX, pitch-diving bass, and a lead with a short attack scoop. Place them in the existing Drums, FX, Bass and Leads groups, using original sound designs rather than copying commercial soundtrack patches.
 - [x] **Protect user presets across the schema change.** v3/v4 imports upgrade with pitch envelope off; v5 round-trips per-engine envelopes (`test/preset-library.test.js`).

@@ -22,11 +22,11 @@ export const FACTORY_AUDITION_PHRASES=Object.freeze({
  'octave-chase-lead':{low:'C4 hold (Game Arp)',mid:'—',high:'C5',inspiredBy:'turrican',designNote:'Stepped octave pattern'},
  'filtered-saw-lead':{low:'C4',mid:'G4 hold',high:'C5',inspiredBy:'turrican',designNote:'Resonant moving cutoff'},
  'noise-snare':{low:'C3 rapid',mid:'C4 rapid',high:'C4',inspiredBy:'commando',designNote:'Short HP noise burst'},
- 'low-thud-kick':{low:'C1/C2 repeat',mid:'C2',high:'—',inspiredBy:'commando',designNote:'Static thud — not pitch-swept kick'},
+ 'low-thud-kick':{low:'C1/C2 repeat',mid:'C2',high:'—',inspiredBy:'commando',designNote:'Kick template pitch sweep + short triangle body'},
  'closed-noise-hat':{low:'—',mid:'C4 rapid',high:'C5 rapid',inspiredBy:'commando',designNote:'Very short HP noise'},
  'open-noise-hat':{low:'—',mid:'C4 spaced',high:'C5',inspiredBy:'commando',designNote:'Longer HP noise decay'},
  'noise-clap':{low:'—',mid:'C4 repeats',high:'—',inspiredBy:'commando',designNote:'Band-pass noise + volume LFO'},
- 'low-tom':{low:'C2',mid:'G2',high:'—',inspiredBy:'commando',designNote:'Triangle tom body — no sweep yet'}
+ 'low-tom':{low:'C2',mid:'G2',high:'—',inspiredBy:'commando',designNote:'Tom template downward sweep on trigger'}
 });
 
 export const CORE_C64_INSPIRED_IDS=Object.freeze(Object.keys(FACTORY_AUDITION_PHRASES));

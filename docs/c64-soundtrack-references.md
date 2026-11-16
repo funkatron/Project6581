@@ -49,7 +49,7 @@ Metadata sources: [HVSC STIL via 6581.nl](https://6581.nl/), composer interviews
 | 2 | Alt loop | 1:01 | 0:00–0:30 | Shorter action loop | `pwm-drive-bass`, Game Arp **action** |
 | 3–19 | SFX / jingles | &lt;6 s each | per subtune | Short noise bursts, stab notes | `noise-clap`, `closed-noise-hat`, `open-noise-hat`, `low-tom` |
 
-**Pitch envelope gap:** Arcade kick descent is not reproduced by static `low-thud-kick`; compare with [pitch-envelope roadmap](../ROADMAP.md#programmable-pitch-envelopes-engine-shipped-presets-and-drums-open) before replacing factory drums.
+**Pitch envelope (2026-11-16 tuning):** `low-thud-kick` and `low-tom` use editor **kick** / **tom** templates; iPad listening still required before calling drums validated.
 
 ---
 
