@@ -8,7 +8,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     this.queue=[];
     this.pitchEnvelopes=new Map();
     this.blocks=0;this.lastPeak=0;this.writes=0;
-    this.chipPeakHold=[0,0,0];this.chipPeakInterval=[0,0,0];
+    this.chipPeakHold=[0,0,0];this.chipPeakInterval=[0,0,0];this.masterPeakHold=0;
     this.meterBlocks=0;
     this.mixedMeterGain=3;
     this.pendingNoteEvents=[];this.eventLogEnabled=false;
@@ -343,6 +343,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       }
     }
     this.lastPeak=Math.max(this.lastPeak,peak);
+    this.masterPeakHold=Math.max(this.masterPeakHold,peak);
     let blockPeaks=null;
     if(Array.isArray(chipPeaks))blockPeaks=chipPeaks;
     else{
@@ -355,8 +356,8 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       this.chipPeakInterval[i]=Math.max(this.chipPeakInterval[i],sample);
     }
     if(++this.meterBlocks%16===0){
-      this.port.postMessage({type:'meter-levels',chipPeaks:[...this.chipPeakHold]});
-      this.chipPeakHold=[0,0,0];
+      this.port.postMessage({type:'meter-levels',chipPeaks:[...this.chipPeakHold],masterPeak:this.masterPeakHold});
+      this.chipPeakHold=[0,0,0];this.masterPeakHold=0;
     }
     if(++this.blocks%128===0){
       this.port.postMessage({
