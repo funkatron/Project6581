@@ -1,4 +1,4 @@
-import {selectRoot,stepMilliseconds} from './arp-composition.js?v=__BUILD_ID__';
+import {selectRoot,stepMilliseconds,resolveGameRoot} from './arp-composition.js?v=__BUILD_ID__';
 import {defaultSequence,sequenceEvent,sequenceForStyle} from './game-step-sequencer.js?v=__BUILD_ID__';
 
 // Step grid plus the Game Arp and root-arp clocks. The studio still owns play(),
@@ -96,11 +96,10 @@ export function mountPerformance({
   getArpKeyVisual().clear('root');
  }
  function gameRoot(){
-  const held=activeNotes();
-  if(arpEnabled()&&arp.root!==null)return arp.root;
-  if(held.length)return held[held.length-1];
-  if(isSeqPreview())return (keyboardState.octave+1)*12;
-  return null;
+  return resolveGameRoot({
+   arpEnabled:arpEnabled(),arpRoot:arp.root,heldNotes:activeNotes(),
+   seqPreview:isSeqPreview(),previewRootMidi:(keyboardState.octave+1)*12
+  });
  }
  function phraseLabel(){
   if($('gameArpStyle').value==='custom')return 'Custom';

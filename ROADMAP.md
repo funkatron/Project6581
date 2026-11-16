@@ -23,7 +23,7 @@ Finish the **active step** (code, doc, or device verification) in a single focus
 | **G** | **iPad MIDI** route decision (MIDI browser vs native shell) | Priority 3 + Priority 4 |
 | *later* | Western scale lock, `.sid` player, visualization, audio-clock LFO migration | Sections below |
 
-**Active step:** **E** — desktop Web MIDI note input (ARP/SEQ tab).
+**Active step:** **C** — Arp + Game Arp four-mode verification (CI + desktop Chromium; iPad Safari pending). Desktop Web MIDI shipped in [#124](https://github.com/funkatron/Project6581/pull/124)–[#125](https://github.com/funkatron/Project6581/pull/125).
 
 **Deferred (owner, 2026-11-16):** Step **A** [desktop-chromium-qa.md](docs/desktop-chromium-qa.md) and Step **B** iPad load-while-playing / full preset workflow pass—may return before a release milestone. Step **B** code shipped in [#122](https://github.com/funkatron/Project6581/pull/122).
 
@@ -68,7 +68,7 @@ Finish the **active step** (code, doc, or device verification) in a single focus
 - [x] Create a small **Factory Presets** browser (Bass, Lead, Pluck, Pad and FX) with six original settings. Display unsaved edits clearly.
 - [x] Add a separate **My Presets** collection with **Save**, **Save As**, **Rename**, and **Delete**. Factory presets remain read-only.
 - [x] Save and restore **all sound and performance settings**: SID model, waveform, ADSR, pulse/PWM, filter, level, unison/polyphony/detune, all three LFOs, master BPM, regular Arp and Game Arp settings. Presets never contain held notes or latches' active note contents, and loading never automatically plays a note.
-- [x] Make loading predictable while a note is sounding: **panic only when** routing, voice budget, mode, per-engine enable, or chip model changes (`presetLoadRequiresSilence`); always reset arp/seq state; user message on load. iPad verification open.
+- [x] Make loading predictable while a note is sounding: **panic only when** routing, voice budget, mode, per-engine enable, or chip model changes (`presetLoadRequiresSilence`); always reset arp/seq state; user message on load. Device pass deferred per owner.
 - [x] Persist user presets locally in browser storage with error reporting. Presets are **not** synchronized across devices.
 - [x] **Export** individual presets or a user bank as readable versioned JSON; **import** either with schema/range validation, actionable errors, and confirmation before replacing duplicate names.
 - [x] Use a simple **version 2** preset format including Game Arp Pattern rate, with no migration for earlier files. Validate imported content before modifying storage.
@@ -151,7 +151,8 @@ SID playback + highlighted keyboard keys
 - [x] Trigger immediately on first key press, stop on final release when latch is off, and preserve clear-latch/stop behavior. Verify on iPad Safari before claiming device-level reliability.
 - [x] Bound the final Game Arp note to MIDI 0–127 and illuminate that actual note. The future scale-lock policy must run after root transposition and pattern offsets.
 - [x] Label each role and rate explicitly and avoid a redundant current-note readout above the keyboard. iPad layout verification remains pending.
-- [ ] Finish CI and iPad Safari verification of all four modes, independent timing, transitions, latch/stop and keyboard highlights. Pure root/interval and source-wiring regression checks are included.
+- [x] CI regression: four composable modes, root/interval math, `resolveGameRoot`, latch release, and source-wiring (`test/arp-composition.test.js`, `test/arp-four-modes.test.js`, `test/arp-key-integration.test.js`). Agent notes: [agents/roadmap-step-c-arp.md](agents/roadmap-step-c-arp.md); desktop pass: [desktop-chromium-qa.md](docs/desktop-chromium-qa.md).
+- [ ] iPad Safari verification of all four modes, independent timing, transitions, latch/stop and keyboard highlights ([ipad-safari-qa.md](docs/ipad-safari-qa.md) composable section).
 
 **Completion checks:** Both generators can run simultaneously; Arpeggiator changes the root of the ongoing Game Arp phrase, each feature retains a clear independent purpose, and no combination produces stuck notes or misleading highlights.
 
@@ -189,10 +190,10 @@ SID playback + highlighted keyboard keys
 
 **Delivery order (step-by-step):** **(1)** Desktop [Web MIDI](https://caniuse.com/midi) over HTTPS — Step **E** in the queue above. **(2)** Document and test iPad-capable browsers or a native shell — Step **G**. CC mapping, MIDI Learn, MIDI out, and clock are explicitly later slices.
 
-- [x] **Desktop first — implement** minimal `requestMIDIAccess()` adapter, port/channel UI, note on/off + velocity-zero off + CC64 sustain, routed through keyboard `keyDown`/`keyUp` (ARP/SEQ tab). **Verify** on desktop HTTPS with [desktop-chromium-qa.md](docs/desktop-chromium-qa.md) (optional per owner).
+- [x] **Desktop first — implement** minimal `requestMIDIAccess()` adapter, port/channel UI, note on/off + velocity-zero off + CC64 sustain, routed through keyboard `keyDown`/`keyUp` (**Prefs** dialog). Shipped [#124](https://github.com/funkatron/Project6581/pull/124)–[#125](https://github.com/funkatron/Project6581/pull/125). **Verify** on desktop HTTPS with [desktop-chromium-qa.md](docs/desktop-chromium-qa.md) (optional per owner).
 - [ ] **Then verify iPad routes.** Stock Safari on iPad does not expose Web MIDI. Test a MIDI-enabled iPad browser such as [Web MIDI Browser](https://apps.apple.com/us/app/web-midi-browser/id953846217) for both MIDI input and AudioWorklet/WASM playback. Test USB and Bluetooth controllers and a same-iPad sequencer or DAW as separate cases. Record hardware, app and OS versions, routing steps, foreground/split-view behavior and audio recovery after switching apps.
 - [ ] **Prototype a native route if needed.** If a MIDI-enabled browser cannot cover both use cases reliably, try a minimal iPad shell hosting the existing synth. Use [Core MIDI](https://developer.apple.com/documentation/coremidi) for physical inputs and expose a [virtual destination](https://developer.apple.com/documentation/coremidi/mididestinationcreatewithprotocol(_:_:_:_:_:)) another app can select. Verify the complete path from MIDI event to audible SID output, including app switching. Record the chosen route and setup steps before committing to packaging.
-- [ ] **Share the performance path.** On supported desktop browsers use Web MIDI over HTTPS. Route Web MIDI or native input through the same note and arp logic as the on-screen keyboard. Add a port/channel selector and status, note-on/off including velocity-zero note-on, sustain (CC64), panic and clear handling for permission denial or unavailable MIDI. Define an intentional velocity response and preserve note ownership across sources.
+- [x] **Share the performance path.** On supported desktop browsers use Web MIDI over HTTPS. Route Web MIDI or native input through the same note and arp logic as the on-screen keyboard. Port/channel selector and status in **Prefs**; note-on/off, velocity-zero off, CC64 sustain, panic/unplug cleanup; note ownership across keyboard/MIDI ([#125](https://github.com/funkatron/Project6581/pull/125)).
 - [ ] **Verify live playing.** Measure MIDI-to-audio onset alongside the existing keyboard latency baseline. Test channel filtering, repeated notes, simultaneous touch/MIDI, both arps, latch, hot unplug/reconnect and Stop All. Verify on a physical iPad with a connected controller and with another app sending notes to Project6581.
 - [ ] **Follow-up slices.** Add optional CC mapping and MIDI Learn. Scope MIDI output separately, distinguishing direct and generated notes and handling matching note-offs and feedback. Evaluate clock sync after live input is stable.
 

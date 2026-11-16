@@ -12,4 +12,4 @@
 - [ ] Run [desktop-chromium-qa.md](../docs/desktop-chromium-qa.md) on **GitHub Pages** in Chrome or Edge.
 - [ ] Note whether intermittent output lag (meters on time, sound late) reproduces on desktop or stays iPad/Safari-specific.
 
-Step **B** implementation can proceed while Step A owner notes are pending; mark Step A complete in ROADMAP when the checklist is filed.
+Step **B** shipped ([#122](https://github.com/funkatron/Project6581/pull/122)). Step A checklist **deferred** by owner (2026-11-16); revisit before calling a release milestone if cross-browser latency or MIDI matters.

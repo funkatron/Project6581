@@ -27,3 +27,10 @@ export function stepMilliseconds(bpm,rate){
   throw new RangeError('Invalid arpeggiator tempo or rate');
  return 60000/tempo/division;
 }
+/** Root fed into Game Arp: regular Arp root wins when enabled. */
+export function resolveGameRoot({arpEnabled,arpRoot,heldNotes,seqPreview,previewRootMidi}){
+ if(arpEnabled&&arpRoot!==null)return arpRoot;
+ if(heldNotes?.length)return heldNotes[heldNotes.length-1];
+ if(seqPreview)return previewRootMidi;
+ return null;
+}

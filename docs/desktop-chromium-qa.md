@@ -27,7 +27,17 @@ Record: browser + version, OS, build stamp from footer, audio output route, and 
 - [ ] If meters align with keys but **speaker output lags**, note `contextState` in diagnostic JSON, try **new tab reload** before filing an engine defect.
 - [ ] After backgrounding the tab 30+ seconds, return and play — note suspend/interrupted → running in startup list.
 
-## MIDI (Step E)
+## Arp four modes (Step C)
+
+With a sustaining factory lead (Game Arp and Root Arp **off** first):
+
+- [ ] **Both off:** keys sound directly; footer Activity log shows input/note events when Diagnostics is open.
+- [ ] **Game Arp only:** one held key starts the pattern immediately; changing **Pattern** rate changes step speed (Root arp stays off).
+- [ ] **Root Arp only:** hold a chord; notes cycle Up/Down per pattern; **Root** rate changes root steps; Game Arp off.
+- [ ] **Both on:** root changes on Root rate, melody on Pattern rate (e.g. Root 1/4 vs Pattern 1/16 should feel distinct); teal = root highlight, orange = Game step pitch.
+- [ ] Latch on/off, **Clear latch**, **Stop all**, and toggling either generator: no stuck notes or stale key colors.
+
+## MIDI (Step E — shipped on desktop)
 
 - [ ] Header **Prefs** (system preferences) → Enable MIDI input → allow access → select port.
 - [ ] USB controller note-on matches on-screen keyboard path (try with arps off first).
