@@ -27,10 +27,11 @@ Record: browser + version, OS, build stamp from footer, audio output route, and 
 - [ ] If meters align with keys but **speaker output lags**, note `contextState` in diagnostic JSON, try **new tab reload** before filing an engine defect.
 - [ ] After backgrounding the tab 30+ seconds, return and play — note suspend/interrupted → running in startup list.
 
-## MIDI (when shipped)
+## MIDI (Step E)
 
-- [ ] `requestMIDIAccess` succeeds on HTTPS; USB controller note-on routes to same sound as keyboard.
-- [ ] Channel filter, velocity, Stop all with held MIDI notes.
+- [ ] **ARP / SEQ** tab → Enable MIDI → allow access → select port.
+- [ ] USB controller note-on matches on-screen keyboard path (try with arps off first).
+- [ ] Channel filter 1–16 vs All; CC64 sustain defers release; **Stop all** clears MIDI notes.
 
 ## Completion
 
