@@ -29,7 +29,7 @@ Record: browser + version, OS, build stamp from footer, audio output route, and 
 
 ## MIDI (Step E)
 
-- [ ] **ARP / SEQ** tab → Enable MIDI → allow access → select port.
+- [ ] Header **Prefs** (system preferences) → Enable MIDI input → allow access → select port.
 - [ ] USB controller note-on matches on-screen keyboard path (try with arps off first).
 - [ ] Channel filter 1–16 vs All; CC64 sustain defers release; **Stop all** clears MIDI notes.
 

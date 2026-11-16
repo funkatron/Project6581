@@ -246,11 +246,19 @@ header{padding:8px 12px;min-width:0}
 /* Preset dialog reuses the existing Sound palette and controls. */
 #presetOpen{max-width:175px;min-height:38px;padding:6px 10px;display:inline-flex;align-items:center;gap:6px}
 #presetCurrent{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:140px}
-#presetDialog{width:min(760px,calc(100vw - 24px));max-width:100%;max-height:calc(100dvh - 32px);margin:auto;padding:clamp(12px,2vw,20px);color:#f3f5fa;background:#1b2736;border:1px solid #52647d;border-radius:13px;box-shadow:0 20px 65px #0009;overflow-y:auto;overscroll-behavior:contain}
-#presetDialog:not([open]){display:none}
+#presetDialog,#preferencesDialog{width:min(760px,calc(100vw - 24px));max-width:100%;max-height:calc(100dvh - 32px);margin:auto;padding:clamp(12px,2vw,20px);color:#f3f5fa;background:#1b2736;border:1px solid #52647d;border-radius:13px;box-shadow:0 20px 65px #0009;overflow-y:auto;overscroll-behavior:contain}
+#presetDialog:not([open]),#preferencesDialog:not([open]){display:none}
 #presetDialog h2,#presetDialog h3{color:#f3f5fa}
+#preferencesDialog h2,#preferencesDialog h3{color:#f3f5fa}
 #presetDialog small,#presetDialog .preset-empty,#presetDialog .preset-item-category{color:#c8d6e5}
-#presetDialog::backdrop{background:#090f18c9}
+#preferencesDialog .preferences-hint{color:#c8d6e5}
+#presetDialog{background:#1b2736}
+#preferencesDialog{background:#1b2736}
+#presetDialog::backdrop,#preferencesDialog::backdrop{background:#090f18c9}
+.preferences-section{margin:0}
+.preferences-hint{margin:4px 0 12px;font-size:12px;line-height:1.35}
+.preferences-grid{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.preferences-grid label{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0}
 .preset-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
 .preset-dialog-header h2{margin:0;font-size:16px}
 #presetClose{min-height:40px;padding:5px 12px;flex:none}
