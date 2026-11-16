@@ -43,8 +43,8 @@ test('preset loading restores performance settings without stored notes or autop
  assert.match(script,/game:\{enabled:\$\('gameArpOn'\)\.checked,style:[\s\S]*?rate:Number\(\$\('gameRate'\)\.value\)/);
  assert.match(script,/arp:\{enabled:\$\('arpOn'\)\.checked,latch:/);
  assert.match(script,/presetLoadRequiresSilence/);
- assert.match(script,/if\(silenceAudio\)panic\(\)/);
- assert.match(script,/resetPerformanceGenerators\(\)/);
+ assert.match(script,/if\(silenceAudio\)panic\(\);\s*resetPerformanceGenerators\(\)/);
+ assert.match(script,/await sidAudio\.setChipModel\(chip,engines\[chip\]\.model\)/);
  assert.match(script,/game\.step=0;arp\.root=null/);
  assert.match(script,/unisonCount:Number\(\$\('unisonCount'\)\.value\)/);
  assert.match(script,/mode:\$\('voiceAssign'\)\.value/);

@@ -873,9 +873,9 @@ function resetPerformanceGenerators(){
  for(const key of keys.values())key.classList.remove('down');
 }
 function applyPresetControls(next,{silenceAudio=true}={}){
- // Stop arp/seq state always; full panic only when routing, voices, or chip models require it.
+ // Full panic when routing/voices/models require silence; always reset arp/seq UI state.
  if(silenceAudio)panic();
- else resetPerformanceGenerators();
+ resetPerformanceGenerators();
  next.sound.engines.forEach((engine,index)=>{
   engines[index].model=engine.model;
   engines[index].pan=engine.pan;
@@ -927,7 +927,9 @@ async function applyPresetSettings(value){
  syncLegacyFilterInputs();syncEnginePans();
  try{
   await ensureSidModel(presetModel);
-  for(let chip=0;chip<3;chip++)sidAudio?.setChipModel?.(chip,engines[chip].model).catch(()=>{});
+  for(let chip=0;chip<3;chip++){
+   if(sidAudio?.setChipModel)await sidAudio.setChipModel(chip,engines[chip].model);
+  }
   if(activeSidModel!==presetModel)throw new Error('SID chip model does not match the selected preset');
  }catch(error){
   // Loading is transactional even if a device fails to initialize.
