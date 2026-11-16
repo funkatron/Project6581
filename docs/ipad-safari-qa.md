@@ -121,6 +121,7 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 - [ ] Change octaves and rotate iPad during preview. It should continue at the updated root octave and preserve note ownership.
 - [ ] Save the custom sequence in a user preset, load another sound, then restore the user preset. Existing version-3 presets without sequence fields still load.
 - [ ] Confirm that the original Sound settings, LFOs, voice allocation, recording, and preset modal are all reachable in the new layout.
+- [ ] SYNTH: set **Assign Poly**, **Voices 9**, then **Unison 8** (and **Unison 9**). After each change the full UI must stay tappable (no whole-page freeze after the native picker closes).
 - [ ] Test VoiceOver range labels, keyboard navigation, and colored step highlights without relying solely on color to identify the active step.
 
 ## Composable Game Arp and Arpeggiator (pending device verification)
