@@ -1,6 +1,7 @@
 import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=__BUILD_ID__';
 import {SID_ENGINE_COUNT} from './sid-engines.js';
 import {meterDisplayWidth} from './sid-meter-display.js?v=__BUILD_ID__';
+import {formatPanBrief,formatHzBrief,formatPercent} from './control-format.js?v=__BUILD_ID__';
 
 const FILTER_MODES=['lowpass','bandpass','highpass'];
 
@@ -48,23 +49,43 @@ export function mountSidEnginePanels({
   model.value=String(engine.model);
   modelLabel.append(model);
   header.append(title,meter,modelLabel);
-  const panRow=document.createElement('label');
+  function appendParamRow(parent,labelText,{value,min,max,step,filter,prop,formatFn}){
+   const row=document.createElement('div');
+   row.className='param-row';
+   const label=document.createElement('span');
+   label.className='param-label';
+   label.textContent=labelText;
+   const track=document.createElement('div');
+   track.className='param-track';
+   const input=document.createElement('input');
+   input.type='range';
+   input.min=String(min);
+   input.max=String(max);
+   input.step=String(step);
+   input.value=String(value);
+   if(filter)input.dataset.filter=filter;
+   if(prop)input.dataset.prop=prop;
+   const output=document.createElement('output');
+   output.className='param-value base-value';
+   output.textContent=formatFn(value);
+   track.append(input);
+   row.append(label,track,output);
+   parent.append(row);
+   return {row,input,output};
+  }
+  const panRow=document.createElement('div');
   panRow.className='sid-engine-pan';
-  panRow.innerHTML='Pan L <input type="range" data-prop="pan" min="-100" max="100" step="1"><output class="base-value"></output> R';
-  panRow.querySelector('[data-prop="pan"]').value=String(engine.pan);
-  panRow.querySelector('output').textContent=engine.pan===0?'Center':engine.pan<0?Math.abs(engine.pan)+'% L':engine.pan+'% R';
+  const pan=appendParamRow(panRow,'Pan',{value:engine.pan,min:-100,max:100,step:1,prop:'pan',formatFn:formatPanBrief});
   const grid=document.createElement('div');
-  grid.className='voice-grid';
+  grid.className='voice-grid sid-engine-params';
   const filterFields=[
-    ['volume','Volume',0,100,1],['cutoff','Cutoff',50,10000,1],['resonance','Resonance',0,100,1]
+    ['volume','Volume',0,100,formatPercent],
+    ['cutoff','Cutoff',50,10000,formatHzBrief],
+    ['resonance','Resonance',0,100,formatPercent]
   ];
-  for(const [key,label,min,max,step] of filterFields){
-   const row=document.createElement('label');
-   row.innerHTML=label+' <input type="range" data-filter="'+key+'" min="'+min+'" max="'+max+'" step="'+step+'"><output class="base-value"></output>';
-   const input=row.querySelector('input');
-   input.value=String(engine.filter[key]);
-   row.querySelector('output').textContent=formatControlValue(key,engine.filter[key]);
-   grid.append(row);
+  const filterRows=[];
+  for(const [key,label,min,max,formatFn] of filterFields){
+   filterRows.push(appendParamRow(grid,label,{value:engine.filter[key],min,max,step:1,filter:key,formatFn:value=>formatFn(value)}));
   }
   const modeLabel=document.createElement('label');
   modeLabel.textContent='Filter ';
@@ -101,20 +122,21 @@ export function mountSidEnginePanels({
   card.querySelectorAll('input[data-filter]').forEach(inp=>inp.addEventListener('input',()=>{
    const key=inp.dataset.filter;
    engine.filter[key]=Number(inp.value);
-   const out=inp.closest('label')?.querySelector('output');
-   if(out)out.textContent=formatControlValue(key,engine.filter[key]);
+   const out=inp.closest('.param-row')?.querySelector('output');
+   if(out){
+    if(key==='cutoff')out.textContent=formatHzBrief(engine.filter[key]);
+    else if(key==='volume'||key==='resonance')out.textContent=formatPercent(engine.filter[key]);
+    else out.textContent=formatControlValue(key,engine.filter[key]);
+   }
    onEngineChange?.(index);
   }));
   card.querySelectorAll('select[data-filter]').forEach(inp=>inp.addEventListener('change',()=>{
    engine.filter.mode=inp.value;
    onEngineChange?.(index);
   }));
-  panRow.querySelector('[data-prop="pan"]').addEventListener('input',e=>{
+  pan.input.addEventListener('input',e=>{
    engine.pan=Number(e.target.value);
-   const out=panRow.querySelector('output');
-   if(engine.pan===0)out.textContent='Center';
-   else if(engine.pan<0)out.textContent=Math.abs(engine.pan)+'% L';
-   else out.textContent=engine.pan+'% R';
+   pan.output.textContent=formatPanBrief(engine.pan);
    onEngineChange?.(index);
   });
   model.addEventListener('change',()=>{engine.model=Number(model.value);onEngineChange?.(index,'model');});
