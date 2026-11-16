@@ -26,6 +26,8 @@ test('sid-studio wires extracted UI modules',()=>{
  assert.match(studio,/from "\.\/sid-engine-panels-ui\.js/);
  assert.match(studio,/mountSidEnginePanels\(/);
  assert.match(studio,/mountMasterLoudnessMeter\(/);
+ assert.match(studio,/mountHelpDialog\(/);
+ assert.match(studio,/mountHelpTriggers\(/);
  assert.match(studio,/from "\.\/audio-timing-panel\.js/);
  assert.match(studio,/mountAudioTimingPanel\(/);
 });

@@ -19,6 +19,7 @@ import {applyFirstEnergyTiming} from "./audio-timing-metrics.js?v=__BUILD_ID__";
 import {createDefaultEngines,clampVoiceCount,maxVoicesForEngines,DEFAULT_ROUTING,routeMask,routingKeyForSource,readRoutingFromDom} from "./sid-engines.js?v=__BUILD_ID__";
 import {mountSidEnginePanels} from "./sid-engine-panels-ui.js?v=__BUILD_ID__";
 import {mountMasterLoudnessMeter} from "./master-loudness-meter-ui.js?v=__BUILD_ID__";
+import {mountHelpDialog,mountHelpTriggers} from "./ui-help-dialog.js?v=__BUILD_ID__";
 
 export function startSidStudio(){
 const $=id=>document.getElementById(id);
@@ -135,6 +136,8 @@ const lfoTargetNames={
 const syncedRates=[{value:0.25,label:'4/1'},{value:0.5,label:'2/1'},...([1,2,4,8,16,32].map(value=>({value,label:'1/'+value})))];
 const {renderLfos}=mountLfoPanel({$,lfoState,lfoTargets,lfoTargetNames,syncedRates,onChange:()=>updateModulation()});
 mountEditorTabs({$});
+const helpUi=mountHelpDialog($);
+mountHelpTriggers($,{openHelp:helpUi.openHelp});
 const activeOwners=new Map();
 function voiceSettingsForSlot(slot){
  const chip=Math.floor(slot/3);
