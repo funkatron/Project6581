@@ -8,7 +8,7 @@ Route the touch keyboard, arpeggiators, presets, and all voice/filter controls t
 
 | Layer | Location | Role |
 | --- | --- | --- |
-| WASM bridge | `native/sid_bridge.cpp` | Three `reSIDfp::SID` instances; panned stereo mix + per-chip peak meters |
+| WASM bridge | `native/sid_bridge.cpp` | Three `reSIDfp::SID` instances; panned stereo mix + per-chip peak meters (each chip’s peak is its **post-pan ÷3 bus contribution**, same scale as the header master meter on mixed PCM) |
 | Build | `scripts/build-residfp.sh` | Emscripten compile; artifact `dist/residfp.wasm` |
 | Audio thread | `src/residfp-worklet.js` | WASM render, write queue, pitch envelopes, LFO filter path, PCM recording |
 | Main thread bootstrap | `src/create-residfp-audio.js` | `AudioContext`, worklet module, WASM fetch/compile, diagnostics |

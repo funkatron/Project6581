@@ -85,13 +85,18 @@ int sid_render(int frames) {
     chip->clock(scratch, frames);
     float blockPeak = 0.f;
     const auto [leftGain, rightGain] = pan_gains(chip_pan[index]);
+    constexpr float kBusDivisor = 3.f;
     for (int i = 0; i < frames; ++i) {
       const int32_t sample = scratch[i];
       const float normalized = static_cast<float>(std::abs(sample)) / 32768.f;
-      if (normalized > blockPeak) blockPeak = normalized;
+      const float busL = normalized * leftGain / kBusDivisor;
+      const float busR = normalized * rightGain / kBusDivisor;
+      const float busPeak = std::max(busL, busR);
+      if (busPeak > blockPeak) blockPeak = busPeak;
       mixedL[i] += static_cast<int32_t>(sample * leftGain);
       mixedR[i] += static_cast<int32_t>(sample * rightGain);
     }
+    // Per-chip meters track post-pan bus contribution (matches mixed PCM master meter).
     chip_peak[index] = std::max(chip_peak[index] * 0.85f, blockPeak);
   }
   for (int i = 0; i < frames; ++i) {
