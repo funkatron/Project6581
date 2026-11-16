@@ -212,10 +212,13 @@ header{padding:8px 12px;min-width:0}
 .lfo-controls input[type=range]{height:40px;touch-action:pan-x}
 .lfo-controls output{font-size:11px}
 @media(max-width:520px){header{display:grid;grid-template-columns:minmax(0,1fr);gap:5px}header .controls{justify-content:space-between}}
-/* Arp-generated note: separate from the gold physical-press state. */
-.key.arp-playing:not(.down){background:#7bcabb;color:#16362d;border-bottom-color:#2d7465;box-shadow:inset 0 0 0 3px #236858}
-.key.black.arp-playing:not(.down){background:#2d7768;color:#fff;border-bottom-color:#22584c;box-shadow:inset 0 0 0 3px #a1eedf}
-.key.down.arp-playing{box-shadow:inset 0 0 0 3px #236858}
+/* Arp-generated notes: separate from gold physical-press; root vs Game Arp colors. */
+.key.arp-playing-root:not(.down){background:#7bcabb;color:#16362d;border-bottom-color:#2d7465;box-shadow:inset 0 0 0 3px #236858}
+.key.black.arp-playing-root:not(.down){background:#2d7768;color:#fff;border-bottom-color:#22584c;box-shadow:inset 0 0 0 3px #a1eedf}
+.key.down.arp-playing-root{box-shadow:inset 0 0 0 3px #236858}
+.key.arp-playing-game:not(.down){background:#f0a574;color:#4a2208;border-bottom-color:#c56a2a;box-shadow:inset 0 0 0 3px #b94415}
+.key.black.arp-playing-game:not(.down){background:#9c4a18;color:#fff;border-bottom-color:#7a3810;box-shadow:inset 0 0 0 3px #f0a87a}
+.key.down.arp-playing-game{box-shadow:inset 0 0 0 3px #b94415}
 /* Fix octave-navigation position independent of currently sounding notes. */
 .keyboard-heading{display:grid;grid-template-columns:minmax(0,1fr) max-content max-content;min-width:0}
 .keyboard-heading .octave-controls{min-width:max-content;white-space:nowrap;justify-self:end}

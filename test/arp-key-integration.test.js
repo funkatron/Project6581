@@ -21,10 +21,11 @@ test('Game Arp voices its pattern, while regular Arp owns the selected root',()=
  assert.match(performance,/function gameTick\(\)[\s\S]*?sequenceEvent\(root,seqState,game\.step\+\+\)/);
  assert.doesNotMatch(performance,/patternPitch\(/);
  assert.match(performance,/loadBuiltInPhrase\(\$\('gameArpStyle'\)\.value\)/);
- assert.match(performance,/play\(game\.last,'game'\);getArpKeyVisual\(\)\.show\(game\.last\)/);
+ assert.match(performance,/play\(game\.last,'game'\);getArpKeyVisual\(\)\.show\(game\.last,'game'\)/);
  assert.match(performance,/function arpTick\(\)[\s\S]*?selectRoot\(notes,\$\('arpPattern'\)\.value,arp\.step\+\+\)/);
- assert.match(performance,/arp\.last=note;play\(note,'arp'\);getArpKeyVisual\(\)\.show\(note\)/);
+ assert.match(performance,/getArpKeyVisual\(\)\.show\(note,'root'\)/);
  assert.match(performance,/if\(gameEnabled\(\)\)return;/);
+ assert.doesNotMatch(performance,/if\(gameEnabled\(\)\)return;[\s\S]*?getArpKeyVisual\(\)\.show\(note,'root'\)/);
 });
 test('both arpeggiators have independent rate selectors and timers',()=>{
  assert.match(html,/id="gameRate"/);
@@ -34,18 +35,20 @@ test('both arpeggiators have independent rate selectors and timers',()=>{
 });
 
 test('all arpeggiator release paths remove the visual highlight',()=>{
- assert.match(performance,/function gameStop\(\)[\s\S]*?getArpKeyVisual\(\)\.clear\(\)/);
- assert.match(performance,/function arpStopVoice\(\)[\s\S]*?getArpKeyVisual\(\)\.clear\(\)/);
+ assert.match(performance,/function gameStop\(\)[\s\S]*?getArpKeyVisual\(\)\.clear\('game'\)/);
+ assert.match(performance,/function arpStopVoice\(\)[\s\S]*?getArpKeyVisual\(\)\.clear\('root'\)/);
  assert.match(script,/function panic\(\)[^\n]*?arpKeyVisual\.clear\(\)/);
  assert.match(performance,/\$\('arpClear'\)\.addEventListener\('click'/);
 });
 
 test('visual style remains independent from pressed keys and contains no animation',()=>{
- assert.match(studioCss,/\.key\.arp-playing:not\(\.down\)/);
- assert.match(studioCss,/\.key\.down\.arp-playing/);
+ assert.match(studioCss,/\.key\.arp-playing-root:not\(\.down\)/);
+ assert.match(studioCss,/\.key\.arp-playing-game:not\(\.down\)/);
+ assert.match(studioCss,/\.key\.down\.arp-playing-root/);
+ assert.match(studioCss,/\.key\.down\.arp-playing-game/);
  assert.doesNotMatch(html,/id="arpVisualNote"|class="arp-visual-note"/);
  assert.doesNotMatch(script,/showLabel:|noteName:|arpVisualNote/);
- assert.doesNotMatch(html,/\.key\.arp-playing[^\{]*\{[^}]*animation\s*:/);
+ assert.doesNotMatch(html,/\.key\.arp-playing-(?:root|game)[^\{]*\{[^}]*animation\s*:/);
 });
 
 test('changing note text cannot move the keyboard octave controls',()=>{

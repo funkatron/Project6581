@@ -89,11 +89,11 @@ export function mountPerformance({
   if(game.gateTimer!==null){clearTimeout(game.gateTimer);game.gateTimer=null}
   if(game.last!==null){stop(game.last,'game');game.last=null}
   clearStepHighlight();
-  getArpKeyVisual().clear();
+  getArpKeyVisual().clear('game');
  }
  function arpStopVoice(){
   if(arp.last!==null){stop(arp.last,'arp');arp.last=null}
-  getArpKeyVisual().clear();
+  getArpKeyVisual().clear('root');
  }
  function gameRoot(){
   const held=activeNotes();
@@ -127,19 +127,19 @@ export function mountPerformance({
   highlightStep(event.index);
   game.last=null;
   if(!event.gate){
-   getArpKeyVisual().clear();
+   getArpKeyVisual().clear('game');
    $('arpStatus').textContent=phraseLabel()+' step '+(event.index+1)+' · rest';
    return;
   }
   game.last=event.note;
-  play(game.last,'game');getArpKeyVisual().show(game.last);
+  play(game.last,'game');getArpKeyVisual().show(game.last,'game');
   $('arpStatus').textContent=phraseLabel()+' step '+(event.index+1)+' · '+names[root%12]+(Math.floor(root/12)-1);
   if(event.duration<100){
    const sounding=event.note,clock=game.step;
    const bpm=Number($('arpSync').checked?$('masterBpm').value:$('arpBpm').value);
    game.gateTimer=setTimeout(()=>{
     if(game.step!==clock||game.last!==sounding)return;
-    stop(sounding,'game');game.last=null;getArpKeyVisual().clear();game.gateTimer=null;
+    stop(sounding,'game');game.last=null;getArpKeyVisual().clear('game');game.gateTimer=null;
    },stepMilliseconds(bpm,$('gameRate').value)*event.duration/100);
   }
  }
@@ -152,9 +152,10 @@ export function mountPerformance({
   }
   const note=selectRoot(notes,$('arpPattern').value,arp.step++);
   arp.root=note;
-  if(gameEnabled())return; // The separate Game Arp clock voices this root.
-  arpStopVoice();
-  arp.last=note;play(note,'arp');getArpKeyVisual().show(note);
+  getArpKeyVisual().show(note,'root');
+  if(gameEnabled())return; // Game Arp clock voices melody; root stays highlighted.
+  if(arp.last!==null)stop(arp.last,'arp');
+  arp.last=note;play(note,'arp');
   $('arpStatus').textContent='Root Arp · '+names[note%12]+(Math.floor(note/12)-1)+
    ' · '+notes.length+' notes';
  }
