@@ -130,7 +130,8 @@ test('actual app note commands retain their physical input parent and tag on/off
   canDispatchNote,shouldBlockMusicalInput,needsAudioResume,restoreSidOutput(){},
   pendingSidStartup:null,pendingSidClose:null,presetLoading:false,sidCleanupBlocked:false,sidStarting:false,
   engines,currentSidSettings:{enabled:true},$:id=>({value:'all'}),
-  routingKeyForSource,routeMask,DEFAULT_ROUTING,readRoutingFromDom:()=>({...DEFAULT_ROUTING})});
+  routingKeyForSource,routeMask,DEFAULT_ROUTING,readRoutingFromDom:()=>({...DEFAULT_ROUTING}),
+  traceStudio(){},diagnosticsUi:{afterNoteEvent(){}}});
  const trace=html.slice(html.indexOf('function traceInput('),html.indexOf('// Let the browser release'));
  const notes=html.slice(html.indexOf('const activeOwners=new Map();'),html.indexOf('function updateUnison(){'));
  vm.runInContext(trace+'\n'+notes,scope);

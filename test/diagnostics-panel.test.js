@@ -9,6 +9,7 @@ test('diagnostics panel is footer-driven and not in the tab bar',()=>{
  assert.match(html,/id="diagPanel"/);
  assert.match(html,/footer-diagnostics-link/);
  assert.match(html,/id="diagnosticsDownload"/);
+ assert.match(html,/id="diagnosticsNoteView"/);
  assert.doesNotMatch(html,/id="studioDiagnostics"/);
  assert.doesNotMatch(html,/header-icon-btn[^>]*id="diagnosticsOpen"/);
  assert.match(studio,/mountDiagnosticsPanel/);

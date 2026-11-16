@@ -19,6 +19,35 @@ export function createSidEventLog({capacity=512,now=()=>performance.now()}={}){
  };
 }
 
+function formatEventDetail(entry){
+ const skip=new Set(['type','atMs','eventId']);
+ const parts=[];
+ for(const [key,value] of Object.entries(entry)){
+  if(skip.has(key))continue;
+  if(value==null)continue;
+  if(Array.isArray(value))parts.push(key+'=['+value.join(',')+']');
+  else if(typeof value==='object')parts.push(key+'='+JSON.stringify(value));
+  else parts.push(key+'='+String(value));
+ }
+ return parts.join(' · ');
+}
+
+export function formatSidEventLogText(snapshot,{headerLines=[],newestFirst=true}={}){
+ const lines=[...headerLines];
+ if(!snapshot.enabled)lines.push('Detailed note logging is off. Open Diagnostics to enable, or check “Log note events”.');
+ else if(snapshot.overwritten)lines.push('('+snapshot.overwritten+' earlier note events dropped)');
+ const entries=newestFirst?[...snapshot.entries].reverse():snapshot.entries;
+ for(const entry of entries){
+  if(!entry)continue;
+  const ms=Number.isFinite(entry.atMs)?entry.atMs.toFixed(1):'?';
+  const detail=formatEventDetail(entry);
+  const id=Number.isInteger(entry.eventId)?' #'+entry.eventId:'';
+  lines.push(ms+' ms · '+entry.type+id+(detail?': '+detail:''));
+ }
+ if(snapshot.enabled&&!entries.length)lines.push('No detailed note events yet. Play a key or run an arp.');
+ return lines.join('\n');
+}
+
 export function formatSidDiagnosticReport(log,environment){
  return JSON.stringify({schemaVersion:1,
   notice:'Local diagnostic log. Times are main-thread receipt/dispatch times, not physical speaker latency. Audio frame positions use a separate clock. Several notes may share one rendered block; this does not prove each note was audible.',
