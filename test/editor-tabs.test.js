@@ -16,7 +16,8 @@ test('each editor tab hides both inactive panels and retains the existing contro
  }
  nodes.set('workspace',{dataset:{tab:'voice'},querySelectorAll:()=>panels.map(id=>nodes.get(id))});
  const sandbox={$:id=>nodes.get(id)};
- vm.runInNewContext(tabsModule.replace('export function mountEditorTabs','function mountEditorTabs')+'\nmountEditorTabs({$});',sandbox);
+ const script=tabsModule.replace(/export function /g,'function ')+'\nmountEditorTabs({$});';
+ vm.runInNewContext(script,sandbox);
  for(const selected of [2,0,1,2,1,0]){
   const controls=panels.map(id=>nodes.get(id).control);
   events.get(tabs[selected])();
