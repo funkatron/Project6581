@@ -23,9 +23,9 @@ test('immediate note-on flush preserves register ordering and does not double-po
 });
 
 test('keyboard and Game Arp note-ons use the same immediate dispatch path',()=>{
- assert.match(code,/const token=sidController\.noteOn\(note,voiceSettingsForSlot,\{chipMask\}\)/);
+ assert.match(code,/const token=sidController\.noteOn\(note,voiceSettingsForSlot,\{chipMask,layerChip\}\)/);
  assert.match(code,/sidAudio\?\.noteDispatched\?\.\(ownerKey\.startsWith\('key:'\)\?'keyboard':ownerKey\.split\('@'\)\[0\]\)/);
- assert.match(code,/function playOne\(note,ownerKey,chipMask\)/);
+ assert.match(code,/function playOne\(note,ownerKey,chipMask,\{layer=false\}/);
  assert.match(bridge,/noteDispatched\(source='keyboard'\)\{\s*batcher\.flush\(\)/);
  assert.match(bridge,/if\(now-lastProbeAt<500\|\|pendingProbes\.size>=4\)\{/);
  assert.match(bridge,/onStatus\(\{type:'latency-probe-skipped',source\}\)/);

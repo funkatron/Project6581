@@ -10,6 +10,8 @@ export class UnisonSidController {
   this.detune=0;this.liveDetune=0;this.held=[];this.monoTokens=new Map();
   this.current=null;this.currentToken=null;this.settings=null;this.currentSlotMap=null;
   this.polyNotes=new Map();this.sequence=0;
+  this.layerStacks=[null,null,null];
+  this.layerPoly=[new Map(),new Map(),new Map()];
   this.configure({voiceCount,unisonCount,mode,detune});
  }
  configure({voiceCount=this.voiceCount,unisonCount=this.unisonCount,mode=this.mode,detune=this.detune}={}){
@@ -67,13 +69,71 @@ export class UnisonSidController {
   return getter;
  }
  releaseSlots(slots){for(const slot of slots){this.onPitchStop(slot);this.chip(slot).noteOff(this.voice(slot))}}
+ releaseLayerPoly(chip,note){
+  const entry=this.layerPoly[chip].get(note);
+  if(!entry)return;
+  this.releaseSlots(entry.slots);
+  this.layerPoly[chip].delete(note);
+ }
+ releaseLayerStack(chip){
+  const stack=this.layerStacks[chip];
+  if(!stack)return;
+  this.releaseSlots(this.stackSlots(0,stack.slotMap));
+  this.layerStacks[chip]=null;
+ }
+ noteOnLayer(chip,note,settings,chipMask){
+  if(!Number.isInteger(chip)||chip<0||chip>2)throw new RangeError('layer chip');
+  const token=++this.sequence;
+  const getter=typeof settings==='function'?settings:()=>settings;
+  const mask=Array.isArray(chipMask)&&chipMask.length?chipMask:[chip];
+  const slotMap=this.buildSlotMap(mask);
+  const capacity=this.capacityFor(slotMap);
+  if(this.mode==='mono'||this.mode==='legato'){
+   const prior=this.layerStacks[chip];
+   if(this.mode==='legato'&&prior){
+    prior.note=note;prior.token=token;prior.getter=getter;prior.slotMap=slotMap;
+    this.retuneSlots(this.stackSlots(0,slotMap),note);
+    return token;
+   }
+   if(prior)this.releaseLayerStack(chip);
+   const applied=this.trigger(this.stackSlots(0,slotMap),note,getter);
+   this.layerStacks[chip]={note,token,slotMap,getter:applied};
+   return token;
+  }
+  const poly=this.layerPoly[chip];
+  if(poly.has(note))this.releaseLayerPoly(chip,note);
+  while(poly.size>=capacity)this.releaseLayerPoly(chip,poly.keys().next().value);
+  const used=new Set([...poly.values()].map(entry=>entry.index));
+  let index=0;while(used.has(index))index++;
+  const slots=this.stackSlots(index,slotMap);
+  poly.set(note,{token,index,slots,slotMap,getter:this.trigger(slots,note,getter)});
+  return token;
+ }
+ noteOffLayer(chip,note,token){
+  const stack=this.layerStacks[chip];
+  if(stack&&stack.note===note&&(token===undefined||stack.token===token)){
+   this.releaseLayerStack(chip);
+   return true;
+  }
+  const entry=this.layerPoly[chip].get(note);
+  if(entry&&(token===undefined||entry.token===token)){
+   this.releaseLayerPoly(chip,note);
+   return true;
+  }
+  return false;
+ }
  retuneSlots(slots,note){slots.forEach((slot,i)=>{
   const tuned=note+this.offset(i);
   this.onPitchRetune(slot,tuned);
   this.chip(slot).setFrequency(this.voice(slot),tuned);
  })}
- noteOn(note,settings,{chipMask=null}={}){
+ noteOn(note,settings,{chipMask=null,layerChip=null}={}){
   if(!Number.isFinite(note))throw new RangeError('MIDI note');
+  const isolated=Number.isInteger(layerChip)?layerChip:
+   (Array.isArray(chipMask)&&chipMask.length===1?chipMask[0]:null);
+  if(Number.isInteger(isolated)&&isolated>=0&&isolated<=2){
+   return this.noteOnLayer(isolated,note,settings,chipMask);
+  }
   const token=++this.sequence;
   const getter=typeof settings==='function'?settings:()=>settings;
   const slotMap=this.buildSlotMap(chipMask);
@@ -109,6 +169,9 @@ export class UnisonSidController {
   this.releaseSlots(entry.slots);this.polyNotes.delete(note);
  }
  noteOff(note,token){
+  for(let chip=0;chip<3;chip++){
+   if(this.noteOffLayer(chip,note,token))return;
+  }
   if(this.mode==='mono'||this.mode==='legato'){
    const owner=this.monoTokens.get(note);
    if(!owner||(token!==undefined&&token!==owner.token))return;
@@ -134,6 +197,10 @@ export class UnisonSidController {
  panic(){
   this.releaseVoices();
   for(const note of [...this.polyNotes.keys()])this.releasePoly(note);
+  for(let chip=0;chip<3;chip++){
+   if(this.layerStacks[chip])this.releaseLayerStack(chip);
+   for(const note of [...this.layerPoly[chip].keys()])this.releaseLayerPoly(chip,note);
+  }
   this.held=[];this.monoTokens.clear();this.settings=null;
  }
  forceSilent(){this.panic();for(const chip of this.chips)chip.forceSilent()}
@@ -143,6 +210,11 @@ export class UnisonSidController {
   if(this.unisonCount<=1)return;
   if(this.current!==null)this.retuneSlots(this.stackSlots(0,this.currentSlotMap),this.current);
   for(const [note,entry] of this.polyNotes)this.retuneSlots(entry.slots,note);
+  for(let chip=0;chip<3;chip++){
+   const stack=this.layerStacks[chip];
+   if(stack)this.retuneSlots(this.stackSlots(0,stack.slotMap),stack.note);
+   for(const [note,entry] of this.layerPoly[chip])this.retuneSlots(entry.slots,note);
+  }
  }
  setEnvelope(settings,chipIndex){
   if(Number.isInteger(chipIndex)&&chipIndex>=0&&chipIndex<3){

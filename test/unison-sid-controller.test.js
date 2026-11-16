@@ -93,6 +93,31 @@ test('Detune retunes active polyphonic stacks without restarting envelopes',()=>
  assert.equal(envelopeSlots.size,8,'ADSR updates both registers for four active oscillators');
 });
 
+test('layer routing stacks the same pitch on three chips without replacing prior chips',()=>{
+ const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:6,unisonCount:2,mode:'poly',detune:0});
+ const token0=sid.noteOn(60,sound,{chipMask:[0],layerChip:0});
+ const token1=sid.noteOn(60,sound,{chipMask:[1],layerChip:1});
+ const token2=sid.noteOn(60,sound,{chipMask:[2],layerChip:2});
+ assert.equal(gateOns(writes).length,6);
+ assert.deepEqual([...new Set(gateOns(writes).map(([reg])=>Math.floor(reg/32)))].sort(),[0,1,2]);
+ assert.equal(sid.layerPoly[0].size,1);
+ assert.equal(sid.layerPoly[1].size,1);
+ assert.equal(sid.layerPoly[2].size,1);
+ const offAt=writes.length;
+ sid.noteOff(60,token0);sid.noteOff(60,token1);sid.noteOff(60,token2);
+ assert.equal(gateOffs(writes.slice(offAt)).length,6);
+});
+
+test('layer mono keeps earlier chips sounding when later chips trigger',()=>{
+ const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:2,unisonCount:2,mode:'mono'});
+ sid.noteOn(60,sound,{chipMask:[0],layerChip:0});
+ const gatesAfterChip0=gateOns(writes).length;
+ sid.noteOn(60,sound,{chipMask:[1],layerChip:1});
+ assert.equal(gateOns(writes).length,gatesAfterChip0+2);
+ assert.equal(gateOns(writes).filter(([reg])=>Math.floor(reg/32)===0).length,2);
+ assert.equal(sid.current,null);
+});
+
 test('chip mask limits register writes to the routed SID',()=>{
  const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:3,unisonCount:1,mode:'poly'});
  const token=sid.noteOn(69,sound,{chipMask:[1]});
