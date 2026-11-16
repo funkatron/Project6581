@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 520" width="720" height="520">
+  <title>SYNTH tab mock — play target + param rows</title>
+  <rect width="720" height="520" fill="#f5eee4" stroke="#c8b8a4" stroke-width="2"/>
+  <rect x="8" y="8" width="200" height="32" rx="4" fill="#c54a15"/>
+  <text x="24" y="30" fill="#fff" font-size="12" font-weight="700">SYNTH</text>
+  <text x="220" y="28" fill="#888" font-size="11">ARP/SEQ · LFOs (tabs)</text>
+  <!-- Voice allocation -->
+  <text x="20" y="60" font-size="13" font-weight="700">SOUND</text>
+  <rect x="20" y="68" width="680" height="52" fill="#ece5da" stroke="#cbbdad" rx="4"/>
+  <text x="28" y="90" font-size="10">Assign · Voices · Unison · Detune</text>
+  <!-- Play target NEW -->
+  <rect x="20" y="128" width="680" height="44" fill="#e8f4f1" stroke="#2d7465" stroke-width="2"/>
+  <text x="28" y="148" font-size="12" font-weight="700" fill="#16362d">Play target</text>
+  <circle cx="108" cy="152" r="12" fill="#e9e4d8" stroke="#9b9384"/>
+  <text x="108" y="156" font-size="12" text-anchor="middle">?</text>
+  <text x="130" y="156" font-size="10">Keyboard →</text>
+  <rect x="220" y="140" width="120" height="22" fill="#fff" stroke="#888"/>
+  <text x="228" y="155" font-size="10">Layer</text>
+  <text x="360" y="156" font-size="9" fill="#888" font-style="italic">(was on ARP tab — hint in Help)</text>
+  <!-- SID card -->
+  <rect x="20" y="184" width="210" height="280" fill="#fff" stroke="#a69d8b" rx="6"/>
+  <text x="28" y="204" font-size="12" font-weight="700">SID 1</text>
+  <rect x="160" y="190" width="10" height="40" fill="#120e0a"/>
+  <!-- Param rows -->
+  <g font-family="system-ui,sans-serif" font-size="10">
+    <text x="28" y="232" fill="#333" width="70">Pan</text>
+    <rect x="78" y="224" width="100" height="8" fill="#d0cbbc"/>
+    <circle cx="118" cy="228" r="5" fill="#f1eadd" stroke="#333"/>
+    <text x="188" y="232" fill="#71470c" text-anchor="end">L80</text>
+    <line x1="28" y1="238" x2="210" y2="238" stroke="#eee"/>
+    <text x="28" y="258">Volume</text>
+    <rect x="78" y="250" width="100" height="8" fill="#d0cbbc"/>
+    <circle cx="128" cy="254" r="5" fill="#f1eadd" stroke="#333"/>
+    <text x="188" y="258" fill="#71470c" text-anchor="end">55%</text>
+    <text x="28" y="284">Cutoff</text>
+    <rect x="78" y="276" width="100" height="8" fill="#d0cbbc"/>
+    <circle cx="140" cy="280" r="5" fill="#f1eadd" stroke="#333"/>
+    <text x="188" y="284" fill="#71470c" text-anchor="end">7.0k</text>
+  </g>
+  <text x="28" y="310" font-size="9" fill="#666">Label 5.5rem | track 1fr | value 4.5rem</text>
+  <rect x="240" y="184" width="210" height="280" fill="#fff" stroke="#a69d8b" rx="6" opacity="0.7"/>
+  <text x="248" y="204" font-size="12" fill="#888">SID 2</text>
+  <rect x="460" y="184" width="210" height="280" fill="#fff" stroke="#a69d8b" rx="6" opacity="0.7"/>
+  <text x="468" y="204" font-size="12" fill="#888">SID 3</text>
+  <!-- Keyboard placeholder -->
+  <rect x="20" y="476" width="680" height="36" fill="#e7ddce" stroke="#bba890"/>
+  <text x="28" y="498" font-size="11">Keyboard strip (see mock-keyboard-strip.svg)</text>
+</svg>

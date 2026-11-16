@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 640" width="720" height="640">
+  <title>ARP / SEQ tab mock — reordered sections</title>
+  <rect width="720" height="640" fill="#f5eee4" stroke="#c8b8a4"/>
+  <!-- Arp targets only (no keyboard route) -->
+  <rect x="16" y="16" width="688" height="56" fill="#f4e9dc" stroke="#cbbdad"/>
+  <text x="24" y="36" font-size="12" font-weight="700">Arp targets</text>
+  <circle cx="118" cy="40" r="11" fill="#e9e4d8" stroke="#9b9384"/>
+  <text x="118" y="44" font-size="11" text-anchor="middle">?</text>
+  <text x="140" y="44" font-size="10">Root → SID1 · Game → SID1</text>
+  <rect x="16" y="78" width="688" height="36" fill="#ece5da"/>
+  <text x="24" y="100" font-size="10">Latch ☑ · Clear latch</text>
+  <!-- ROOT ARP - moved up, teal chrome -->
+  <rect x="16" y="122" width="688" height="88" fill="#e8f4f1" stroke="#2d7465" stroke-width="2"/>
+  <text x="24" y="142" font-size="11" fill="#2d7465">↕</text>
+  <text x="44" y="142" font-size="13" font-weight="700" fill="#16362d">ROOT ARPEGGIATOR</text>
+  <line x1="200" y1="138" x2="680" y2="138" stroke="#2d7465" stroke-width="2" stroke-dasharray="4 2"/>
+  <circle cx="650" cy="136" r="11" fill="#e9e4d8"/>
+  <text x="650" y="140" font-size="11" text-anchor="middle">?</text>
+  <rect x="24" y="152" width="660" height="48" fill="#f7fdfa" stroke="#7bcabb" rx="4"/>
+  <text x="32" y="180" font-size="10">Enabled ☑ · Order Up · Rate 1/8 · Sync ☑</text>
+  <!-- GAME ARP -->
+  <text x="24" y="238" font-size="11" fill="#e15a24">▦</text>
+  <text x="44" y="238" font-size="13" font-weight="700">GAME ARP STEP SEQUENCER</text>
+  <line x1="280" y1="234" x2="680" y2="234" stroke="#e15a24" stroke-width="2"/>
+  <rect x="16" y="246" width="688" height="40" fill="#f4e9dc" stroke="#e47b49"/>
+  <text x="24" y="270" font-size="10">Preview · Stop · Enabled · Steps · Rate · Sync · Pattern</text>
+  <rect x="16" y="292" width="688" height="260" fill="#f7efe5" stroke="#e15a24" stroke-width="2"/>
+  <!-- 16 steps simplified -->
+  <g>
+    <rect x="100" y="308" width="560" height="200" fill="#fff"/>
+    <text x="24" y="330" font-size="9" fill="#888">no sidebar prose</text>
+    <text x="110" y="328" font-size="8" fill="#666">1 … 16 step sliders</text>
+    <rect x="110" y="340" width="24" height="120" fill="#f0a574" opacity="0.5"/>
+    <text x="400" y="520" font-size="9" fill="#b94415">Step ? long-press → gate help</text>
+  </g>
+  <text x="24" y="580" font-size="10" fill="#525">#seqStatus — live only (tutorial in Help)</text>
+  <text x="16" y="620" font-size="9" fill="#c44">Old: Root Arp was below grid in seq-subsection</text>
+</svg>

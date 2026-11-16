@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320" width="400" height="320">
+  <title>Help pop-over mock</title>
+  <rect width="400" height="320" fill="#000" opacity="0.25"/>
+  <rect x="40" y="24" width="320" height="272" rx="10" fill="#f5eee4" stroke="#c8b8a4" stroke-width="2"/>
+  <rect x="40" y="24" width="320" height="6" fill="#2d7465"/>
+  <text x="56" y="52" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#16362d">Root arpeggiator</text>
+  <text x="300" y="52" font-size="16" fill="#666">×</text>
+  <text x="56" y="78" font-size="10" fill="#555" font-style="italic">You long-pressed ROOT LED.</text>
+  <line x1="56" y1="88" x2="344" y2="88" stroke="#ddd"/>
+  <text x="56" y="108" font-size="11" fill="#333">• Cycles held notes in pattern order.</text>
+  <text x="56" y="128" font-size="11" fill="#333">• Picks the root for Game Arp.</text>
+  <text x="56" y="148" font-size="11" fill="#333">• Teal keys show the current root step.</text>
+  <text x="56" y="168" font-size="11" fill="#333">• When Game Arp is on, Root still</text>
+  <text x="64" y="184" font-size="11" fill="#333">highlights but Game voices melody.</text>
+  <rect x="56" y="208" width="120" height="32" rx="6" fill="#575b58"/>
+  <text x="72" y="228" font-size="11" fill="#fff">Go to controls</text>
+  <text x="56" y="268" font-size="9" fill="#888">Same dialog from ? · long-press · context menu</text>
+  <circle cx="360" cy="280" r="14" fill="#e9e4d8" stroke="#9b9384"/>
+  <text x="360" y="285" font-size="14" text-anchor="middle">?</text>
+</svg>
