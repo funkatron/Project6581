@@ -326,3 +326,18 @@ label:has(.slider-stack){gap:4px}
 .help-popover-body{font-size:13px;line-height:1.45;color:#d8e2ee}
 .help-popover-body ul{margin:0;padding-left:1.2em}
 .help-popover-go{margin-top:12px;min-height:40px}
+#studioDiagnostics{width:min(820px,calc(100vw - 20px));max-height:calc(100dvh - 24px);margin:auto;padding:clamp(12px,2vw,18px);color:#f3f5fa;background:#1b2736;border:1px solid #52647d;border-radius:13px;box-shadow:0 20px 65px #0009;overflow:hidden;display:grid;grid-template-rows:auto auto auto auto minmax(120px,1fr) auto minmax(72px,.35fr) auto auto;gap:6px}
+#studioDiagnostics:not([open]){display:none}
+#studioDiagnostics::backdrop{background:#090f18c9}
+.diagnostics-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.diagnostics-dialog-header h2{margin:0;font-size:16px}
+.diagnostics-lead{margin:0;font-size:12px;line-height:1.4;color:#c8d6e5}
+.diagnostics-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.diagnostics-actions button{min-height:40px;padding:6px 10px;font-size:12px}
+.diagnostics-option{font-size:12px;color:#d8e2ee;display:inline-flex;align-items:center;gap:6px}
+.diagnostics-section-title{margin:4px 0 0;font-size:12px;font-weight:650;color:#f3bd78}
+.diagnostics-log-view{margin:0;padding:10px;border:1px solid #34455a;border-radius:8px;background:#0f1722;color:#d8e2ee;font:11px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow:auto;overscroll-behavior:contain;white-space:pre-wrap;word-break:break-word;-webkit-user-select:text;user-select:text;min-height:0}
+.diagnostics-timing-view{max-height:22dvh}
+.diagnostics-status{margin:0;font-size:11px;color:#b6c2d2;min-height:1.2em}
+.diagnostics-copy-fallback{width:100%;min-height:72px;margin-top:4px;font:11px/1.35 ui-monospace,monospace;-webkit-user-select:text;user-select:text}
+.diagnostics-copy-fallback[hidden]{display:none!important}
