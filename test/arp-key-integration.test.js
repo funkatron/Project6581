@@ -37,7 +37,7 @@ test('both arpeggiators have independent rate selectors and timers',()=>{
 test('all arpeggiator release paths remove the visual highlight',()=>{
  assert.match(performance,/function gameStop\(\)[\s\S]*?getArpKeyVisual\(\)\.clear\('game'\)/);
  assert.match(performance,/function arpStopVoice\(\)[\s\S]*?getArpKeyVisual\(\)\.clear\('root'\)/);
- assert.match(script,/function panic\(\)[^\n]*?arpKeyVisual\.clear\(\)/);
+ assert.match(script,/function panic\(reason=[\s\S]*?arpKeyVisual\.clear\(\)/);
  assert.match(performance,/\$\('arpClear'\)\.addEventListener\('click'/);
 });
 

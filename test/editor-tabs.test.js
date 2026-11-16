@@ -14,7 +14,9 @@ test('each editor tab hides both inactive panels and retains the existing contro
    setAttribute(name,value){this.attributes[name]=value;}});
   nodes.set(panels[i],{hidden:i!==0,getAttribute:()=>id,control:{value:17}});
  }
- nodes.set('workspace',{dataset:{tab:'voice'},querySelectorAll:()=>panels.map(id=>nodes.get(id))});
+ const diagPanel={id:'diagPanel',hidden:true,getAttribute:()=>null,control:{value:0}};
+ nodes.set('diagPanel',diagPanel);
+ nodes.set('workspace',{dataset:{tab:'voice'},querySelectorAll:()=>[...panels.map(id=>nodes.get(id)),diagPanel]});
  const sandbox={$:id=>nodes.get(id)};
  const script=tabsModule.replace(/export function /g,'function ')+'\nmountEditorTabs({$});';
  vm.runInNewContext(script,sandbox);
@@ -22,6 +24,7 @@ test('each editor tab hides both inactive panels and retains the existing contro
   const controls=panels.map(id=>nodes.get(id).control);
   events.get(tabs[selected])();
   assert.equal(nodes.get('workspace').dataset.tab,['voice','play','lfos'][selected]);
+  assert.equal(diagPanel.hidden,true);
   panels.forEach((id,i)=>{
    assert.equal(nodes.get(id).hidden,i!==selected);
    assert.equal(nodes.get(tabs[i]).attributes['aria-selected'],String(i===selected));

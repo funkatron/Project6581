@@ -11,7 +11,10 @@ export function mountEditorTabs({$}={}){
  for(const [name,id] of TAB_BINDINGS){
   $(id).addEventListener('click',()=>{
    $('workspace').dataset.tab=name;
-   for(const panel of $('workspace').querySelectorAll(':scope > [role="tabpanel"]'))panel.hidden=panel.getAttribute('aria-labelledby')!==id;
+   for(const panel of $('workspace').querySelectorAll(':scope > [role="tabpanel"]')){
+    if(panel.id==='diagPanel'){panel.hidden=true;continue}
+    panel.hidden=panel.getAttribute('aria-labelledby')!==id;
+   }
    $('tabVoice').setAttribute('aria-selected',String(name==='voice'));
    $('tabPlay').setAttribute('aria-selected',String(name==='play'));
    $('tabLfos').setAttribute('aria-selected',String(name==='lfos'));

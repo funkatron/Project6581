@@ -1,4 +1,6 @@
 import {createSidEventLog} from './sid-event-log.js?v=__BUILD_ID__';
+import {createStudioTraceLog} from './studio-trace-log.js?v=__BUILD_ID__';
+import {mountDiagnosticsPanel} from './diagnostics-panel.js?v=__BUILD_ID__';
 import {formatActiveSidStatus,formatPlaybackLatencyStatus,formatSidProgressMessage,shouldShowSidUnlock,sidLedAriaLabel,sidLedState} from './sid-engine-status-ui.js?v=__BUILD_ID__';
 import {canDispatchNote,needsAudioResume,shouldBlockMusicalInput} from './sid-note-gate.js?v=__BUILD_ID__';
 import {closeSidContext} from './sid-audio-lifecycle.js?v=__BUILD_ID__';
@@ -27,6 +29,7 @@ export function startSidStudio(){
 const $=id=>document.getElementById(id);
 const sidStartupLog=[];
 const sidEventLog=createSidEventLog();
+const studioTrace=createStudioTraceLog();
 let sidInputEvent=null;
 const audioTiming={source:null,roundTripMs:null,renderAvgMs:null,renderMaxMs:null,renderBudgetMs:null,baseMs:null,outputMs:null,
  keyAt:null,keyEnergyMs:null,keyBufferRemainderMs:null,keyToOutputEstimateMs:null,keyEnergyMissed:false,probeSkipped:false};
@@ -43,6 +46,20 @@ const {updateAudioTimingReport}=mountAudioTimingPanel({
   timing:{...audioTiming},startup:[...sidStartupLog]
  })
 });
+const diagnosticsUi=mountDiagnosticsPanel({
+ $,studioTrace,sidEventLog,getReportContext:()=>({
+  build:$('buildInfo').textContent,browser:navigator.userAgent,route:location.pathname,
+  selectedSidModel:Number($('chip').value),activeSidModel,
+  contextState:sidContext?.state??'unavailable',sampleRate:sidContext?.sampleRate??null,
+  baseLatencyMs:Number.isFinite(sidContext?.baseLatency)?sidContext.baseLatency*1000:null,
+  outputLatencyMs:Number.isFinite(sidContext?.outputLatency)?sidContext.outputLatency*1000:null,
+  timing:{...audioTiming},startup:[...sidStartupLog]
+ }),updateAudioTimingReport
+});
+function traceStudio(type,details={}){
+ studioTrace.add(type,details);
+ if(diagnosticsUi.isVisible?.())diagnosticsUi.refresh();
+}
 function traceInput(note,source,action,run){
  if(!sidEventLog.enabled)return run();
  const previous=sidInputEvent;
@@ -257,8 +274,9 @@ function updateUnison(){
  const mode=$('voiceAssign').value;
  if(sidController&&(sidController.voiceCount!==voices||sidController.unisonCount!==layers||sidController.mode!==mode)){
   // Assignments change only after releasing owned notes and running generators.
-  panic();arp.held.clear();arp.latched.clear();
- }
+  traceStudio('unison-change',{voices,layers,mode,route:readRoutingFromDom($,DEFAULT_ROUTING).keyboard});
+  panic('unison-config');arp.held.clear();arp.latched.clear();
+ }else traceStudio('unison-update',{voices,layers,mode,detune:Number($('detune').value)});
  sidController?.configure({voiceCount:voices,unisonCount:layers,mode,detune:Number($('detune').value)});
  $('detune').disabled=layers===1;
  $('detuneValue').textContent=formatControlValue('detune',Number($('detune').value));
@@ -274,7 +292,9 @@ function updateUnison(){
 ['voiceAssign','voiceCount','unisonCount'].forEach(id=>{$(id).addEventListener('change',updateUnison);$(id).addEventListener('input',updateUnison)});
 $('detune').addEventListener('input',updateUnison);
 updateUnison();
-function panic(){gameStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.root=null;directOwned.clear();activeOwners.clear();arpKeyVisual.clear();sidController?.panic()}
+function panic(reason=''){
+ traceStudio('panic',{reason});
+ gameStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.root=null;directOwned.clear();activeOwners.clear();arpKeyVisual.clear();sidController?.panic()}
 $('panic').addEventListener('click',()=>{
  sidEventLog.add('stop-all',{contextId:sidAudio?sidAttempt:null,model:activeSidModel});
  $('gameArpOn').checked=false;$('arpOn').checked=false;
@@ -285,7 +305,7 @@ $('panic').addEventListener('click',()=>{
 });window.addEventListener('blur',()=>{
  // Native pickers can blur the window without meaning navigation away.
  if(document.activeElement?.tagName==='SELECT')return;
- panic();arp.held.clear();seqPreview=false;setSeqTransportLabel();
+ panic('window-blur');arp.held.clear();seqPreview=false;setSeqTransportLabel();
 });
 const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 const arp={held:new Set(),latched:new Set(),timer:null,step:0,root:null,last:null};
@@ -875,6 +895,9 @@ async function applyPresetSettings(value){
  const previous=snapshotPresetSettings();
  const presetModel=next.sound.engines[0].model;
  sidEventLog.add('preset-apply',{contextId:sidAudio?sidAttempt:null,activeModel:activeSidModel,requestedModel:presetModel});
+ traceStudio('preset-apply',{name:$('presetCurrent')?.textContent??'preset',model:presetModel,
+  voices:next.sound.instrument.voiceCount,unison:next.sound.instrument.unisonCount,mode:next.sound.instrument.mode,
+  keyboardRoute:next.performance.routing.keyboard});
  applyPresetControls(next);
  try{
   await ensureSidModel(presetModel);

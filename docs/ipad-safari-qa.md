@@ -28,6 +28,7 @@ See [investigation evidence and limits](sid-startup-investigation.md).
 
 ## Correlated note logging (pending device verification)
 
+- [ ] Footer **Diagnostics** opens the diagnostics panel (not a main tab): trace updates on allocation/panic/preset; **Download log** saves JSON; optional note-event logging via checkbox.
 - [ ] Open Audio timing, enable Log note events, play/release direct notes, then run and stop the sequencer. Pause logging and copy the diagnostic report.
 - [ ] Confirm the report contains correlated input, note command, register dispatch and rendered-block acknowledgment IDs; context state and current latency are included.
 - [ ] Verify Copy diagnostic report on Safari. If clipboard access fails, select and copy the fallback text. Typing shortcuts in that field must not play notes.
