@@ -76,6 +76,7 @@ test('preset actions cannot mutate settings while loading a different sound or i
 });
 test('modal text overrides light-theme global heading and description colors',()=>{
  assert.match(studioCss,/#presetDialog h2,#presetDialog h3\{color:#f3f5fa\}/);
+ assert.match(studioCss,/#preferencesDialog h2,#preferencesDialog h3\{color:#f3f5fa\}/);
  assert.match(studioCss,/#presetDialog small,#presetDialog \.preset-empty,#presetDialog \.preset-item-category\{color:#c8d6e5\}/);
 });
 

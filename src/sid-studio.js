@@ -23,6 +23,8 @@ import {createDefaultEngines,clampVoiceCount,maxVoicesForEngines,DEFAULT_ROUTING
 import {mountSidEnginePanels} from "./sid-engine-panels-ui.js?v=__BUILD_ID__";
 import {mountMasterLoudnessMeter} from "./master-loudness-meter-ui.js?v=__BUILD_ID__";
 import {mountHelpDialog,mountHelpTriggers} from "./ui-help-dialog.js?v=__BUILD_ID__";
+import {mountMidiInput} from "./midi-input.js?v=__BUILD_ID__";
+import {mountPreferencesDialog} from "./studio-preferences-ui.js?v=__BUILD_ID__";
 import {bindHelpGesture} from "./ui-help-gesture.js?v=__BUILD_ID__";
 
 export function startSidStudio(){
@@ -311,6 +313,7 @@ $('detune').addEventListener('input',updateUnison);
 updateUnison();
 function panic(reason=''){
  traceStudio('panic',{reason});
+ releaseMidiNotes();
  gameStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.root=null;directOwned.clear();activeOwners.clear();arpKeyVisual.clear();sidController?.panic()}
 $('panic').addEventListener('click',()=>{
  sidEventLog.add('stop-all',{contextId:sidAudio?sidAttempt:null,model:activeSidModel});
@@ -338,6 +341,8 @@ let setSeqTransportLabel=()=>{};
 let renderSequenceSteps=()=>{};
 let loadBuiltInPhrase=()=>false;
 let flushQueuedKeys=()=>{};
+let keyDown=()=>{},keyUp=()=>{};
+let releaseMidiNotes=()=>{};
 const gameEnabled=()=>$('gameArpOn').checked;
 const arpEnabled=()=>$('arpOn').checked;
 const activeNotes=()=>[...($('arpLatch').checked&&arp.latched.size?arp.latched:arp.held)];
@@ -356,7 +361,7 @@ const arpKeyVisual=createArpKeyVisual({getKey:note=>keys.get(note)});
  getActiveSeqStep:()=>activeSeqStep,
  setActiveSeqStep:value=>{activeSeqStep=value}
 }));
-({flushQueuedKeys}=mountKeyboard({
+({flushQueuedKeys,keyDown,keyUp}=mountKeyboard({
  $,keys,names,keyboardState,audioTiming,sidEventLog,
  getSidContext:()=>sidContext,
  sidMusicalInputBlocked,armSidResume,
@@ -369,6 +374,11 @@ const arpKeyVisual=createArpKeyVisual({getKey:note=>keys.get(note)});
  gameRestart,arpStopVoice,arpNotes,
  isSeqPreview:()=>seqPreview,
  traceInput,panic
+}));
+mountPreferencesDialog($);
+({releaseAll:releaseMidiNotes}=mountMidiInput({
+ $,traceInput,keyDown,keyUp,isBlocked:sidMusicalInputBlocked,
+ pitchPhysicallyHeld:note=>arp.held.has(note)||directOwned.has(note)
 }));
 
 function updateSidFilter(overrides={},engineIndex=0){

@@ -50,7 +50,7 @@ Legend:
 
 | QA item | Coverage | Test / artifact |
 | --- | --- | --- |
-| Four composable modes (logic) | Auto | `test/arp-key-integration.test.js`, `test/game-step-sequencer.test.js` |
+| Four composable modes (logic) | Auto | `test/arp-composition.test.js`, `test/arp-four-modes.test.js`, `test/arp-key-integration.test.js`, `test/game-step-sequencer.test.js` |
 | Keyboard highlight rules | Auto | `test/arp-key-visual.test.js` |
 | Neutral reset steps | Partial | Sequencer defaults in tests; UI Manual |
 | 16-step editor touch / scroll | Manual | `test/step-sequencer-ui.test.js` (markup only) |
