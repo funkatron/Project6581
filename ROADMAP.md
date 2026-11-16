@@ -23,7 +23,7 @@ Finish the **active step** (code, doc, or device verification) in a single focus
 | **G** | **iPad MIDI** route decision (MIDI browser vs native shell) | Priority 3 + Priority 4 |
 | *later* | Western scale lock, `.sid` player, visualization, audio-clock LFO migration | Sections below |
 
-**Active step:** **A** — desktop Chromium baseline. Step **B** starts after A is recorded in a PR or device note (even if findings are “no issues”).
+**Active step:** **B** — preset load-while-playing polish + iPad preset workflow QA. Step **A** owner checklist: [desktop-chromium-qa.md](docs/desktop-chromium-qa.md); agent smoke notes in [agents/roadmap-step-a-chromium.md](agents/roadmap-step-a-chromium.md).
 
 ## Release milestones (v0.2.0+)
 
@@ -66,7 +66,7 @@ Finish the **active step** (code, doc, or device verification) in a single focus
 - [x] Create a small **Factory Presets** browser (Bass, Lead, Pluck, Pad and FX) with six original settings. Display unsaved edits clearly.
 - [x] Add a separate **My Presets** collection with **Save**, **Save As**, **Rename**, and **Delete**. Factory presets remain read-only.
 - [x] Save and restore **all sound and performance settings**: SID model, waveform, ADSR, pulse/PWM, filter, level, unison/polyphony/detune, all three LFOs, master BPM, regular Arp and Game Arp settings. Presets never contain held notes or latches' active note contents, and loading never automatically plays a note.
-- [ ] Make loading predictable while a note is sounding: stop/reinitialize only when required, leave no stuck notes, refresh every numeric display, and do not start autoplay unexpectedly.
+- [x] Make loading predictable while a note is sounding: **panic only when** routing, voice budget, mode, per-engine enable, or chip model changes (`presetLoadRequiresSilence`); always reset arp/seq state; user message on load. iPad verification open.
 - [x] Persist user presets locally in browser storage with error reporting. Presets are **not** synchronized across devices.
 - [x] **Export** individual presets or a user bank as readable versioned JSON; **import** either with schema/range validation, actionable errors, and confirmation before replacing duplicate names.
 - [x] Use a simple **version 2** preset format including Game Arp Pattern rate, with no migration for earlier files. Validate imported content before modifying storage.
@@ -261,7 +261,7 @@ Distinguish **in-app timing** (footer, Diagnostics Activity log, worklet metrics
 
 ### Investigation
 
-- [ ] Complete **Step A:** [desktop-chromium-qa.md](docs/desktop-chromium-qa.md) on current production; file whether lag reproduces on Chromium or is Safari/session-specific.
+- [ ] Complete **Step A:** [desktop-chromium-qa.md](docs/desktop-chromium-qa.md) on current production; file whether lag reproduces on Chromium or is Safari/session-specific. Agent CI smoke: [agents/roadmap-step-a-chromium.md](agents/roadmap-step-a-chromium.md).
 - [ ] Measure touch/pointer event to SID register dispatch, AudioWorklet receipt, and first nonzero PCM sample separately.
 - [ ] Measure perceived and output latency on iPad Safari **and desktop Chromium**, including AudioContext `baseLatency` and `outputLatency` when available.
 - [x] Inspect AudioWorklet messaging: each note currently emits multiple register writes. PR #14 batches writes into one message per JavaScript turn.

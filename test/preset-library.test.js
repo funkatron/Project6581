@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
  PRESET_VERSION,PRESET_STORAGE_KEY,LEGACY_PRESET_STORAGE_KEY_V3,LEGACY_PRESET_STORAGE_KEY_V4,FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,LAYER_FACTORY_IDS,
  defaultPresetSettings,validatePresetSettings,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,
- importPresetFile
+ importPresetFile,presetLoadRequiresSilence,
 } from '../src/preset-library.js';
 import {sequenceEvent} from '../src/game-step-sequencer.js';
 
@@ -45,6 +45,19 @@ test('factory bank contains useful original sounds and complete performance sett
   assert.equal(typeof result.performance.game.style,'string');
  }
 });
+test('presetLoadRequiresSilence detects routing and voice budget changes',()=>{
+ const base=defaultPresetSettings();
+ const timbre=structuredClone(base);
+ timbre.sound.engines[0].filter.cutoff=2000;
+ assert.equal(presetLoadRequiresSilence(base,timbre),false);
+ const routing=structuredClone(base);
+ routing.performance.routing.keyboard='layer';
+ assert.equal(presetLoadRequiresSilence(base,routing),true);
+ const voices=structuredClone(base);
+ voices.sound.instrument.voiceCount=4;
+ assert.equal(presetLoadRequiresSilence(base,voices),true);
+});
+
 test('user preset can save and reload every sound and performance setting',()=>{
  const storage=makeStorage(),settings=defaultPresetSettings();
  settings.sound.engines[0].model=8580;

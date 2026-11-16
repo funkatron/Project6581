@@ -42,7 +42,9 @@ test('preset loading restores performance settings without stored notes or autop
  assert.doesNotMatch(html,/id="unisonOn"/);
  assert.match(script,/game:\{enabled:\$\('gameArpOn'\)\.checked,style:[\s\S]*?rate:Number\(\$\('gameRate'\)\.value\)/);
  assert.match(script,/arp:\{enabled:\$\('arpOn'\)\.checked,latch:/);
- assert.match(script,/panic\(\);arp\.held\.clear\(\);arp\.latched\.clear\(\)/);
+ assert.match(script,/presetLoadRequiresSilence/);
+ assert.match(script,/if\(silenceAudio\)panic\(\);\s*resetPerformanceGenerators\(\)/);
+ assert.match(script,/await sidAudio\.setChipModel\(chip,engines\[chip\]\.model\)/);
  assert.match(script,/game\.step=0;arp\.root=null/);
  assert.match(script,/unisonCount:Number\(\$\('unisonCount'\)\.value\)/);
  assert.match(script,/mode:\$\('voiceAssign'\)\.value/);
@@ -67,7 +69,7 @@ test('preset actions cannot mutate settings while loading a different sound or i
  assert.match(script,/for\(const \[id,available\] of \[/);
  assert.match(script,/for\(const id of \['factoryPresetList','userPresetList'\]\)/);
  assert.match(library,/if\(isLoading\(\)\)return null/);
- assert.match(library,/setPresetLoading\(true\);\s*try\{\s*await applyPresetSettings\(preset\.settings\)/);
+ assert.match(library,/setPresetLoading\(true\);\s*try\{\s*const outcome=await applyPresetSettings\(preset\.settings\)/);
  assert.match(library,/finally\{\s*setPresetLoading\(false\)/);
  assert.match(library,/if\(isLoading\(\)\)\{input\.value='';return\}/);
  assert.match(library,/finally\{input\.value='';setPresetLoading\(false\)\}/);
