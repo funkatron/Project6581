@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
- PRESET_VERSION,PRESET_STORAGE_KEY,LEGACY_PRESET_STORAGE_KEY_V3,LEGACY_PRESET_STORAGE_KEY_V4,FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,
+ PRESET_VERSION,PRESET_STORAGE_KEY,LEGACY_PRESET_STORAGE_KEY_V3,LEGACY_PRESET_STORAGE_KEY_V4,FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,LAYER_FACTORY_IDS,
  defaultPresetSettings,validatePresetSettings,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,
  importPresetFile
 } from '../src/preset-library.js';
@@ -124,11 +124,8 @@ test('C64-inspired prototype bank covers four distinct categories without changi
  assert.equal(FACTORY_PRESETS[0].settings.sound.engines[0].voice.pitchEnvelope.enabled,false);
 });
 
-const LAYER_FACTORY_IDS=[
- 'complex-layer-pad','complex-layer-bass','complex-layer-lead','complex-layer-brass','complex-layer-wash'
-];
-
 test('layer factory presets use three distinct engines and layer routing',()=>{
+ assert.ok(LAYER_FACTORY_IDS.length>=9);
  for(const id of LAYER_FACTORY_IDS){
   const preset=FACTORY_PRESETS.find(p=>p.id===id);
   assert.ok(preset,'missing layer preset '+id);

@@ -270,6 +270,52 @@ export const FACTORY_PRESETS=Object.freeze([
   ],
   performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false}}
  }),
+ // Layer stacks inspired by film/game/era palettes (original designs, not transcriptions).
+ factory('complex-layer-nexus','Nexus Skyline Layer','FX',{
+  instrument:{voiceCount:6,unisonCount:2,mode:'poly',detune:14},
+  engines:[
+   {model:6581,pan:-36,voice:{wave:'sawtooth',attack:.62,decay:.58,sustain:.78,release:2.4},filter:{cutoff:3100,resonance:32,volume:56}},
+   {pan:0,voice:{wave:'triangle',attack:.55,decay:.52,sustain:.74,release:2.1},filter:{cutoff:1750,resonance:18,volume:52}},
+   {model:8580,pan:34,voice:{wave:'square',attack:.48,decay:.5,sustain:.7,release:1.9,pulse:58,pwmDepth:7,pwmRate:.32},filter:{cutoff:4300,resonance:24,volume:48}}
+  ],
+  lfos:[
+   {enabled:true,wave:'triangle',rate:.14,depth:.38,target:'cutoff',engines:'1'},
+   {enabled:true,wave:'sine',rate:.09,depth:.22,target:'volume',engines:'2'}
+  ],
+  performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false}}
+ }),
+ factory('complex-layer-commando','Raid Assault Layer','Bass',{
+  instrument:{voiceCount:4,unisonCount:2,mode:'poly',detune:8},
+  engines:[
+   {pan:-40,voice:{wave:'square',attack:.002,decay:.14,sustain:.62,release:.1,pulse:24},filter:{cutoff:780,resonance:24,volume:80}},
+   {pan:0,voice:{wave:'sawtooth',attack:.002,decay:.11,sustain:.58,release:.09},filter:{cutoff:3200,resonance:22,volume:66}},
+   {pan:38,voice:{wave:'square',attack:.002,decay:.07,sustain:.42,release:.06,pulse:16},filter:{cutoff:6800,resonance:12,volume:58}}
+  ],
+  performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:true,style:'action',rate:8},arp:{enabled:true,pattern:'up',rate:4,sync:true}}
+ }),
+ factory('complex-layer-turrican','Heroic Storm Layer','Leads',{
+  instrument:{voiceCount:3,unisonCount:3,mode:'legato',detune:22},
+  engines:[
+   {pan:-34,voice:{wave:'sawtooth',attack:.004,decay:.16,sustain:.82,release:.22},filter:{cutoff:1250,resonance:38,volume:72}},
+   {pan:0,voice:{wave:'sawtooth',attack:.003,decay:.12,sustain:.86,release:.18},filter:{cutoff:5100,resonance:44,volume:64}},
+   {pan:36,voice:{wave:'square',attack:.002,decay:.09,sustain:.8,release:.14,pulse:30,pwmDepth:8,pwmRate:1.8},filter:{cutoff:7600,resonance:16,volume:54}}
+  ],
+  lfos:[{enabled:true,wave:'triangle',rate:.35,depth:.2,target:'resonance',engines:'2'}],
+  performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:true,style:'adventure',rate:4}}
+ }),
+ factory('complex-layer-synthpop','Neon Chorus Layer','Keys',{
+  instrument:{voiceCount:6,unisonCount:2,mode:'poly',detune:17},
+  engines:[
+   {pan:-32,voice:{wave:'square',attack:.012,decay:.28,sustain:.72,release:.42,pulse:46,pwmDepth:16,pwmRate:1.15},filter:{cutoff:5400,resonance:14,volume:60}},
+   {pan:2,voice:{wave:'sawtooth',attack:.015,decay:.3,sustain:.75,release:.45},filter:{cutoff:4800,resonance:11,volume:58}},
+   {pan:32,voice:{wave:'triangle',attack:.02,decay:.26,sustain:.68,release:.4},filter:{cutoff:7200,resonance:6,volume:52}}
+  ],
+  lfos:[
+   {enabled:true,wave:'sine',rate:6.5,depth:.18,target:'volume',engines:'3'},
+   {enabled:true,wave:'triangle',rate:.5,depth:.1,target:'detune',engines:'all'}
+  ],
+  performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false},arp:{enabled:true,pattern:'updown',rate:8,sync:true}}
+ }),
  factory('soft-flute','Soft Flute','Lead',{voice:{wave:'triangle',attack:.08,decay:.24,sustain:.86,release:.35},instrument:{detune:0},filter:{cutoff:4300,resonance:5,volume:80},performance:{game:{enabled:false}}}),
  factory('filter-motion','Filter Motion','FX',{filter:{cutoff:4200,resonance:55,volume:60},lfos:[{enabled:true,wave:'triangle',rate:.35,depth:.55,target:'cutoff'}],performance:{game:{enabled:false}}}),
  // Original C64-inspired prototypes. These are sound-design starting points, not transcriptions.
@@ -303,6 +349,9 @@ export const FACTORY_PRESETS=Object.freeze([
  factory('noise-clap','Noise Clap','Drums',{voice:{wave:'noise',attack:0,decay:.17,sustain:0,release:.07},filter:{cutoff:3150,resonance:28,volume:66,mode:'bandpass'},lfos:[{enabled:true,wave:'square',rate:17,depth:.49,target:'volume'}],performance:{game:{enabled:false}}}),
  factory('low-tom','Low Tom','Drums',{voice:{wave:'triangle',attack:0,decay:.31,sustain:0,release:.09},filter:{cutoff:1300,resonance:19,volume:83},performance:{game:{enabled:false}}})
 ]);
+export const LAYER_FACTORY_IDS=Object.freeze(
+ FACTORY_PRESETS.filter(p=>p.id.startsWith('complex-layer-')).map(p=>p.id)
+);
 function unique(presets){
  const names=new Set(),ids=new Set();
  for(const p of presets){
