@@ -21,6 +21,7 @@ import {createDefaultEngines,clampVoiceCount,maxVoicesForEngines,DEFAULT_ROUTING
 import {mountSidEnginePanels} from "./sid-engine-panels-ui.js?v=__BUILD_ID__";
 import {mountMasterLoudnessMeter} from "./master-loudness-meter-ui.js?v=__BUILD_ID__";
 import {mountHelpDialog,mountHelpTriggers} from "./ui-help-dialog.js?v=__BUILD_ID__";
+import {bindHelpGesture} from "./ui-help-gesture.js?v=__BUILD_ID__";
 
 export function startSidStudio(){
 const $=id=>document.getElementById(id);
@@ -145,6 +146,10 @@ mountGeneratorLeds($,{
   requestAnimationFrame(()=>$(id)?.scrollIntoView?.({block:'nearest',behavior:'smooth'}));
  }
 });
+for(const [id,helpId] of [['rootArpTitle','root-arp'],['gameArpTitle','game-arp']]){
+ const el=$(id);
+ if(el)bindHelpGesture(el,{helpId,$});
+}
 const activeOwners=new Map();
 function voiceSettingsForSlot(slot){
  const chip=Math.floor(slot/3);

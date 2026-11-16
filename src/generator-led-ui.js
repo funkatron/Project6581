@@ -1,4 +1,7 @@
+import {bindHelpGesture} from './ui-help-gesture.js?v=__BUILD_ID__';
+
 const RATE_LABEL={0.25:'1/1',0.5:'1/2',1:'1/4',2:'1/8',4:'1/16',8:'1/32',16:'1/64',32:'1/128'};
+const HELP_BY_GEN={root:'generator-led-root',game:'generator-led-game',latch:'generator-led-latch'};
 
 export function mountGeneratorLeds($,{focusPlaySection}={}){
  const host=$('generatorLeds');
@@ -26,7 +29,10 @@ export function mountGeneratorLeds($,{focusPlaySection}={}){
   const detail=document.createElement('span');
   detail.className='gen-led-detail';
   btn.append(dot,label,detail);
-  btn.addEventListener('click',()=>focusPlaySection?.(spec.scroll));
+  bindHelpGesture(btn,{
+   helpId:HELP_BY_GEN[spec.gen],
+   onTap:()=>focusPlaySection?.(spec.scroll)
+  });
   host.append(btn);
  }
  function sync(){
