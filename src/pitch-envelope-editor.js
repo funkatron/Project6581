@@ -82,7 +82,7 @@ export function mountPitchEnvelopeEditor(parent,{getEnvelope,applyEnvelope,maxPo
     '<button type="button" class="pitch-point-remove" data-pitch-remove>Remove</button>'+
    '</div>'+
   '</div>'+
-  '<small class="pitch-envelope-hint">Saved with presets (v4). Applies to newly played notes. Drag a point, or tap the graph to add one.</small>';
+  '<button type="button" class="help-trigger" data-help="pitch-envelope" aria-label="Help: pitch envelope">?</button>';
  parent.append(host);
  const templateSelect=host.querySelector('[data-pitch-template]');
  const customPanel=host.querySelector('[data-pitch-custom]');
