@@ -227,6 +227,49 @@ export const FACTORY_PRESETS=Object.freeze([
   lfos:[{enabled:true,wave:'triangle',rate:.22,depth:.42,target:'cutoff',engines:'3'}],
   performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false}}
  }),
+ factory('complex-layer-bass','Layered Sub Stack','Bass',{
+  instrument:{voiceCount:4,unisonCount:2,mode:'poly',detune:11},
+  engines:[
+   {pan:-42,voice:{wave:'square',attack:.006,decay:.22,sustain:.78,release:.28,pulse:28},filter:{cutoff:520,resonance:22,volume:76}},
+   {pan:-8,voice:{wave:'sawtooth',attack:.004,decay:.2,sustain:.7,release:.22},filter:{cutoff:1150,resonance:28,volume:68}},
+   {pan:36,voice:{wave:'triangle',attack:.02,decay:.26,sustain:.62,release:.3},filter:{cutoff:2100,resonance:16,volume:52,mode:'highpass'}}
+  ],
+  lfos:[{enabled:true,wave:'sine',rate:.55,depth:.2,target:'cutoff',engines:'2'}],
+  performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false}}
+ }),
+ factory('complex-layer-lead','Stacked Chorus Lead','Leads',{
+  instrument:{voiceCount:3,unisonCount:3,mode:'mono',detune:18},
+  engines:[
+   {pan:-30,voice:{wave:'sawtooth',attack:.002,decay:.12,sustain:.88,release:.16},filter:{cutoff:4800,resonance:14,volume:64}},
+   {pan:0,voice:{wave:'square',attack:.002,decay:.1,sustain:.9,release:.12,pulse:22,pwmDepth:11,pwmRate:2.4},filter:{cutoff:7200,resonance:11,volume:58}},
+   {pan:32,voice:{wave:'sawtooth',attack:.003,decay:.11,sustain:.85,release:.14},filter:{cutoff:8600,resonance:8,volume:50}}
+  ],
+  lfos:[{enabled:true,wave:'triangle',rate:4.5,depth:.12,target:'detune',engines:'all'}],
+  performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:true,style:'arcade'}}
+ }),
+ factory('complex-layer-brass','Brass Chord Layer','Keys',{
+  instrument:{voiceCount:6,unisonCount:2,mode:'poly',detune:9},
+  engines:[
+   {pan:-34,voice:{wave:'square',attack:.018,decay:.32,sustain:.45,release:.35,pulse:40},filter:{cutoff:2400,resonance:26,volume:60}},
+   {pan:2,voice:{wave:'sawtooth',attack:.02,decay:.35,sustain:.48,release:.38},filter:{cutoff:3100,resonance:31,volume:58}},
+   {pan:34,voice:{wave:'square',attack:.015,decay:.28,sustain:.42,release:.32,pulse:56,pwmDepth:6,pwmRate:.8},filter:{cutoff:4500,resonance:19,volume:52}}
+  ],
+  lfos:[{enabled:true,wave:'sine',rate:.65,depth:.15,target:'resonance',engines:'2'}],
+  performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false}}
+ }),
+ factory('complex-layer-wash','Shimmer Drone Wash','FX',{
+  instrument:{voiceCount:4,unisonCount:1,mode:'poly',detune:0},
+  engines:[
+   {pan:-40,voice:{wave:'triangle',attack:.8,decay:.6,sustain:.82,release:2.2},filter:{cutoff:1900,resonance:10,volume:54}},
+   {pan:0,voice:{wave:'sawtooth',attack:.7,decay:.55,sustain:.76,release:1.9},filter:{cutoff:3600,resonance:24,volume:48}},
+   {pan:38,voice:{wave:'noise',attack:.5,decay:.48,sustain:.55,release:1.6},filter:{cutoff:8200,resonance:6,volume:38,mode:'bandpass'}}
+  ],
+  lfos:[
+   {enabled:true,wave:'triangle',rate:.18,depth:.35,target:'cutoff',engines:'1'},
+   {enabled:true,wave:'sine',rate:.12,depth:.25,target:'volume',engines:'3'}
+  ],
+  performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false}}
+ }),
  factory('soft-flute','Soft Flute','Lead',{voice:{wave:'triangle',attack:.08,decay:.24,sustain:.86,release:.35},instrument:{detune:0},filter:{cutoff:4300,resonance:5,volume:80},performance:{game:{enabled:false}}}),
  factory('filter-motion','Filter Motion','FX',{filter:{cutoff:4200,resonance:55,volume:60},lfos:[{enabled:true,wave:'triangle',rate:.35,depth:.55,target:'cutoff'}],performance:{game:{enabled:false}}}),
  // Original C64-inspired prototypes. These are sound-design starting points, not transcriptions.
