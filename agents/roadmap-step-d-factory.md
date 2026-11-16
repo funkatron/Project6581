@@ -33,6 +33,8 @@ File results in PR/issue; patch tweaks only after **adjust** notes. Mark ROADMAP
 
 IDs unchanged; user saved copies unaffected.
 
+**2026-11-16 pass 2:** All **40** factory sounds tuned (24 core + 6 legacy + 10 layer stacks). See `preset-library.js` diff; iPad audition still required before marking Step D complete.
+
 ## Desktop quick pass (optional)
 
 Load presets from browser groups **Bass → Drums**; use phrases from `factory-audition-matrix.js`. Compare `low-thud-kick` / `low-tom` against Commando subtune #1 bass — note pitch-envelope gap in references doc.

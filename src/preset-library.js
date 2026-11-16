@@ -230,28 +230,28 @@ export function factoryGroup(category){
  return ({Lead:'Leads',Pluck:'Keys',Pad:'Keys'})[category]??category;
 }
 export const FACTORY_PRESETS=Object.freeze([
- factory('deep-bass','Deep Bass','Bass',{voice:{wave:'square',decay:.24,sustain:.72,pulse:32},instrument:{voiceCount:2,detune:7},filter:{cutoff:1700,resonance:8,volume:80}}),
- factory('arcade-lead','Arcade Lead','Lead',{voice:{wave:'sawtooth',decay:.1,release:.14},instrument:{voiceCount:2,detune:11},filter:{cutoff:6800,resonance:16,volume:65},performance:{game:{enabled:true,style:'arcade'}}}),
- factory('chiptune-pluck','Chiptune Pluck','Pluck',{voice:{wave:'triangle',decay:.08,sustain:0,release:.08},instrument:{detune:0},filter:{cutoff:8000,resonance:0,volume:75},performance:{game:{enabled:false}}}),
- factory('pulsing-pad','Pulsing Pad','Pad',{voice:{attack:.5,decay:.42,sustain:.65,release:1.2,pwmDepth:28,pwmRate:.7},instrument:{voiceCount:3,detune:16},filter:{cutoff:5000,resonance:20,volume:70},performance:{game:{enabled:false}}}),
+ factory('deep-bass','Deep Bass','Bass',{voice:{wave:'square',decay:.22,sustain:.74,pulse:30},instrument:{voiceCount:2,detune:8},filter:{cutoff:1580,resonance:10,volume:79},performance:{game:{enabled:false}}}),
+ factory('arcade-lead','Arcade Lead','Lead',{voice:{wave:'sawtooth',decay:.09,release:.13},instrument:{voiceCount:2,detune:12},filter:{cutoff:7100,resonance:17,volume:66},performance:{game:{enabled:true,style:'arcade'}}}),
+ factory('chiptune-pluck','Chiptune Pluck','Pluck',{voice:{wave:'triangle',decay:.07,sustain:0,release:.07},instrument:{detune:0},filter:{cutoff:7800,resonance:2,volume:76},performance:{game:{enabled:false}}}),
+ factory('pulsing-pad','Pulsing Pad','Pad',{voice:{attack:.55,decay:.44,sustain:.66,release:1.25,pwmDepth:30,pwmRate:.62},instrument:{voiceCount:3,detune:15},filter:{cutoff:4800,resonance:22,volume:69},performance:{game:{enabled:false}}}),
  factory('complex-layer-pad','Complex Layer Pad','Pad',{
   instrument:{voiceCount:6,unisonCount:2,mode:'poly',detune:16},
   engines:[
-   {pan:-38,voice:{wave:'triangle',attack:.45,decay:.5,sustain:.72,release:1.4},filter:{cutoff:2800,resonance:14,volume:58}},
-   {pan:0,voice:{wave:'sawtooth',attack:.38,decay:.45,sustain:.68,release:1.2},filter:{cutoff:5200,resonance:18,volume:62}},
-   {pan:38,voice:{wave:'square',attack:.42,decay:.48,sustain:.65,release:1.3,pulse:52,pwmDepth:9,pwmRate:.45},filter:{cutoff:6400,resonance:22,volume:55}}
+   {pan:-38,voice:{wave:'triangle',attack:.48,decay:.52,sustain:.73,release:1.45},filter:{cutoff:2650,resonance:15,volume:57}},
+   {pan:0,voice:{wave:'sawtooth',attack:.4,decay:.46,sustain:.69,release:1.22},filter:{cutoff:5000,resonance:19,volume:61}},
+   {pan:38,voice:{wave:'square',attack:.44,decay:.5,sustain:.66,release:1.32,pulse:52,pwmDepth:10,pwmRate:.4},filter:{cutoff:6200,resonance:23,volume:54}}
   ],
-  lfos:[{enabled:true,wave:'triangle',rate:.22,depth:.42,target:'cutoff',engines:'3'}],
+  lfos:[{enabled:true,wave:'triangle',rate:.2,depth:.44,target:'cutoff',engines:'3'}],
   performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false}}
  }),
  factory('complex-layer-bass','Layered Sub Stack','Bass',{
   instrument:{voiceCount:4,unisonCount:2,mode:'poly',detune:11},
   engines:[
-   {pan:-42,voice:{wave:'square',attack:.006,decay:.22,sustain:.78,release:.28,pulse:28},filter:{cutoff:520,resonance:22,volume:76}},
-   {pan:-8,voice:{wave:'sawtooth',attack:.004,decay:.2,sustain:.7,release:.22},filter:{cutoff:1150,resonance:28,volume:68}},
-   {pan:36,voice:{wave:'triangle',attack:.02,decay:.26,sustain:.62,release:.3},filter:{cutoff:2100,resonance:16,volume:52,mode:'highpass'}}
+   {pan:-42,voice:{wave:'square',attack:.004,decay:.2,sustain:.8,release:.26,pulse:26},filter:{cutoff:480,resonance:24,volume:77}},
+   {pan:-8,voice:{wave:'sawtooth',attack:.003,decay:.18,sustain:.72,release:.2},filter:{cutoff:1080,resonance:30,volume:69}},
+   {pan:36,voice:{wave:'triangle',attack:.018,decay:.24,sustain:.64,release:.28},filter:{cutoff:1980,resonance:17,volume:51,mode:'highpass'}}
   ],
-  lfos:[{enabled:true,wave:'sine',rate:.55,depth:.2,target:'cutoff',engines:'2'}],
+  lfos:[{enabled:true,wave:'sine',rate:.5,depth:.22,target:'cutoff',engines:'2'}],
   performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false}}
  }),
  factory('complex-layer-lead','Stacked Chorus Lead','Leads',{
@@ -261,7 +261,7 @@ export const FACTORY_PRESETS=Object.freeze([
    {pan:0,voice:{wave:'square',attack:.002,decay:.1,sustain:.9,release:.12,pulse:22,pwmDepth:11,pwmRate:2.4},filter:{cutoff:7200,resonance:11,volume:58}},
    {pan:32,voice:{wave:'sawtooth',attack:.003,decay:.11,sustain:.85,release:.14},filter:{cutoff:8600,resonance:8,volume:50}}
   ],
-  lfos:[{enabled:true,wave:'triangle',rate:4.5,depth:.12,target:'detune',engines:'all'}],
+  lfos:[{enabled:true,wave:'triangle',rate:4.2,depth:.14,target:'detune',engines:'all'}],
   performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:true,style:'arcade'}}
  }),
  factory('complex-layer-brass','Brass Chord Layer','Keys',{
@@ -271,7 +271,7 @@ export const FACTORY_PRESETS=Object.freeze([
    {pan:2,voice:{wave:'sawtooth',attack:.02,decay:.35,sustain:.48,release:.38},filter:{cutoff:3100,resonance:31,volume:58}},
    {pan:34,voice:{wave:'square',attack:.015,decay:.28,sustain:.42,release:.32,pulse:56,pwmDepth:6,pwmRate:.8},filter:{cutoff:4500,resonance:19,volume:52}}
   ],
-  lfos:[{enabled:true,wave:'sine',rate:.65,depth:.15,target:'resonance',engines:'2'}],
+  lfos:[{enabled:true,wave:'sine',rate:.58,depth:.17,target:'resonance',engines:'2'}],
   performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false}}
  }),
  factory('complex-layer-wash','Shimmer Drone Wash','FX',{
@@ -283,7 +283,7 @@ export const FACTORY_PRESETS=Object.freeze([
   ],
   lfos:[
    {enabled:true,wave:'triangle',rate:.18,depth:.35,target:'cutoff',engines:'1'},
-   {enabled:true,wave:'sine',rate:.12,depth:.25,target:'volume',engines:'3'}
+   {enabled:true,wave:'sine',rate:.1,depth:.27,target:'volume',engines:'3'}
   ],
   performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false}}
  }),
@@ -296,34 +296,34 @@ export const FACTORY_PRESETS=Object.freeze([
    {model:8580,pan:34,voice:{wave:'square',attack:.48,decay:.5,sustain:.7,release:1.9,pulse:58,pwmDepth:7,pwmRate:.32},filter:{cutoff:4300,resonance:24,volume:48}}
   ],
   lfos:[
-   {enabled:true,wave:'triangle',rate:.14,depth:.38,target:'cutoff',engines:'1'},
-   {enabled:true,wave:'sine',rate:.09,depth:.22,target:'volume',engines:'2'}
+   {enabled:true,wave:'triangle',rate:.12,depth:.4,target:'cutoff',engines:'1'},
+   {enabled:true,wave:'sine',rate:.08,depth:.24,target:'volume',engines:'2'}
   ],
   performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false}}
  }),
  factory('complex-layer-commando','Raid Assault Layer','Bass',{
   instrument:{voiceCount:4,unisonCount:2,mode:'poly',detune:8},
   engines:[
-   {pan:-40,voice:{wave:'square',attack:.002,decay:.14,sustain:.62,release:.1,pulse:24},filter:{cutoff:780,resonance:24,volume:80}},
-   {pan:0,voice:{wave:'sawtooth',attack:.002,decay:.11,sustain:.58,release:.09},filter:{cutoff:3200,resonance:22,volume:66}},
-   {pan:38,voice:{wave:'square',attack:.002,decay:.07,sustain:.42,release:.06,pulse:16},filter:{cutoff:6800,resonance:12,volume:58}}
+   {pan:-40,voice:{wave:'square',attack:0,decay:.12,sustain:.64,release:.08,pulse:22},filter:{cutoff:720,resonance:26,volume:81}},
+   {pan:0,voice:{wave:'sawtooth',attack:0,decay:.1,sustain:.6,release:.08},filter:{cutoff:3050,resonance:24,volume:67}},
+   {pan:38,voice:{wave:'square',attack:0,decay:.06,sustain:.44,release:.05,pulse:14},filter:{cutoff:6600,resonance:14,volume:57}}
   ],
   performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:true,style:'action',rate:8},arp:{enabled:true,pattern:'up',rate:4,sync:true}}
  }),
  factory('complex-layer-turrican','Heroic Storm Layer','Leads',{
   instrument:{voiceCount:3,unisonCount:3,mode:'legato',detune:22},
   engines:[
-   {pan:-34,voice:{wave:'sawtooth',attack:.004,decay:.16,sustain:.82,release:.22},filter:{cutoff:1250,resonance:38,volume:72}},
-   {pan:0,voice:{wave:'sawtooth',attack:.003,decay:.12,sustain:.86,release:.18},filter:{cutoff:5100,resonance:44,volume:64}},
-   {pan:36,voice:{wave:'square',attack:.002,decay:.09,sustain:.8,release:.14,pulse:30,pwmDepth:8,pwmRate:1.8},filter:{cutoff:7600,resonance:16,volume:54}}
+   {pan:-34,voice:{wave:'sawtooth',attack:.003,decay:.15,sustain:.83,release:.2},filter:{cutoff:1180,resonance:40,volume:73}},
+   {pan:0,voice:{wave:'sawtooth',attack:.002,decay:.11,sustain:.87,release:.17},filter:{cutoff:4950,resonance:46,volume:65}},
+   {pan:36,voice:{wave:'square',attack:.002,decay:.08,sustain:.81,release:.13,pulse:28,pwmDepth:9,pwmRate:1.9},filter:{cutoff:7400,resonance:17,volume:55}}
   ],
-  lfos:[{enabled:true,wave:'triangle',rate:.35,depth:.2,target:'resonance',engines:'2'}],
+  lfos:[{enabled:true,wave:'triangle',rate:.32,depth:.22,target:'resonance',engines:'2'}],
   performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:true,style:'adventure',rate:4}}
  }),
  factory('complex-layer-synthpop','Neon Chorus Layer','Keys',{
   instrument:{voiceCount:6,unisonCount:2,mode:'poly',detune:17},
   engines:[
-   {pan:-32,voice:{wave:'square',attack:.012,decay:.28,sustain:.72,release:.42,pulse:46,pwmDepth:16,pwmRate:1.15},filter:{cutoff:5400,resonance:14,volume:60}},
+   {pan:-32,voice:{wave:'square',attack:.01,decay:.26,sustain:.73,release:.4,pulse:46,pwmDepth:17,pwmRate:1.05},filter:{cutoff:5250,resonance:15,volume:61}},
    {pan:2,voice:{wave:'sawtooth',attack:.015,decay:.3,sustain:.75,release:.45},filter:{cutoff:4800,resonance:11,volume:58}},
    {pan:32,voice:{wave:'triangle',attack:.02,decay:.26,sustain:.68,release:.4},filter:{cutoff:7200,resonance:6,volume:52}}
   ],
@@ -336,7 +336,7 @@ export const FACTORY_PRESETS=Object.freeze([
  factory('complex-layer-firestart','Firestart Corridor Layer','FX',{
   instrument:{voiceCount:4,unisonCount:2,mode:'legato',detune:13},
   engines:[
-   {pan:-39,voice:{wave:'square',attack:.008,decay:.28,sustain:.84,release:.55,pulse:38},filter:{cutoff:720,resonance:31,volume:74}},
+   {pan:-39,voice:{wave:'square',attack:.006,decay:.26,sustain:.85,release:.52,pulse:36},filter:{cutoff:680,resonance:33,volume:75}},
    {pan:0,voice:{wave:'sawtooth',attack:.12,decay:.42,sustain:.76,release:1.1},filter:{cutoff:2050,resonance:39,volume:58,mode:'bandpass'}},
    {pan:36,voice:{wave:'noise',attack:.2,decay:.5,sustain:.4,release:.85},filter:{cutoff:3400,resonance:22,volume:34,mode:'bandpass'}}
   ],
@@ -346,37 +346,37 @@ export const FACTORY_PRESETS=Object.freeze([
   ],
   performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false},arp:{enabled:false}}
  }),
- factory('soft-flute','Soft Flute','Lead',{voice:{wave:'triangle',attack:.08,decay:.24,sustain:.86,release:.35},instrument:{detune:0},filter:{cutoff:4300,resonance:5,volume:80},performance:{game:{enabled:false}}}),
- factory('filter-motion','Filter Motion','FX',{filter:{cutoff:4200,resonance:55,volume:60},lfos:[{enabled:true,wave:'triangle',rate:.35,depth:.55,target:'cutoff'}],performance:{game:{enabled:false}}}),
+ factory('soft-flute','Soft Flute','Lead',{voice:{wave:'triangle',attack:.06,decay:.22,sustain:.87,release:.33},instrument:{detune:0},filter:{cutoff:4500,resonance:6,volume:79},performance:{game:{enabled:false}}}),
+ factory('filter-motion','Filter Motion','FX',{filter:{cutoff:4000,resonance:58,volume:59},lfos:[{enabled:true,wave:'triangle',rate:.28,depth:.58,target:'cutoff'}],performance:{game:{enabled:false}}}),
  // Original C64-inspired prototypes. These are sound-design starting points, not transcriptions.
  factory('tight-pulse-bass','Tight Pulse Bass','Bass',{voice:{wave:'square',attack:0,decay:.09,sustain:.28,release:.06,pulse:22},filter:{cutoff:1180,resonance:22,volume:74},performance:{game:{enabled:false}}}),
  factory('shimmer-pwm-keys','Shimmer PWM Keys','Keys',{voice:{wave:'square',attack:.05,decay:.42,sustain:.64,release:.68,pulse:43,pwmDepth:16,pwmRate:.48},filter:{cutoff:4600,resonance:14,volume:58},performance:{game:{enabled:false}}}),
- factory('bright-pulse-lead','Bright Pulse Lead','Leads',{voice:{wave:'square',attack:.002,decay:.13,sustain:.83,release:.12,pulse:18},filter:{cutoff:7200,resonance:9,volume:64},lfos:[{enabled:true,wave:'sine',rate:5,depth:.08,target:'pulse'}],performance:{game:{enabled:false}}}),
- factory('noise-snare','Noise Snare','Drums',{voice:{wave:'noise',attack:0,decay:.09,sustain:0,release:.03},filter:{cutoff:6200,resonance:10,volume:70,mode:'highpass'},performance:{game:{enabled:false}}}),
+ factory('bright-pulse-lead','Bright Pulse Lead','Leads',{voice:{wave:'square',attack:.002,decay:.12,sustain:.84,release:.11,pulse:17},filter:{cutoff:7350,resonance:10,volume:65},lfos:[{enabled:true,wave:'sine',rate:5.2,depth:.09,target:'pulse'}],performance:{game:{enabled:false}}}),
+ factory('noise-snare','Noise Snare','Drums',{voice:{wave:'noise',attack:0,decay:.09,sustain:0,release:.01},filter:{cutoff:6200,resonance:10,volume:70,mode:'highpass'},performance:{game:{enabled:false}}}),
  // Five additional original sounds in each category; retains the four approved prototypes.
  // Bass: contrasting PWM, filter, tone and octave-arpeggio behaviors.
- factory('pwm-drive-bass','PWM Drive Bass','Bass',{voice:{wave:'square',attack:.002,decay:.2,sustain:.56,release:.1,pulse:34,pwmDepth:19,pwmRate:1.1},filter:{cutoff:1850,resonance:20,volume:70},performance:{game:{enabled:false}}}),
+ factory('pwm-drive-bass','PWM Drive Bass','Bass',{voice:{wave:'square',attack:.002,decay:.18,sustain:.58,release:.09,pulse:32,pwmDepth:21,pwmRate:1.22},filter:{cutoff:1780,resonance:22,volume:71},performance:{game:{enabled:false}}}),
  factory('filtered-saw-bass','Filtered Saw Bass','Bass',{voice:{wave:'sawtooth',attack:.002,decay:.16,sustain:.45,release:.11},filter:{cutoff:880,resonance:42,volume:76},performance:{game:{enabled:false}}}),
- factory('hollow-square-bass','Hollow Square Bass','Bass',{voice:{wave:'square',attack:.006,decay:.24,sustain:.66,release:.16,pulse:50},filter:{cutoff:1750,resonance:29,volume:75,mode:'bandpass'},performance:{game:{enabled:false}}}),
- factory('octave-runner-bass','Octave Runner Bass','Bass',{voice:{wave:'square',attack:.002,decay:.08,sustain:.52,release:.05,pulse:24},filter:{cutoff:2700,resonance:12,volume:67},performance:{game:{enabled:true,style:'custom',rate:8,sequence:octaveSequence([0,12,0,12])}}}),
- factory('warm-triangle-bass','Warm Triangle Bass','Bass',{voice:{wave:'triangle',attack:.015,decay:.24,sustain:.79,release:.22},filter:{cutoff:2400,resonance:7,volume:86},performance:{game:{enabled:false}}}),
+ factory('hollow-square-bass','Hollow Square Bass','Bass',{voice:{wave:'square',attack:.005,decay:.22,sustain:.68,release:.14,pulse:48},filter:{cutoff:1680,resonance:31,volume:74,mode:'bandpass'},performance:{game:{enabled:false}}}),
+ factory('octave-runner-bass','Octave Runner Bass','Bass',{voice:{wave:'square',attack:.002,decay:.07,sustain:.54,release:.05,pulse:23},filter:{cutoff:2580,resonance:13,volume:68},performance:{game:{enabled:true,style:'custom',rate:8,sequence:octaveSequence([0,12,0,12])}}}),
+ factory('warm-triangle-bass','Warm Triangle Bass','Bass',{voice:{wave:'triangle',attack:.012,decay:.22,sustain:.8,release:.2},filter:{cutoff:2280,resonance:8,volume:85},performance:{game:{enabled:false}}}),
  // Keys: monophonic plucks and bells alongside genuinely playable Poly patches.
- factory('chip-pluck-keys','Chip Pluck Keys','Keys',{voice:{wave:'triangle',attack:0,decay:.1,sustain:0,release:.06},filter:{cutoff:6700,resonance:4,volume:79},performance:{game:{enabled:false}}}),
- factory('bell-keys','Bell Keys','Keys',{voice:{wave:'triangle',attack:0,decay:1.1,sustain:0,release:.48},filter:{cutoff:8200,resonance:0,volume:79},performance:{game:{enabled:false}}}),
- factory('chord-stab-keys','Chord Stab Keys','Keys',{voice:{wave:'sawtooth',attack:.003,decay:.28,sustain:.35,release:.19},instrument:{voiceCount:6,unisonCount:2,mode:'poly',detune:8},filter:{cutoff:3850,resonance:21,volume:53},performance:{game:{enabled:false}}}),
- factory('organ-keys','Organ Keys','Keys',{voice:{wave:'square',attack:.012,decay:.08,sustain:1,release:.13,pulse:49},instrument:{voiceCount:4,unisonCount:1,mode:'poly',detune:0},filter:{cutoff:5700,resonance:6,volume:53},performance:{game:{enabled:false}}}),
+ factory('chip-pluck-keys','Chip Pluck Keys','Keys',{voice:{wave:'triangle',attack:0,decay:.08,sustain:0,release:.05},filter:{cutoff:6900,resonance:5,volume:80},performance:{game:{enabled:false}}}),
+ factory('bell-keys','Bell Keys','Keys',{voice:{wave:'triangle',attack:0,decay:1.02,sustain:0,release:.45},filter:{cutoff:8000,resonance:1,volume:78},performance:{game:{enabled:false}}}),
+ factory('chord-stab-keys','Chord Stab Keys','Keys',{voice:{wave:'sawtooth',attack:.002,decay:.25,sustain:.36,release:.18},instrument:{voiceCount:6,unisonCount:2,mode:'poly',detune:9},filter:{cutoff:3720,resonance:23,volume:54},performance:{game:{enabled:false}}}),
+ factory('organ-keys','Organ Keys','Keys',{voice:{wave:'square',attack:.01,decay:.07,sustain:1,release:.12,pulse:48},instrument:{voiceCount:4,unisonCount:1,mode:'poly',detune:0},filter:{cutoff:5550,resonance:7,volume:54},performance:{game:{enabled:false}}}),
  factory('slow-glass-pad','Slow Glass Pad','Keys',{voice:{wave:'square',attack:.82,decay:.58,sustain:.64,release:1.75,pulse:44,pwmDepth:23,pwmRate:.32},instrument:{voiceCount:4,unisonCount:1,mode:'poly',detune:0},filter:{cutoff:3900,resonance:16,volume:55},lfos:[{enabled:true,wave:'sine',rate:.16,depth:.22,target:'cutoff'}],performance:{game:{enabled:false}}}),
  // Leads: legato, resonant pulse, volume tremolo, octave stepping, and filtered saw.
  factory('nasal-pwm-lead','Nasal PWM Lead','Leads',{voice:{wave:'square',attack:.002,decay:.14,sustain:.84,release:.14,pulse:14,pwmDepth:14,pwmRate:1.45},filter:{cutoff:2480,resonance:41,volume:64,mode:'bandpass'},performance:{game:{enabled:false}}}),
- factory('smooth-legato-lead','Smooth Legato Lead','Leads',{voice:{wave:'triangle',attack:.035,decay:.28,sustain:.88,release:.32},instrument:{voiceCount:1,unisonCount:1,mode:'legato',detune:0},filter:{cutoff:5600,resonance:4,volume:78},performance:{game:{enabled:false}}}),
- factory('tremolo-pulse-lead','Tremolo Pulse Lead','Leads',{voice:{wave:'square',attack:.008,decay:.21,sustain:.78,release:.22,pulse:37},filter:{cutoff:6100,resonance:12,volume:66},lfos:[{enabled:true,wave:'triangle',rate:5,depth:.35,target:'volume'}],performance:{game:{enabled:false}}}),
- factory('octave-chase-lead','Octave Chase Lead','Leads',{voice:{wave:'square',attack:.002,decay:.08,sustain:.72,release:.09,pulse:23},filter:{cutoff:6000,resonance:13,volume:62},performance:{game:{enabled:true,style:'custom',rate:8,sequence:octaveSequence([0,12,7,12])}}}),
- factory('filtered-saw-lead','Filtered Saw Lead','Leads',{voice:{wave:'sawtooth',attack:.004,decay:.22,sustain:.71,release:.21},filter:{cutoff:2900,resonance:42,volume:58},lfos:[{enabled:true,wave:'sine',rate:.8,depth:.23,target:'cutoff'}],performance:{game:{enabled:false}}}),
- // Drums: pitched and noise-envelope approximations. No pitch envelope is claimed.
- factory('low-thud-kick','Low Thud Kick','Drums',{voice:{wave:'triangle',attack:0,decay:.18,sustain:0,release:.03,pitchEnvelope:FACTORY_PITCH.kick},filter:{cutoff:540,resonance:11,volume:92},performance:{game:{enabled:false}}}),
- factory('closed-noise-hat','Closed Noise Hat','Drums',{voice:{wave:'noise',attack:0,decay:.035,sustain:0,release:.01},filter:{cutoff:7400,resonance:6,volume:58,mode:'highpass'},performance:{game:{enabled:false}}}),
- factory('open-noise-hat','Open Noise Hat','Drums',{voice:{wave:'noise',attack:0,decay:.39,sustain:0,release:.12},filter:{cutoff:8200,resonance:8,volume:57,mode:'highpass'},performance:{game:{enabled:false}}}),
- factory('noise-clap','Noise Clap','Drums',{voice:{wave:'noise',attack:0,decay:.17,sustain:0,release:.07},filter:{cutoff:3150,resonance:28,volume:66,mode:'bandpass'},lfos:[{enabled:true,wave:'square',rate:17,depth:.49,target:'volume'}],performance:{game:{enabled:false}}}),
+ factory('smooth-legato-lead','Smooth Legato Lead','Leads',{voice:{wave:'triangle',attack:.032,decay:.26,sustain:.89,release:.3},instrument:{voiceCount:1,unisonCount:1,mode:'legato',detune:0},filter:{cutoff:5750,resonance:5,volume:77},performance:{game:{enabled:false}}}),
+ factory('tremolo-pulse-lead','Tremolo Pulse Lead','Leads',{voice:{wave:'square',attack:.007,decay:.2,sustain:.79,release:.2,pulse:36},filter:{cutoff:5950,resonance:13,volume:67},lfos:[{enabled:true,wave:'triangle',rate:5.2,depth:.38,target:'volume'}],performance:{game:{enabled:false}}}),
+ factory('octave-chase-lead','Octave Chase Lead','Leads',{voice:{wave:'square',attack:.002,decay:.07,sustain:.73,release:.08,pulse:22},filter:{cutoff:5850,resonance:14,volume:63},performance:{game:{enabled:true,style:'custom',rate:8,sequence:octaveSequence([0,12,7,12])}}}),
+ factory('filtered-saw-lead','Filtered Saw Lead','Leads',{voice:{wave:'sawtooth',attack:.003,decay:.2,sustain:.72,release:.19},filter:{cutoff:2750,resonance:44,volume:59},lfos:[{enabled:true,wave:'sine',rate:.75,depth:.25,target:'cutoff'}],performance:{game:{enabled:false}}}),
+ // Drums: kick/tom use pitch templates; hats/clap remain noise-focused.
+ factory('low-thud-kick','Low Thud Kick','Drums',{voice:{wave:'triangle',attack:0,decay:.18,sustain:0,release:.01,pitchEnvelope:FACTORY_PITCH.kick},filter:{cutoff:540,resonance:11,volume:92},performance:{game:{enabled:false}}}),
+ factory('closed-noise-hat','Closed Noise Hat','Drums',{voice:{wave:'noise',attack:0,decay:.03,sustain:0,release:.01},filter:{cutoff:7600,resonance:7,volume:60,mode:'highpass'},performance:{game:{enabled:false}}}),
+ factory('open-noise-hat','Open Noise Hat','Drums',{voice:{wave:'noise',attack:0,decay:.34,sustain:0,release:.1},filter:{cutoff:8000,resonance:9,volume:58,mode:'highpass'},performance:{game:{enabled:false}}}),
+ factory('noise-clap','Noise Clap','Drums',{voice:{wave:'noise',attack:0,decay:.14,sustain:0,release:.06},filter:{cutoff:3000,resonance:30,volume:68,mode:'bandpass'},lfos:[{enabled:true,wave:'square',rate:18,depth:.52,target:'volume'}],performance:{game:{enabled:false}}}),
  factory('low-tom','Low Tom','Drums',{voice:{wave:'triangle',attack:0,decay:.26,sustain:0,release:.07,pitchEnvelope:FACTORY_PITCH.tom},filter:{cutoff:1180,resonance:21,volume:84},performance:{game:{enabled:false}}})
 ]);
 export const LAYER_FACTORY_IDS=Object.freeze(

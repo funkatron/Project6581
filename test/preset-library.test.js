@@ -272,6 +272,11 @@ test('invalid pitch envelope times reject preset settings',()=>{
  assert.throws(()=>validatePresetSettings(settings),/Pitch point/);
 });
 
+test('every factory preset validates after tuning',()=>{
+ for(const preset of FACTORY_PRESETS)
+  assert.deepEqual(validatePresetSettings(preset.settings),preset.settings,preset.id);
+});
+
 test('Step D drum presets use shipped kick and tom pitch envelope templates',()=>{
  const templates=pitchEnvelopeTemplates();
  for(const [id,key] of [['low-thud-kick','kick'],['low-tom','tom']]){
