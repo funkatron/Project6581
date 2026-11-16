@@ -35,6 +35,14 @@ IDs unchanged; user saved copies unaffected.
 
 **2026-11-16 pass 2:** All **40** factory sounds tuned (24 core + 6 legacy + 10 layer stacks). See `preset-library.js` diff; iPad audition still required before marking Step D complete.
 
+## Batch recordings (WAV or M4A)
+
+```bash
+node scripts/factory-audition-record.mjs --format m4a --out ./artifacts/factory-audition
+```
+
+See [docs/factory-audition-recordings.md](../docs/factory-audition-recordings.md). **M4A** only when the browser’s `MediaRecorder` supports `audio/mp4` (common on Safari/iPad; optional on Chromium). Use **WAV** for a guaranteed lossless set on desktop.
+
 ## Desktop quick pass (optional)
 
 Load presets from browser groups **Bass → Drums**; use phrases from `factory-audition-matrix.js`. Compare `low-thud-kick` / `low-tom` against Commando subtune #1 bass — note pitch-envelope gap in references doc.
