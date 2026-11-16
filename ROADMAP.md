@@ -23,7 +23,9 @@ Finish the **active step** (code, doc, or device verification) in a single focus
 | **G** | **iPad MIDI** route decision (MIDI browser vs native shell) | Priority 3 + Priority 4 |
 | *later* | Western scale lock, `.sid` player, visualization, audio-clock LFO migration | Sections below |
 
-**Active step:** **B** — preset load-while-playing polish + iPad preset workflow QA. Step **A** owner checklist: [desktop-chromium-qa.md](docs/desktop-chromium-qa.md); agent smoke notes in [agents/roadmap-step-a-chromium.md](agents/roadmap-step-a-chromium.md).
+**Active step:** **C** — Arp + Game Arp four-mode verification (or **E** Web MIDI on desktop if prioritizing MIDI over more device QA).
+
+**Deferred (owner, 2026-11-16):** Step **A** [desktop-chromium-qa.md](docs/desktop-chromium-qa.md) and Step **B** iPad load-while-playing / full preset workflow pass—may return before a release milestone. Step **B** code shipped in [#122](https://github.com/funkatron/Project6581/pull/122).
 
 ## Release milestones (v0.2.0+)
 
@@ -66,7 +68,7 @@ Finish the **active step** (code, doc, or device verification) in a single focus
 - [x] Create a small **Factory Presets** browser (Bass, Lead, Pluck, Pad and FX) with six original settings. Display unsaved edits clearly.
 - [x] Add a separate **My Presets** collection with **Save**, **Save As**, **Rename**, and **Delete**. Factory presets remain read-only.
 - [x] Save and restore **all sound and performance settings**: SID model, waveform, ADSR, pulse/PWM, filter, level, unison/polyphony/detune, all three LFOs, master BPM, regular Arp and Game Arp settings. Presets never contain held notes or latches' active note contents, and loading never automatically plays a note.
-- [x] Make loading predictable while a note is sounding: **panic only when** routing, voice budget, mode, per-engine enable, or chip model changes (`presetLoadRequiresSilence`); always reset arp/seq state; user message on load. iPad verification open.
+- [x] Make loading predictable while a note is sounding: **panic only when** routing, voice budget, mode, per-engine enable, or chip model changes (`presetLoadRequiresSilence`); always reset arp/seq state; user message on load. Device pass deferred per owner.
 - [x] Persist user presets locally in browser storage with error reporting. Presets are **not** synchronized across devices.
 - [x] **Export** individual presets or a user bank as readable versioned JSON; **import** either with schema/range validation, actionable errors, and confirmation before replacing duplicate names.
 - [x] Use a simple **version 2** preset format including Game Arp Pattern rate, with no migration for earlier files. Validate imported content before modifying storage.
