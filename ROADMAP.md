@@ -29,7 +29,7 @@ Prioritize features that help people **make, retain, exchange, and perform music
 
 ## Planned UI refinement: consistent control widths and dedicated LFO tab
 
-**Goal:** Make the synth's controls easier to scan and use across desktop and iPad, while giving modulation its own focused workspace. This is a layout and navigation task, not a change to the SID engine.
+**Goal:** Make the synth's controls easier to scan and use across desktop and iPad, while giving modulation its own focused workspace. This is **layout and navigation only** — three LFOs, routing, and stationary-thumb visualization are already shipped ([LFO modulation](#lfo-modulation-shipped-layout-and-device-verification-open)).
 
 - [ ] Audit control widths and alignment across the existing tabs: sliders, selects, buttons, numeric readouts, labels and grouped controls. Identify where controls that serve the same role have inconsistent widths.
 - [ ] Establish reusable sizing rules for comparable controls and shared spacing/alignment tokens. Keep full-width sliders full-width where appropriate, and allow compact selectors to wrap consistently rather than forcing every control to the same pixel width.
@@ -221,7 +221,7 @@ SID playback + highlighted keyboard keys
 - [ ] Complete real iPad Safari audio/layout verification using [the device checklist](docs/ipad-safari-qa.md); a code review alone cannot complete this step.
 - [x] Confirm the GitHub Pages deployment of PRs #39 and #40 (commit `ec25e9c`, November 4, 2026).
 
-The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) identifies current scheduling risks and a bounded measurement/prototype plan. No replacement of the current LFO timer is authorized by regression tests alone. Spectrum analyzer, oscilloscope, spectrogram, and independently configurable SID chips remain separate roadmap items.
+The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) tracks extending worklet-rate modulation beyond filter/volume/resonance. Spectrum analyzer, oscilloscope, and spectrogram remain separate roadmap items. Triple-SID engines are shipped (see below).
 
 ## November 5, 2026: latency report and neutral Game Arp reset
 
@@ -253,49 +253,46 @@ The [audio-clock investigation](docs/audio-clock-lfo-investigation.md) identifie
 
 **Completion condition:** Demonstrated lower median and tail key-to-sound latency under equivalent test conditions, with reliable SID-only audio and no regression in arpeggiator timing.
 
-## Planned: three assignable LFOs
+## LFO modulation (shipped; layout and device verification open)
 
-**Goal:** Add three independent low-frequency oscillators for modulation of synthesizer controls while preserving authentic SID audio generation.
+**Goal:** Three independent LFOs modulate continuous parameters per engine without overwriting saved base slider values. See [live-sid-engine.md](docs/live-sid-engine.md) for scheduling split (worklet vs main thread).
 
-- [x] Provide **LFO 1**, **LFO 2**, and **LFO 3**, each with independent enable, rate, depth, and waveform controls (initial live filter/pulse routing; pending CI and device verification).
-- [x] Implement and test the pure waveform evaluation and modulation-routing core (PR in progress; not connected to audio/UI).
-- [ ] Offer selectable modulation waveforms: sine, triangle, sawtooth, square, and sample-and-hold/random. These are modulation shapes, not additional SID audio oscillator waveforms.
-- [x] Route three LFOs to 11 continuous sound parameters: cutoff, resonance, volume, pulse width, Unison detune, ADSR, PWM depth and PWM rate. Implement live SID register updates and preserve the base values. Exclude discrete waveform, chip, Unison mode, and voice-count controls.
-- [ ] Permit multiple LFOs to target the same parameter with predictable summation, clamping, and clear display of the base value versus modulation.
-- [ ] Ensure modulation updates do not permanently overwrite manually selected slider values.
-- [ ] Respect waveform-dependent controls: pulse-related modulation should have no audible effect unless the Pulse waveform is active.
-- [ ] Keep the interface usable on iPad, with compact routing controls and no unnecessary panel scrolling.
-- [ ] Complete final CI and iPad Safari validation of live ADSR/detune/PWM modulation, including simultaneous modulation, register-write frequency, voice releases, stop/reset and high-rate performance. Pure waveforms, timing and register-level paths have automated tests; evaluate AudioWorklet-rate scheduling where browser timers introduce audible stepping.
+**Shipped on `main`:**
 
-**Completion condition:** Three LFOs can run simultaneously, independently modulate selected sliders, and stop cleanly without changing saved base control values or compromising SID playback.
+- [x] **LFO 1–3** with enable, rate, sync, depth, target, and **engine scope** (`all` or SID 1–3).
+- [x] Waveforms: sine, triangle, sawtooth, square, **sample-hold** (`src/lfo-modulation.js`).
+- [x] Targets: cutoff, resonance, volume, pulse width, detune, ADSR stages, PWM depth/rate — with pulse-only gating and unison gating for detune.
+- [x] **Summation** when multiple LFOs share a target (offset sum + clamp).
+- [x] **Stationary-thumb** UI and effective-value readout ([modulation-center](#modulation-center-shipped-ipad-verification-open) below).
+- [x] **Filter/volume/resonance** modulation on the audio clock in the worklet (`useAudioClockLfo=true`); presets persist LFO blocks in v5.
+- [x] Automated waveform, routing, sync-division, and modulation-track tests.
 
-## In development: voice allocation controls
+**Still open:**
+
+- [ ] Dedicated **LFOs tab** and control-width polish (UI refinement section above).
+- [ ] iPad Safari verification for simultaneous LFOs, touch on modulation sliders, and ADSR/PWM paths.
+- [ ] Extend audio-clock modulation to remaining targets or reduce stepping ([audio-clock investigation](docs/audio-clock-lfo-investigation.md)).
+
+## Voice allocation controls (shipped; iPad verification open)
 
 **Design and implementation:** [Voice allocation layout](docs/voice-allocation-layout.md). The approved compact Voice Assign, Voices and Unison selectors and a full-width Detune slider are implemented in the same PR. Existing styling and keyboard are retained. **Spread remains excluded.**
 
 - [x] Plan a compact **Voice Assign** selector: **Mono, Legato, Duo, Poly**.
-- [x] Define **Voices** (1–8 total hardware oscillators) separately from **Unison** (1–Voices stacked layers per note), with **Detune** in cents.
+- [x] Define **Voices** (1–9 total hardware oscillators) separately from **Unison** (1–Voices stacked layers per note), with **Detune** in cents.
 - [x] Specify a compact, wrapping inline group of **content-sized** Voice Assign, Voices and Unison selectors with **Detune on a full-width row**, retaining the current Sound tab, iPad/desktop keyboard visibility, and accessible touch targets.
 - [x] Document the desired allocation, note ownership, clipping/voice limits, legato envelope behavior, and preset/LFO interactions without changing the audio engine.
-- [x] The compact layout was approved for implementation in PR #50. Added Voice Assign (Mono/Legato/Duo/Poly), eight-oscillator budget, per-note Unison stacks, and Detune without stereo Spread.
-- [x] Implemented voice ownership, deterministic oldest-stack stealing, Mono retrigger and Legato pitch-only transitions. Presets use format v3 with no migrations.\n- [ ] Confirm CI, address new Copilot reviews, and verify actual iPad playback and responsive layout before merging.
+- [x] Voice Assign through PR #50: nine-oscillator budget, per-note Unison stacks, Detune (no stereo Spread).
+- [x] Voice ownership, oldest-stack stealing, Mono retrigger, Legato pitch-only transitions; presets **v5**.
+- [ ] iPad playback and responsive layout verification ([ipad-safari-qa.md](docs/ipad-safari-qa.md)).
 
-**Scope decision:** No stereo Spread, panning, or stereo output work for this milestone. The separate future **up-to-three-independent-SID-devices** UI milestone remains distinct.
+**Scope decision:** No stereo **Spread** (detune-as-width) milestone. Per-engine **pan** and triple SID cards are shipped separately.
 
-## Planned: modulation-center slider presentation
+## Modulation-center (shipped; iPad verification open)
 
-**Goal:** Make modulation immediately readable without moving control thumbs during playback.
+**Goal:** Readable modulation without moving slider thumbs during playback.
 
-- [x] Always show each sound control's editable base value and unit (e.g. Hz, %, seconds, cents), whether or not an LFO is assigned.
-- [x] Treat the physical slider thumb as the **base/center value** that the user edits. LFOs add modulation around that center without shifting the thumb, changing the saved base value, or hijacking pointer input.
-- [x] Show the instantaneous modulated value through a **colored track segment between the stationary thumb and the effective value**, with a neutral fill to the center. The segment handles bipolar movement and clipping at bounds.
-- [x] Keep the editable center's numeric readout visible at all times, and show a separately labeled effective numeric readout when an LFO targets the control.
-- [ ] Confirm actual numeric readability and slider behavior on iPad Safari in portrait and landscape; see `docs/ipad-safari-qa.md`.
-- [x] Update appearance as the user changes the center or an LFO's depth/rate/target, and return to the center and ordinary track when modulation is disabled or reassigned.
-- [ ] Finish CI and device-level verification of simultaneous LFO summation, min/max saturation, base edits, keyboard accessibility, iPad Safari touch, and rendering overhead. Pure track-mapping tests are included but cannot establish actual touch behavior.
-- [x] Do not use a second moving slider thumb or create additional SID register writes merely to render the effect.
-
-**Completion checks:** The thumb remains fixed at the user-selected modulation center, a colored track visualizes the current modulation, and numeric values remain readable. Touch/keyboard edits and authentic SID playback behave as before.
+- [x] Base value + units always visible; thumb is the editable center; green track shows effective value; worklet posts `modulation-display` for live filter readouts.
+- [ ] iPad Safari portrait/landscape touch and numeric readability ([ipad-safari-qa.md](docs/ipad-safari-qa.md)).
 
 ## Three independently configurable SID engines (shipped; polish open)
 

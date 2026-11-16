@@ -148,7 +148,7 @@ PCM samples → browser audio output
 - **Sound generation:** [libresidfp](https://github.com/libsidplayfp/libresidfp), pinned to **v1.1.2**, is compiled into `dist/residfp.wasm`. It models SID oscillators, envelopes, and filter behavior.
 - **Browser audio:** An `AudioWorklet` renders the emulated audio off the main UI thread. JavaScript handles note input, controls, and arpeggiator scheduling.
 - **Chip selection:** The interface offers MOS **6581** and **8580** models, whose filter characteristics differ.
-- **Voice model:** Up to eight oscillators across three emulated SID chips. Voice Assign controls one-note retriggering (Mono), no-retrigger pitch changes (Legato), two-note stacks (Duo), or multi-note stacks (Poly). The total Voices and per-note Unison counts are independent.
+- **Voice model:** Up to nine oscillators across three emulated SID chips (Voices slider 1–9). Voice Assign controls one-note retriggering (Mono), no-retrigger pitch changes (Legato), two-note stacks (Duo), or multi-note stacks (Poly). The total Voices and per-note Unison counts are independent.
 - **No audio fallback:** If the WebAssembly SID engine cannot initialize, the app reports the failure instead of silently substituting generic oscillators.
 
 ### Building and testing
