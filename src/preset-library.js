@@ -316,6 +316,19 @@ export const FACTORY_PRESETS=Object.freeze([
   ],
   performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false},arp:{enabled:true,pattern:'updown',rate:8,sync:true}}
  }),
+ factory('complex-layer-firestart','Firestart Corridor Layer','FX',{
+  instrument:{voiceCount:4,unisonCount:2,mode:'legato',detune:13},
+  engines:[
+   {pan:-39,voice:{wave:'square',attack:.008,decay:.28,sustain:.84,release:.55,pulse:38},filter:{cutoff:720,resonance:31,volume:74}},
+   {pan:0,voice:{wave:'sawtooth',attack:.12,decay:.42,sustain:.76,release:1.1},filter:{cutoff:2050,resonance:39,volume:58,mode:'bandpass'}},
+   {pan:36,voice:{wave:'noise',attack:.2,decay:.5,sustain:.4,release:.85},filter:{cutoff:3400,resonance:22,volume:34,mode:'bandpass'}}
+  ],
+  lfos:[
+   {enabled:true,wave:'triangle',rate:.2,depth:.32,target:'cutoff',engines:'2'},
+   {enabled:true,wave:'sample-hold',rate:.45,depth:.22,target:'volume',engines:'3'}
+  ],
+  performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false},arp:{enabled:false}}
+ }),
  factory('soft-flute','Soft Flute','Lead',{voice:{wave:'triangle',attack:.08,decay:.24,sustain:.86,release:.35},instrument:{detune:0},filter:{cutoff:4300,resonance:5,volume:80},performance:{game:{enabled:false}}}),
  factory('filter-motion','Filter Motion','FX',{filter:{cutoff:4200,resonance:55,volume:60},lfos:[{enabled:true,wave:'triangle',rate:.35,depth:.55,target:'cutoff'}],performance:{game:{enabled:false}}}),
  // Original C64-inspired prototypes. These are sound-design starting points, not transcriptions.
