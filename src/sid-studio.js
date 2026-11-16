@@ -18,6 +18,7 @@ import {mountAudioTimingPanel} from "./audio-timing-panel.js?v=__BUILD_ID__";
 import {applyFirstEnergyTiming} from "./audio-timing-metrics.js?v=__BUILD_ID__";
 import {createDefaultEngines,clampVoiceCount,maxVoicesForEngines,DEFAULT_ROUTING,routeMask,routingKeyForSource,readRoutingFromDom} from "./sid-engines.js?v=__BUILD_ID__";
 import {mountSidEnginePanels} from "./sid-engine-panels-ui.js?v=__BUILD_ID__";
+import {mountMasterLoudnessMeter} from "./master-loudness-meter-ui.js?v=__BUILD_ID__";
 
 export function startSidStudio(){
 const $=id=>document.getElementById(id);
@@ -74,6 +75,13 @@ const engineLiveSettings=[null,null,null];
 const useAudioClockLfo=true;
 let enginePanelsUi=null;
 let chipPeakLevels=[0,0,0];
+const masterLoudnessMeter=mountMasterLoudnessMeter($);
+function updateMasterLoudnessFromLevels(masterPeak,chipPeaks){
+ if(Number.isFinite(masterPeak))masterLoudnessMeter.update(masterPeak);
+ else if(Array.isArray(chipPeaks)&&chipPeaks.length){
+  masterLoudnessMeter.update(Math.max(...chipPeaks.map(level=>Number(level)||0)));
+ }
+}
 function syncLegacyFilterInputs(){
  const filter=engines[0].filter;
  $('chip').value=String(engines[0].model);
@@ -540,6 +548,7 @@ async function startSid({gesture=false}={}){
       if(event.type==='meter-levels'){
         if(Array.isArray(event.chipPeaks))chipPeakLevels=event.chipPeaks;
         enginePanelsUi?.updateMeters(chipPeakLevels);
+        updateMasterLoudnessFromLevels(event.masterPeak,chipPeakLevels);
         return;
       }
       if(event.type==='audio-stats'){
@@ -550,6 +559,7 @@ async function startSid({gesture=false}={}){
         const peak=(event.peak*100).toFixed(2);
         if(Array.isArray(event.chipPeaks))chipPeakLevels=event.chipPeaks;
         enginePanelsUi?.updateMeters(chipPeakLevels);
+        if(Number.isFinite(event.peak))updateMasterLoudnessFromLevels(event.peak,chipPeakLevels);
         $('sidPlaybackStatus').textContent='SID key presses: '+sidKeys+' · register writes (recent): '+event.writes+' · audio peak: '+peak+'%';
       }
     }});

@@ -8,6 +8,7 @@ for(const [file,exportName] of [
  ['../src/editor-tabs.js','mountEditorTabs'],
  ['../src/lfo-panel-ui.js','mountLfoPanel'],
  ['../src/sid-engine-panels-ui.js','mountSidEnginePanels'],
+ ['../src/master-loudness-meter-ui.js','mountMasterLoudnessMeter'],
  ['../src/sid-engines.js','maxVoicesForEngines'],
  ['../src/audio-timing-panel.js','mountAudioTimingPanel'],
  ['../src/studio-bootstrap.js','bootSidStudio'],
@@ -24,6 +25,7 @@ test('sid-studio wires extracted UI modules',()=>{
  assert.match(studio,/mountLfoPanel\(/);
  assert.match(studio,/from "\.\/sid-engine-panels-ui\.js/);
  assert.match(studio,/mountSidEnginePanels\(/);
+ assert.match(studio,/mountMasterLoudnessMeter\(/);
  assert.match(studio,/from "\.\/audio-timing-panel\.js/);
  assert.match(studio,/mountAudioTimingPanel\(/);
 });

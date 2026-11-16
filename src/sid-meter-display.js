@@ -26,3 +26,7 @@ export function meterDisplayFraction(level) {
 export function meterDisplayHeight(level) {
  return `${(meterDisplayFraction(level) * 100).toFixed(1)}%`;
 }
+
+export function meterDisplayWidth(level) {
+ return meterDisplayHeight(level);
+}
