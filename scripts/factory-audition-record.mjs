@@ -17,7 +17,6 @@ import {FACTORY_AUDITION_PHRASES} from '../src/factory-audition-matrix.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const NOTE=/^([A-G])(?:#|♯)?(\d)$/i;
-const CHORD=/^([A-G][#♯]?\d(?:\s*[–-]\s*[A-G][#♯]?\d)+)$/;
 
 function parseArgs(argv){
  const opts={format:'wav',out:path.join(root,'artifacts/factory-audition'),port:8765,limit:0,ids:null};
@@ -48,8 +47,8 @@ function noteNameToMidi(text){
 function phraseToActions(phrase){
  if(!phrase||phrase==='—'||phrase==='-')return [];
  const s=phrase.trim().replace(/\//g,' ');
- if(CHORD.test(s.replace(/\s/g,'')))
-  return s.split(/[–-]/).map(part=>noteNameToMidi(part.trim()));
+ const chordParts=s.split(/[–-]/).map(p=>p.trim()).filter(p=>NOTE.test(p));
+ if(chordParts.length>1)return chordParts.map(noteNameToMidi);
  const low=s.toLowerCase();
  if(low.includes('rapid')||low.includes('repeats')||low.includes('repeat')){
   const stripped=s.replace(/\s*(rapid|repeats|repeat).*/i,'').trim();
@@ -58,13 +57,17 @@ function phraseToActions(phrase){
   const count=parts.length>1?parts.length:4;
   return parts.length>1?parts.map(noteNameToMidi):Array.from({length:count},()=>midi);
  }
- if(low.includes('hold')||low.includes('overlap')||low.includes('game arp'))
-  return [noteNameToMidi(s.replace(/\s*(hold|overlap).*|\s*\(game arp\).*/gi,'').trim())];
- if(low.includes('staccato'))return [noteNameToMidi(s.replace(/\s*staccato/i,''))];
  if(s.includes('→')){
-  const [a,b]=s.split('→').map(t=>noteNameToMidi(t.trim()));
-  return [a,b];
+  const stem=s.replace(/\s*(hold|overlap).*|\s*\(game arp\).*/gi,'').trim();
+  return stem.split('→').map(t=>noteNameToMidi(t.trim()));
  }
+ if(low.includes('hold')||low.includes('overlap')||low.includes('game arp')){
+  const stem=s.replace(/\s*(hold|overlap).*|\s*\(game arp\).*/gi,'').trim();
+  const held=stem.split(/[–-]/).map(p=>p.trim()).filter(p=>NOTE.test(p));
+  if(held.length>1)return held.map(noteNameToMidi);
+  return [noteNameToMidi(stem)];
+ }
+ if(low.includes('staccato'))return [noteNameToMidi(s.replace(/\s*staccato/i,''))];
  const tokens=s.split(/\s+/).map(t=>t.replace(/[,.].*$/,'')).filter(t=>NOTE.test(t));
  if(tokens.length>1)return tokens.map(noteNameToMidi);
  return [noteNameToMidi(tokens[0]??s.split(/\s/)[0])];
@@ -131,22 +134,20 @@ async function loadFactoryPreset(page,id){
 }
 
 async function ensureNotesVisible(page,notes){
- for(let attempt=0;attempt<10;attempt++){
-  const missing=await page.evaluate(list=>list.filter(n=>!document.querySelector(`#keyboard .key[data-note="${n}"]`)),notes);
-  if(!missing.length)return;
-  const down=await page.$('#octaveDown');
-  const up=await page.$('#octaveUp');
-  const min=Math.min(...missing),max=Math.max(...missing);
-  const el=await page.$('#keyboard .key');
-  const visibleMin=await page.evaluate(()=>{
-   const first=document.querySelector('#keyboard .key');
-   return first?Number(first.dataset.note):60;
+ for(let attempt=0;attempt<14;attempt++){
+  const range=await page.evaluate(()=>{
+   const keys=[...document.querySelectorAll('#keyboard .key[data-note]')];
+   if(!keys.length)return null;
+   const nums=keys.map(k=>Number(k.dataset.note));
+   return {min:Math.min(...nums),max:Math.max(...nums)};
   });
-  if(min<visibleMin){
-   if(down&&!(await page.evaluate(e=>e.disabled,down))){await down.click();await delay(120);continue}
-  }
-  if(max>visibleMin+24&&up&&!(await page.evaluate(e=>e.disabled,up))){await up.click();await delay(120);continue}
-  break;
+  if(!range)return;
+  const needMin=Math.min(...notes),needMax=Math.max(...notes);
+  if(needMin>=range.min&&needMax<=range.max)return;
+  const down=await page.$('#octaveDown'),up=await page.$('#octaveUp');
+  if(needMin<range.min&&down&&!(await page.evaluate(e=>e.disabled,down))){await down.click();await delay(150);continue}
+  if(needMax>range.max&&up&&!(await page.evaluate(e=>e.disabled,up))){await up.click();await delay(150);continue}
+  return;
  }
 }
 
