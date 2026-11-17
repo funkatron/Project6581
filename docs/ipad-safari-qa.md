@@ -134,15 +134,17 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 - [ ] SYNTH: set **Assign Poly**, **Voices 9**, then **Unison 8** (and **Unison 9**). After each change the full UI must stay tappable (no whole-page freeze after the native picker closes).
 - [ ] Test VoiceOver range labels, keyboard navigation, and colored step highlights without relying solely on color to identify the active step.
 
-## Composable Game Arp and Arpeggiator (pending device verification)
+## Composable Game Arp and Arpeggiator
 
-- [ ] Both off: keys play directly, with no pattern timers running.
-- [ ] Game Arp only: holding one key triggers the chosen style immediately; Pattern rate changes its note steps.
-- [ ] Arpeggiator only: three keys cycle in Up, Down, Up/Down or Random order; Root rate controls the interval.
-- [ ] Both on: Arpeggiator changes the root while Game Arp independently runs its interval pattern; Root 1/4 and Pattern 1/16 are noticeably distinct.
-- [ ] Releasing the last key with Latch off stops both clocks; with Latch enabled, the stored roots continue.
-- [ ] Switch styles, enable/disable either generator, change BPM and rates, use Clear latch and Stop all. No stuck or doubled notes.
-- [ ] Generated-note highlights follow the actual sounding pitch, including roots outside the visible keyboard range, without adding note text.
+**Owner verification (2026-11-16, America/Indianapolis):** Exercised all four enable combinations extensively on iPad Safari; latch, timing, and transitions reported as working well. No formal build stamp/orientation log filed for this pass.
+
+- [x] Both off: keys play directly, with no pattern timers running.
+- [x] Game Arp only: holding one key triggers the chosen style immediately; Pattern rate changes its note steps.
+- [x] Arpeggiator only: three keys cycle in Up, Down, Up/Down or Random order; Root rate controls the interval.
+- [x] Both on: Arpeggiator changes the root while Game Arp independently runs its interval pattern; Root 1/4 and Pattern 1/16 are noticeably distinct.
+- [x] Releasing the last key with Latch off stops both clocks; with Latch enabled, the stored roots continue.
+- [x] Switch styles, enable/disable either generator, change BPM and rates, use Clear latch and Stop all. No stuck or doubled notes.
+- [x] Generated-note highlights follow the actual sounding pitch, including roots outside the visible keyboard range, without adding note text.
 
 ## Audio recording and download (pending device verification)
 

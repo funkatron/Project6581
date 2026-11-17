@@ -11,7 +11,7 @@ export const HELP_CONTENT={
  keyboard:{title:'Keyboard',relatedTab:'voice',focusId:'keyboardPanel',bullets:['Octave controls shift range.','LEDs show generator state (after P8).']},
  'pitch-envelope':{title:'Pitch envelope',relatedTab:'voice',bullets:['Pitch glide per voice while held.','Drag points or use templates.']},
  meters:{title:'Level meters',bullets:['Header: mixed output.','SID cards: per-chip bus level.']},
- 'generator-led-root':{title:'Root generator LED',relatedTab:'play',focusId:'rootArpTitle',bullets:['On when Root Arp is enabled.','Tap: jump to Root Arp. Long-press: help.']},
- 'generator-led-game':{title:'Game generator LED',relatedTab:'play',focusId:'gameArpTitle',bullets:['On when Game Arp is enabled.','Tap: jump to Game Arp. Long-press: help.']},
- 'generator-led-latch':{title:'Latch LED',relatedTab:'play',focusId:'arpLatch',bullets:['On when latch holds notes.','Tap: jump to latch. Long-press: help.']}
+ 'generator-led-root':{title:'Root generator LED',relatedTab:'play',focusId:'rootArpTitle',bullets:['Lit when Root Arp is enabled; shows root rate when on.','Tap: enable or disable Root Arp. Long-press: help.']},
+ 'generator-led-game':{title:'Game generator LED',relatedTab:'play',focusId:'gameArpTitle',bullets:['Lit when Game Arp is enabled; shows pattern rate when on.','Tap: enable or disable Game Arp. Long-press: help.']},
+ 'generator-led-latch':{title:'Latch LED',relatedTab:'play',focusId:'arpLatch',bullets:['Lit when latch is on.','Tap: enable or disable latch. Long-press: help.']}
 };

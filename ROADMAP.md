@@ -23,7 +23,7 @@ Finish the **active step** (code, doc, or device verification) in a single focus
 | **G** | **iPad MIDI** route decision (MIDI browser vs native shell) | Priority 3 + Priority 4 |
 | *later* | Western scale lock, `.sid` player, visualization, audio-clock LFO migration | Sections below |
 
-**Active step:** *Owner choice* — no single gated step until hardware or priorities return. **Step G** (iPad MIDI) and **Step F** (PWA) pinned by owner (2026-11-17); resume notes in [agents/roadmap-step-g-midi.md](agents/roadmap-step-g-midi.md).
+**Active step:** *Owner choice* — **Step C** iPad composable arp verified ([#128](https://github.com/funkatron/Project6581/pull/128)); **Step D** factory bank listening verified on iPad (owner, 2026-11-17). **Step G** (iPad MIDI) and **Step F** (PWA) pinned by owner (2026-11-17); resume in [agents/roadmap-step-g-midi.md](agents/roadmap-step-g-midi.md).
 
 **Deferred (owner, 2026-11-16):** Step **A** [desktop-chromium-qa.md](docs/desktop-chromium-qa.md) and Step **B** iPad load-while-playing / full preset workflow pass—may return before a release milestone. Step **B** code shipped in [#122](https://github.com/funkatron/Project6581/pull/122).
 
@@ -154,7 +154,7 @@ SID playback + highlighted keyboard keys
 - [x] Bound the final Game Arp note to MIDI 0–127 and illuminate that actual note. The future scale-lock policy must run after root transposition and pattern offsets.
 - [x] Label each role and rate explicitly and avoid a redundant current-note readout above the keyboard. iPad layout verification remains pending.
 - [x] CI regression: four composable modes, root/interval math, `resolveGameRoot`, latch release, and source-wiring (`test/arp-composition.test.js`, `test/arp-four-modes.test.js`, `test/arp-key-integration.test.js`). Agent notes: [agents/roadmap-step-c-arp.md](agents/roadmap-step-c-arp.md); desktop pass: [desktop-chromium-qa.md](docs/desktop-chromium-qa.md).
-- [ ] iPad Safari verification of all four modes, independent timing, transitions, latch/stop and keyboard highlights ([ipad-safari-qa.md](docs/ipad-safari-qa.md) composable section).
+- [x] iPad Safari verification of all four modes, independent timing, transitions, latch/stop and keyboard highlights — owner exercised all combinations on iPad Safari (2026-11-16, summary in [ipad-safari-qa.md](docs/ipad-safari-qa.md) composable section).
 
 **Completion checks:** Both generators can run simultaneously; Arpeggiator changes the root of the ongoing Game Arp phrase, each feature retains a clear independent purpose, and no combination produces stuck notes or misleading highlights.
 

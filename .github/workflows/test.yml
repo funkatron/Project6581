@@ -16,5 +16,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: node scripts/resolve-version.mjs
+      - name: Verify package.json matches resolved version
+        run: |
+          resolved=$(node scripts/resolve-version.mjs)
+          pkg=$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).version")
+          if [ "$pkg" != "$resolved" ]; then
+            echo "package.json is $pkg but resolved version is $resolved."
+            echo "Run: node scripts/sync-package-version.mjs and commit package.json + scripts/version-policy.mjs"
+            exit 1
+          fi
       - run: npm test
