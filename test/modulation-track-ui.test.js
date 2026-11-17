@@ -41,9 +41,16 @@ test('modulation colors the track, not an extra moving thumb or the slider value
 
 test('base and effective readouts are both retained when a target is modulated',()=>{
  assert.match(script,/function presentModulatedSlider/);
- assert.match(script,/label\.querySelector\('output:not\(\.modulated-value\)'\)/);
+ assert.match(script,/closest\('\.param-row'\)/);
+ assert.match(script,/container\.querySelector\('output:not\(\.modulated-value\)'\)/);
  assert.match(script,/display\.hidden=!enabled/);
  assert.match(script,/formatControlValue\(target,effectiveValue\)/);
  assert.match(script,/lfosForEngine\(effectiveLfos,chip\)/);
  assert.match(script,/SLIDER_TARGETS/);
+});
+
+test('envelope and detune targets refresh on a UI loop without repushing audio config',()=>{
+ assert.match(script,/function syncModulationUiLoop/);
+ assert.match(script,/updateModulation\(\{uiOnly:true\}\)/);
+ assert.match(script,/if\(uiOnly\)return/);
 });
