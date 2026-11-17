@@ -17,6 +17,7 @@ import {readScaleStateFromDom,resolvePerformanceNote,isPitchInScale} from "./wes
 import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from "./pitch-envelope.js?v=__BUILD_ID__";
 import {mountEditorTabs} from "./editor-tabs.js?v=__BUILD_ID__";
 import {mountGeneratorLeds} from "./generator-led-ui.js?v=__BUILD_ID__";
+import {createPerformanceArpState} from "./performance-arp-state.js?v=__BUILD_ID__";
 import {mountLfoPanel} from "./lfo-panel-ui.js?v=__BUILD_ID__";
 import {mountAudioTimingPanel} from "./audio-timing-panel.js?v=__BUILD_ID__";
 import {applyFirstEnergyTiming} from "./audio-timing-metrics.js?v=__BUILD_ID__";
@@ -189,7 +190,8 @@ const {renderLfos}=mountLfoPanel({$,lfoState,lfoTargets,lfoTargetNames,syncedRat
 const editorTabs=mountEditorTabs({$});
 const helpUi=mountHelpDialog($);
 mountHelpTriggers($,{openHelp:helpUi.openHelp});
-mountGeneratorLeds($,{onGeneratorToggle:()=>refreshPresetDirty()});
+const performanceArp=createPerformanceArpState($);
+mountGeneratorLeds($,{performanceArp,onGeneratorToggle:()=>refreshPresetDirty()});
 for(const [id,helpId] of [['rootArpTitle','root-arp'],['gameArpTitle','game-arp']]){
  const el=$(id);
  if(el)bindHelpGesture(el,{helpId,$});
@@ -315,7 +317,7 @@ function panic(reason=''){
  gameStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.root=null;directOwned.clear();activeOwners.clear();arpKeyVisual.clear();sidController?.panic()}
 $('panic').addEventListener('click',()=>{
  sidEventLog.add('stop-all',{contextId:sidAudio?sidAttempt:null,model:activeSidModel});
- $('gameArpOn').checked=false;$('arpOn').checked=false;
+ performanceArp.set({rootOn:false,gameOn:false});
  lfoState.forEach(lfo=>{lfo.enabled=false});renderLfos();updateModulation();
  panic();arp.held.clear();arp.latched.clear();arp.step=0;game.step=0;seqPreview=false;setSeqTransportLabel();
  sidController?.panic();
@@ -341,9 +343,10 @@ let loadBuiltInPhrase=()=>false;
 let flushQueuedKeys=()=>{};
 let keyDown=()=>{},keyUp=()=>{};
 let releaseMidiNotes=()=>{};
-const gameEnabled=()=>$('gameArpOn').checked;
-const arpEnabled=()=>$('arpOn').checked;
-const activeNotes=()=>[...($('arpLatch').checked&&arp.latched.size?arp.latched:arp.held)];
+const gameEnabled=()=>performanceArp.gameOn;
+const arpEnabled=()=>performanceArp.rootOn;
+const latchOn=()=>performanceArp.latchOn;
+const activeNotes=()=>[...(latchOn()&&arp.latched.size?arp.latched:arp.held)];
 const arpNotes=()=>{
  const state=readScaleStateFromDom($);
  const raw=activeNotes().sort((a,b)=>a-b);
@@ -368,7 +371,8 @@ const performanceNote=note=>resolvePerformanceNote(note,readScaleStateFromDom($)
  isSeqPreview:()=>seqPreview,
  setSeqPreview:value=>{seqPreview=value},
  getActiveSeqStep:()=>activeSeqStep,
- setActiveSeqStep:value=>{activeSeqStep=value}
+ setActiveSeqStep:value=>{activeSeqStep=value},
+ performanceArp
 }));
 let renderKeyboard=()=>{};
 ({flushQueuedKeys,keyDown,keyUp,renderKeyboard}=mountKeyboard({
@@ -380,7 +384,7 @@ let renderKeyboard=()=>{};
   sidKeys++;
   $('sidPlaybackStatus').textContent='SID key presses: '+sidKeys+' · waiting for audio samples…';
  },
- activeNotes,arp,game,gameEnabled,arpEnabled,directOwned,play,stop,restartGenerators,stopGenerators,
+ activeNotes,arp,game,gameEnabled,arpEnabled,latchOn,directOwned,play,stop,restartGenerators,stopGenerators,
  gameRestart,arpStopVoice,arpNotes,
  isSeqPreview:()=>seqPreview,
  getScaleState:()=>readScaleStateFromDom($),
@@ -886,9 +890,9 @@ function snapshotPresetSettings(){
   performance:{
    masterBpm:Number($('masterBpm').value),
    routing:readRoutingFromDom($),
-   arp:{enabled:$('arpOn').checked,latch:$('arpLatch').checked,pattern:arpPattern,
+   arp:{enabled:performanceArp.rootOn,latch:performanceArp.latchOn,pattern:arpPattern,
     rate:Number($('arpRate').value),sync:$('arpSync').checked,localBpm:Number($('arpBpm').value)},
-   game:{enabled:$('gameArpOn').checked,style:$('gameArpStyle').value||'action',
+   game:{enabled:performanceArp.gameOn,style:$('gameArpStyle').value||'action',
     rate:Number($('gameRate').value),sequence:seqState},
    scale:readScaleStateFromDom($)
   }
@@ -926,15 +930,13 @@ function applyPresetControls(next,{silenceAudio=true}={}){
  next.sound.lfos.forEach((lfo,i)=>Object.assign(lfoState[i],lfo));
  $('masterBpm').value=String(next.performance.masterBpm);
  $('masterBpmValue').textContent=String(next.performance.masterBpm);
- $('arpOn').checked=next.performance.arp.enabled;
- $('arpLatch').checked=next.performance.arp.latch;
+ performanceArp.applyFromPreset(next.performance);
  $('arpPattern').value=next.performance.arp.pattern;
  $('arpRate').value=String(next.performance.arp.rate);
  $('arpSync').checked=next.performance.arp.sync;
  $('arpBpm').value=String(next.performance.arp.localBpm);
  $('bpmValue').textContent=String(next.performance.arp.localBpm);
  document.querySelector('.arp-local-bpm').hidden=next.performance.arp.sync;
- $('gameArpOn').checked=next.performance.game.enabled;
  $('gameArpStyle').value=next.performance.game.style;
  $('gameRate').value=String(next.performance.game.rate);
  $('scaleKey').value=String(next.performance.scale.tonic);
