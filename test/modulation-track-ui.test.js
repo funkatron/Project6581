@@ -20,10 +20,12 @@ test('the module script remains valid JavaScript with the track presentation hel
 });
 
 test('twelve continuous sound controls have numeric base values that remain visible',()=>{
- assert.match(html,/id="detune"[\s\S]*?<output id="detuneValue" class="base-value"/);
+ assert.match(html,/class="param-row allocation-detune"[\s\S]*?id="detune"[\s\S]*?id="detuneValue" class="base-value"/);
+ assert.match(html,/param-values/);
  assert.match(enginePanels,/for\(const \[prop,name,min,max,step\] of ranges\)/);
- assert.match(enginePanels,/appendParamRow\(voiceParams,name/);
+ assert.match(enginePanels,/appendParamRow\(controlGrid,name/);
  assert.match(enginePanels,/input\.dataset\.filter=filter/);
+ assert.match(script,/valueHost\.querySelector\('output:not\(\.modulated-value\)'\)/);
  assert.match(script,/if\(baseDisplay\.textContent!==baseText\)baseDisplay\.textContent=baseText/);
  assert.deepEqual(new Set(targetNames).size,12);
 });
@@ -44,7 +46,7 @@ test('modulation colors the track, not an extra moving thumb or the slider value
 test('base and effective readouts are both retained when a target is modulated',()=>{
  assert.match(script,/function presentModulatedSlider/);
  assert.match(script,/closest\('\.param-row'\)/);
- assert.match(script,/container\.querySelector\('output:not\(\.modulated-value\)'\)/);
+ assert.match(script,/valueHost\.querySelector\('output:not\(\.modulated-value\)'\)/);
  assert.match(script,/display\.hidden=!enabled/);
  assert.match(script,/formatControlValue\(target,effectiveValue\)/);
  assert.match(script,/lfosForEngine\(effectiveLfos,chip\)/);

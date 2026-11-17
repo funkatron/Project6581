@@ -41,7 +41,7 @@
   <label>Voices <select id="voiceCount" aria-label="Total SID oscillators"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option></select></label>
   <label>Unison <select id="unisonCount" aria-label="Oscillators per note"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option></select></label>
  </div>
- <label class="allocation-detune">Detune <input id="detune" type="range" min="0" max="100" value="12" step="1" aria-label="Unison pitch detune"><output id="detuneValue" class="base-value">12¢</output></label>
+ <div class="voice-allocation-param-grid"><div class="param-row allocation-detune"><span class="param-label">Detune</span><div class="param-track"><input id="detune" type="range" min="0" max="100" value="12" step="1" aria-label="Unison pitch detune"></div><div class="param-values"><output id="detuneValue" class="base-value">12¢</output></div></div></div>
  <small id="voiceCapacity" class="voice-capacity" role="status" aria-live="polite">Up to 1 note · 1 oscillator</small>
 </div>
 <div class="play-target controls" aria-label="Keyboard play target">

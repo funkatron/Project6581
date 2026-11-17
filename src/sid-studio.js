@@ -450,17 +450,18 @@ function presentModulatedSlider(root,target,baseValue,effectiveValue,enabled){
  if(!input&&target==='detune')input=$('detune');
  const container=modulationPresentationRoot(input,target);
  if(!container)return;
- let baseDisplay=container.querySelector('output:not(.modulated-value)');
+ const valueHost=container.querySelector('.param-values')??container;
+ let baseDisplay=valueHost.querySelector('output:not(.modulated-value)');
  if(!baseDisplay){
-  baseDisplay=document.createElement('output');baseDisplay.className='base-value';container.append(baseDisplay);
+  baseDisplay=document.createElement('output');baseDisplay.className='base-value';valueHost.append(baseDisplay);
  }
  baseDisplay.classList.add('base-value');
  const baseText=formatControlValue(target,baseValue);
  if(baseDisplay.textContent!==baseText)baseDisplay.textContent=baseText;
- let display=container.querySelector('.modulated-value');
+ let display=valueHost.querySelector('.modulated-value');
  if(!display){
   display=document.createElement('output');display.className='modulated-value';
-  display.setAttribute('aria-label',target+' effective value');container.append(display);
+  display.setAttribute('aria-label',target+' effective value');valueHost.append(display);
  }
  display.hidden=!enabled;
  if(input)setModulationTrack(input,baseValue,effectiveValue,enabled);
