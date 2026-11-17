@@ -48,6 +48,13 @@
  <h3 class="play-target-heading">Play target <button type="button" class="help-trigger" data-help="play-target-keyboard" aria-label="Help: keyboard play target">?</button></h3>
  <label>Keyboard <select id="keyboardRoute"><option value="sid1" selected>SID 1</option><option value="sid2">SID 2</option><option value="sid3">SID 3</option><option value="all">All (shared voices)</option><option value="layer">Layer (per SID)</option></select></label>
 </div>
+<div class="scale-controls controls" aria-label="Key and scale">
+ <h3 class="scale-heading">Key &amp; scale</h3>
+ <label>Key <select id="scaleKey" aria-label="Scale key"><option value="0" selected>C</option><option value="1">C♯</option><option value="2">D</option><option value="3">D♯</option><option value="4">E</option><option value="5">F</option><option value="6">F♯</option><option value="7">G</option><option value="8">G♯</option><option value="9">A</option><option value="10">A♯</option><option value="11">B</option></select></label>
+ <label>Scale <select id="scaleId" aria-label="Scale type"><option value="chromatic" selected>Chromatic</option><option value="major">Major</option><option value="natural-minor">Natural minor</option><option value="harmonic-minor">Harmonic minor</option><option value="melodic-minor">Melodic minor</option><option value="dorian">Dorian</option><option value="phrygian">Phrygian</option><option value="lydian">Lydian</option><option value="mixolydian">Mixolydian</option><option value="locrian">Locrian</option><option value="major-pentatonic">Major pentatonic</option><option value="minor-pentatonic">Minor pentatonic</option><option value="blues">Blues</option></select></label>
+ <label>Scale lock <input id="scaleLock" type="checkbox" aria-describedby="scaleLockHelpSr"></label>
+ <span id="scaleLockHelpSr" class="sr-only">When on, notes snap to the selected scale. Off-scale keys stay playable in chromatic mode.</span>
+</div>
 <div id="sidEngines" class="sid-engines" aria-label="SID engine panels"></div>
 <select id="chip" hidden aria-hidden="true"><option value="6581">6581</option><option value="8580">8580</option></select>
 <input type="range" id="volume" hidden aria-hidden="true"><input type="range" id="cutoff" hidden aria-hidden="true"><input type="range" id="resonance" hidden aria-hidden="true"><select id="mode" hidden aria-hidden="true"><option value="lowpass">Low-pass</option></select>

@@ -72,7 +72,8 @@ export function createKeyGesture({
 }
 
 export function mountKeyboard(deps){
- const {$,keys,names,keyboardState,traceInput,panic,restartGenerators,gameEnabled,isSeqPreview,arp}=deps;
+ const {$,keys,names,keyboardState,traceInput,panic,restartGenerators,gameEnabled,isSeqPreview,arp,
+  pitchInScale=()=>true,refreshPresetDirty,getArpKeyVisual}=deps;
  const {keyDown,keyUp,flushQueuedKeys}=createKeyGesture(deps);
  const MIN_OCTAVE=0,MAX_OCTAVE=7;
  const compactKeyboard=()=>matchMedia('(max-width:900px), (max-height:620px)').matches;
@@ -89,7 +90,8 @@ export function mountKeyboard(deps){
    const note=start+i;
    const key=document.createElement('button');
    key.type='button';
-   key.className='key'+(names[note%12].includes('♯')?' black':'');
+   const inScale=pitchInScale(note);
+   key.className='key'+(names[note%12].includes('♯')?' black':'')+(inScale?' scale-in':' scale-out');
    key.dataset.note=String(note);
    key.textContent=names[note%12]+(Math.floor(note/12)-1);
    key.setAttribute('aria-label','Play '+key.textContent);
@@ -105,6 +107,7 @@ export function mountKeyboard(deps){
   $('octaveLabel').textContent='C'+keyboardState.octave+'–C'+(keyboardState.octave+(compactKeyboard()?1:2));
   $('octaveDown').disabled=keyboardState.octave===MIN_OCTAVE;
   $('octaveUp').disabled=keyboardState.octave===MAX_OCTAVE;
+  getArpKeyVisual?.().refresh();
   if(resumePreview)restartGenerators();
  }
  $('octaveDown').addEventListener('click',()=>{keyboardState.octave=Math.max(MIN_OCTAVE,keyboardState.octave-1);renderKeyboard()});
@@ -132,5 +135,5 @@ export function mountKeyboard(deps){
  const layout='awsedftgyhujkolp;';
  window.addEventListener('keydown',e=>{if(e.repeat||e.target.matches('input,select,button,textarea,[contenteditable="true"]'))return;const idx=layout.indexOf(e.key.toLowerCase());if(idx>=0){const note=(keyboardState.octave+1)*12+idx;const key=keys.get(note);if(key){e.preventDefault();key.classList.add('down');traceInput(note,'keyboard','down',()=>keyDown(note))}}});
  window.addEventListener('keyup',e=>{const idx=layout.indexOf(e.key.toLowerCase());if(idx>=0){const note=(keyboardState.octave+1)*12+idx;keys.get(note)?.classList.remove('down');if(arp.held.has(note))traceInput(note,'keyboard','up',()=>keyUp(note));else keyUp(note)}});
- return {flushQueuedKeys,keyDown,keyUp};
+ return {flushQueuedKeys,keyDown,keyUp,renderKeyboard};
 }
