@@ -15,4 +15,4 @@ Run [desktop-chromium-qa.md](../docs/desktop-chromium-qa.md) **Arp four modes** 
 
 ## iPad Safari (owner)
 
-[ipad-safari-qa.md](../docs/ipad-safari-qa.md) — **Composable Game Arp and Arpeggiator**. Mark Step C complete in ROADMAP only when that subsection is filed with build stamp and orientation notes.
+- [x] **2026-11-16:** Owner reported extensive use of all four composable combinations on iPad Safari; behavior good (latch, timing, stop/clear). Logged in [ipad-safari-qa.md](../docs/ipad-safari-qa.md) composable section.
