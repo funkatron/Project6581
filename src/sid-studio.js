@@ -184,7 +184,7 @@ const lfoTargetNames={
  pwmDepth:'PWM depth',pwmRate:'PWM rate'
 };
 const syncedRates=[{value:0.25,label:'4/1'},{value:0.5,label:'2/1'},...([1,2,4,8,16,32].map(value=>({value,label:'1/'+value})))];
-const {renderLfos}=mountLfoPanel({$,lfoState,lfoTargets,lfoTargetNames,syncedRates,onChange:()=>updateModulation()});
+const {renderLfos}=mountLfoPanel({$,lfoState,lfoTargets,lfoTargetNames,syncedRates,onChange:()=>{updateModulation();syncModulationUiLoop()}});
 const editorTabs=mountEditorTabs({$});
 const helpUi=mountHelpDialog($);
 mountHelpTriggers($,{openHelp:helpUi.openHelp});
@@ -313,7 +313,7 @@ function panic(reason=''){
 $('panic').addEventListener('click',()=>{
  sidEventLog.add('stop-all',{contextId:sidAudio?sidAttempt:null,model:activeSidModel});
  $('gameArpOn').checked=false;$('arpOn').checked=false;
- lfoState.forEach(lfo=>{lfo.enabled=false});renderLfos();updateModulation();
+ lfoState.forEach(lfo=>{lfo.enabled=false});renderLfos();updateModulation();stopModulationUiLoop();
  panic();arp.held.clear();arp.latched.clear();arp.step=0;game.step=0;seqPreview=false;setSeqTransportLabel();
  sidController?.panic();
  $('arpStatus').textContent='Arps and LFOs off';
@@ -414,24 +414,29 @@ function modulationTargetEnabled(chipLfos,values,target,pulseActive,unisonActive
   &&(!['pulse','pwmDepth','pwmRate'].includes(target)||pulseActive)
   &&(target!=='detune'||unisonActive);
 }
+function modulationPresentationRoot(input,target){
+ if(!input&&target==='detune')return document.querySelector('.allocation-detune');
+ if(!input)return null;
+ return input.closest('label')??input.closest('.param-row')??null;
+}
 function presentModulatedSlider(root,target,baseValue,effectiveValue,enabled){
  if(!root&&target!=='detune')return;
  let input=null;
  if(root)input=root.querySelector('[data-prop="'+target+'"],input[data-filter="'+target+'"],select[data-filter="'+target+'"]');
  if(!input&&target==='detune')input=$('detune');
- const label=input?.closest('label')??(target==='detune'?document.querySelector('.allocation-detune'):null);
- if(!label)return;
- let baseDisplay=label.querySelector('output:not(.modulated-value)');
+ const container=modulationPresentationRoot(input,target);
+ if(!container)return;
+ let baseDisplay=container.querySelector('output:not(.modulated-value)');
  if(!baseDisplay){
-  baseDisplay=document.createElement('output');baseDisplay.className='base-value';label.append(baseDisplay);
+  baseDisplay=document.createElement('output');baseDisplay.className='base-value';container.append(baseDisplay);
  }
  baseDisplay.classList.add('base-value');
  const baseText=formatControlValue(target,baseValue);
  if(baseDisplay.textContent!==baseText)baseDisplay.textContent=baseText;
- let display=label.querySelector('.modulated-value');
+ let display=container.querySelector('.modulated-value');
  if(!display){
   display=document.createElement('output');display.className='modulated-value';
-  display.setAttribute('aria-label',target+' effective value');label.append(display);
+  display.setAttribute('aria-label',target+' effective value');container.append(display);
  }
  display.hidden=!enabled;
  if(input)setModulationTrack(input,baseValue,effectiveValue,enabled);
@@ -464,7 +469,25 @@ function setModulationTrack(input,base,effective,enabled){
   band.style.setProperty('--band-end',track.end);
  band.hidden=!track.active;
 }
-function updateModulation(){
+function modulationUiNeeded(){
+ if(lfoState.some(lfo=>lfo.enabled&&lfo.depth>0))return true;
+ return engines.some(engine=>engine.voice.wave==='square'&&Number(engine.voice.pwmDepth)>0);
+}
+let modulationUiFrame=null;
+function stopModulationUiLoop(){
+ if(modulationUiFrame!==null){cancelAnimationFrame(modulationUiFrame);modulationUiFrame=null}
+}
+function scheduleModulationUiLoop(){
+ if(modulationUiFrame!==null||!modulationUiNeeded())return;
+ modulationUiFrame=requestAnimationFrame(()=>{
+  modulationUiFrame=null;
+  if(!modulationUiNeeded())return;
+  updateModulation({uiOnly:true});
+  scheduleModulationUiLoop();
+ });
+}
+function syncModulationUiLoop(){modulationUiNeeded()?scheduleModulationUiLoop():stopModulationUiLoop()}
+function updateModulation({uiOnly=false}={}){
  syncLegacyFilterInputs();
  Object.assign(settings[0],engines[0].voice);
  const unisonActive=Number($('unisonCount').value)>1;
@@ -503,7 +526,9 @@ function updateModulation(){
    globalDetuneLfos,time,{pulseActive:false,unisonActive}).detune
   :detuneBase.detune;
  presentModulatedSlider(detuneRoot,'detune',detuneBase.detune,globalDetune,detuneEnabled);
+ syncModulationUiLoop();
  if(!sidController)return;
+ if(uiOnly)return;
  if(useAudioClockLfo)pushAudioModulationConfig();
  else{
   for(let chip=0;chip<3;chip++){
