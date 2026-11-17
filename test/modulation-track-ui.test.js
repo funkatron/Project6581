@@ -21,7 +21,8 @@ test('the module script remains valid JavaScript with the track presentation hel
 
 test('twelve continuous sound controls have numeric base values that remain visible',()=>{
  assert.match(html,/id="detune"[\s\S]*?<output id="detuneValue" class="base-value"/);
- assert.match(enginePanels,/ranges\.map\(\(\[p,name,min,max,step\]\)=>[\s\S]*?class="base-value"/);
+ assert.match(enginePanels,/for\(const \[prop,name,min,max,step\] of ranges\)/);
+ assert.match(enginePanels,/appendParamRow\(voiceParams,name/);
  assert.match(enginePanels,/input\.dataset\.filter=filter/);
  assert.match(script,/if\(baseDisplay\.textContent!==baseText\)baseDisplay\.textContent=baseText/);
  assert.deepEqual(new Set(targetNames).size,12);

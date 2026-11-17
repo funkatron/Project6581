@@ -15,4 +15,6 @@ test('sid engine panels use param-row markup',()=>{
  assert.match(ui,/className='param-row'/);
  assert.match(ui,/formatPanBrief/);
  assert.match(ui,/formatHzBrief/);
+ assert.match(ui,/sid-engine-voice-params/);
+ assert.match(ui,/appendParamRow\(voiceParams,name/);
 });

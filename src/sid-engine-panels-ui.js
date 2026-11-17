@@ -105,20 +105,65 @@ export function mountSidEnginePanels({
   voiceHost.dataset.engineVoice=String(index);
   card.append(voiceHost);
   const voiceSection=document.createElement('section');
+  voiceSection.className='sid-engine-voice-section';
   const s=engine.voice;
-  voiceSection.innerHTML='<h4>Voice</h4><div class="voice-grid"><label>Enabled <input type="checkbox" data-prop="enabled"></label><label>Waveform <select data-prop="wave"><option value="triangle">Triangle</option><option value="sawtooth">Sawtooth</option><option value="square">Pulse</option><option value="noise">Noise</option></select></label>'+ranges.map(([p,name,min,max,step])=>'<label data-control="'+p+'">'+name+' <input data-prop="'+p+'" type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+s[p]+'"><output class="base-value">'+formatControlValue(p,s[p])+'</output></label>').join('')+'</div>';
+  const voiceHeading=document.createElement('h4');
+  voiceHeading.textContent='Voice';
+  const voiceParams=document.createElement('div');
+  voiceParams.className='sid-engine-voice-params';
+  const voiceToggles=document.createElement('div');
+  voiceToggles.className='voice-toggles';
+  const enabledLabel=document.createElement('label');
+  enabledLabel.className='voice-toggle';
+  const enabledInput=document.createElement('input');
+  enabledInput.type='checkbox';
+  enabledInput.dataset.prop='enabled';
+  enabledInput.checked=s.enabled;
+  enabledLabel.append('Enabled ',enabledInput);
+  const waveLabel=document.createElement('label');
+  waveLabel.className='voice-toggle';
+  const waveSelect=document.createElement('select');
+  waveSelect.dataset.prop='wave';
+  for(const [value,label] of [['triangle','Triangle'],['sawtooth','Sawtooth'],['square','Pulse'],['noise','Noise']]){
+   const option=document.createElement('option');
+   option.value=value;option.textContent=label;
+   waveSelect.append(option);
+  }
+  waveSelect.value=s.wave;
+  waveLabel.append('Waveform ',waveSelect);
+  voiceToggles.append(enabledLabel,waveLabel);
+  voiceParams.append(voiceToggles);
+  const voiceRows={};
+  for(const [prop,name,min,max,step] of ranges){
+   const row=appendParamRow(voiceParams,name,{
+    value:s[prop],min,max,step,prop,formatFn:value=>formatControlValue(prop,value)
+   });
+   row.row.dataset.control=prop;
+   voiceRows[prop]=row;
+  }
+  voiceSection.append(voiceHeading,voiceParams);
   voiceHost.append(voiceSection);
-  voiceSection.querySelector('[data-prop="enabled"]').checked=s.enabled;
-  voiceSection.querySelector('[data-prop="wave"]').value=s.wave;
-  const updatePulse=()=>voiceSection.querySelectorAll('[data-control="pulse"],[data-control="pwmDepth"],[data-control="pwmRate"]').forEach(label=>{label.hidden=s.wave!=='square'});
+  const updatePulse=()=>{
+   const show=engine.voice.wave==='square';
+   for(const key of ['pulse','pwmDepth','pwmRate']){
+    const row=voiceRows[key]?.row;
+    if(row)row.hidden=!show;
+   }
+  };
   updatePulse();
   voiceSection.querySelectorAll('[data-prop]').forEach(inp=>inp.addEventListener('input',()=>{
    engine.voice[inp.dataset.prop]=inp.type==='checkbox'?inp.checked:inp.type==='range'?Number(inp.value):inp.value;
-   const out=inp.closest('label')?.querySelector('output:not(.modulated-value)');
-   if(out)out.textContent=formatControlValue(inp.dataset.prop,Number(inp.value));
+   const out=inp.closest('.param-row')?.querySelector('output:not(.modulated-value)')
+    ??inp.closest('label')?.querySelector('output:not(.modulated-value)');
+   if(out&&inp.type==='range')out.textContent=formatControlValue(inp.dataset.prop,Number(inp.value));
    if(inp.dataset.prop==='wave')updatePulse();
    onEngineChange?.(index);
   }));
+  waveSelect.addEventListener('change',()=>{
+   engine.voice.wave=waveSelect.value;
+   updatePulse();
+   onEngineChange?.(index);
+  });
   card.querySelectorAll('input[data-filter]').forEach(inp=>inp.addEventListener('input',()=>{
    const key=inp.dataset.filter;
    engine.filter[key]=Number(inp.value);
