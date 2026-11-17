@@ -72,7 +72,7 @@ test('clear latch preserves physical owners and direct notes',()=>{
  assert.match(clearHandler,/arp\.latched\.clear\(\)/);
  assert.doesNotMatch(clearHandler,/arp\.held\.clear\(\)/);
  assert.doesNotMatch(clearHandler,/directOwned\.clear\(\)/);
- assert.match(script,/const activeNotes=\(\)=>\[\.\.\.\(\$\('arpLatch'\)\.checked&&arp\.latched\.size\?arp\.latched:arp\.held\)\]/);
+ assert.match(script,/const activeNotes=\(\)=>\[\.\.\.\(latchOn\(\)&&arp\.latched\.size\?arp\.latched:arp\.held\)\]/);
 });
 
 test('released roots do not produce extra out-of-tempo arp ticks',()=>{

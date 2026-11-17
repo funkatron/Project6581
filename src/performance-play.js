@@ -6,7 +6,7 @@ import {defaultSequence,sequenceEvent,sequenceForStyle} from './game-step-sequen
 export function mountPerformance({
  $,names,keyboardState,arp,game,directOwned,play,stop,silenceSidOutput,refreshPresetDirty,getArpKeyVisual,
  gameEnabled,arpEnabled,activeNotes,arpNotes,
- getSeqState,setSeqState,isSeqPreview,setSeqPreview,getActiveSeqStep,setActiveSeqStep
+ getSeqState,setSeqState,isSeqPreview,setSeqPreview,getActiveSeqStep,setActiveSeqStep,performanceArp
 }){
  function clearStepHighlight(){
   const activeSeqStep=getActiveSeqStep();
@@ -205,11 +205,13 @@ export function mountPerformance({
   setSeqState(defaultSequence());renderSequenceSteps();modifiedStepPhrase();gameRestart();
  });
  $('seqRun').addEventListener('click',()=>{
-  setSeqPreview(true);$('gameArpStyle').value='custom';$('gameArpOn').checked=true;
+  setSeqPreview(true);$('gameArpStyle').value='custom';
+  performanceArp.set({gameOn:true});
   setSeqTransportLabel();restartGenerators();refreshPresetDirty();
  });
  $('seqStop').addEventListener('click',()=>{
-  setSeqPreview(false);$('gameArpOn').checked=false;
+  setSeqPreview(false);
+  performanceArp.set({gameOn:false});
   setSeqTransportLabel();
   stopGenerators();arp.held.clear();arp.latched.clear();
   silenceSidOutput();

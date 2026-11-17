@@ -5,9 +5,10 @@ import {selectRoot} from './arp-composition.js?v=__BUILD_ID__';
 // and the arp clock; this module asks those to run.
 export function createKeyGesture({
   audioTiming,sidEventLog,getSidContext,sidMusicalInputBlocked,armSidResume,hasController,countKeyPress,
-  activeNotes,arp,game,gameEnabled,arpEnabled,directOwned,play,stop,restartGenerators,stopGenerators,
+  activeNotes,arp,game,gameEnabled,arpEnabled,latchOn,directOwned,play,stop,restartGenerators,stopGenerators,
   gameRestart,arpStopVoice,arpNotes,isSeqPreview,$
 }){
+ if(!latchOn)latchOn=()=>Boolean($('arpLatch')?.checked);
  let queuedKeyNotes=[];
  function flushQueuedKeys(){
   const sidContext=getSidContext();
@@ -40,7 +41,7 @@ export function createKeyGesture({
   if(!arp.held.has(note)){
    const firstPhysical=arp.held.size===0;
    arp.held.add(note);
-   if((gameEnabled()||arpEnabled())&&$('arpLatch').checked){
+   if((gameEnabled()||arpEnabled())&&latchOn()){
     if(firstPhysical)arp.latched.clear();
     arp.latched.add(note);
    }
@@ -57,11 +58,11 @@ export function createKeyGesture({
   arp.held.delete(note);
   if(directOwned.delete(note))stop(note);
   if(!gameEnabled()&&!arpEnabled())return;
-  if(arp.held.size===0&&(!$('arpLatch').checked||arp.latched.size===0)&&!isSeqPreview()){
+  if(arp.held.size===0&&(!latchOn()||arp.latched.size===0)&&!isSeqPreview()){
    stopGenerators();$('arpStatus').textContent='No notes held';return;
   }
   if(gameEnabled()&&!arpEnabled())gameRestart();
-  else if(arpEnabled()&&!$('arpLatch').checked&&arp.root===note){
+  else if(arpEnabled()&&!latchOn()&&arp.root===note){
    // Keep the root valid, without firing an extra off-grid arpeggio note.
    const notes=arpNotes();
    arp.root=notes.length?selectRoot(notes,$('arpPattern').value,arp.step):null;
@@ -72,7 +73,7 @@ export function createKeyGesture({
 }
 
 export function mountKeyboard(deps){
- const {$,keys,names,keyboardState,traceInput,panic,restartGenerators,gameEnabled,isSeqPreview,arp}=deps;
+ const {$,keys,names,keyboardState,traceInput,panic,restartGenerators,gameEnabled,latchOn,isSeqPreview,arp}=deps;
  const {keyDown,keyUp,flushQueuedKeys}=createKeyGesture(deps);
  const MIN_OCTAVE=0,MAX_OCTAVE=7;
  const compactKeyboard=()=>matchMedia('(max-width:900px), (max-height:620px)').matches;
@@ -80,7 +81,7 @@ export function mountKeyboard(deps){
   const resumePreview=isSeqPreview()&&gameEnabled();
   panic();
   arp.held.clear(); // Pointer capture cannot survive keyboard reconstruction.
-  if(!$('arpLatch').checked)arp.latched.clear();
+  if(!latchOn())arp.latched.clear();
   keys.clear();
   $('keyboard').replaceChildren();
   const start=(keyboardState.octave+1)*12;
