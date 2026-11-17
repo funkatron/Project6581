@@ -23,6 +23,8 @@ export function countsTowardVersion(message){
   const subject=message.split('\n')[0].trim();
   if(!subject)return false;
   if(/^Merge branch/i.test(subject))return false;
+  if(/^Merge pull request/i.test(subject))return false;
+  if(/^Merge [0-9a-f]{7,40} into/i.test(subject))return false;
   const title=commitTitle(message);
   if(RELEASE_FLOOR.test(title))return false;
   if(RELEASE_TAG.test(title))return false;
