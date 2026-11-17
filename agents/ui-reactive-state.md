@@ -22,7 +22,7 @@ Project6581 stays vanilla JS. When the same value appears in more than one place
 | --- | --- | --- |
 | Performance arp/latch | `performance-arp-state` | Shipped (#134) |
 | Routing | `performance-routing-state` | Shipped (keyboard / Root Arp / Game Arp selects) |
-| Instrument | `instrument-state` | voiceCount, unison, assign, detune |
+| Instrument | `performance-instrument-state` | voiceCount, unison, assign, detune (shipped) |
 | Engines ×3 | `engines-state` | Already `engines[]`; formalize panel sync |
 | LFOs | `lfo-state` | Today `lfoState[]` + `updateModulation`; UI loop separate |
 | Game sequence | `game-sequence-state` | `seqState` |

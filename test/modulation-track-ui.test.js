@@ -9,7 +9,8 @@ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const script=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
 const enginePanels=readFileSync(new URL('../src/sid-engine-panels-ui.js',import.meta.url),'utf8');
 const studioCss=readStudioCss();
-const targetNames=['volume','cutoff','resonance','detune','attack','decay','sustain','release','pulse','pwmDepth','pwmRate'];
+import {LFO_TARGET_ORDER} from '../src/lfo-modulation.js';
+const targetNames=LFO_TARGET_ORDER;
 
 test('the module script remains valid JavaScript with the track presentation helper',()=>{
  assert.ok(script);
@@ -18,12 +19,12 @@ test('the module script remains valid JavaScript with the track presentation hel
  assert.match(script,/import \{modulationTrack,formatControlValue,SLIDER_TARGETS\} from/);
 });
 
-test('eleven continuous sound controls have numeric base values that remain visible',()=>{
+test('twelve continuous sound controls have numeric base values that remain visible',()=>{
  assert.match(html,/id="detune"[\s\S]*?<output id="detuneValue" class="base-value"/);
  assert.match(enginePanels,/ranges\.map\(\(\[p,name,min,max,step\]\)=>[\s\S]*?class="base-value"/);
  assert.match(enginePanels,/input\.dataset\.filter=filter/);
  assert.match(script,/if\(baseDisplay\.textContent!==baseText\)baseDisplay\.textContent=baseText/);
- assert.deepEqual(new Set(targetNames).size,11);
+ assert.deepEqual(new Set(targetNames).size,12);
 });
 
 test('modulation colors the track, not an extra moving thumb or the slider value',()=>{

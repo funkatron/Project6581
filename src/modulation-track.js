@@ -1,9 +1,9 @@
+import {formatPanBrief} from './control-format.js?v=__BUILD_ID__';
+import {LFO_TARGET_ORDER} from './lfo-modulation.js?v=__BUILD_ID__';
+
 // Presentation-only helpers for continuously modulated UI range controls.
 // MIDI/SID sound parameters must not be derived from a CSS position.
-export const SLIDER_TARGETS = [
- 'volume','cutoff','resonance','detune','attack','decay','sustain',
- 'release','pulse','pwmDepth','pwmRate'
-];
+export const SLIDER_TARGETS = LFO_TARGET_ORDER;
 
 function clamp(value, min, max) {
  return Math.max(min, Math.min(max, value));
@@ -35,6 +35,7 @@ export function formatControlValue(target,value) {
  if(target==='pwmRate')return n.toFixed(2)+' Hz';
  if(target==='sustain')return Math.round(n*100)+'%';
  if(target==='detune')return n.toFixed(1).replace(/\.0$/,'')+'¢';
+ if(target==='pan')return formatPanBrief(n);
  if(['volume','resonance','pulse','pwmDepth'].includes(target))
   return Math.round(n)+'%';
  return String(n);

@@ -33,8 +33,8 @@ test('nonzero slider minima, zero-length and nonfinite values',()=>{
  }
 });
 
-test('all eleven continuous controls have legible persistent base and effective values',()=>{
- assert.equal(SLIDER_TARGETS.length,11);
+test('all twelve continuous controls have legible persistent base and effective values',()=>{
+ assert.equal(SLIDER_TARGETS.length,12);
  assert.equal(formatControlValue('cutoff',6800.4),'6800 Hz');
  assert.equal(formatControlValue('volume',55.1),'55%');
  assert.equal(formatControlValue('resonance',10),'10%');
@@ -47,4 +47,6 @@ test('all eleven continuous controls have legible persistent base and effective 
  assert.equal(formatControlValue('pulse',50),'50%');
  assert.equal(formatControlValue('pwmDepth',12),'12%');
  assert.equal(formatControlValue('pwmRate',1.25),'1.25 Hz');
+ assert.equal(formatControlValue('pan',-40),'L40');
+ assert.equal(formatControlValue('pan',25),'R25');
 });
