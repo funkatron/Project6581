@@ -4,7 +4,8 @@ import {readFileSync} from 'node:fs';
 // package.json must match resolveVersion() — run scripts/sync-package-version.mjs after
 // shipping code on main. BASELINE is the commit where package.json last synced.
 // Rules: feat/behavior → minor (reset patch); any other counted change → patch.
-export const BASELINE='6c578ea7c8ab249cc97188412166bad4cf43b999';
+// Floor v0.4.0: western scale lock + performance arp/latch state (#130, #134).
+export const BASELINE='142161e1c939e5d79c060c7ab23cae29167e1349';
 
 const RELEASE_FLOOR=/^chore(?:\([^)]+\))?:\s*release\b/i;
 const RELEASE_TAG=/^release v\d+\.\d+\.\d+/i;
@@ -23,7 +24,7 @@ export function countsTowardVersion(message){
   const subject=message.split('\n')[0].trim();
   if(!subject)return false;
   if(/^Merge branch/i.test(subject))return false;
-  if(/^Merge pull request/i.test(subject))return false;
+  // GitHub PR merges on main: count the PR title in the merge body, not the merge subject.
   if(/^Merge [0-9a-f]{7,40} into/i.test(subject))return false;
   const title=commitTitle(message);
   if(RELEASE_FLOOR.test(title))return false;

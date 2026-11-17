@@ -10,7 +10,11 @@ Displayed footer: `Project6581 vX.Y.Z · Built … (UTC)` from [stamp-build.mjs]
 
 **Preset JSON schema version** (v5 in presets) is unrelated to app semver.
 
-## Current release floor: v0.3.0
+## Current release floor: v0.4.0+
+
+**App semver on `main`:** **v0.4.1** (v0.4.0 = western scale lock + arp/latch UI state; v0.4.1 = LFO slider modulation visualization).
+
+## Historical floors: v0.3.0
 
 | Milestone | Shipped highlights (on `main`) |
 | --- | --- |

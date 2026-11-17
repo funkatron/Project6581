@@ -6,7 +6,7 @@
 
 | Change | Bump | Commit style |
 | --- | --- | --- |
-| **New feature or behavior change** | **Middle** (minor), patch → 0 | `feat: …` or merge PR title starting with `feat:` |
+| **New feature or behavior change** | **Middle** (minor), patch → 0 | `feat: …` or merge PR title starting with `feat:` (GitHub merge body title on `main`) |
 | **Any other codebase change** | **Right** (patch) | `fix:`, `refactor:`, `docs:`, `chore:`, tests, or untyped PR titles |
 
 - Breaking changes before 1.0: still **minor** (not major).

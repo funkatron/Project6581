@@ -18,11 +18,12 @@ test('breaking changes stay pre-1.0 until explicitly promoted',()=>{
   assert.equal(calculateVersion('0.9.3',['feat!: change interface']),'0.10.0');
   assert.equal(calculateVersion('1.2.3',['feat!: change interface']),'2.0.0');
 });
-test('GitHub merge commits do not double-count PR work',()=>{
+test('GitHub merge commits use the PR title on first-parent main',()=>{
   const merge='Merge pull request #20 from org/branch\n\nfeat: new oscillator';
-  assert.equal(countsTowardVersion(merge),false);
-  assert.equal(calculateVersion('0.1.0',[merge]),'0.1.0');
-  assert.equal(calculateVersion('0.1.0',['feat: new oscillator',merge]),'0.2.0');
+  assert.equal(countsTowardVersion(merge),true);
+  assert.equal(calculateVersion('0.1.0',[merge]),'0.2.0');
+  // Branch-only feat plus main merge title would double-bump; first-parent main sees merge once.
+  assert.equal(calculateVersion('0.1.0',['feat: new oscillator',merge]),'0.3.0');
 });
 test('empty git log fragments are ignored',()=>{
   assert.equal(calculateVersion('0.3.0',["Merge branch 'release/v0.3.0'\n",'\n']),'0.3.0');
@@ -34,10 +35,14 @@ test('release floor commits do not auto-increment',()=>{
 test('resolveVersion matches stamped build on this checkout',()=>{
   assert.match(resolveVersion(),/^\d+\.\d+\.\d+$/);
 });
-test('untyped merge commit is ignored; title-only commit is patch',()=>{
+test('untyped merge PR title increments patch',()=>{
   const merge='Merge pull request #132 from org/branch\n\nKeyboard LED toggles';
-  assert.equal(calculateVersion('0.3.0',[merge]),'0.3.0');
+  assert.equal(calculateVersion('0.3.0',[merge]),'0.3.1');
   assert.equal(calculateVersion('0.3.0',['Keyboard LED toggles']),'0.3.1');
+});
+test('LFO visualization PR is a patch on v0.4.0 floor',()=>{
+  const merge='Merge pull request #135 from funkatron/cursor/lfo-modulation-ui-fa36\n\nRestore LFO slider modulation visualization';
+  assert.equal(calculateVersion('0.4.0',[merge]),'0.4.1');
 });
 test('mechanical package sync commits do not increment',()=>{
   assert.equal(countsTowardVersion('chore: sync package.json to 0.3.2\n'),false);
