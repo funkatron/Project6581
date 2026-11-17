@@ -14,9 +14,9 @@ test('log meter maps quiet and loud SID peaks across the strip', () => {
  assert.equal(meterDisplayHeight(1), '100.0%');
 
  const quiet = meterDisplayFraction(0.03);
- const loud = meterDisplayFraction(0.18);
+ const loud = meterDisplayFraction(0.12);
  assert.ok(quiet > 0.2 && quiet < 0.65, `quiet band ${quiet}`);
- assert.ok(loud > 0.85, `loud band ${loud}`);
+ assert.ok(loud > 0.88, `loud band ${loud}`);
  assert.ok(loud > quiet + 0.25);
 });
 

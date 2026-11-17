@@ -61,9 +61,10 @@ test('master loudness meter updates fill width',()=>{
  assert.match(fill.style.width,/\d+\.\d%/);
 });
 
-test('header master meter is a wide horizontal rainbow bar',()=>{
+test('header master meter is a full-bleed horizontal rainbow bar',()=>{
  const css=readStudioCoreCss();
- assert.match(css,/\.master-rainbow-meter\{[^}]*width:min\(300px,100%\)/);
+ assert.match(css,/\.header-meter-band \.master-rainbow-meter\{[^}]*width:100%/);
+ assert.match(css,/\.header-meter-band \.master-rainbow-meter\{[^}]*height:10px/);
  assert.match(css,/\.master-rainbow-meter-fill\{[^}]*width:0/);
 });
 
@@ -71,7 +72,7 @@ test('header includes Plus/4 style master meter markup',()=>{
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  assert.match(html,/id="masterLoudnessMeter"/);
  assert.match(html,/master-rainbow-meter-fill/);
- assert.match(html,/class="controls"><div id="masterLoudnessMeter"/);
+ assert.match(html,/class="header-meter-band"><div id="masterLoudnessMeter"/);
  assert.doesNotMatch(html,/class="statusbar"[^>]*>[\s\S]*?masterLoudnessMeter/);
 });
 

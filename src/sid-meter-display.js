@@ -7,8 +7,8 @@ const DB = (level) => 20 * Math.log10(level);
 /** ~−42 dBFS: meter bottom (idle / very quiet). */
 export const METER_LOG_FLOOR = 0.008;
 
-/** ~−13 dBFS: calibrate typical loud SID activity near the top of the strip. */
-export const METER_LOG_REFERENCE = 0.22;
+/** ~−18 dBFS: calibrate typical playing peaks nearer the top of the strip. */
+export const METER_LOG_REFERENCE = 0.13;
 
 const DB_FLOOR = DB(METER_LOG_FLOOR);
 const DB_REFERENCE = DB(METER_LOG_REFERENCE);

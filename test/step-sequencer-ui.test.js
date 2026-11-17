@@ -93,7 +93,7 @@ test('landscape and compact layouts preserve sequencer lanes and taller keyboard
  assert.match(css,/@media \(min-width:701px\) and \(max-height:1000px\)/);
  assert.match(css,/\.seq-step\{grid-template-rows:21px 112px 42px 44px;gap:0\}/);
  assert.match(css,/\.keyboard-panel\{height:clamp\(185px,26dvh,270px\)\}/);
- assert.match(css,/@media \(max-width:1100px\)\{\s*header\{display:grid/);
+ assert.match(css,/@media \(max-width:1100px\)\{\s*\.header-toolbar\{display:grid/);
  assert.match(css,/\.seq-grid-scroller\{[^}]*overflow-x:auto/);
  assert.match(css,/@media \(max-height:650px\)/);
  assert.match(css,/\.seq-grid-scroller\{[^}]*touch-action:auto/);
