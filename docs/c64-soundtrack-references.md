@@ -59,4 +59,4 @@ Metadata sources: [HVSC STIL via 6581.nl](https://6581.nl/), composer interviews
 2. On iPad or desktop Chromium, load the mapped factory preset and use the phrases in [factory-audition-matrix.js](../src/factory-audition-matrix.js) (`low` / `mid` / `high`).
 3. Record **pass / adjust / gap** in [agents/roadmap-step-d-factory.md](../agents/roadmap-step-d-factory.md) owner table; update patch parameters only in a follow-up PR with before/after notes.
 
-**Step D completion:** This file satisfies the **soundtrack-reference research** checkbox; **iPad audition** remains open until [ipad-safari-qa.md](ipad-safari-qa.md) factory section is filed.
+**Step D completion:** **Soundtrack-reference research** satisfied here. **Owner iPad listening (2026-11-16):** presets reported sounding fine ([ipad-safari-qa.md](ipad-safari-qa.md) factory listening section). Optional: per-preset matrix rows in [agents/roadmap-step-d-factory.md](../agents/roadmap-step-d-factory.md) for HVSC-close adjustments.

@@ -4,22 +4,23 @@ Project6581 stays vanilla JS. When the same value appears in more than one place
 
 ## Building blocks
 
-1. **`ui-control.js`** (when merged) — `setControlChecked()` for programmatic toggle writes.
-2. **Slice module** — in-memory truth, `set(patch)`, `subscribe(fn)`, sync to known control ids, `applyFromPreset` / snapshot helpers. Example: `performance-arp-state.js` (PR #134).
+1. **`src/ui-control.js`** — `setControlChecked(input, checked, { emitChange })` for programmatic toggle writes.
+2. **Slice module** (example: `performance-arp-state.js`) — in-memory truth, `set(patch)`, `subscribe(fn)`, sync to known control ids, `applyFromPreset` / snapshot helpers.
 3. **Coordinator** — `sid-studio.js` (or a thin `studio-coordinator.js`) batches preset apply, panic, and audio pushes after slices update.
-4. **Views** — call `slice.set()`; mirrors only `subscribe()` and repaint.
+4. **Views** — mirror controls call `set()`; decorative UI (keyboard LEDs) only `subscribe()` and repaint.
 
 ## Rules
 
-- No raw `.checked =` / `.value =` on slice-bound controls outside the slice / `ui-control`.
+- Do **not** assign `.checked =` on bound controls outside `ui-control.js` / the slice’s `syncDom`.
 - Serializable settings belong in slices; runtime audio (`arp.held`, voice owners) stays outside presets.
-- Side effects can stay on DOM `change` handlers during migration; prefer one coordinator call after batch `applyFromPreset`.
+- Side effects can stay on existing `change` handlers during migration; prefer one coordinator call after batch `applyFromPreset`.
+- Add a focused test file per slice; grep tests can guard against raw `.checked =` on slice ids.
 
 ## Domain map (rollout order)
 
 | Domain | Slice candidate | Notes |
 | --- | --- | --- |
-| Performance arp/latch | `performance-arp-state` | Shipped in #134 |
+| Performance arp/latch | `performance-arp-state` | Shipped (#134) |
 | Routing | `performance-routing-state` | Preset + panic |
 | Instrument | `instrument-state` | voiceCount, unison, assign, detune |
 | Engines ×3 | `engines-state` | Already `engines[]`; formalize panel sync |

@@ -5,8 +5,9 @@ import {defaultSequence,sequenceEvent,sequenceForStyle} from './game-step-sequen
 // stop(), and the preset snapshot; this module asks those to run.
 export function mountPerformance({
  $,names,keyboardState,arp,game,directOwned,play,stop,silenceSidOutput,refreshPresetDirty,getArpKeyVisual,
+ performanceNote=note=>note,
  gameEnabled,arpEnabled,activeNotes,arpNotes,
- getSeqState,setSeqState,isSeqPreview,setSeqPreview,getActiveSeqStep,setActiveSeqStep
+ getSeqState,setSeqState,isSeqPreview,setSeqPreview,getActiveSeqStep,setActiveSeqStep,performanceArp
 }){
  function clearStepHighlight(){
   const activeSeqStep=getActiveSeqStep();
@@ -130,7 +131,7 @@ export function mountPerformance({
    $('arpStatus').textContent=phraseLabel()+' step '+(event.index+1)+' · rest';
    return;
   }
-  game.last=event.note;
+  game.last=performanceNote(event.note);
   play(game.last,'game');getArpKeyVisual().show(game.last,'game');
   $('arpStatus').textContent=phraseLabel()+' step '+(event.index+1)+' · '+names[root%12]+(Math.floor(root/12)-1);
   if(event.duration<100){
@@ -149,7 +150,7 @@ export function mountPerformance({
    if(!gameEnabled())arpStopVoice();
    $('arpStatus').textContent='No notes held';return;
   }
-  const note=selectRoot(notes,$('arpPattern').value,arp.step++);
+  const note=performanceNote(selectRoot(notes,$('arpPattern').value,arp.step++));
   arp.root=note;
   getArpKeyVisual().show(note,'root');
   if(gameEnabled())return; // Game Arp clock voices melody; root stays highlighted.
@@ -205,11 +206,13 @@ export function mountPerformance({
   setSeqState(defaultSequence());renderSequenceSteps();modifiedStepPhrase();gameRestart();
  });
  $('seqRun').addEventListener('click',()=>{
-  setSeqPreview(true);$('gameArpStyle').value='custom';$('gameArpOn').checked=true;
+  setSeqPreview(true);$('gameArpStyle').value='custom';
+  performanceArp.set({gameOn:true});
   setSeqTransportLabel();restartGenerators();refreshPresetDirty();
  });
  $('seqStop').addEventListener('click',()=>{
-  setSeqPreview(false);$('gameArpOn').checked=false;
+  setSeqPreview(false);
+  performanceArp.set({gameOn:false});
   setSeqTransportLabel();
   stopGenerators();arp.held.clear();arp.latched.clear();
   silenceSidOutput();

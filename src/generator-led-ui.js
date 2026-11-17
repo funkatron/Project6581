@@ -2,23 +2,21 @@ import {bindHelpGesture} from './ui-help-gesture.js?v=__BUILD_ID__';
 
 const RATE_LABEL={0.25:'1/1',0.5:'1/2',1:'1/4',2:'1/8',4:'1/16',8:'1/32',16:'1/64',32:'1/128'};
 const HELP_BY_GEN={root:'generator-led-root',game:'generator-led-game',latch:'generator-led-latch'};
-const CONTROL_BY_GEN={root:'arpOn',game:'gameArpOn',latch:'arpLatch'};
 const LABEL_BY_GEN={root:'Root Arp',game:'Game Arp',latch:'Latch'};
 
-export function mountGeneratorLeds($,{onGeneratorToggle}={}){
+export function mountGeneratorLeds($,{performanceArp,onGeneratorToggle}={}){
  const host=$('generatorLeds');
- if(!host)return;
+ if(!host||!performanceArp)return;
  const specs=[
-  {id:'genLedRoot',gen:'root',getOn:()=>$('arpOn')?.checked,getDetail:()=>RATE_LABEL[$('arpRate')?.value]??''},
-  {id:'genLedGame',gen:'game',getOn:()=>$('gameArpOn')?.checked,getDetail:()=>RATE_LABEL[$('gameRate')?.value]??''},
-  {id:'genLedLatch',gen:'latch',getOn:()=>$('arpLatch')?.checked,getDetail:()=>''}
+  {id:'genLedRoot',gen:'root',getDetail:()=>RATE_LABEL[$('arpRate')?.value]??''},
+  {id:'genLedGame',gen:'game',getDetail:()=>RATE_LABEL[$('gameRate')?.value]??''},
+  {id:'genLedLatch',gen:'latch',getDetail:()=>''}
  ];
  function toggleGen(gen){
-  const input=$(CONTROL_BY_GEN[gen]);
-  if(!input)return;
-  input.checked=!input.checked;
-  input.dispatchEvent(new Event('change',{bubbles:true}));
-  onGeneratorToggle?.(gen,input.checked);
+  const field=performanceArp.fieldForGenerator(gen);
+  if(!field)return;
+  const next=!performanceArp[field];
+  if(performanceArp.set({[field]:next}))onGeneratorToggle?.(gen,next);
  }
  host.replaceChildren();
  for(const spec of specs){
@@ -44,11 +42,13 @@ export function mountGeneratorLeds($,{onGeneratorToggle}={}){
   });
   host.append(btn);
  }
- function sync(){
+ function sync(snapshot){
+  const state=snapshot??performanceArp.getState();
   for(const spec of specs){
    const btn=$(spec.id);
    if(!btn)continue;
-   const on=Boolean(spec.getOn?.());
+   const field=performanceArp.fieldForGenerator(spec.gen);
+   const on=Boolean(state[field]);
    btn.dataset.state=on?'on':'off';
    btn.setAttribute('aria-pressed',String(on));
    const name=LABEL_BY_GEN[spec.gen]??spec.gen;
@@ -57,8 +57,7 @@ export function mountGeneratorLeds($,{onGeneratorToggle}={}){
    btn.querySelector('.gen-led-detail').textContent=detail&&on?' · '+detail:'';
   }
  }
- for(const id of ['arpOn','gameArpOn','arpLatch','arpRate','gameRate'])
-  $(id)?.addEventListener('change',sync);
- sync();
+ for(const id of ['arpRate','gameRate'])$(id)?.addEventListener('change',()=>sync());
+ performanceArp.subscribe(sync);
  return {sync};
 }

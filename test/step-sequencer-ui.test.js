@@ -54,7 +54,7 @@ test('custom sequence starts without held keys, handles rests and cancels stale 
  assert.match(performance,/if\(game\.step!==clock\|\|game\.last!==sounding\)return/);
  assert.match(performance,/if\(!activeNotes\(\)\.length&&!seqPreview\)/);
  assert.match(performance,/if\(game\.gateTimer!==null\)\{clearTimeout\(game\.gateTimer\)/);
- assert.match(performance,/setSeqPreview\(false\);\$\('gameArpOn'\)\.checked=false/);
+ assert.match(performance,/setSeqPreview\(false\);\s*performanceArp\.set\(\{gameOn:false\}\)/);
 });
 
 test('keyboard remains full width and can collapse without stopping preview',()=>{

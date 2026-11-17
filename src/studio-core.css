@@ -82,6 +82,8 @@ input[type=checkbox]:checked::before{transform:translateX(17px)}
    Equal negative side margins keep each black key centered at its white-key boundary. */
 .key.black{background:#202c3b;color:white;flex:0 0 4.2%;height:61%;min-width:0;margin:0 -2.1%;z-index:2;border:1px solid #75869a;padding-bottom:7px}
 .key.down{background:#e8a759;color:#151b24}
+.key.scale-out:not(.down){opacity:.48}
+.key.scale-out.black:not(.down){opacity:.55}
 footer{font-size:10px;color:#9fadc1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
 footer p{display:inline;margin:0}footer strong,footer strong~*{display:none}
 .footer-diagnostics-link{font:inherit;font-size:10px;font-weight:700;color:#7bcabb;background:transparent;border:0;border-radius:0;min-height:32px;padding:4px 2px;text-decoration:underline;text-underline-offset:2px;touch-action:manipulation}

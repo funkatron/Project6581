@@ -3,6 +3,7 @@ import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from './pitch-envelope.js'
 import {pitchEnvelopeTemplates} from './pitch-envelope-editor.js';
 const FACTORY_PITCH=pitchEnvelopeTemplates();
 import {createDefaultEngines,DEFAULT_ROUTING,ROUTE_OPTIONS,defaultEngineSettings} from './sid-engines.js';
+import {validateScaleSettings} from './western-scales.js';
 // Project6581 preset format v5: per-engine sound blocks and performance.routing (v4 imports upgrade).
 export const PRESET_VERSION=5;
 export const PRESET_STORAGE_KEY='project6581.user-presets.v5';
@@ -52,7 +53,8 @@ export function defaultPresetSettings(){
    masterBpm:120,
    routing:{...DEFAULT_ROUTING},
    arp:{enabled:false,latch:false,pattern:'up',rate:4,sync:true,localBpm:120},
-   game:{enabled:true,style:'action',rate:4,sequence:defaultSequence()}
+   game:{enabled:true,style:'action',rate:4,sequence:defaultSequence()},
+   scale:{tonic:0,id:'chromatic',lock:false}
   }
  });
 }
@@ -150,7 +152,8 @@ export function validatePresetSettings(value){
    },
    game:{enabled:boolean(game.enabled,'Game Arp enabled'),style:choice(game.style,'Game Arp style',STYLES),
     rate:choice(game.rate,'Game Arp pattern rate',DIVISIONS),
-    sequence:validateSequence(game.sequence??defaultSequence())}
+    sequence:validateSequence(game.sequence??defaultSequence())},
+   scale:validateScaleSettings(perf.scale)
   }
  };
 }
