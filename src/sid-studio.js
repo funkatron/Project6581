@@ -13,6 +13,7 @@ import {mountPerformance} from "./performance-play.js?v=__BUILD_ID__";
 import {presetLoadRequiresSilence,validatePresetSettings} from "./preset-library.js?v=__BUILD_ID__";
 import {mountPresetLibrary} from "./preset-library-ui.js?v=__BUILD_ID__";
 import {mountKeyboard} from "./keyboard-input.js?v=__BUILD_ID__";
+import {readScaleStateFromDom,resolvePerformanceNote,isPitchInScale} from "./western-scales.js?v=__BUILD_ID__";
 import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from "./pitch-envelope.js?v=__BUILD_ID__";
 import {mountEditorTabs} from "./editor-tabs.js?v=__BUILD_ID__";
 import {mountGeneratorLeds} from "./generator-led-ui.js?v=__BUILD_ID__";
@@ -233,6 +234,7 @@ function playOne(note,ownerKey,chipMask,{layer=false}={}){
  diagnosticsUi.afterNoteEvent?.();
 }
 function play(note,source='key:'+note){
+ note=resolvePerformanceNote(note,readScaleStateFromDom($));
  restoreSidOutput();
  const route=routingSelectForSource(source);
  const chips=routeMask(route);
@@ -243,6 +245,7 @@ function play(note,source='key:'+note){
  playOne(note,source,chips);
 }
 function stop(note,source='key:'+note){
+ note=resolvePerformanceNote(note,readScaleStateFromDom($));
  const eventId=sidEventLog.enabled?sidEventLog.begin('note-command',{note,source,action:'off',inputEventId:sidInputEvent}):null;
  const route=routingSelectForSource(source);
  if(route==='layer'){
@@ -341,13 +344,24 @@ let releaseMidiNotes=()=>{};
 const gameEnabled=()=>$('gameArpOn').checked;
 const arpEnabled=()=>$('arpOn').checked;
 const activeNotes=()=>[...($('arpLatch').checked&&arp.latched.size?arp.latched:arp.held)];
-const arpNotes=()=>activeNotes().sort((a,b)=>a-b);
+const arpNotes=()=>{
+ const state=readScaleStateFromDom($);
+ const raw=activeNotes().sort((a,b)=>a-b);
+ if(!state.lock||state.id==='chromatic')return raw;
+ const seen=new Set(),out=[];
+ for(const note of raw){
+  const mapped=resolvePerformanceNote(note,state);
+  if(!seen.has(mapped)){seen.add(mapped);out.push(mapped)}
+ }
+ return out.sort((a,b)=>a-b);
+};
 const keyboardState={octave:3};
 const keys=new Map();
 const arpKeyVisual=createArpKeyVisual({getKey:note=>keys.get(note)});
+const performanceNote=note=>resolvePerformanceNote(note,readScaleStateFromDom($));
 ({gameStop,arpStopVoice,restartGenerators,stopGenerators,gameRestart,setSeqTransportLabel,renderSequenceSteps,loadBuiltInPhrase}=mountPerformance({
  $,names,keyboardState,arp,game,directOwned,play,stop,silenceSidOutput,refreshPresetDirty,
- getArpKeyVisual:()=>arpKeyVisual,
+ getArpKeyVisual:()=>arpKeyVisual,performanceNote,
  gameEnabled,arpEnabled,activeNotes,arpNotes,
  getSeqState:()=>seqState,
  setSeqState:value=>{seqState=value},
@@ -356,7 +370,8 @@ const arpKeyVisual=createArpKeyVisual({getKey:note=>keys.get(note)});
  getActiveSeqStep:()=>activeSeqStep,
  setActiveSeqStep:value=>{activeSeqStep=value}
 }));
-({flushQueuedKeys,keyDown,keyUp}=mountKeyboard({
+let renderKeyboard=()=>{};
+({flushQueuedKeys,keyDown,keyUp,renderKeyboard}=mountKeyboard({
  $,keys,names,keyboardState,audioTiming,sidEventLog,
  getSidContext:()=>sidContext,
  sidMusicalInputBlocked,armSidResume,
@@ -368,8 +383,17 @@ const arpKeyVisual=createArpKeyVisual({getKey:note=>keys.get(note)});
  activeNotes,arp,game,gameEnabled,arpEnabled,directOwned,play,stop,restartGenerators,stopGenerators,
  gameRestart,arpStopVoice,arpNotes,
  isSeqPreview:()=>seqPreview,
- traceInput,panic
+ getScaleState:()=>readScaleStateFromDom($),
+ pitchInScale:note=>isPitchInScale(note,readScaleStateFromDom($)),
+ traceInput,panic,refreshPresetDirty,getArpKeyVisual:()=>arpKeyVisual
 }));
+for(const id of ['scaleKey','scaleId','scaleLock']){
+ $(id)?.addEventListener('change',()=>{
+  renderKeyboard();
+  arpKeyVisual.refresh();
+  refreshPresetDirty();
+ });
+}
 mountPreferencesDialog($);
 ({releaseAll:releaseMidiNotes}=mountMidiInput({
  $,traceInput,keyDown,keyUp,isBlocked:sidMusicalInputBlocked,
@@ -865,7 +889,8 @@ function snapshotPresetSettings(){
    arp:{enabled:$('arpOn').checked,latch:$('arpLatch').checked,pattern:arpPattern,
     rate:Number($('arpRate').value),sync:$('arpSync').checked,localBpm:Number($('arpBpm').value)},
    game:{enabled:$('gameArpOn').checked,style:$('gameArpStyle').value||'action',
-    rate:Number($('gameRate').value),sequence:seqState}
+    rate:Number($('gameRate').value),sequence:seqState},
+   scale:readScaleStateFromDom($)
   }
  });
 }
@@ -912,9 +937,13 @@ function applyPresetControls(next,{silenceAudio=true}={}){
  $('gameArpOn').checked=next.performance.game.enabled;
  $('gameArpStyle').value=next.performance.game.style;
  $('gameRate').value=String(next.performance.game.rate);
+ $('scaleKey').value=String(next.performance.scale.tonic);
+ $('scaleId').value=next.performance.scale.id;
+ $('scaleLock').checked=next.performance.scale.lock;
  seqState=validateSequence(next.performance.game.sequence);
  renderSequenceSteps();
  loadBuiltInPhrase($('gameArpStyle').value);
+ renderKeyboard();
  enginePanelsUi?.render();renderLfos();updateUnison();updateModulation();
  $('arpStatus').textContent=silenceAudio?'Preset ready · press a key':'Preset ready · held notes may continue';
 }

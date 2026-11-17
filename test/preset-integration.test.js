@@ -127,7 +127,8 @@ test('empty live Arp selections snapshot as Up and Action so presets can still l
  const app={
   $:id=>({value:['arpPattern','gameArpStyle'].includes(id)?'':'1',checked:false}),
   validatePresetSettings:value=>value,engines,lfoState:[],seqState:{},
-  readRoutingFromDom:()=>({keyboard:'all',arp:'all',game:'sid1'})
+  readRoutingFromDom:()=>({keyboard:'all',arp:'all',game:'sid1'}),
+  readScaleStateFromDom:()=>({tonic:0,id:'chromatic',lock:false})
  };
  const {arp,game}=runInNewContext(source+'snapshotPresetSettings()',app).performance;
  assert.equal(arp.pattern,'up');
