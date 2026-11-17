@@ -1,9 +1,10 @@
 import {execFileSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';
 
-// When package.json is bumped for an intentional release, set BASELINE to that
-// release commit on main so stamp-build only auto-increments from the new floor.
-export const BASELINE='7ad80740ffa5dca51b7d6ed73be8a071be253e0d';
+// package.json must match resolveVersion() — run scripts/sync-package-version.mjs after
+// shipping code on main. BASELINE is the commit where package.json last synced.
+// Rules: feat/behavior → minor (reset patch); any other counted change → patch.
+export const BASELINE='1837b67f922773236572b6e2d2b9b48e991f8fbc';
 
 const RELEASE_FLOOR=/^chore(?:\([^)]+\))?:\s*release\b/i;
 const RELEASE_TAG=/^release v\d+\.\d+\.\d+/i;
@@ -20,6 +21,7 @@ export function commitTitle(message){
 export function countsTowardVersion(message){
   const subject=message.split('\n')[0].trim();
   if(!subject)return false;
+  if(/^Merge branch/i.test(subject))return false;
   const title=commitTitle(message);
   if(RELEASE_FLOOR.test(title))return false;
   if(RELEASE_TAG.test(title))return false;
@@ -40,8 +42,7 @@ export function calculateVersion(base,commits){
       else {major++;minor=0;patch=0}
     }
     else if(/^feat(?:\([^)]+\))?:/i.test(title)){minor++;patch=0}
-    else if(/^(fix|perf|refactor|docs|test|build|ci|chore)(?:\([^)]+\))?:/i.test(title)){patch++}
-    else if(!/^Merge branch/i.test(subject)){patch++}
+    else if(countsTowardVersion(message)){patch++}
   }
   return [major,minor,patch].join('.');
 }

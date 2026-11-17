@@ -31,3 +31,6 @@ test('release floor commits do not auto-increment',()=>{
 test('resolveVersion matches stamped build on this checkout',()=>{
   assert.match(resolveVersion(),/^\d+\.\d+\.\d+$/);
 });
+test('untyped PR title increments patch',()=>{
+  assert.equal(calculateVersion('0.3.0',['Merge pull request #132 from org/branch\n\nKeyboard LED toggles']),'0.3.1');
+});
