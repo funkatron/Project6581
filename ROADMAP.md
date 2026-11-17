@@ -6,7 +6,7 @@
 
 Prioritize features that help people **make, retain, exchange, and perform music**. Keep regression tests proportionate to the feature being shipped; defer extended audio-clock research and large architecture changes unless an observed defect requires them. Work in small, separately reviewable PRs, inspect all Copilot review findings, and verify deployment independently.
 
-**Near-term order:** **1. Factory/user presets and import/export** (polish + iPad verification) → **2. Composable Arpeggiator + Game Arp** (device checks) **and Western scale lock** (not started) → **3. MIDI input on iPad and desktop** → **4. App-like installation and offline access**. WAV/M4A recording and stationary-thumb LFO display are **shipped**; iPad validation remains. Triple-SID **UI, routing, and layer per-chip voice ownership** are **shipped** on `main` ([#94](https://github.com/funkatron/Project6581/pull/94)); confirm layer mutes on iPad still open.
+**Near-term order:** **1. Factory/user presets and import/export** (polish + iPad verification) → **2. Composable Arpeggiator + Game Arp** (device checks) **and Western scale lock** ([#130](https://github.com/funkatron/Project6581/pull/130)) → **3. MIDI input on iPad and desktop** → **4. App-like installation and offline access**. **Owner backlog (planned, not scheduled):** dedicated **FX** section (compressor, distortion, delay, phaser), a **drum sequencer**, and a **toggle-able drum level boost** so noise/drum hits sit with PWM-heavy sounds. WAV/M4A recording and stationary-thumb LFO display are **shipped**; iPad validation remains. Triple-SID **UI, routing, and layer per-chip voice ownership** are **shipped** on `main` ([#94](https://github.com/funkatron/Project6581/pull/94)); confirm layer mutes on iPad still open.
 
 ### How we execute: one roadmap step at a time
 
@@ -21,7 +21,7 @@ Finish the **active step** (code, doc, or device verification) in a single focus
 | **E** | **Web MIDI** note input on desktop HTTPS | [Priority 3](#priority-3-midi-input-on-ipad-and-desktop) |
 | **F** | **PWA** shell (install, offline WASM/JS pairs, version indicator) | [Priority 4](#priority-4-package-project6581-as-an-application) |
 | **G** | **iPad MIDI** route decision (MIDI browser vs native shell) | Priority 3 + Priority 4 |
-| *later* | Western scale lock, `.sid` player, visualization, audio-clock LFO migration | Sections below |
+| *later* | Western scale lock ([#130](https://github.com/funkatron/Project6581/pull/130)), master **FX** bus, **drum sequencer**, drum level boost, `.sid` player, visualization, audio-clock LFO migration | Sections below |
 
 **Active step:** *Owner choice* — **Step C** iPad composable arp verified ([#128](https://github.com/funkatron/Project6581/pull/128)); **Step D** factory bank listening verified on iPad (owner, 2026-11-17). **Step G** (iPad MIDI) and **Step F** (PWA) pinned by owner (2026-11-17); resume in [agents/roadmap-step-g-midi.md](agents/roadmap-step-g-midi.md).
 
@@ -361,6 +361,53 @@ Distinguish **in-app timing** (footer, Diagnostics Activity log, worklet metrics
 - [ ] Future: optional “single focused SID” compact layout (roadmap UI refinement), not a return to one hidden engine.
 
 **Completion checks:** Layer routing plays predictable stacked notes; muting or disabling one engine does not corrupt others; device QA recorded in [ipad-safari-qa.md](docs/ipad-safari-qa.md).
+
+## Planned: master effects (FX) section
+
+**Goal:** Add a real **Effects** workspace — not decorative mockup buttons — with a focused set of post-SID (or master-bus) processors that musicians can hear while playing and save in presets.
+
+**First processors (owner priority):**
+
+- [ ] **Compressor** — tame peaks and even out factory PWM/leads vs quieter patches; expose threshold/ratio/makeup or a small sensible default set.
+- [ ] **Distortion** — intentional drive/saturation on the mixed SID output (distinct from chip pulse width).
+- [ ] **Delay** — tempo-synced echoes sharing master BPM where practical; wet/dry mix.
+- [ ] **Phaser** — classic swept notch filter on the output bus.
+
+**Engineering notes:**
+
+- [ ] Implement in the **AudioWorklet / Web Audio graph** after reSIDfp mix, preserving authentic per-note SID rendering (no WASM core change unless a measured defect requires it).
+- [ ] Persist FX parameters in preset schema (version bump when shipped); factory presets ship sensible off/default states.
+- [ ] iPad-safe touch targets, bypass per effect, and level staging so FX do not routinely clip the master meter.
+- [ ] Regression tests for preset round-trip, bypass, and deterministic render smoke where feasible without golden-ear claims.
+
+**Completion checks:** User can enable each effect from a dedicated FX area, hear the change on live play and arps, save/recall with presets, and disable all FX without altering SID register behavior.
+
+## Planned: drum sequencer
+
+**Goal:** A **drum-focused step sequencer** separate from the melodic **Game Arp** (semitone offsets from a held root). Trigger short drum/noise hits on a grid with its own clock — usable alongside keyboard, Root Arp, and Game Arp without stuck notes or confusing routing.
+
+- [ ] Define scope: step count (e.g. 16), per-step instrument or drum-preset slot, velocity/gate, and whether steps address **factory drum IDs** or fixed noise/pitch templates.
+- [ ] Transport: enable, rate/sync to master BPM, preview without keyboard, Stop all integration.
+- [ ] Routing: default to Drums factory patches or a dedicated drum voice path; document interaction with **triple SID** and **layer** mode.
+- [ ] UI: grid readable on iPad landscape; reuse 64C-inspired sequencing patterns where it helps, without duplicating the Game Arp editor verbatim.
+- [ ] Preset persistence for patterns and transport settings; import/export with validation.
+- [ ] Behavioral tests for clock wrap, mute steps, and coexistence with Game Arp / Root Arp.
+
+**Completion checks:** User can program a repeating drum pattern, hear it in time with master BPM, switch factory drum sounds, and save the pattern in a user preset. No fake controls — every step either sounds or is an explicit rest.
+
+**Related:** [Programmable pitch envelopes](#programmable-pitch-envelopes-engine-shipped-presets-and-drums-open) and [factory Drums bank](#priority-1-follow-up-c64-game-inspired-factory-sounds) for timbre; drum **level** parity is tracked in the next section.
+
+## Planned: drum level boost (mix parity)
+
+**Goal:** Factory and live **drum/noise** hits often read quieter than **PWM-heavy** bass, keys, and leads in the same mix. Provide an explicit, **toggle-able level boost** so percussion is usable in musical balance without manually cranking per-preset filter volume on every drum patch.
+
+- [ ] **Product behavior:** global or performance-level **Drum boost** (owner preference: toggle) that applies a documented gain curve when playing drum-category factory sounds and/or when the drum sequencer (above) fires — not a hidden rewrite of all factory JSON.
+- [ ] Measure representative factory drums vs PWM leads on the **master rainbow meter**; pick a default boost (dB or linear) from evidence, with user-adjustable amount if scope allows.
+- [ ] Ensure boost respects **recording** (WAV/M4A), **layer** stacks, and **6581/8580**; avoid clipping on stacked unison + boost.
+- [ ] Optional: per-preset override; default **off** for backward compatibility with saved user presets until the user opts in.
+- [ ] iPad listening pass: kick/snare/hat vs a reference PWM bass/lead at comfortable master level.
+
+**Completion checks:** With boost **on**, owner-agreed drum presets are audibly in the same ballpark as PWM patches at default master listening level; with boost **off**, behavior matches current `main`.
 
 ## Planned investigation: audio-clock LFO scheduling
 
