@@ -1,6 +1,6 @@
 # C64-inspired factory sound bank
 
-**Status:** **30-sound core bank** — 24 original new presets across Bass, Keys, Leads and Drums (six per group), plus the six original Project6581 factory sounds. **Ten additional layer presets** (IDs `complex-layer-*`) demonstrate **Layer (per SID)** routing; see the README factory section. **40 factory sounds total** on `main`. The first four core patches have iPad listening notes; the rest are unverified starting points.
+**Status:** **30-sound core bank** — 24 original new presets across Bass, Keys, Leads and Drums (six per group), plus the six original Project6581 factory sounds. **Ten additional layer presets** (IDs `complex-layer-*`) demonstrate **Layer (per SID)** routing; see the README factory section. **40 factory sounds total** on `main`. **Owner iPad listening (2026-11-16):** presets reported sounding fine in regular use; formal per-preset audition matrix still optional for HVSC-close tuning.
 
 These are **original patches**, not reproductions or extracted settings from commercial games. **Step D references:** [c64-soundtrack-references.md](c64-soundtrack-references.md) (HVSC subtunes / listen windows) and [factory-audition-matrix.js](../src/factory-audition-matrix.js) (low/mid/high phrases per preset). Register traces remain manual when tuning a patch toward a reference.
 
@@ -50,7 +50,10 @@ See the [programmable pitch envelopes roadmap](../ROADMAP.md#planned-synthesis-f
 
 ## iPad listening and interaction checks
 
-- [ ] Audition each new patch at low, middle and high notes using built-in speakers and, if available, headphones. Record impressions of level, brightness, timbral distinction and usefulness.
+**Owner sound pass (2026-11-16):** See [ipad-safari-qa.md](ipad-safari-qa.md) **Factory bank listening (Step D)**.
+
+- [x] Audition factory patches in musical use on iPad Safari; owner reports levels and timbres sound fine (qualitative; not every phrase in `factory-audition-matrix.js`).
+- [ ] Formal low, middle and high note pass per preset with recorded pass/adjust notes.
 - [ ] Confirm the grouped preset picker scrolls and remains usable in iPad portrait and landscape, with the keyboard still accessible.
 - [ ] Check rapid retriggers, release tails, Game Arp patterns, polyphonic chords, Stop All and switching between sounds while a note is held.
 - [ ] Pay special attention to PWM audibility, note clicks, high-pass hats, noise-clap timbre, and filter/resonance differences between 6581 and 8580.

@@ -2,7 +2,7 @@
 
 Central index for maintainer and device-verification docs. User-facing synth help lives in the [README](../README.md).
 
-**Last synced with `main`:** 2026-11-16
+**Last synced with `main`:** 2026-11-17
 
 ## Product and releases
 
