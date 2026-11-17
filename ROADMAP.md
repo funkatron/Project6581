@@ -23,9 +23,11 @@ Finish the **active step** (code, doc, or device verification) in a single focus
 | **G** | **iPad MIDI** route decision (MIDI browser vs native shell) | Priority 3 + Priority 4 |
 | *later* | Western scale lock, `.sid` player, visualization, audio-clock LFO migration | Sections below |
 
-**Active step:** **F** / **G** — PWA packaging or iPad MIDI route (owner choice). **Step D** factory bank owner listening verified on iPad Safari (2026-11-16). Step **C** iPad arp checks still open until [ipad-safari-qa.md](docs/ipad-safari-qa.md) composable section is filed.
+**Active step:** *Owner choice* — no single gated step until hardware or priorities return. **Step G** (iPad MIDI) and **Step F** (PWA) pinned by owner (2026-11-17); resume notes in [agents/roadmap-step-g-midi.md](agents/roadmap-step-g-midi.md).
 
 **Deferred (owner, 2026-11-16):** Step **A** [desktop-chromium-qa.md](docs/desktop-chromium-qa.md) and Step **B** iPad load-while-playing / full preset workflow pass—may return before a release milestone. Step **B** code shipped in [#122](https://github.com/funkatron/Project6581/pull/122).
+
+**Deferred (owner, 2026-11-17):** Step **G** Launchkey 37 MK3 + Web MIDI Browser USB spike; Step **F** PWA (low upside vs Safari for current use).
 
 ## Release milestones (v0.2.0+)
 
