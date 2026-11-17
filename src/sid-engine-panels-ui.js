@@ -65,19 +65,20 @@ export function mountSidEnginePanels({
    input.value=String(value);
    if(filter)input.dataset.filter=filter;
    if(prop)input.dataset.prop=prop;
+   const values=document.createElement('div');
+   values.className='param-values';
    const output=document.createElement('output');
    output.className='param-value base-value';
    output.textContent=formatFn(value);
+   values.append(output);
    track.append(input);
-   row.append(label,track,output);
+   row.append(label,track,values);
    parent.append(row);
-   return {row,input,output};
+   return {row,input,output,values};
   }
-  const panRow=document.createElement('div');
-  panRow.className='sid-engine-pan';
-  const pan=appendParamRow(panRow,'Pan',{value:engine.pan,min:-100,max:100,step:1,prop:'pan',formatFn:formatPanBrief});
-  const grid=document.createElement('div');
-  grid.className='voice-grid sid-engine-params';
+  const controlGrid=document.createElement('div');
+  controlGrid.className='sid-engine-control-grid';
+  const pan=appendParamRow(controlGrid,'Pan',{value:engine.pan,min:-100,max:100,step:1,prop:'pan',formatFn:formatPanBrief});
   const filterFields=[
     ['volume','Volume',0,100,formatPercent],
     ['cutoff','Cutoff',50,10000,formatHzBrief],
@@ -85,9 +86,10 @@ export function mountSidEnginePanels({
   ];
   const filterRows=[];
   for(const [key,label,min,max,formatFn] of filterFields){
-   filterRows.push(appendParamRow(grid,label,{value:engine.filter[key],min,max,step:1,filter:key,formatFn:value=>formatFn(value)}));
+   filterRows.push(appendParamRow(controlGrid,label,{value:engine.filter[key],min,max,step:1,filter:key,formatFn:value=>formatFn(value)}));
   }
   const modeLabel=document.createElement('label');
+  modeLabel.className='control-span-full filter-mode';
   modeLabel.textContent='Filter ';
   const mode=document.createElement('select');
   mode.dataset.filter='mode';
@@ -98,31 +100,71 @@ export function mountSidEnginePanels({
   }
   mode.value=engine.filter.mode;
   modeLabel.append(mode);
-  grid.append(modeLabel);
-  card.append(header,panRow,grid);
-  const voiceHost=document.createElement('div');
-  voiceHost.className='sid-engine-voice';
-  voiceHost.dataset.engineVoice=String(index);
-  card.append(voiceHost);
-  const voiceSection=document.createElement('section');
+  controlGrid.append(modeLabel);
   const s=engine.voice;
-  voiceSection.innerHTML='<h4>Voice</h4><div class="voice-grid"><label>Enabled <input type="checkbox" data-prop="enabled"></label><label>Waveform <select data-prop="wave"><option value="triangle">Triangle</option><option value="sawtooth">Sawtooth</option><option value="square">Pulse</option><option value="noise">Noise</option></select></label>'+ranges.map(([p,name,min,max,step])=>'<label data-control="'+p+'">'+name+' <input data-prop="'+p+'" type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+s[p]+'"><output class="base-value">'+formatControlValue(p,s[p])+'</output></label>').join('')+'</div>';
-  voiceHost.append(voiceSection);
-  voiceSection.querySelector('[data-prop="enabled"]').checked=s.enabled;
-  voiceSection.querySelector('[data-prop="wave"]').value=s.wave;
-  const updatePulse=()=>voiceSection.querySelectorAll('[data-control="pulse"],[data-control="pwmDepth"],[data-control="pwmRate"]').forEach(label=>{label.hidden=s.wave!=='square'});
+  const voiceHeading=document.createElement('h4');
+  voiceHeading.className='control-span-full sid-engine-voice-heading';
+  voiceHeading.textContent='Voice';
+  const voiceToggles=document.createElement('div');
+  voiceToggles.className='control-span-full voice-toggles';
+  const enabledLabel=document.createElement('label');
+  enabledLabel.className='voice-toggle';
+  const enabledInput=document.createElement('input');
+  enabledInput.type='checkbox';
+  enabledInput.dataset.prop='enabled';
+  enabledInput.checked=s.enabled;
+  enabledLabel.append('Enabled ',enabledInput);
+  const waveLabel=document.createElement('label');
+  waveLabel.className='voice-toggle';
+  const waveSelect=document.createElement('select');
+  waveSelect.dataset.prop='wave';
+  for(const [value,label] of [['triangle','Triangle'],['sawtooth','Sawtooth'],['square','Pulse'],['noise','Noise']]){
+   const option=document.createElement('option');
+   option.value=value;option.textContent=label;
+   waveSelect.append(option);
+  }
+  waveSelect.value=s.wave;
+  waveLabel.append('Waveform ',waveSelect);
+  voiceToggles.append(enabledLabel,waveLabel);
+  const voiceHost=document.createElement('div');
+  voiceHost.className='control-span-full sid-engine-voice';
+  voiceHost.dataset.engineVoice=String(index);
+  controlGrid.append(voiceHeading,voiceToggles);
+  const voiceRows={};
+  for(const [prop,name,min,max,step] of ranges){
+   const row=appendParamRow(controlGrid,name,{
+    value:s[prop],min,max,step,prop,formatFn:value=>formatControlValue(prop,value)
+   });
+   row.row.dataset.control=prop;
+   voiceRows[prop]=row;
+  }
+  controlGrid.append(voiceHost);
+  card.append(header,controlGrid);
+  const updatePulse=()=>{
+   const show=engine.voice.wave==='square';
+   for(const key of ['pulse','pwmDepth','pwmRate']){
+    const row=voiceRows[key]?.row;
+    if(row)row.hidden=!show;
+   }
+  };
   updatePulse();
-  voiceSection.querySelectorAll('[data-prop]').forEach(inp=>inp.addEventListener('input',()=>{
+  controlGrid.querySelectorAll('[data-prop]').forEach(inp=>inp.addEventListener('input',()=>{
    engine.voice[inp.dataset.prop]=inp.type==='checkbox'?inp.checked:inp.type==='range'?Number(inp.value):inp.value;
-   const out=inp.closest('label')?.querySelector('output:not(.modulated-value)');
-   if(out)out.textContent=formatControlValue(inp.dataset.prop,Number(inp.value));
+   const out=inp.closest('.param-row')?.querySelector('.param-values output:not(.modulated-value)')
+    ??inp.closest('label')?.querySelector('output:not(.modulated-value)');
+   if(out&&inp.type==='range')out.textContent=formatControlValue(inp.dataset.prop,Number(inp.value));
    if(inp.dataset.prop==='wave')updatePulse();
    onEngineChange?.(index);
   }));
+  waveSelect.addEventListener('change',()=>{
+   engine.voice.wave=waveSelect.value;
+   updatePulse();
+   onEngineChange?.(index);
+  });
   card.querySelectorAll('input[data-filter]').forEach(inp=>inp.addEventListener('input',()=>{
    const key=inp.dataset.filter;
    engine.filter[key]=Number(inp.value);
-   const out=inp.closest('.param-row')?.querySelector('output');
+   const out=inp.closest('.param-row')?.querySelector('.param-values output');
    if(out){
     if(key==='cutoff')out.textContent=formatHzBrief(engine.filter[key]);
     else if(key==='volume'||key==='resonance')out.textContent=formatPercent(engine.filter[key]);

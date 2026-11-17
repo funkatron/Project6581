@@ -281,14 +281,14 @@ header{padding:8px 12px;min-width:0}
 #presetExportLink:not([hidden]){display:inline-block;color:#b8edda;font-size:12px;margin:4px 0}
 @media(max-width:560px){.preset-columns{grid-template-columns:minmax(0,1fr)}.preset-list{max-height:26dvh}#presetOpen{max-width:130px}#presetCurrent{max-width:98px}}
 /* Active modulation is green, the editable base number stays neutral. */
-label>.base-value{color:#424b43;font-size:10px;min-width:max-content;text-align:right}
-label>.modulated-value{color:#236b58;font-size:10px;font-weight:700;min-width:max-content;text-align:right}
+label>.base-value{color:#424b43;font-size:10px;text-align:right}
+label>.modulated-value{color:#236b58;font-size:10px;font-weight:700;text-align:right}
 label:has(.slider-stack){gap:4px}
-.allocation-detune .slider-stack{max-width:none}
+label:not(:has(.param-track))>.base-value,label:not(:has(.param-track))>.modulated-value{min-width:var(--control-value-width,48px);flex:none}
 
 /* UI refinement tokens (header/toolbar, param rows, module chrome). */
 :root,main,header,.tabbar,.workspace{
- --bar-h:38px;--label-w:5.5rem;--value-w:4.5rem;--help-btn:30px;
+ --bar-h:38px;--label-w:6.25rem;--value-w:5rem;--help-btn:30px;
  --root-teal:#2d7465;--root-teal-accent:#7bcabb;--game-orange:#e15a24
 }
 @media (pointer:coarse){
@@ -298,15 +298,26 @@ label:has(.slider-stack){gap:4px}
 .param-row{display:grid;grid-template-columns:var(--label-w) minmax(0,1fr) var(--value-w);align-items:center;column-gap:8px;row-gap:4px;min-width:0;margin:0}
 .param-row .param-label{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;line-height:1.2}
 .param-row .param-track{min-width:0;display:flex;align-items:center}
-.param-row .param-value,.param-row > .base-value{min-width:0;max-width:var(--value-w);text-align:right;font-variant-numeric:tabular-nums;font-size:10px}
+.param-row .param-values{grid-column:3;width:var(--value-w);min-width:var(--value-w);max-width:var(--value-w);display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:1px;overflow:hidden}
+.param-row .param-values .base-value,.param-row .param-values .modulated-value,.param-row .param-value{width:100%;min-width:0;max-width:100%;text-align:right;font-variant-numeric:tabular-nums;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.param-row .param-values .base-value{color:#424b43}
+.param-row .param-values .modulated-value{color:#236b58;font-weight:700}
+.param-row .param-track .slider-stack{width:100%;max-width:none}
 .param-row > input[type=range],.param-row .slider-stack{grid-column:2;max-width:none;width:100%}
 
-/* Shared instrument control geometry. Preserve the full track for sliders. */
-.workspace{--control-gap:10px;--control-value-width:48px}
+/* Shared control grids: one track column width for every slider row in the stack. */
+.sid-engine-control-grid,.lfo-slider-grid,.voice-allocation-param-grid{display:grid;grid-template-columns:var(--label-w) minmax(0,1fr) var(--value-w);column-gap:8px;row-gap:4px;align-items:center;min-width:0}
+.sid-engine-control-grid>.param-row,.lfo-slider-grid>.param-row{display:grid;grid-column:1/-1;grid-template-columns:subgrid;align-items:center}
+.sid-engine-control-grid>.param-row[hidden],.lfo-slider-grid>.param-row[hidden]{display:none}
+.sid-engine-control-grid>.control-span-full,.lfo-slider-grid>.control-span-full{grid-column:1/-1}
+.voice-allocation-param-grid>.param-row{display:grid;grid-column:1/-1;grid-template-columns:subgrid}
+
+/* Shared instrument control geometry. Sliders outside param-row stay compact flex rows. */
+.workspace{--control-gap:10px;--control-value-width:var(--value-w)}
 .workspace .panel label{gap:var(--control-gap);min-width:0}
-.workspace .panel label>output{min-width:var(--control-value-width);text-align:right;font-variant-numeric:tabular-nums}
+.workspace .panel label>output{text-align:right;font-variant-numeric:tabular-nums}
 .workspace .panel label>select{min-width:0;max-width:65%}
-.workspace .panel label>input[type=range],.workspace .panel label>.slider-stack{flex:1 1 0;min-width:0;max-width:62%}
+.workspace .panel label:not(:has(.param-track))>input[type=range],.workspace .panel label:not(:has(.param-track))>.slider-stack{flex:1 1 0;min-width:0;max-width:62%}
 .workspace .lfo-panel{grid-column:1/-1;margin-top:0;container-type:inline-size}
 .workspace .lfo-panel #lfoControls{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:10px}
 .workspace .lfo-panel .lfo-controls{min-width:0}
@@ -314,7 +325,7 @@ label:has(.slider-stack){gap:4px}
 @media(max-width:520px){.workspace{--control-gap:6px;--control-value-width:32px}}
 
 .sid-engines-toolbar{display:flex;justify-content:flex-end;margin:6px 0 10px}
-.sid-engines{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))}
+.sid-engines{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,min(320px,100%)),1fr))}
 .sid-engine-card{padding:10px 12px}
 .sid-engine-header{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px}
 .sid-engine-header h3{margin:0;font-size:14px;flex:1}
@@ -325,9 +336,12 @@ label:has(.slider-stack){gap:4px}
 .master-rainbow-meter{width:min(300px,100%);max-width:300px;height:14px;flex:1 1 180px;position:relative;border:1px solid #4c3b2d;border-radius:2px;background:#120e0a;overflow:hidden;box-shadow:inset 0 1px 2px #0006}
 .master-rainbow-meter-track{position:absolute;inset:1px;opacity:.38;pointer-events:none;background:linear-gradient(90deg,#e35a4f 0%,#f3a23c 14%,#f7d24f 28%,#4bc067 42%,#2cb4c2 57%,#4a6fe3 72%,#8a4dc9 100%)}
 .master-rainbow-meter-fill{position:absolute;left:1px;top:1px;bottom:1px;width:0;background:linear-gradient(90deg,#e35a4f 0%,#f3a23c 14%,#f7d24f 28%,#4bc067 42%,#2cb4c2 57%,#4a6fe3 72%,#8a4dc9 100%);box-shadow:0 0 7px rgba(243,162,60,.3);transition:width .08s linear}
-.sid-engine-pan{margin:6px 0}
-.sid-engine-params{display:grid;grid-template-columns:1fr;gap:4px}
-.sid-engine-params .param-row{grid-column:1/-1}
+.sid-engine-control-grid{margin:6px 0 0}
+.sid-engine-voice-heading{margin:10px 0 4px;font-size:13px}
+.voice-toggles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 12px;margin-bottom:2px}
+.voice-toggles .voice-toggle{min-width:0}
+.voice-allocation-param-grid{margin:4px 0 0}
+.allocation-detune .param-track .slider-stack,.allocation-detune .slider-stack,.sid-engine-card .param-track .slider-stack{width:100%;max-width:none}
 .play-target{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:8px 0 10px;padding:8px 10px;border:1px solid #34455a;border-radius:9px}
 .play-target-heading{width:100%;margin:0 0 4px;font-size:13px}
 .note-routing{display:flex;flex-wrap:wrap;gap:8px 12px;margin-bottom:10px}
