@@ -1,5 +1,17 @@
 export const LFO_WAVES = ['sine', 'triangle', 'sawtooth', 'square', 'sample-hold'];
-export const LFO_TARGETS = {volume:[0,100],cutoff:[50,10000],resonance:[0,100],detune:[0,100],attack:[0,2],decay:[0,3],sustain:[0,1],release:[0.01,4],pulse:[5,95],pwmDepth:[0,45],pwmRate:[0.1,12]};
+export const LFO_TARGETS = {
+ volume:[0,100],cutoff:[50,10000],resonance:[0,100],pan:[-100,100],
+ detune:[0,100],attack:[0,2],decay:[0,3],sustain:[0,1],release:[0.01,4],
+ pulse:[5,95],pwmDepth:[0,45],pwmRate:[0.1,12]
+};
+export const LFO_TARGET_ORDER = [
+ 'cutoff','resonance','volume','pan','pulse','detune','attack','decay','sustain','release','pwmDepth','pwmRate'
+];
+export const LFO_TARGET_LABELS = {
+ cutoff:'Filter cutoff',resonance:'Resonance',volume:'Volume',pan:'Pan',pulse:'Pulse width',
+ detune:'Unison detune',attack:'Attack',decay:'Decay',sustain:'Sustain',release:'Release',
+ pwmDepth:'PWM depth',pwmRate:'PWM rate'
+};
 export function lfoValue(wave,phase,seed=0){
  const p=phase-Math.floor(phase);
  if(wave==='sine')return Math.sin(2*Math.PI*p);

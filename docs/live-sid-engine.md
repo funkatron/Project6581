@@ -81,7 +81,7 @@ GPL-2.0-or-later applies via libresidfp; see repository README and build workflo
 - **Pitch envelopes** schedule in the worklet from `currentFrame` (see [pitch-envelope.md](pitch-envelope.md)).
 - **LFO (hybrid):**
   - With **`useAudioClockLfo=true`** (current default), **cutoff, resonance, and volume** for each chip are modulated inside `applyAudioClockModulation()` every render quantum; the worklet posts **`modulation-display`** for slider visualization.
-  - **ADSR, pulse width, PWM, and detune** targets are applied on the main thread in `updateModulation()` via `modulation.modulate()` → `UnisonSidController` register helpers, using wall-clock phase for LFO waves. Extending audio-thread coverage is [roadmap](audio-clock-lfo-investigation.md) work.
+  - **ADSR, pulse width, PWM, pan, and detune** targets are applied on the main thread in `updateModulation()` via `modulation.modulate()` → `UnisonSidController` / `setPan` helpers, using wall-clock phase for LFO waves. Extending audio-thread coverage is [roadmap](audio-clock-lfo-investigation.md) work.
 - LFOs can target **all engines** or a single SID (`lfos[].engines`: `'all'|'1'|'2'|'3'`).
 
 SID-specific rules enforced in JS:

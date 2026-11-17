@@ -158,7 +158,7 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 
 ## Stationary-center slider visuals (pending device verification)
 
-- [ ] With no LFO assigned, all 11 continuous sound controls show their numeric base value and appropriate unit.
+- [ ] With no LFO assigned, all 12 continuous sound controls show their numeric base value and appropriate unit.
 - [ ] Assign LFOs above and below the center. The thumb remains fixed at the user-selected base position; a green segment moves between center and effective value.
 - [ ] Check both values remain readable on iPad portrait and landscape, including short landscape viewports and narrow phone widths.
 - [ ] Edit the slider while modulation runs; the thumb updates the base while audio follows the resulting effective value.
@@ -167,7 +167,7 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 
 ## Expanded LFO routing (pending device verification)
 
-- [ ] All 11 target names appear in each LFO's Target selector, with touch-friendly selection in portrait and landscape.
+- [ ] All 12 target names appear in each LFO's Target selector (including **Pan** per engine), with touch-friendly selection in portrait and landscape.
 - [ ] ADSR modulation audibly changes held Unison and polyphonic notes without breaking note release or causing stuck gates.
 - [ ] Detune changes pitch between active layers in Mono, Legato, Duo and Poly when Unison is greater than 1; at Unison 1 the slider is inactive without losing its value.
 - [ ] PWM depth/rate audibly change Pulse movement, without changing Triangle/Sawtooth/Noise output.

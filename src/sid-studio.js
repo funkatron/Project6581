@@ -6,7 +6,7 @@ import {canDispatchNote,needsAudioResume,shouldBlockMusicalInput} from './sid-no
 import {closeSidContext} from './sid-audio-lifecycle.js?v=__BUILD_ID__';
 import {createArpKeyVisual} from "./arp-key-visual.js?v=__BUILD_ID__";
 import {modulationTrack,formatControlValue,SLIDER_TARGETS} from "./modulation-track.js?v=__BUILD_ID__";
-import {lfosForEngine} from "./lfo-modulation.js?v=__BUILD_ID__";
+import {lfosForEngine,LFO_TARGET_ORDER,LFO_TARGET_LABELS} from "./lfo-modulation.js?v=__BUILD_ID__";
 import {createSidRecorder,prepareRecordingDownload} from "./sid-recorder.js?v=__BUILD_ID__";
 import {defaultSequence,validateSequence} from "./game-step-sequencer.js?v=__BUILD_ID__";
 import {mountPerformance} from "./performance-play.js?v=__BUILD_ID__";
@@ -180,14 +180,8 @@ enginePanelsUi=mountSidEnginePanels({
 syncVoiceCountOptions();
 syncUnisonCountOptions();
 const lfoState=Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',engines:'all',phase:0,seed:i}));
-const lfoTargets=['cutoff','resonance','volume','pulse','detune','attack','decay','sustain','release','pwmDepth','pwmRate'];
-const lfoTargetNames={
- cutoff:'Filter cutoff',resonance:'Resonance',volume:'Volume',pulse:'Pulse width',
- detune:'Unison detune',attack:'Attack',decay:'Decay',sustain:'Sustain',release:'Release',
- pwmDepth:'PWM depth',pwmRate:'PWM rate'
-};
 const syncedRates=[{value:0.25,label:'4/1'},{value:0.5,label:'2/1'},...([1,2,4,8,16,32].map(value=>({value,label:'1/'+value})))];
-const {renderLfos}=mountLfoPanel({$,lfoState,lfoTargets,lfoTargetNames,syncedRates,onChange:()=>{updateModulation();syncModulationUiLoop()}});
+const {renderLfos}=mountLfoPanel({$,lfoState,lfoTargets:LFO_TARGET_ORDER,lfoTargetNames:LFO_TARGET_LABELS,syncedRates,onChange:()=>{updateModulation();syncModulationUiLoop()}});
 const editorTabs=mountEditorTabs({$});
 const helpUi=mountHelpDialog($);
 mountHelpTriggers($,{openHelp:helpUi.openHelp});
@@ -431,7 +425,7 @@ function modulationBaseForEngine(chip){
  const engine=engines[chip];
  return {
   cutoff:Number(engine.filter.cutoff),resonance:Number(engine.filter.resonance),volume:Number(engine.filter.volume),
-  pulse:Number(engine.voice.pulse),detune:Number($('detune').value),
+  pan:Number(engine.pan),pulse:Number(engine.voice.pulse),detune:Number($('detune').value),
   attack:Number(engine.voice.attack),decay:Number(engine.voice.decay),sustain:Number(engine.voice.sustain),
   release:Number(engine.voice.release),pwmDepth:Number(engine.voice.pwmDepth),pwmRate:Number(engine.voice.pwmRate)
  };
@@ -525,6 +519,7 @@ function updateModulation({uiOnly=false}={}){
   ?{...lfo,rate:modulation.syncedLfoHz(bpm,lfo.syncDivision)}:lfo);
  const time=(performance.now()-lfoStarted)/1000;
  const detuneBase={detune:Number($('detune').value)};
+ const engineModValues=new Array(3);
  for(let chip=0;chip<3;chip++){
   const sound=engines[chip].voice;
   const pulseActive=sound.wave==='square';
@@ -533,6 +528,7 @@ function updateModulation({uiOnly=false}={}){
   const active=chipLfos.some(lfo=>lfo.enabled&&lfo.depth>0);
   const values=active&&modulation
    ?modulation.modulate(base,chipLfos,time,{pulseActive,unisonActive}):base;
+  engineModValues[chip]=values;
   const livePulse=pulseActive&&modulation
    ?modulation.pulseWithPwm(values.pulse,values.pwmDepth,values.pwmRate,time):values.pulse;
   const live={...sound,pitchEnvelope:sound.pitchEnvelope,pulse:livePulse,
@@ -560,19 +556,15 @@ function updateModulation({uiOnly=false}={}){
  if(uiOnly)return;
  if(useAudioClockLfo)pushAudioModulationConfig();
  else{
-  for(let chip=0;chip<3;chip++){
-   const base=modulationBaseForEngine(chip);
-   const chipLfos=lfosForEngine(effectiveLfos,chip);
-   const values=chipLfos.some(lfo=>lfo.enabled&&lfo.depth>0)&&modulation
-    ?modulation.modulate(base,chipLfos,time,{pulseActive:engines[chip].voice.wave==='square',unisonActive}):base;
-   updateSidFilter(values,chip);
-  }
+  for(let chip=0;chip<3;chip++)updateSidFilter(engineModValues[chip],chip);
  }
  sidController.setLiveDetune(globalDetune);
  for(let chip=0;chip<3;chip++){
   const live=engineLiveSettings[chip];
+  const values=engineModValues[chip];
   sidController.setEnvelope(live,chip);
   if(engines[chip].voice.wave==='square')sidController.setPulse(0,live.pulse,chip);
+  sidAudio?.setPan?.(chip,Math.round(values.pan));
  }
 }
 $('masterBpm').addEventListener('input',()=>{const n=Number($('masterBpm').value);if(!Number.isFinite(n)||n<40||n>240)return;$('masterBpmValue').textContent=String(n);updateModulation();if($('arpSync').checked)restartGenerators();});

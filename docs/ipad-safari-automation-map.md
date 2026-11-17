@@ -32,7 +32,7 @@ Legend:
 | QA item | Coverage | Test / artifact |
 | --- | --- | --- |
 | Synced rate table (4/1, 2/1, 1/1, …) | Auto | `test/lfo-modulation.test.js` |
-| Routing to 11 targets | Auto | `test/lfo-modulation.test.js`, `test/live-sid-controller.test.js` |
+| Routing to 12 targets (incl. pan) | Auto | `test/lfo-modulation.test.js`, `test/live-sid-controller.test.js` |
 | Stationary thumb track math | Auto | `test/modulation-track.test.js`, `test/modulation-track-ui.test.js` |
 | Audible stepping at 60 Hz | Manual | — |
 | Background/foreground timing | Manual | — |

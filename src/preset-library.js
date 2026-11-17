@@ -4,6 +4,7 @@ import {pitchEnvelopeTemplates} from './pitch-envelope-editor.js';
 const FACTORY_PITCH=pitchEnvelopeTemplates();
 import {createDefaultEngines,DEFAULT_ROUTING,ROUTE_OPTIONS,defaultEngineSettings} from './sid-engines.js';
 import {validateScaleSettings} from './western-scales.js';
+import {LFO_TARGET_ORDER,LFO_WAVES} from './lfo-modulation.js';
 // Project6581 preset format v5: per-engine sound blocks and performance.routing (v4 imports upgrade).
 export const PRESET_VERSION=5;
 export const PRESET_STORAGE_KEY='project6581.user-presets.v5';
@@ -14,8 +15,7 @@ export const MAX_USER_PRESETS=100;
 const WAVES=['triangle','sawtooth','square','noise'];
 const MODES=['lowpass','bandpass','highpass'];
 const ASSIGNMENTS=['mono','legato','duo','poly'];
-const LFO_WAVES=['sine','triangle','sawtooth','square','sample-hold'];
-const TARGETS=['cutoff','resonance','volume','pulse','detune','attack','decay','sustain','release','pwmDepth','pwmRate'];
+const TARGETS=LFO_TARGET_ORDER;
 const DIVISIONS=[.25,.5,1,2,4,8,16,32];
 const PATTERNS=['up','down','updown','random'];
 const STYLES=['action','adventure','arcade','custom'];
