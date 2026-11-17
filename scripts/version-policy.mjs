@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 // package.json must match resolveVersion() — run scripts/sync-package-version.mjs after
 // shipping code on main. BASELINE is the commit where package.json last synced.
 // Rules: feat/behavior → minor (reset patch); any other counted change → patch.
-export const BASELINE='1837b67f922773236572b6e2d2b9b48e991f8fbc';
+export const BASELINE='28c7d69e19b90464b61a79399d6d0188edfa548f';
 
 const RELEASE_FLOOR=/^chore(?:\([^)]+\))?:\s*release\b/i;
 const RELEASE_TAG=/^release v\d+\.\d+\.\d+/i;
