@@ -188,12 +188,7 @@ const {renderLfos}=mountLfoPanel({$,lfoState,lfoTargets,lfoTargetNames,syncedRat
 const editorTabs=mountEditorTabs({$});
 const helpUi=mountHelpDialog($);
 mountHelpTriggers($,{openHelp:helpUi.openHelp});
-mountGeneratorLeds($,{
- focusPlaySection:id=>{
-  editorTabs.activateTab('play');
-  requestAnimationFrame(()=>$(id)?.scrollIntoView?.({block:'nearest',behavior:'smooth'}));
- }
-});
+mountGeneratorLeds($,{onGeneratorToggle:()=>refreshPresetDirty()});
 for(const [id,helpId] of [['rootArpTitle','root-arp'],['gameArpTitle','game-arp']]){
  const el=$(id);
  if(el)bindHelpGesture(el,{helpId,$});

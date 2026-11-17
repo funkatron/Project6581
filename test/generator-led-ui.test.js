@@ -7,5 +7,5 @@ test('keyboard heading mounts generator LED host',()=>{
  const studio=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
  assert.match(html,/id="generatorLeds"/);
  assert.match(studio,/mountGeneratorLeds\(/);
- assert.match(studio,/activateTab\('play'\)/);
+ assert.match(studio,/onGeneratorToggle:.*refreshPresetDirty/);
 });

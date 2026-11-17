@@ -218,7 +218,7 @@ export function mountPerformance({
  setSeqTransportLabel();
  $('gameArpOn').addEventListener('change',()=>{
   if(!$('gameArpOn').checked){setSeqPreview(false);setSeqTransportLabel()}
-  restartGenerators();
+  restartGenerators();refreshPresetDirty();
  });
  $('gameArpStyle').addEventListener('change',()=>{
   loadBuiltInPhrase($('gameArpStyle').value);
@@ -226,11 +226,11 @@ export function mountPerformance({
   gameRestart();
  });
  $('gameRate').addEventListener('change',gameRestart);
- $('arpOn').addEventListener('change',restartGenerators);
+ $('arpOn').addEventListener('change',()=>{restartGenerators();refreshPresetDirty()});
  $('arpLatch').addEventListener('change',()=>{
   if($('arpLatch').checked)arp.held.forEach(note=>arp.latched.add(note));
   else arp.latched.clear();
-  restartGenerators();
+  restartGenerators();refreshPresetDirty();
  });
  ['arpPattern','arpRate'].forEach(id=>$(id).addEventListener('change',arpRestart));
  $('arpBpm').addEventListener('input',()=>{
