@@ -26,7 +26,8 @@ input[type=checkbox]::before{content:"";position:absolute;top:3px;left:3px;width
 input[type=checkbox]:checked{background:#ac682e;border-color:#f3bd78}
 input[type=checkbox]:checked::before{transform:translateX(17px)}
 .master-tempo{gap:6px;font-size:12px}.master-tempo input{width:67px;min-height:38px;padding:4px 7px;border-radius:6px;border:1px solid #52647d;background:#29384b;color:#f3f5fa;font:inherit}
-.arp-local-bpm[hidden]{display:none!important}
+.layout-inert{visibility:hidden;pointer-events:none}
+.layout-inert *{pointer-events:none}
 .voices .panel{border:0;background:none;padding:0;overflow:visible}.voices h2{display:none}
 .voice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 12px}
 .voice-grid label{min-width:0}
@@ -308,7 +309,6 @@ label:not(:has(.param-track))>.base-value,label:not(:has(.param-track))>.modulat
 /* Shared control grids: one track column width for every slider row in the stack. */
 .sid-engine-control-grid,.lfo-slider-grid,.voice-allocation-param-grid{display:grid;grid-template-columns:var(--label-w) minmax(0,1fr) var(--value-w);column-gap:8px;row-gap:4px;align-items:center;min-width:0}
 .sid-engine-control-grid>.param-row,.lfo-slider-grid>.param-row{display:grid;grid-column:1/-1;grid-template-columns:subgrid;align-items:center}
-.sid-engine-control-grid>.param-row[hidden],.lfo-slider-grid>.param-row[hidden]{display:none}
 .sid-engine-control-grid>.control-span-full,.lfo-slider-grid>.control-span-full{grid-column:1/-1}
 .voice-allocation-param-grid>.param-row{display:grid;grid-column:1/-1;grid-template-columns:subgrid}
 
