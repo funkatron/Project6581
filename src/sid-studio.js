@@ -18,10 +18,11 @@ import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from "./pitch-envelope.js?
 import {mountEditorTabs} from "./editor-tabs.js?v=__BUILD_ID__";
 import {mountGeneratorLeds} from "./generator-led-ui.js?v=__BUILD_ID__";
 import {createPerformanceArpState} from "./performance-arp-state.js?v=__BUILD_ID__";
+import {createPerformanceRoutingState} from "./performance-routing-state.js?v=__BUILD_ID__";
 import {mountLfoPanel} from "./lfo-panel-ui.js?v=__BUILD_ID__";
 import {mountAudioTimingPanel} from "./audio-timing-panel.js?v=__BUILD_ID__";
 import {applyFirstEnergyTiming} from "./audio-timing-metrics.js?v=__BUILD_ID__";
-import {createDefaultEngines,clampVoiceCount,maxVoicesForEngines,DEFAULT_ROUTING,routeMask,routingKeyForSource,readRoutingFromDom} from "./sid-engines.js?v=__BUILD_ID__";
+import {createDefaultEngines,clampVoiceCount,maxVoicesForEngines,DEFAULT_ROUTING,routeMask,routingKeyForSource} from "./sid-engines.js?v=__BUILD_ID__";
 import {mountSidEnginePanels} from "./sid-engine-panels-ui.js?v=__BUILD_ID__";
 import {mountMasterLoudnessMeter} from "./master-loudness-meter-ui.js?v=__BUILD_ID__";
 import {mountHelpDialog,mountHelpTriggers} from "./ui-help-dialog.js?v=__BUILD_ID__";
@@ -191,6 +192,7 @@ const editorTabs=mountEditorTabs({$});
 const helpUi=mountHelpDialog($);
 mountHelpTriggers($,{openHelp:helpUi.openHelp});
 const performanceArp=createPerformanceArpState($);
+const performanceRouting=createPerformanceRoutingState($,{onChange:()=>refreshPresetDirty()});
 mountGeneratorLeds($,{performanceArp,onGeneratorToggle:()=>refreshPresetDirty()});
 for(const [id,helpId] of [['rootArpTitle','root-arp'],['gameArpTitle','game-arp']]){
  const el=$(id);
@@ -207,8 +209,7 @@ function voiceSettingsForSlot(slot){
 }
 function routingSelectForSource(source){
  const key=routingKeyForSource(source);
- const routing=readRoutingFromDom($,DEFAULT_ROUTING);
- return routing[key];
+ return performanceRouting.getState()[key];
 }
 function playOne(note,ownerKey,chipMask,{layer=false}={}){
  const eventId=sidEventLog.enabled?sidEventLog.begin('note-command',{note,source:ownerKey,action:'on',inputEventId:sidInputEvent,stepIndex:ownerKey==='game'&&activeSeqStep>=0?activeSeqStep:null,contextState:sidContext?.state??'unavailable',chipMask}):null;
@@ -293,7 +294,7 @@ function updateUnison(){
  const mode=$('voiceAssign').value;
  if(sidController&&(sidController.voiceCount!==voices||sidController.unisonCount!==layers||sidController.mode!==mode)){
   // Assignments change only after releasing owned notes and running generators.
-  traceStudio('unison-change',{voices,layers,mode,route:readRoutingFromDom($,DEFAULT_ROUTING).keyboard});
+  traceStudio('unison-change',{voices,layers,mode,route:performanceRouting.keyboard});
   panic('unison-config');arp.held.clear();arp.latched.clear();
  }else traceStudio('unison-update',{voices,layers,mode,detune:Number($('detune').value)});
  sidController?.configure({voiceCount:voices,unisonCount:layers,mode,detune:Number($('detune').value)});
@@ -914,7 +915,7 @@ function snapshotPresetSettings(){
   },
   performance:{
    masterBpm:Number($('masterBpm').value),
-   routing:readRoutingFromDom($),
+   routing:performanceRouting.getState(),
    arp:{enabled:performanceArp.rootOn,latch:performanceArp.latchOn,pattern:arpPattern,
     rate:Number($('arpRate').value),sync:$('arpSync').checked,localBpm:Number($('arpBpm').value)},
    game:{enabled:performanceArp.gameOn,style:$('gameArpStyle').value||'action',
@@ -943,9 +944,7 @@ function applyPresetControls(next,{silenceAudio=true}={}){
  });
  Object.assign(settings[0],engines[0].voice);
  $('chip').value=String(engines[0].model);
- $('keyboardRoute').value=next.performance.routing.keyboard;
- $('arpRoute').value=next.performance.routing.arp;
- $('gameRoute').value=next.performance.routing.game;
+ performanceRouting.applyFromPreset(next.performance);
  $('voiceCount').value=String(clampVoiceCount(next.sound.instrument.voiceCount));
  $('unisonCount').value=String(next.sound.instrument.unisonCount);
  $('voiceAssign').value=next.sound.instrument.mode;
@@ -983,7 +982,7 @@ async function applyPresetSettings(value){
  sidEventLog.add('preset-apply',{contextId:sidAudio?sidAttempt:null,activeModel:activeSidModel,requestedModel:presetModel,silenceAudio});
  traceStudio('preset-apply',{name:$('presetCurrent')?.textContent??'preset',model:presetModel,
   voices:next.sound.instrument.voiceCount,unison:next.sound.instrument.unisonCount,mode:next.sound.instrument.mode,
-  keyboardRoute:next.performance.routing.keyboard,silenceAudio});
+  keyboardRoute:performanceRouting.keyboard,silenceAudio});
  applyPresetControls(next,{silenceAudio});
  syncLegacyFilterInputs();syncEnginePans();
  try{

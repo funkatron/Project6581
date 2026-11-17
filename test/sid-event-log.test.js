@@ -130,7 +130,8 @@ test('actual app note commands retain their physical input parent and tag on/off
   canDispatchNote,shouldBlockMusicalInput,needsAudioResume,restoreSidOutput(){},
   pendingSidStartup:null,pendingSidClose:null,presetLoading:false,sidCleanupBlocked:false,sidStarting:false,
   engines,currentSidSettings:{enabled:true},$:id=>({value:'all'}),
-  routingKeyForSource,routeMask,DEFAULT_ROUTING,readRoutingFromDom:()=>({...DEFAULT_ROUTING}),
+  routingKeyForSource,routeMask,DEFAULT_ROUTING,
+  performanceRouting:{getState:()=>({keyboard:'all',arp:'all',game:'all'})},
   readScaleStateFromDom:()=>({tonic:0,id:'chromatic',lock:false}),
   resolvePerformanceNote:(note)=>note,
   traceStudio(){},diagnosticsUi:{afterNoteEvent(){}}});
