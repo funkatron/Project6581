@@ -1,4 +1,5 @@
 import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=__BUILD_ID__';
+import {setLayoutInert} from './ui-layout.js?v=__BUILD_ID__';
 
 export function mountVoiceSoundPanel({
  $,settings,ranges,formatControlValue,applyPitchEnvelope,onVoiceChange
@@ -12,7 +13,7 @@ export function mountVoiceSoundPanel({
   $('voices').replaceChildren(el);
   el.querySelector('[data-prop="enabled"]').checked=s.enabled;
   el.querySelector('[data-prop="wave"]').value=s.wave;
-  const updatePulse=()=>el.querySelectorAll('[data-control="pulse"],[data-control="pwmDepth"],[data-control="pwmRate"]').forEach(label=>{label.hidden=s.wave!=='square'});
+  const updatePulse=()=>el.querySelectorAll('[data-control="pulse"],[data-control="pwmDepth"],[data-control="pwmRate"]').forEach(label=>{setLayoutInert(label,s.wave!=='square')});
   el.querySelectorAll('[data-prop]').forEach(inp=>inp.addEventListener('input',()=>{
    s[inp.dataset.prop]=inp.type==='checkbox'?inp.checked:inp.type==='range'?Number(inp.value):inp.value;
    const baseOutput=inp.closest('label')?.querySelector('output:not(.modulated-value)');

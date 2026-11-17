@@ -2,6 +2,7 @@ import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=__BUILD_ID_
 import {SID_ENGINE_COUNT} from './sid-engines.js';
 import {meterDisplayWidth} from './sid-meter-display.js?v=__BUILD_ID__';
 import {formatPanBrief,formatHzBrief,formatPercent} from './control-format.js?v=__BUILD_ID__';
+import {setLayoutInert} from './ui-layout.js?v=__BUILD_ID__';
 
 const FILTER_MODES=['lowpass','bandpass','highpass'];
 
@@ -144,7 +145,7 @@ export function mountSidEnginePanels({
    const show=engine.voice.wave==='square';
    for(const key of ['pulse','pwmDepth','pwmRate']){
     const row=voiceRows[key]?.row;
-    if(row)row.hidden=!show;
+    if(row)setLayoutInert(row,!show);
    }
   };
   updatePulse();

@@ -20,6 +20,7 @@ import {mountGeneratorLeds} from "./generator-led-ui.js?v=__BUILD_ID__";
 import {createPerformanceArpState} from "./performance-arp-state.js?v=__BUILD_ID__";
 import {createPerformanceRoutingState} from "./performance-routing-state.js?v=__BUILD_ID__";
 import {createPerformanceInstrumentState} from "./performance-instrument-state.js?v=__BUILD_ID__";
+import {setLayoutInert} from "./ui-layout.js?v=__BUILD_ID__";
 import {mountLfoPanel} from "./lfo-panel-ui.js?v=__BUILD_ID__";
 import {mountAudioTimingPanel} from "./audio-timing-panel.js?v=__BUILD_ID__";
 import {applyFirstEnergyTiming} from "./audio-timing-metrics.js?v=__BUILD_ID__";
@@ -570,7 +571,11 @@ function updateModulation({uiOnly=false}={}){
  }
 }
 $('masterBpm').addEventListener('input',()=>{const n=Number($('masterBpm').value);if(!Number.isFinite(n)||n<40||n>240)return;$('masterBpmValue').textContent=String(n);updateModulation();if($('arpSync').checked)restartGenerators();});
-$('arpSync').addEventListener('change',()=>{document.querySelector('.arp-local-bpm').hidden=$('arpSync').checked;restartGenerators();});
+function syncArpLocalBpmLayout(){
+ setLayoutInert(document.querySelector('.arp-local-bpm'),$('arpSync').checked);
+}
+$('arpSync').addEventListener('change',()=>{syncArpLocalBpmLayout();restartGenerators();});
+syncArpLocalBpmLayout();
 ['volume','cutoff','resonance','mode'].forEach(id=>$(id).addEventListener('input',updateModulation));
 function updateSidLed(){
   const led=$('sidLed');
@@ -952,7 +957,7 @@ function applyPresetControls(next,{silenceAudio=true}={}){
  $('arpSync').checked=next.performance.arp.sync;
  $('arpBpm').value=String(next.performance.arp.localBpm);
  $('bpmValue').textContent=String(next.performance.arp.localBpm);
- document.querySelector('.arp-local-bpm').hidden=next.performance.arp.sync;
+ setLayoutInert(document.querySelector('.arp-local-bpm'),next.performance.arp.sync);
  $('gameArpStyle').value=next.performance.game.style;
  $('gameRate').value=String(next.performance.game.rate);
  $('scaleKey').value=String(next.performance.scale.tonic);
