@@ -84,6 +84,18 @@ test('single preset and entire bank export then import without losing LFOs or ar
  assert.deepEqual(importPresetFile(exportPreset(first)),[first]);
  assert.deepEqual(importPresetFile(exportPresetBank([first,second])),[first,second]);
 });
+test('arp and Game Arp division rates accept numeric strings from JSON',()=>{
+ const base=defaultPresetSettings();
+ base.performance.arp.rate='4';
+ base.performance.game.rate='8';
+ const validated=validatePresetSettings(base);
+ assert.equal(validated.performance.arp.rate,4);
+ assert.equal(validated.performance.game.rate,8);
+ const assault=FACTORY_PRESETS.find(p=>p.id==='complex-layer-commando');
+ const clone=JSON.parse(JSON.stringify(assault.settings));
+ clone.performance.arp.rate='4';
+ assert.doesNotThrow(()=>validatePresetSettings(clone));
+});
 test('invalid file, unsupported version, duplicate names and invalid slider values are rejected',()=>{
  const good={name:'Good',settings:defaultPresetSettings()};
  const bad=JSON.parse(exportPreset(good));

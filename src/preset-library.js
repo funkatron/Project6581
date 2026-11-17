@@ -39,6 +39,14 @@ function choice(v,name,options){
  if(!options.includes(v))throw new RangeError('Invalid '+name);
  return v;
 }
+function divisionChoice(v,name,options=DIVISIONS,fallback){
+ if(v===undefined||v===null)v=fallback;
+ const n=typeof v==='number'?v:Number(v);
+ if(!Number.isFinite(n))throw new RangeError('Invalid '+name);
+ const match=options.find(d=>Object.is(d,n)||Math.abs(d-n)<1e-9);
+ if(match===undefined)throw new RangeError('Invalid '+name);
+ return match;
+}
 function defaultEngineBank(){
  return createDefaultEngines(6581);
 }
@@ -131,7 +139,7 @@ export function validatePresetSettings(value){
     return {
      enabled:boolean(lfo.enabled,'LFO enabled'),sync:boolean(lfo.sync,'LFO sync'),
      wave:choice(lfo.wave,'LFO waveform',LFO_WAVES),
-     rate:numeric(lfo.rate,'LFO rate',.05,20),syncDivision:choice(lfo.syncDivision,'LFO division',DIVISIONS),
+     rate:numeric(lfo.rate,'LFO rate',.05,20),syncDivision:divisionChoice(lfo.syncDivision,'LFO division',DIVISIONS,4),
      depth:numeric(lfo.depth,'LFO depth',0,1),target:choice(lfo.target,'LFO target',TARGETS),
      phase:numeric(lfo.phase,'LFO phase',-1e6,1e6),seed:numeric(lfo.seed,'LFO seed',-1e6,1e6),
      engines:choice(lfo.engines??'all','LFO engines',['all','1','2','3'])
@@ -147,11 +155,12 @@ export function validatePresetSettings(value){
    },
    arp:{
     enabled:boolean(arp.enabled,'Arp enabled'),latch:boolean(arp.latch,'Arp latch'),
-    pattern:choice(arp.pattern,'Arp pattern',PATTERNS),rate:choice(arp.rate,'Arp rate',DIVISIONS),
+    pattern:choice(arp.pattern,'Arp pattern',PATTERNS),
+    rate:divisionChoice(arp.rate,'Arp rate',DIVISIONS,4),
     sync:boolean(arp.sync,'Arp sync'),localBpm:integer(arp.localBpm,'local BPM',40,240)
    },
    game:{enabled:boolean(game.enabled,'Game Arp enabled'),style:choice(game.style,'Game Arp style',STYLES),
-    rate:choice(game.rate,'Game Arp pattern rate',DIVISIONS),
+    rate:divisionChoice(game.rate,'Game Arp pattern rate',DIVISIONS,4),
     sequence:validateSequence(game.sequence??defaultSequence())},
    scale:validateScaleSettings(perf.scale)
   }
