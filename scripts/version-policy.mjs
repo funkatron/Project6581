@@ -8,6 +8,7 @@ export const BASELINE='28c7d69e19b90464b61a79399d6d0188edfa548f';
 
 const RELEASE_FLOOR=/^chore(?:\([^)]+\))?:\s*release\b/i;
 const RELEASE_TAG=/^release v\d+\.\d+\.\d+/i;
+const VERSION_SYNC=/^chore(?:\([^)]+\))?:\s*sync package\.json\b/i;
 
 export function commitTitle(message){
   const subject=message.split('\n')[0].trim();
@@ -25,6 +26,7 @@ export function countsTowardVersion(message){
   const title=commitTitle(message);
   if(RELEASE_FLOOR.test(title))return false;
   if(RELEASE_TAG.test(title))return false;
+  if(VERSION_SYNC.test(title))return false;
   return true;
 }
 
