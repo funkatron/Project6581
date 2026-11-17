@@ -48,10 +48,8 @@ test('preset loading restores performance settings without stored notes or autop
  assert.match(script,/if\(silenceAudio\)panic\(\);\s*resetPerformanceGenerators\(\)/);
  assert.match(script,/await sidAudio\.setChipModel\(chip,engines\[chip\]\.model\)/);
  assert.match(script,/game\.step=0;arp\.root=null/);
- assert.match(script,/unisonCount:Number\(\$\('unisonCount'\)\.value\)/);
- assert.match(script,/mode:\$\('voiceAssign'\)\.value/);
- assert.match(script,/\$\('unisonCount'\)\.value=String\(next\.sound\.instrument\.unisonCount\)/);
- assert.match(script,/\$\('voiceAssign'\)\.value=next\.sound\.instrument\.mode/);
+ assert.match(script,/instrument:performanceInstrument\.getState\(\)/);
+ assert.match(script,/performanceInstrument\.applyFromPreset/);
  assert.match(script,/\$\('gameRate'\)\.value=String\(next\.performance\.game\.rate\)/);
  assert.match(script,/enginePanelsUi\?\.render\(\);renderLfos\(\);updateUnison\(\);updateModulation\(\)/);
  assert.match(script,/await ensureSidModel\(presetModel\)/);
@@ -132,6 +130,7 @@ test('empty live Arp selections snapshot as Up and Action so presets can still l
   readRoutingFromDom:()=>({keyboard:'all',arp:'all',game:'sid1'}),
   performanceArp:{rootOn:false,latchOn:false,gameOn:false},
   performanceRouting:{getState:()=>({keyboard:'all',arp:'all',game:'sid1'})},
+  performanceInstrument:{getState:()=>({voiceCount:1,unisonCount:1,mode:'mono',detune:12})},
   readScaleStateFromDom:()=>({tonic:0,id:'chromatic',lock:false})
  };
  const {arp,game}=runInNewContext(source+'snapshotPresetSettings()',app).performance;

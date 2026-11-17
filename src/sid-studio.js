@@ -19,6 +19,7 @@ import {mountEditorTabs} from "./editor-tabs.js?v=__BUILD_ID__";
 import {mountGeneratorLeds} from "./generator-led-ui.js?v=__BUILD_ID__";
 import {createPerformanceArpState} from "./performance-arp-state.js?v=__BUILD_ID__";
 import {createPerformanceRoutingState} from "./performance-routing-state.js?v=__BUILD_ID__";
+import {createPerformanceInstrumentState} from "./performance-instrument-state.js?v=__BUILD_ID__";
 import {mountLfoPanel} from "./lfo-panel-ui.js?v=__BUILD_ID__";
 import {mountAudioTimingPanel} from "./audio-timing-panel.js?v=__BUILD_ID__";
 import {applyFirstEnergyTiming} from "./audio-timing-metrics.js?v=__BUILD_ID__";
@@ -187,6 +188,10 @@ const helpUi=mountHelpDialog($);
 mountHelpTriggers($,{openHelp:helpUi.openHelp});
 const performanceArp=createPerformanceArpState($);
 const performanceRouting=createPerformanceRoutingState($,{onChange:()=>refreshPresetDirty()});
+const performanceInstrument=createPerformanceInstrumentState($,{
+ onChange:()=>{refreshPresetDirty();updateUnison()},
+ formatDetune:value=>formatControlValue('detune',value)
+});
 mountGeneratorLeds($,{performanceArp,onGeneratorToggle:()=>refreshPresetDirty()});
 for(const [id,helpId] of [['rootArpTitle','root-arp'],['gameArpTitle','game-arp']]){
  const el=$(id);
@@ -283,17 +288,15 @@ function updateUnison(){
  if(unisonUpdating)return;
  unisonUpdating=true;
  try{
- const voices=Number($('voiceCount').value);
- const layers=Math.max(1,Math.min(voices,Math.round(Number($('unisonCount').value)||1)));
- const mode=$('voiceAssign').value;
+ const {voiceCount:voices,unisonCount:layers,mode,detune}=performanceInstrument.getState();
  if(sidController&&(sidController.voiceCount!==voices||sidController.unisonCount!==layers||sidController.mode!==mode)){
   // Assignments change only after releasing owned notes and running generators.
   traceStudio('unison-change',{voices,layers,mode,route:performanceRouting.keyboard});
   panic('unison-config');arp.held.clear();arp.latched.clear();
- }else traceStudio('unison-update',{voices,layers,mode,detune:Number($('detune').value)});
- sidController?.configure({voiceCount:voices,unisonCount:layers,mode,detune:Number($('detune').value)});
+ }else traceStudio('unison-update',{voices,layers,mode,detune});
+ sidController?.configure({voiceCount:voices,unisonCount:layers,mode,detune});
  $('detune').disabled=layers===1;
- $('detuneValue').textContent=formatControlValue('detune',Number($('detune').value));
+ performanceInstrument.syncDetuneDisplay();
  const max=mode==='mono'||mode==='legato'?1:mode==='duo'?Math.min(2,Math.floor(voices/layers)):Math.floor(voices/layers);
  $('voiceCapacity').textContent='Up to '+max+' '+(max===1?'note':'notes')+' · '+voices+' '+(voices===1?'oscillator':'oscillators');
  // Defer modulation and option.disabled so Safari/iPad can finish closing the native <select> picker.
@@ -303,8 +306,6 @@ function updateUnison(){
  });
  }finally{unisonUpdating=false}
 }
-['voiceAssign','voiceCount','unisonCount'].forEach(id=>{$(id).addEventListener('change',updateUnison);$(id).addEventListener('input',updateUnison)});
-$('detune').addEventListener('input',updateUnison);
 updateUnison();
 function panic(reason=''){
  traceStudio('panic',{reason});
@@ -425,7 +426,7 @@ function modulationBaseForEngine(chip){
  const engine=engines[chip];
  return {
   cutoff:Number(engine.filter.cutoff),resonance:Number(engine.filter.resonance),volume:Number(engine.filter.volume),
-  pan:Number(engine.pan),pulse:Number(engine.voice.pulse),detune:Number($('detune').value),
+  pan:Number(engine.pan),pulse:Number(engine.voice.pulse),detune:performanceInstrument.detune,
   attack:Number(engine.voice.attack),decay:Number(engine.voice.decay),sustain:Number(engine.voice.sustain),
   release:Number(engine.voice.release),pwmDepth:Number(engine.voice.pwmDepth),pwmRate:Number(engine.voice.pwmRate)
  };
@@ -513,12 +514,12 @@ function syncModulationUiLoop(){modulationUiNeeded()?scheduleModulationUiLoop():
 function updateModulation({uiOnly=false}={}){
  syncLegacyFilterInputs();
  Object.assign(settings[0],engines[0].voice);
- const unisonActive=Number($('unisonCount').value)>1;
+ const unisonActive=performanceInstrument.unisonCount>1;
  const bpm=Number($('masterBpm').value);
  const effectiveLfos=lfoState.map(lfo=>lfo.sync&&modulation
   ?{...lfo,rate:modulation.syncedLfoHz(bpm,lfo.syncDivision)}:lfo);
  const time=(performance.now()-lfoStarted)/1000;
- const detuneBase={detune:Number($('detune').value)};
+ const detuneBase={detune:performanceInstrument.detune};
  const engineModValues=new Array(3);
  for(let chip=0;chip<3;chip++){
   const sound=engines[chip].voice;
@@ -717,7 +718,8 @@ async function startSid({gesture=false}={}){
     if(!sidRecorder.supportsM4a)$('recordFormat').value='wav';
     $('recordToggle').disabled=false;
     $('recordStatus').textContent=sidRecorder.supportsM4a?'WAV / M4A ready':'WAV ready';
-    sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:Number($('voiceCount').value),unisonCount:Number($('unisonCount').value),mode:$('voiceAssign').value,detune:Number($('detune').value),onPitchStart:(slot,note,envelope)=>audio.startPitchEnvelope(slot,note,envelope),onPitchStop:slot=>audio.stopPitchEnvelope(slot),onPitchRetune:(slot,note)=>audio.retunePitchEnvelope(slot,note)});
+    const inst=performanceInstrument.getState();
+    sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:inst.voiceCount,unisonCount:inst.unisonCount,mode:inst.mode,detune:inst.detune,onPitchStart:(slot,note,envelope)=>audio.startPitchEnvelope(slot,note,envelope),onPitchStop:slot=>audio.stopPitchEnvelope(slot),onPitchRetune:(slot,note)=>audio.retunePitchEnvelope(slot,note)});
     activeSidModel=requestedModel;
     progress('SID '+activeSidModel+' ready.');
     sidEventLog.add('sid-ready',{contextId:attempt,model:activeSidModel});
@@ -902,7 +904,7 @@ function snapshotPresetSettings(){
   sound:{
    engines:engines.map(engine=>({model:engine.model,pan:engine.pan,
     voice:{...engine.voice},filter:{...engine.filter}})),
-   instrument:{voiceCount:Number($('voiceCount').value),unisonCount:Number($('unisonCount').value),mode:$('voiceAssign').value,detune:Number($('detune').value)},
+   instrument:performanceInstrument.getState(),
    lfos:lfoState.map(lfo=>({...lfo}))
   },
   performance:{
@@ -937,10 +939,7 @@ function applyPresetControls(next,{silenceAudio=true}={}){
  Object.assign(settings[0],engines[0].voice);
  $('chip').value=String(engines[0].model);
  performanceRouting.applyFromPreset(next.performance);
- $('voiceCount').value=String(clampVoiceCount(next.sound.instrument.voiceCount));
- $('unisonCount').value=String(next.sound.instrument.unisonCount);
- $('voiceAssign').value=next.sound.instrument.mode;
- $('detune').value=String(next.sound.instrument.detune);
+ performanceInstrument.applyFromPreset(next.sound.instrument);
  syncVoiceCountOptions();
  syncUnisonCountOptions();
  next.sound.lfos.forEach((lfo,i)=>Object.assign(lfoState[i],lfo));

@@ -39,6 +39,8 @@ With a sustaining factory lead (Game Arp and Root Arp **off** first):
 
 ## MIDI (Step E — shipped on desktop)
 
+**Automated (CI):** `test/midi-input-integration.test.js`, `test/midi-input.test.js`, and `test/midi-message.test.js` guard Prefs wiring, note routing hooks, and message parsing. Owner hardware checks below still apply.
+
 - [ ] Header **Prefs** (system preferences) → Enable MIDI input → allow access → select port.
 - [ ] USB controller note-on matches on-screen keyboard path (try with arps off first).
 - [ ] Channel filter 1–16 vs All; CC64 sustain defers release; **Stop all** clears MIDI notes.

@@ -12,7 +12,7 @@ Displayed footer: `Project6581 vX.Y.Z · Built … (UTC)` from [stamp-build.mjs]
 
 ## Current release floor: v0.4.0+
 
-**App semver on `main`:** **v0.4.1** (v0.4.0 = western scale lock + arp/latch UI state; v0.4.1 = LFO slider modulation visualization).
+**App semver on `main`:** **v0.4.1** (pending **v0.5.0** with LFO pan target, instrument state slice, and related `feat:` batch).
 
 ## Historical floors: v0.3.0
 
