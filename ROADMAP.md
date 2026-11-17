@@ -23,7 +23,7 @@ Finish the **active step** (code, doc, or device verification) in a single focus
 | **G** | **iPad MIDI** route decision (MIDI browser vs native shell) | Priority 3 + Priority 4 |
 | *later* | Western scale lock, `.sid` player, visualization, audio-clock LFO migration | Sections below |
 
-**Active step:** **D** — factory bank listening pass (HVSC references + iPad audition). Step **C** CI/docs merged in [#123](https://github.com/funkatron/Project6581/pull/123); iPad arp checks still open.
+**Active step:** **F** / **G** — PWA packaging or iPad MIDI route (owner choice). **Step D** factory bank owner listening verified on iPad Safari (2026-11-16). Step **C** iPad arp checks still open until [ipad-safari-qa.md](docs/ipad-safari-qa.md) composable section is filed.
 
 **Deferred (owner, 2026-11-16):** Step **A** [desktop-chromium-qa.md](docs/desktop-chromium-qa.md) and Step **B** iPad load-while-playing / full preset workflow pass—may return before a release milestone. Step **B** code shipped in [#122](https://github.com/funkatron/Project6581/pull/122).
 
@@ -79,7 +79,7 @@ Finish the **active step** (code, doc, or device verification) in a single focus
 
 ## Priority 1 follow-up: C64 game-inspired factory sounds
 
-**Implementation status (2026-11-16):** The **30-sound C64-inspired bank** is on `main` (24 category presets + six legacy factory sounds). **Ten layer showcase presets** exercise **Layer (per SID)** routing (40 factory sounds total). Tests check IDs, categories, validation and JSON roundtrips. Only the first four prototypes have documented iPad listening feedback; most patches are not acoustically verified on device. See [factory-bank notes](docs/c64-factory-bank.md). Next work: iPad listening, soundtrack-reference research, and adjustments from evidence—not duplicate IDs.
+**Implementation status (2026-11-16):** The **30-sound C64-inspired bank** is on `main` (24 category presets + six legacy factory sounds). **Ten layer showcase presets** exercise **Layer (per SID)** routing (40 factory sounds total). Tests check IDs, categories, validation and JSON roundtrips. **Owner iPad listening (2026-11-16):** presets reported sounding fine in regular use; no per-preset matrix or patch tweaks filed. See [factory-bank notes](docs/c64-factory-bank.md). Further work: formal phrase-matrix logs, pitch-envelope drum validation, and adjustments only from evidence—not duplicate IDs.
 
 **Goal:** Maintain and validate the expanded bank of **24 original presets**, six per category, and expand only after listening on iPad.
 
@@ -91,11 +91,11 @@ Finish the **active step** (code, doc, or device verification) in a single focus
 | Drums | Kick, snare, closed hat, open hat, clap and tom |
 
 - [x] HVSC reference log for [Turrican](https://www.lemon64.com/game/turrican), [Parallax](https://www.slayradio.org/sidinfo/MUSICIANS%2FG%2FGalway_Martin%2FParallax.sid), and [Commando](https://www.slayradio.org/sidinfo/MUSICIANS%2FH%2FHubbard_Rob%2FCommando.sid): composer, subtune, time range, traits, factory mapping — [c64-soundtrack-references.md](docs/c64-soundtrack-references.md); audition phrases in [factory-audition-matrix.js](src/factory-audition-matrix.js).
-- [ ] Listen for short, articulate bass and percussion, slow modulation and evolving keys, and clear pulse leads. Use isolated voices or a SID register trace where available to distinguish the patch from the melody, sequencing and effects. Build original patches using the existing waveform, envelope, filter, PWM and LFO controls.
+- [x] Listen for short, articulate bass and percussion, slow modulation and evolving keys, and clear pulse leads — owner qualitative pass on iPad Safari (2026-11-16; no per-preset adjust log). Register-trace tuning remains optional for future HVSC-close work.
 - [ ] Prototype one patch per category first. For drums, start with one playable hit per preset. If a convincing hit needs a fast pitch sweep or timed waveform changes beyond the current controls, document the gap and scope that work separately.
 - [x] Group the existing and new factory presets in the preset browser while retaining My Presets and version-3 import compatibility.
 - [x] Soundtrack reference research and per-preset audition phrases (register traces still **manual** when tuning). Agent sheet: [agents/roadmap-step-d-factory.md](agents/roadmap-step-d-factory.md).
-- [ ] Audition every preset on iPad with a consistent set of low, middle and high notes. Check that sounds are distinct, levels are usable, drums stop cleanly, and loading a patch leaves playback idle.
+- [x] Audition every preset on iPad with a consistent set of low, middle and high notes — owner reported factory presets sound fine in extended iPad use (2026-11-16); summary in [ipad-safari-qa.md](docs/ipad-safari-qa.md) factory listening section. Formal low/mid/high matrix per [factory-audition-matrix.js](src/factory-audition-matrix.js) not filed.
 
 **Completion checks:** At least 24 new sounds are easy to find across the four categories, with a short reference and patch-design log for each game.
 

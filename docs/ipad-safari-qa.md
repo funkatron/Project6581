@@ -88,6 +88,15 @@ Start with a sustained Pulse note, moderate filter cutoff, LFO depth, and Cutoff
 - [ ] Confirm the unsaved-change dot and discard confirmation, and test dialog close and Escape without changing the current sound.
 - [ ] Save, Save as, Rename, Delete, Import and Export inside the modal; verify the persistent download link remains tappable after export.
 
+## Factory bank listening (Step D)
+
+**Owner verification (2026-11-16, America/Indianapolis):** Factory presets reported sounding fine during extended iPad Safari use across categories (bass, keys, leads, drums, layer showcases). No per-preset adjust notes or formal build stamp/orientation log for this pass.
+
+- [x] Browse and play factory presets; timbre and levels acceptable for musical use.
+- [x] Switch between factory sounds during play; no blocking defects reported.
+- [ ] Per-preset low / mid / high phrases from [factory-audition-matrix.js](../src/factory-audition-matrix.js) with pass/adjust table in [agents/roadmap-step-d-factory.md](../agents/roadmap-step-d-factory.md).
+- [ ] Dedicated checks: drums stop cleanly, 6581 vs 8580 chip swap, rapid retriggers, load-while-held (see factory bank doc).
+
 ## Factory/user presets (additional sound and persistence checks)
 
 - [ ] Choose each factory sound, hold a note, and verify the audible waveform, filter and envelope change.
