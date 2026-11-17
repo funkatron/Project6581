@@ -42,6 +42,8 @@ test('preset loading restores performance settings without stored notes or autop
  assert.doesNotMatch(html,/id="unisonOn"/);
  assert.match(script,/game:\{enabled:performanceArp\.gameOn,style:[\s\S]*?rate:Number\(\$\('gameRate'\)\.value\)/);
  assert.match(script,/arp:\{enabled:performanceArp\.rootOn,latch:performanceArp\.latchOn/);
+ assert.match(script,/routing:performanceRouting\.getState\(\)/);
+ assert.match(script,/performanceRouting\.applyFromPreset/);
  assert.match(script,/presetLoadRequiresSilence/);
  assert.match(script,/if\(silenceAudio\)panic\(\);\s*resetPerformanceGenerators\(\)/);
  assert.match(script,/await sidAudio\.setChipModel\(chip,engines\[chip\]\.model\)/);
@@ -129,6 +131,7 @@ test('empty live Arp selections snapshot as Up and Action so presets can still l
   validatePresetSettings:value=>value,engines,lfoState:[],seqState:{},
   readRoutingFromDom:()=>({keyboard:'all',arp:'all',game:'sid1'}),
   performanceArp:{rootOn:false,latchOn:false,gameOn:false},
+  performanceRouting:{getState:()=>({keyboard:'all',arp:'all',game:'sid1'})},
   readScaleStateFromDom:()=>({tonic:0,id:'chromatic',lock:false})
  };
  const {arp,game}=runInNewContext(source+'snapshotPresetSettings()',app).performance;
