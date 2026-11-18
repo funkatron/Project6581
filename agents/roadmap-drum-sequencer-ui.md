@@ -1,7 +1,7 @@
 # Drum sequencer UI plan (16 steps)
 
-**Status:** design / pre-implementation (2026-11-18)  
-**Owner request:** up to **16 steps**, start here after roadmap merges.  
+**Status:** design approved (2026-11-18); tab + transport refined same day.  
+**Owner request:** **16 steps**, own **DRUM SEQ** tab, preview **separate from arps**, **DRUM** control on keyboard strip.  
 **Goal:** Row-based drum grid — **not** a copy of the melodic Game Arp editor.
 
 ---
@@ -46,39 +46,64 @@
 | **Rows** | **6 lanes** mapped to factory **Drums** category IDs (see §4) |
 | **Cell** | Boolean **hit** (on/off); **velocity** later slice |
 | **Sound** | Each row bound to one **factory drum preset** (snapshot settings at trigger time OR load preset into drum voice slot — engineering choice in implementation PR) |
-| **Clock** | Own **enable + rate + sync** to master BPM; **independent** of Game Arp tick |
-| **Preview** | **▶ Drum seq** runs pattern without held keyboard notes (like Game Preview) |
-| **Coexistence** | May run with Root Arp / Game Arp; **Stop all** clears drum seq transport + voices |
+| **Clock** | Own **rate + sync** to master BPM; **fully independent** timer from Root/Game arps |
+| **Preview** | **Only** starts the drum clock — does **not** enable Root/Game, does **not** require held keys |
+| **Coexistence** | May run **in parallel** with keyboard + Root/Game; **Stop all** stops drum transport + releases drum hits |
 
 ---
 
-## 3. UI placement (ARP tab)
+## 3. UI placement — dedicated **DRUM SEQ** tab
+
+Tab bar becomes: **SYNTH · ARP / SEQ · DRUM SEQ · LFOs** (Diagnostics unchanged).
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ Arp targets · Latch (existing)                              │
-├──────────────────────────┬──────────────────────────────────┤
-│ ROOT ARPEGGIATOR         │ GAME ARP STEP SEQUENCER          │  ← existing P10 layout
-│ (teal)                   │ (orange, melodic grid)           │
-├──────────────────────────┴──────────────────────────────────┤
-│ DRUM STEP SEQUENCER (new section, neutral/warm gray chrome) │
-│  Enable · Rate · Sync · Steps 16 · ▶ Preview · ■ Stop        │
-│  ┌────┬──┬──┬──┬──…─┬──┐  playhead                          │
-│  │Kick│■ │  │■ │    │  │  ← row label + 16 tap cells       │
-│  │Sn  │  │■ │  │    │  │                                    │
-│  │CH  │■ │■ │  │    │  │                                    │
-│  │OH  │  │  │■ │    │  │                                    │
-│  │Cp  │  │■ │  │    │  │                                    │
-│  │Tom │  │  │  │■   │  │                                    │
+│ [SYNTH] [ARP / SEQ] [DRUM SEQ] [LFOs]     ← new tabPlayDrum │
+├─────────────────────────────────────────────────────────────┤
+│ DRUM STEP SEQUENCER · 16 steps                    [?]      │
+│  Rate · Sync master BPM · ▶ Preview · ■ Stop                 │
+│  ┌────┬──┬──┬──┬──…─┬──┐  playhead on active column         │
+│  │Kick│■ │  │■ │    │  │                                   │
+│  │Sn  │  │■ │  │    │  │  6 lanes × 16 columns             │
+│  …                                                           │
 │  └────┴──┴──┴──┴──…─┴──┘                                    │
-│  Row preset: [Low Thud Kick ▾] per lane (v1) or fixed map   │
+│  Optional later: per-row factory preset dropdown            │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-- **New block:** `#drumSeqPanel` **below** `#arpGeneratorsGrid` (full width of `#playPanel`).
-- **Visual language:** Reuse `--root-teal` / `--seq-orange` **only** for existing blocks; drum block uses **neutral border** (`#9a8f84`) + **drum accent** (`#6b5c4f` labels) so it reads as **rhythm**, not melody.
-- **Narrow / portrait:** Same horizontal scroller pattern as `.seq-grid-scroller` (min column width ~40px, 16 cols).
-- **Landscape wide:** Entire grid visible without scroll when container ≥ ~720px.
+- **DOM:** `#tabDrum` → `#drumPanel` (mirror `tabPlay` / `playPanel` / `tabLfos` wiring in `seq-ui.css` + `sid-studio.js`).
+- **ARP tab stays melodic only** — no drum block under Root/Game.
+- **Visual language:** neutral/warm gray chrome (`#6b5c4f` / `#e8e0d6` fills) so DRUM SEQ reads as **rhythm**, not teal/orange melody.
+- **Grid UX:** reuse `.seq-grid-scroller` pattern (horizontal scroll portrait, full grid landscape).
+
+---
+
+## 3b. Keyboard strip — **DRUM** generator control
+
+Extend `#generatorLeds` (same component family as Root / Game / Latch in `generator-led-ui.js`):
+
+| Control | Label shown | Tap behavior |
+| --- | --- | --- |
+| **DRUM** pill | `DRUM` + rate when running (e.g. `DRUM · 1/16`) | **Start/stop drum transport** — same as ▶ Preview / ■ Stop on the DRUM SEQ tab |
+| Long-press | — | Help: `generator-led-drum` → focus `#tabDrum` |
+
+- **Lit state** = drum clock **running** (not merely “pattern has hits”).
+- **Does not** toggle Root/Game; independent third transport.
+- Tap **DRUM** while running → **stop** drum seq (step index may reset or hold — pick **reset to 0** on stop for predictability, match Game Preview stop).
+
+---
+
+## 3c. Playing the keyboard while the drum seq runs
+
+| Question | v1 answer |
+| --- | --- |
+| Does the drum pattern follow held keys? | **No.** Drum hits use **fixed factory drum timbres** and default kit MIDI notes per row — not keyboard root / scale lock. |
+| Can I play chords under a drum loop? | **Yes.** Keyboard + Root/Game use normal `keyDown` / arp clocks; drum clock fires **one-shot hits** on its own grid. |
+| Does enabling Root Arp start the drum seq? | **No.** Only **DRUM** pill, tab **Preview**, or an explicit “arm” if we add one later. |
+| Voice budget | Drum hits are **short**; engine treats each lane as monophonic one-shot; document max simultaneous rows per step (up to 6). |
+| Routing | Default drum rows → **SID 1** or dedicated drum route (implementation D2); never steal Game Arp melody voices without doc. |
+
+**Mental model:** Drum seq = **band drummer**; keyboard/arps = **bassist/lead** — same BPM when Sync on, separate start buttons.
 
 ---
 
@@ -104,11 +129,11 @@ Per-row preset dropdown is **v1 stretch**; fixed map is acceptable for first imp
 | Tap empty cell | Turn **on** (filled cell); trigger optional low audition |
 | Tap on cell | Turn **off** |
 | Long-press cell | Open **Help** lane (hit / rest) — same help pattern as Game steps |
-| **Enable** off | Grid read-only gray; no clock |
-| **Preview** | Start clock from step 0; highlight column playhead |
-| **Stop** | Halt clock, clear playhead, release drum voices |
-| **Stop all** (header) | Includes drum seq stop |
-| Keyboard held | Does **not** transpose drum row notes in v1 |
+| **Preview** (tab) | Start **drum-only** clock from step 0; syncs **DRUM** pill on |
+| **Stop** (tab) | Halt drum clock; syncs **DRUM** pill off; release active drum voices |
+| **DRUM** pill | Toggle same transport as Preview/Stop |
+| **Stop all** (header) | Stops drum transport + arps + keyboard-owned notes (panic rules unchanged) |
+| Keyboard | Live play **independent**; does not transpose drum grid (v1) |
 
 ---
 
@@ -116,11 +141,12 @@ Per-row preset dropdown is **v1 stretch**; fixed map is acceptable for first imp
 
 | PR | Scope |
 | --- | --- |
+| **D0** | Tab shell: `#tabDrum`, `#drumPanel`, workspace `data-tab` CSS |
 | **D1** | `drum-step-sequencer.js` data model + tests (16×6 booleans, validate) |
-| **D2** | Clock in `performance-play.js` (or sibling), trigger via `play()` with drum routing |
-| **D3** | DOM grid UI + CSS (`drum-seq-grid`), wire transport |
-| **D4** | Preset v5+ field `performance.drumSequence`; import/export |
-| **D5** | iPad QA checklist + help entries |
+| **D2** | `mountDrumPerformance` clock — separate from `game.timer` / `arp.timer` |
+| **D3** | Grid UI + tab transport; wire **DRUM** pill via extended `generator-led-ui.js` + `performanceArp` or sibling state |
+| **D4** | Preset v5+ field `performance.drumSequence` + rate/sync; import/export |
+| **D5** | Help entries + iPad QA (drum-only preview, keyboard + drum parallel) |
 
 No WASM. Preserve reSIDfp note path. Voice budget: one short hit per row per step (monophonic per lane).
 
@@ -132,6 +158,9 @@ No WASM. Preserve reSIDfp note path. Voice budget: one short hit per row per ste
 - [ ] 6 rows identifiable on iPad portrait without mis-taps
 - [ ] Playhead visible during preview
 - [ ] Distinct from Game Arp (no pitch sliders in drum block)
+- [ ] Own **DRUM SEQ** tab; ARP tab unchanged
+- [ ] **DRUM** pill start/stop without opening tab
+- [ ] Preview runs with **no** Root/Game enabled and **no** keys held
 - [ ] Help `?` on section title + long-press on cell
 
 ---
