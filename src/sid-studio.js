@@ -10,7 +10,7 @@ import {lfosForEngine,LFO_TARGET_ORDER,LFO_TARGET_LABELS} from "./lfo-modulation
 import {createSidRecorder,prepareRecordingDownload} from "./sid-recorder.js?v=__BUILD_ID__";
 import {defaultSequence,validateSequence} from "./game-step-sequencer.js?v=__BUILD_ID__";
 import {mountPerformance} from "./performance-play.js?v=__BUILD_ID__";
-import {FACTORY_PRESETS,presetLoadRequiresSilence,STARTUP_FACTORY_PRESET_ID,validatePresetSettings} from "./preset-library.js?v=__BUILD_ID__";
+import {FACTORY_PRESETS,presetLoadRequiresSilence,STARTUP_FACTORY_PRESET_ID,validateDrumLfo,validatePresetSettings} from "./preset-library.js?v=__BUILD_ID__";
 import {mountPresetLibrary} from "./preset-library-ui.js?v=__BUILD_ID__";
 import {mountKeyboard} from "./keyboard-input.js?v=__BUILD_ID__";
 import {readScaleStateFromDom,resolvePerformanceNote,isPitchInScale} from "./western-scales.js?v=__BUILD_ID__";
@@ -20,6 +20,7 @@ import {mountDrumPanel} from "./drum-panel-ui.js?v=__BUILD_ID__";
 import {createPerformanceDrumState} from "./performance-drum-state.js?v=__BUILD_ID__";
 import {mountDrumPerformance,readDrumSequenceFromDom} from "./drum-performance.js?v=__BUILD_ID__";
 import {mountDrumGrooveIo} from "./drum-groove-ui.js?v=__BUILD_ID__";
+import {mountDrumLfoPanel} from "./drum-lfo-panel-ui.js?v=__BUILD_ID__";
 import {defaultDrumKit,defaultDrumSequence,validateDrumKit,validateDrumSequence} from "./drum-step-sequencer.js?v=__BUILD_ID__";
 import {DRUM_ENGINE_INDEX} from "./sid-engines.js?v=__BUILD_ID__";
 import {drumOwnerKey,drumLaneTimbre,drumReleaseMilliseconds,isDrumOwner} from "./drum-lane-trigger.js?v=__BUILD_ID__";
@@ -202,10 +203,16 @@ syncVoiceCountOptions();
 syncUnisonCountOptions();
 const lfoState=Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',engines:'all',phase:0,seed:i}));
 const syncedRates=[{value:0.25,label:'4/1'},{value:0.5,label:'2/1'},...([1,2,4,8,16,32].map(value=>({value,label:'1/'+value})))];
+const drumLfoState=validateDrumLfo(null);
 const {renderLfos}=mountLfoPanel({$,lfoState,lfoTargets:LFO_TARGET_ORDER,lfoTargetNames:LFO_TARGET_LABELS,syncedRates,onChange:()=>{updateModulation();syncModulationUiLoop()}});
 const editorTabs=mountEditorTabs({$});
 const helpUi=mountHelpDialog($);
 mountHelpTriggers($,{openHelp:helpUi.openHelp});
+const {renderDrumLfo}=mountDrumLfoPanel({
+ $,drumLfoState,lfoTargetNames:LFO_TARGET_LABELS,syncedRates,
+ onChange:()=>{updateModulation();syncModulationUiLoop();refreshPresetDirty()},
+ bindHelp:root=>mountHelpTriggers($,{openHelp:helpUi.openHelp,root})
+});
 const performanceArp=createPerformanceArpState($);
 const performanceDrum=createPerformanceDrumState();
 const performanceRouting=createPerformanceRoutingState($,{onChange:()=>refreshPresetDirty()});
@@ -502,7 +509,8 @@ mountDrumGrooveIo({
   name:drumKit.name,
   drumSequence:validateDrumSequence({...drumSequence,...readDrumSequenceFromDom($,drumSequence),enabled:false}),
   drumKit:validateDrumKit(drumKit),
-  drumEngine:engines[3]
+  drumEngine:engines[3],
+  drumLfo:validateDrumLfo(drumLfoState)
  }),
  applyGroove:applyDrumGroove,
  onStatus:()=>{}
@@ -553,10 +561,15 @@ function updateSidFilter(overrides={},engineIndex=0){
 }
 function pushAudioModulationConfig(){
  if(!sidAudio?.setModulationConfig)return;
+ const bpm=Number($('masterBpm').value);
+ const drum=effectiveDrumLfoRow(bpm);
  sidAudio.setModulationConfig({
-  bpm:Number($('masterBpm').value),
+  bpm,
   engines:engines.map(engine=>({filter:{...engine.filter},voice:{wave:engine.voice.wave}})),
-  lfos:lfoState.map(lfo=>({...lfo,engines:lfo.engines??'all'}))
+  lfos:[
+   ...lfoState.map(lfo=>({...lfo,engines:lfo.engines??'all'})),
+   ...(drum.enabled&&drum.depth?[{...drum,engines:'4'}]:[])
+  ]
  });
 }
 function modulationBaseForEngine(chip){
@@ -631,8 +644,20 @@ function setModulationTrack(input,base,effective,enabled){
   band.style.setProperty('--band-end',track.end);
  band.hidden=!track.active;
 }
+function effectiveDrumLfoRow(bpm){
+ return drumLfoState.sync&&modulation
+  ?{...drumLfoState,rate:modulation.syncedLfoHz(bpm,drumLfoState.syncDivision)}:drumLfoState;
+}
+function chipLfoScopes(chip,effectiveLfos){
+ const scopes=lfosForEngine(effectiveLfos,chip);
+ if(chip!==DRUM_ENGINE_INDEX)return scopes;
+ const drum=effectiveDrumLfoRow(Number($('masterBpm').value));
+ if(!drum.enabled||!drum.depth)return scopes;
+ return [...scopes,{...drum,engines:'4'}];
+}
 function modulationUiNeeded(){
  if(lfoState.some(lfo=>lfo.enabled&&lfo.depth>0))return true;
+ if(drumLfoState.enabled&&drumLfoState.depth>0)return true;
  return engines.some(engine=>engine.voice.wave==='square'&&Number(engine.voice.pwmDepth)>0);
 }
 let modulationUiFrame=null;
@@ -663,7 +688,7 @@ function updateModulation({uiOnly=false}={}){
   const sound=engines[chip].voice;
   const pulseActive=sound.wave==='square';
   const base=modulationBaseForEngine(chip);
-  const chipLfos=lfosForEngine(effectiveLfos,chip);
+  const chipLfos=chipLfoScopes(chip,effectiveLfos);
   const active=chipLfos.some(lfo=>lfo.enabled&&lfo.depth>0);
   const values=active&&modulation
    ?modulation.modulate(base,chipLfos,time,{pulseActive,unisonActive}):base;
@@ -1049,7 +1074,8 @@ function snapshotPresetSettings(){
    engines:engines.map(engine=>({model:engine.model,pan:engine.pan,outputBoostDb:engine.outputBoostDb,
     voice:{...engine.voice},filter:{...engine.filter}})),
    instrument:performanceInstrument.getState(),
-   lfos:lfoState.map(lfo=>({...lfo}))
+   lfos:lfoState.map(lfo=>({...lfo})),
+   drumLfo:validateDrumLfo(drumLfoState)
   },
   performance:{
    masterBpm:Number($('masterBpm').value),
@@ -1096,6 +1122,8 @@ function applyDrumGroove(groove){
   syncEngineChipGains();
   enginePanelsUi?.render();
  }
+ if(groove.drumLfo)Object.assign(drumLfoState,validateDrumLfo(groove.drumLfo));
+ renderDrumLfo();
  drumPanelUi.render();
  refreshPresetDirty();
 }
@@ -1127,6 +1155,7 @@ function applyPresetControls(next,{silenceAudio=true}={}){
  syncVoiceCountOptions();
  syncUnisonCountOptions();
  next.sound.lfos.forEach((lfo,i)=>Object.assign(lfoState[i],lfo));
+ Object.assign(drumLfoState,validateDrumLfo(next.sound.drumLfo));
  $('masterBpm').value=String(next.performance.masterBpm);
  $('masterBpmValue').textContent=String(next.performance.masterBpm);
  performanceArp.applyFromPreset(next.performance);
@@ -1146,7 +1175,7 @@ function applyPresetControls(next,{silenceAudio=true}={}){
  loadBuiltInPhrase($('gameArpStyle').value);
  applyDrumFromPreset(next.performance);
  renderKeyboard();
- enginePanelsUi?.render();renderLfos();updateUnison();updateModulation();
+ enginePanelsUi?.render();renderLfos();renderDrumLfo();updateUnison();updateModulation();
  void syncEngineChipModels();
  if(performanceArp.gameOn||performanceArp.rootOn)restartGenerators();
  $('arpStatus').textContent=silenceAudio?'Preset ready · press a key':'Preset ready · held notes may continue';

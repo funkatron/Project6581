@@ -19,4 +19,5 @@ test('drum panel module builds grid cells and lane levels', () => {
   assert.match(readFileSync(new URL('../src/generator-led-ui.js', import.meta.url), 'utf8'), /genLedDrum/);
   assert.match(html, /drumGrooveExport/);
   assert.match(html, /drumGrooveImportBtn/);
+  assert.match(html, /id="drumLfoControls"/);
 });

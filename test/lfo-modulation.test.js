@@ -96,6 +96,13 @@ test('lfosForEngine keeps only matching or global LFO scopes',()=>{
  assert.deepEqual(lfosForEngine(lfos,2).map(lfo=>lfo.target),['cutoff']);
 });
 
+test('lfosForEngine routes drum LFO scope to chip index 3 only',()=>{
+ const drum={enabled:true,depth:.4,target:'volume',engines:'4'};
+ assert.deepEqual(lfosForEngine([drum],3).map(lfo=>lfo.target),['volume']);
+ assert.deepEqual(lfosForEngine([drum],0),[]);
+ assert.deepEqual(lfosForEngine([drum],2),[]);
+});
+
 test('audible PWM sweeps around the pulse center and clips safely',()=>{
  assert.equal(pulseWithPwm(50,20,1,0),50);
  assert.equal(pulseWithPwm(50,20,1,0.25),70);

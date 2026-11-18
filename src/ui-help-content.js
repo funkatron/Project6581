@@ -13,6 +13,7 @@ export const HELP_CONTENT={
  meters:{title:'Level meters',bullets:['Header: mixed output.','SID cards: per-chip bus level.']},
  'generator-led-drum':{title:'Drum generator LED',relatedTab:'drum',focusId:'tabDrum',bullets:['Lit when the drum sequencer preview is running; shows drum rate when on.','Tap: start or stop drum transport only — does not enable Root or Game arps. Long-press: help.']},
  'drum-seq':{title:'Drum step sequencer',relatedTab:'drum',focusId:'drumPanel',bullets:['Six lanes × 16 steps. Tap a cell for a hit or rest.','Preview runs the drum clock independently of keyboard arps.']},
+ 'drum-lfo':{title:'Drum LFO (SID 4)',relatedTab:'drum',focusId:'drumLfoControls',bullets:['One modulation source for the drum chip only—saved as sound.drumLfo, separate from the three global LFOs.','Targets filter, volume, pulse/ADSR, and chip pan on SID 4.']},
  'generator-led-root':{title:'Root generator LED',relatedTab:'play',focusId:'rootArpTitle',bullets:['Lit when Root Arp is enabled; shows root rate when on.','Tap: enable or disable Root Arp. Long-press: help.']},
  'generator-led-game':{title:'Game generator LED',relatedTab:'play',focusId:'gameArpTitle',bullets:['Lit when Game Arp is enabled; shows pattern rate when on.','Tap: enable or disable Game Arp. Long-press: help.']},
  'generator-led-latch':{title:'Latch LED',relatedTab:'play',focusId:'arpLatch',bullets:['Lit when latch is on.','Tap: enable or disable latch. Long-press: help.']}
