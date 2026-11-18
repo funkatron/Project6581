@@ -61,7 +61,7 @@ export function defaultPresetSettings(){
    masterBpm:120,
    routing:{...DEFAULT_ROUTING},
    arp:{enabled:false,latch:false,pattern:'up',rate:4,sync:true,localBpm:120},
-   game:{enabled:true,style:'action',rate:4,sequence:defaultSequence()},
+   game:{enabled:false,style:'action',rate:4,sequence:defaultSequence()},
    scale:{tonic:0,id:'chromatic',lock:false}
   }
  });
@@ -263,7 +263,7 @@ export const FACTORY_PRESETS=Object.freeze([
    masterBpm:128,
    routing:{keyboard:'layer',arp:'layer',game:'layer'},
    arp:{enabled:true,latch:false,pattern:'updown',rate:4,sync:true,localBpm:128},
-   game:{enabled:true,style:'arcade',rate:8},
+   game:{enabled:false,style:'arcade',rate:4},
    scale:{tonic:0,id:'chromatic',lock:false}
   }
  }),

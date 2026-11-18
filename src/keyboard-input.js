@@ -50,7 +50,7 @@ export function createKeyGesture({
    if(!directOwned.has(note)){play(note);directOwned.add(note)}
    return;
   }
-  const restart=!hadNotes||(gameEnabled()&&!arpEnabled())||(!game.timer&&!arp.timer);
+  const restart=!hadNotes||(!game.timer&&!arp.timer);
   if(restart)restartGenerators();
  }
  function keyDown(note){beginKey(note)}

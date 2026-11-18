@@ -60,6 +60,15 @@ test('mode: both on defers sound to generator clocks',()=>{
  assert.ok(calls.restart>=1,'restarts idle arp/game timers when adding keys');
 });
 
+test('mode: Game Arp only does not restart clocks on every additional key',()=>{
+ const {gesture,game,calls}=makeHarness({gameOn:true});
+ gesture.keyDown(60);
+ assert.equal(calls.restart,1);
+ game.timer={};
+ gesture.keyDown(64);
+ assert.equal(calls.restart,1);
+});
+
 test('mode: last key release with latch off stops generator clocks',()=>{
  const {gesture,calls}=makeHarness({gameOn:true,arpOn:true});
  gesture.keyDown(60);
