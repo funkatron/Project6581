@@ -51,12 +51,30 @@ function divisionChoice(v,name,options=DIVISIONS,fallback){
 function defaultEngineBank(){
  return createDefaultEngines(6581);
 }
+const DRUM_LFO_TARGETS=LFO_TARGET_ORDER.filter(t=>t!=='detune'&&t!=='pwmDepth'&&t!=='pwmRate');
+export function validateDrumLfo(lfo){
+ if(lfo===undefined||lfo===null){
+  return {enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',phase:0,seed:0,engines:'4'};
+ }
+ const row=object(lfo,'drumLfo');
+ return {
+  enabled:boolean(row.enabled,'drum LFO enabled'),sync:boolean(row.sync,'drum LFO sync'),
+  wave:choice(row.wave,'drum LFO waveform',LFO_WAVES),
+  rate:numeric(row.rate,'drum LFO rate',.05,20),
+  syncDivision:divisionChoice(row.syncDivision,'drum LFO division',DIVISIONS,4),
+  depth:numeric(row.depth,'drum LFO depth',0,1),
+  target:choice(row.target,'drum LFO target',DRUM_LFO_TARGETS),
+  phase:numeric(row.phase,'drum LFO phase',-1e6,1e6),seed:numeric(row.seed,'drum LFO seed',-1e6,1e6),
+  engines:'4'
+ };
+}
 export function defaultPresetSettings(){
  return validatePresetSettings({
   sound:{
    engines:defaultEngineBank(),
    instrument:{voiceCount:1,unisonCount:1,mode:'mono',detune:12},
-   lfos:Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',phase:0,seed:i,engines:'all'}))
+   lfos:Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',phase:0,seed:i,engines:'all'})),
+   drumLfo:validateDrumLfo(null)
   },
   performance:{
    masterBpm:120,
@@ -157,7 +175,8 @@ export function validatePresetSettings(value){
      phase:numeric(lfo.phase,'LFO phase',-1e6,1e6),seed:numeric(lfo.seed,'LFO seed',-1e6,1e6),
      engines:choice(lfo.engines??'all','LFO engines',['all','1','2','3'])
     };
-   })
+   }),
+   drumLfo:validateDrumLfo(sound.drumLfo)
   },
   performance:{
    masterBpm:integer(perf.masterBpm,'master BPM',40,240),
@@ -236,6 +255,7 @@ function factory(id,name,category,patch={}){
   });
  }
  if(patch.lfos)patch.lfos.forEach((lfo,i)=>Object.assign(settings.sound.lfos[i],lfo));
+ if(patch.drumLfo)Object.assign(settings.sound.drumLfo,validateDrumLfo({...settings.sound.drumLfo,...patch.drumLfo}));
  if(patch.performance){
   if(patch.performance.masterBpm)settings.performance.masterBpm=patch.performance.masterBpm;
   if(patch.performance.arp)Object.assign(settings.performance.arp,patch.performance.arp);
