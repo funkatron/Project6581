@@ -27,6 +27,7 @@ export function mountDrumPerformance({
   stopDrumVoices,
   refreshPresetDirty,
   onTransportChange,
+  onStep,
 }) {
   if (!$) throw new TypeError('mountDrumPerformance requires $');
 
@@ -60,6 +61,7 @@ export function mountDrumPerformance({
     const hits = hitsOnStep(seq, index);
     drum.step = (index + 1) % DRUM_STEP_COUNT;
     for (const hit of hits) triggerDrumLane(hit.lane);
+    onStep?.(index);
     updateStatus(true, index);
   }
 
@@ -71,6 +73,7 @@ export function mountDrumPerformance({
     drum.running = false;
     if (resetStep) drum.step = 0;
     stopDrumVoices();
+    onStep?.(-1);
     setTransportLabel(false);
     updateStatus(false, 0);
   }

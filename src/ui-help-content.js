@@ -11,6 +11,8 @@ export const HELP_CONTENT={
  keyboard:{title:'Keyboard',relatedTab:'voice',focusId:'keyboardPanel',bullets:['Octave controls shift range.','LEDs show generator state (after P8).']},
  'pitch-envelope':{title:'Pitch envelope',relatedTab:'voice',bullets:['Pitch glide per voice while held.','Drag points or use templates.']},
  meters:{title:'Level meters',bullets:['Header: mixed output.','SID cards: per-chip bus level.']},
+ 'generator-led-drum':{title:'Drum generator LED',relatedTab:'drum',focusId:'tabDrum',bullets:['Lit when the drum sequencer preview is running; shows drum rate when on.','Tap: start or stop drum transport only — does not enable Root or Game arps. Long-press: help.']},
+ 'drum-seq':{title:'Drum step sequencer',relatedTab:'drum',focusId:'drumPanel',bullets:['Six lanes × 16 steps. Tap a cell for a hit or rest.','Preview runs the drum clock independently of keyboard arps.']},
  'generator-led-root':{title:'Root generator LED',relatedTab:'play',focusId:'rootArpTitle',bullets:['Lit when Root Arp is enabled; shows root rate when on.','Tap: enable or disable Root Arp. Long-press: help.']},
  'generator-led-game':{title:'Game generator LED',relatedTab:'play',focusId:'gameArpTitle',bullets:['Lit when Game Arp is enabled; shows pattern rate when on.','Tap: enable or disable Game Arp. Long-press: help.']},
  'generator-led-latch':{title:'Latch LED',relatedTab:'play',focusId:'arpLatch',bullets:['Lit when latch is on.','Tap: enable or disable latch. Long-press: help.']}
