@@ -238,7 +238,7 @@ function octaveSequence(offsets){
  return sequence;
 }
 // Keep legacy category labels stable in saved preset metadata while grouping the browser.
-export const FACTORY_GROUPS=Object.freeze(['Showcase','Bass','Keys','Leads','Drums','FX']);
+export const FACTORY_GROUPS=Object.freeze(['Showcase','Bass','Keys','Leads','Drums','SFX','FX']);
 export const STARTUP_FACTORY_PRESET_ID='init';
 export function factoryGroup(category){
  return ({Lead:'Leads',Pluck:'Keys',Pad:'Keys'})[category]??category;
@@ -825,6 +825,113 @@ export const FACTORY_PRESETS=Object.freeze([
  }),
  factory('soft-flute','Soft Flute','Lead',{voice:{wave:'triangle',attack:.06,decay:.22,sustain:.87,release:.33},instrument:{detune:0},filter:{cutoff:4500,resonance:6,volume:79},performance:{game:{enabled:false}}}),
  factory('filter-motion','Filter Motion','FX',{filter:{cutoff:4000,resonance:58,volume:59},lfos:[{enabled:true,wave:'triangle',rate:.28,depth:.58,target:'cutoff'}],performance:{game:{enabled:false}}}),
+ // One-shot game/UI effects — mono SID 1 default; tap a key and release quickly.
+ factory('sfx-laser-zap','Laser Zap','SFX',{
+  instrument:{voiceCount:1,unisonCount:1,mode:'mono',detune:0},
+  voice:{wave:'square',attack:0,decay:.12,sustain:0,release:.04,pulse:20,pitchEnvelope:FACTORY_PITCH.laser},
+  filter:{cutoff:5200,resonance:32,volume:82},
+  performance:{routing:{keyboard:'sid1',arp:'sid1',game:'sid1'},arp:{enabled:false},game:{enabled:false}}
+ }),
+ factory('sfx-phaser-blast','Phaser Blast','SFX',{
+  instrument:{voiceCount:1,unisonCount:1,mode:'mono',detune:0},
+  voice:{wave:'square',attack:0,decay:.16,sustain:0,release:.06,pulse:48,pwmDepth:28,pwmRate:9.5},
+  filter:{cutoff:2400,resonance:44,volume:78,mode:'bandpass'},
+  lfos:[{enabled:true,wave:'triangle',rate:14,depth:.45,target:'cutoff'}],
+  performance:{routing:{keyboard:'sid1',arp:'sid1',game:'sid1'},arp:{enabled:false},game:{enabled:false}}
+ }),
+ factory('sfx-coin-pickup','Coin Pickup','SFX',{
+  instrument:{voiceCount:1,unisonCount:1,mode:'mono',detune:0},
+  voice:{wave:'triangle',attack:0,decay:.09,sustain:0,release:.03,pitchEnvelope:{enabled:true,interpolation:'linear',end:'zero',points:[{ms:0,semitones:-4},{ms:45,semitones:14},{ms:90,semitones:0}]}},
+  filter:{cutoff:7200,resonance:8,volume:76},
+  performance:{routing:{keyboard:'sid1',arp:'sid1',game:'sid1'},arp:{enabled:false},game:{enabled:false}}
+ }),
+ factory('sfx-power-up','Power Up','SFX',{
+  instrument:{voiceCount:1,unisonCount:1,mode:'mono',detune:0},
+  voice:{wave:'square',attack:0,decay:.22,sustain:.4,release:.12,pulse:36,pitchEnvelope:{enabled:true,interpolation:'curve',end:'hold',points:[{ms:0,semitones:-12},{ms:120,semitones:7},{ms:280,semitones:12}]}},
+  filter:{cutoff:3800,resonance:24,volume:80},
+  performance:{routing:{keyboard:'sid1',arp:'sid1',game:'sid1'},arp:{enabled:false},game:{enabled:false}}
+ }),
+ factory('sfx-game-over','Game Over','SFX',{
+  instrument:{voiceCount:1,unisonCount:1,mode:'mono',detune:0},
+  voice:{wave:'sawtooth',attack:0,decay:.38,sustain:.2,release:.28,pitchEnvelope:{enabled:true,interpolation:'linear',end:'zero',points:[{ms:0,semitones:5},{ms:200,semitones:-10},{ms:520,semitones:-19}]}},
+  filter:{cutoff:1680,resonance:28,volume:74},
+  performance:{routing:{keyboard:'sid1',arp:'sid1',game:'sid1'},arp:{enabled:false},game:{enabled:false}}
+ }),
+ factory('sfx-explosion-boom','Explosion Boom','SFX',{
+  instrument:{voiceCount:3,unisonCount:1,mode:'mono',detune:0},
+  engines:[
+   {voice:{wave:'noise',attack:0,decay:.32,sustain:0,release:.12},filter:{cutoff:680,resonance:22,volume:88,mode:'lowpass'}},
+   {voice:{wave:'noise',attack:0,decay:.26,sustain:0,release:.08},filter:{cutoff:2200,resonance:36,volume:76,mode:'bandpass'}},
+   {voice:{wave:'triangle',attack:0,decay:.18,sustain:0,release:.06,pitchEnvelope:FACTORY_PITCH.kick},filter:{cutoff:420,resonance:18,volume:82}}
+  ],
+  performance:{routing:{keyboard:'layer',arp:'sid1',game:'sid1'},arp:{enabled:false},game:{enabled:false}}
+ }),
+ factory('sfx-alarm-siren','Alarm Siren','SFX',{
+  instrument:{voiceCount:1,unisonCount:1,mode:'mono',detune:0},
+  voice:{wave:'square',attack:.01,decay:.04,sustain:.92,release:.2,pulse:24},
+  filter:{cutoff:1480,resonance:40,volume:72,mode:'bandpass'},
+  lfos:[{enabled:true,wave:'triangle',rate:2.8,depth:.95,target:'cutoff'}],
+  performance:{routing:{keyboard:'sid1',arp:'sid1',game:'sid1'},arp:{enabled:false},game:{enabled:false}}
+ }),
+ factory('sfx-ui-confirm','UI Confirm','SFX',{
+  instrument:{voiceCount:1,unisonCount:1,mode:'mono',detune:0},
+  voice:{wave:'triangle',attack:0,decay:.06,sustain:0,release:.02,pitchEnvelope:{enabled:true,interpolation:'linear',end:'zero',points:[{ms:0,semitones:0},{ms:35,semitones:7}]}},
+  filter:{cutoff:6400,resonance:6,volume:70},
+  performance:{routing:{keyboard:'sid1',arp:'sid1',game:'sid1'},arp:{enabled:false},game:{enabled:false}}
+ }),
+ factory('sfx-ui-error','UI Error','SFX',{
+  instrument:{voiceCount:1,unisonCount:1,mode:'mono',detune:0},
+  voice:{wave:'square',attack:0,decay:.08,sustain:0,release:.03,pulse:14,pitchEnvelope:{enabled:true,interpolation:'linear',end:'zero',points:[{ms:0,semitones:3},{ms:50,semitones:-7},{ms:110,semitones:-12}]}},
+  filter:{cutoff:920,resonance:34,volume:76},
+  performance:{routing:{keyboard:'sid1',arp:'sid1',game:'sid1'},arp:{enabled:false},game:{enabled:false}}
+ }),
+ factory('sfx-whoosh','Whoosh','SFX',{
+  instrument:{voiceCount:1,unisonCount:1,mode:'mono',detune:0},
+  voice:{wave:'noise',attack:0,decay:.24,sustain:0,release:.08,pitchEnvelope:{enabled:true,interpolation:'linear',end:'zero',points:[{ms:0,semitones:8},{ms:80,semitones:-4},{ms:200,semitones:-16}]}},
+  filter:{cutoff:5600,resonance:14,volume:68,mode:'highpass'},
+  performance:{routing:{keyboard:'sid1',arp:'sid1',game:'sid1'},arp:{enabled:false},game:{enabled:false}}
+ }),
+ factory('sfx-jump','Jump Blip','SFX',{
+  instrument:{voiceCount:1,unisonCount:1,mode:'mono',detune:0},
+  voice:{wave:'triangle',attack:0,decay:.11,sustain:0,release:.04,pitchEnvelope:{enabled:true,interpolation:'curve',end:'zero',points:[{ms:0,semitones:-6},{ms:40,semitones:10}]}},
+  filter:{cutoff:5800,resonance:10,volume:78},
+  performance:{routing:{keyboard:'sid1',arp:'sid1',game:'sid1'},arp:{enabled:false},game:{enabled:false}}
+ }),
+ factory('sfx-hit-damage','Hit Damage','SFX',{
+  instrument:{voiceCount:1,unisonCount:1,mode:'mono',detune:0},
+  voice:{wave:'noise',attack:0,decay:.11,sustain:0,release:.04},
+  filter:{cutoff:4200,resonance:42,volume:72,mode:'bandpass'},
+  lfos:[{enabled:true,wave:'square',rate:18,depth:.55,target:'volume'}],
+  performance:{routing:{keyboard:'sid1',arp:'sid1',game:'sid1'},arp:{enabled:false},game:{enabled:false}}
+ }),
+ factory('sfx-door-slide','Door Slide','SFX',{
+  instrument:{voiceCount:1,unisonCount:1,mode:'mono',detune:0},
+  voice:{wave:'sawtooth',attack:.02,decay:.28,sustain:.5,release:.35,pitchEnvelope:{enabled:true,interpolation:'linear',end:'hold',points:[{ms:0,semitones:-14},{ms:220,semitones:4}]}},
+  filter:{cutoff:1120,resonance:18,volume:66},
+  lfos:[{enabled:true,wave:'sine',rate:3.5,depth:.35,target:'volume'}],
+  performance:{routing:{keyboard:'sid1',arp:'sid1',game:'sid1'},arp:{enabled:false},game:{enabled:false}}
+ }),
+ factory('sfx-teleport','Teleport Spark','SFX',{
+  instrument:{voiceCount:3,unisonCount:1,mode:'mono',detune:0},
+  engines:[
+   {voice:{wave:'square',attack:0,decay:.14,sustain:0,release:.05,pulse:22,pitchEnvelope:FACTORY_PITCH.laser},filter:{cutoff:4800,resonance:30,volume:76}},
+   {voice:{wave:'triangle',attack:0,decay:.1,sustain:0,release:.04,pitchEnvelope:{enabled:true,interpolation:'linear',end:'zero',points:[{ms:0,semitones:12},{ms:70,semitones:-8}]}},filter:{cutoff:7600,resonance:12,volume:64}},
+   {voice:{wave:'noise',attack:0,decay:.08,sustain:0,release:.03},filter:{cutoff:8800,resonance:20,volume:52,mode:'highpass'}}
+  ],
+  performance:{routing:{keyboard:'layer',arp:'sid1',game:'sid1'},arp:{enabled:false},game:{enabled:false}}
+ }),
+ factory('sfx-engine-rev','Engine Rev','SFX',{
+  instrument:{voiceCount:1,unisonCount:1,mode:'mono',detune:0},
+  voice:{wave:'sawtooth',attack:.08,decay:.2,sustain:.75,release:.4,pitchEnvelope:{enabled:true,interpolation:'curve',end:'hold',points:[{ms:0,semitones:-16},{ms:180,semitones:-4},{ms:420,semitones:2}]}},
+  filter:{cutoff:820,resonance:26,volume:80},
+  performance:{routing:{keyboard:'sid1',arp:'sid1',game:'sid1'},arp:{enabled:false},game:{enabled:false}}
+ }),
+ factory('sfx-countdown-tick','Countdown Tick','SFX',{
+  instrument:{voiceCount:1,unisonCount:1,mode:'mono',detune:0},
+  voice:{wave:'square',attack:0,decay:.04,sustain:0,release:.01,pulse:50},
+  filter:{cutoff:6100,resonance:4,volume:74},
+  performance:{routing:{keyboard:'sid1',arp:'sid1',game:'sid1'},arp:{enabled:false},game:{enabled:false}}
+ }),
  // Original C64-inspired prototypes. These are sound-design starting points, not transcriptions.
  factory('tight-pulse-bass','Tight Pulse Bass','Bass',{voice:{wave:'square',attack:0,decay:.09,sustain:.28,release:.06,pulse:22},filter:{cutoff:1180,resonance:22,volume:74},performance:{game:{enabled:false}}}),
  factory('shimmer-pwm-keys','Shimmer PWM Keys','Keys',{voice:{wave:'square',attack:.05,decay:.42,sustain:.64,release:.68,pulse:43,pwmDepth:16,pwmRate:.48},filter:{cutoff:4600,resonance:14,volume:58},performance:{game:{enabled:false}}}),
@@ -858,6 +965,9 @@ export const FACTORY_PRESETS=Object.freeze([
 ]);
 export const SHOWCASE_FACTORY_IDS=Object.freeze(
  FACTORY_PRESETS.filter(p=>p.category==='Showcase').map(p=>p.id)
+);
+export const SFX_FACTORY_IDS=Object.freeze(
+ FACTORY_PRESETS.filter(p=>p.category==='SFX').map(p=>p.id)
 );
 export const LAYER_FACTORY_IDS=Object.freeze(
  FACTORY_PRESETS.filter(p=>p.id.startsWith('complex-layer-')).map(p=>p.id)

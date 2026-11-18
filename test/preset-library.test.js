@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
- PRESET_VERSION,PRESET_STORAGE_KEY,LEGACY_PRESET_STORAGE_KEY_V3,LEGACY_PRESET_STORAGE_KEY_V4,FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,LAYER_FACTORY_IDS,SHOWCASE_FACTORY_IDS,STARTUP_FACTORY_PRESET_ID,
+ PRESET_VERSION,PRESET_STORAGE_KEY,LEGACY_PRESET_STORAGE_KEY_V3,LEGACY_PRESET_STORAGE_KEY_V4,FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,LAYER_FACTORY_IDS,SHOWCASE_FACTORY_IDS,SFX_FACTORY_IDS,STARTUP_FACTORY_PRESET_ID,
  defaultPresetSettings,validatePresetSettings,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,
  importPresetFile,presetLoadRequiresSilence,
 } from '../src/preset-library.js';
@@ -175,6 +175,23 @@ test('composer showcase presets demonstrate triple-SID layers and LFOs',()=>{
  assert.equal(monty.settings.performance.game.style,'adventure');
 });
 
+test('SFX factory bank provides sixteen one-shot effects on SID 1 or layer',()=>{
+ assert.equal(SFX_FACTORY_IDS.length,16);
+ for(const id of SFX_FACTORY_IDS){
+  const preset=FACTORY_PRESETS.find(p=>p.id===id);
+  assert.ok(preset,id);
+  assert.equal(preset.category,'SFX');
+  assert.ok(preset.settings.sound.instrument.voiceCount>=1&&preset.settings.sound.instrument.voiceCount<=3);
+  assert.equal(preset.settings.performance.arp.enabled,false);
+  assert.equal(preset.settings.performance.game.enabled,false);
+  assert.deepEqual(validatePresetSettings(preset.settings),preset.settings);
+ }
+ const boom=FACTORY_PRESETS.find(p=>p.id==='sfx-explosion-boom');
+ assert.equal(boom.settings.performance.routing.keyboard,'layer');
+ const laser=FACTORY_PRESETS.find(p=>p.id==='sfx-laser-zap');
+ assert.equal(laser.settings.sound.engines[0].voice.pitchEnvelope.enabled,true);
+});
+
 test('Init factory preset is the loud three-SID startup showcase',()=>{
  const init=FACTORY_PRESETS.find(p=>p.id===STARTUP_FACTORY_PRESET_ID);
  assert.ok(init);
@@ -221,10 +238,10 @@ test('expanded C64 factory bank retains legacy sounds and has six originals per 
  const legacy=['deep-bass','arcade-lead','chiptune-pluck','pulsing-pad','soft-flute','filter-motion'];
  const allNew=Object.values(newIds).flat();
  assert.equal(allNew.length,24);
- assert.equal(FACTORY_PRESETS.length,50+LAYER_FACTORY_IDS.length);
- assert.deepEqual(new Set(FACTORY_PRESETS.map(p=>p.id)),new Set([...SHOWCASE_FACTORY_IDS,...legacy,...allNew,...LAYER_FACTORY_IDS]));
- assert.equal(new Set(FACTORY_PRESETS.map(p=>p.name.toLowerCase())).size,50+LAYER_FACTORY_IDS.length);
- assert.deepEqual(FACTORY_GROUPS,['Showcase','Bass','Keys','Leads','Drums','FX']);
+ assert.equal(FACTORY_PRESETS.length,66+LAYER_FACTORY_IDS.length);
+ assert.deepEqual(new Set(FACTORY_PRESETS.map(p=>p.id)),new Set([...SHOWCASE_FACTORY_IDS,...SFX_FACTORY_IDS,...legacy,...allNew,...LAYER_FACTORY_IDS]));
+ assert.equal(new Set(FACTORY_PRESETS.map(p=>p.name.toLowerCase())).size,66+LAYER_FACTORY_IDS.length);
+ assert.deepEqual(FACTORY_GROUPS,['Showcase','Bass','Keys','Leads','Drums','SFX','FX']);
  for(const [category,ids] of Object.entries(newIds)){
   assert.equal(ids.length,6);
   for(const id of ids){
