@@ -66,10 +66,11 @@ Tab bar becomes: **SYNTH · ARP / SEQ · DRUM SEQ · LFOs** (Diagnostics unchang
 │  ┌────┬──┬──┬──┬──…─┬──┐  playhead on active column         │
 │  │Kick│■ │  │■ │    │  │                                   │
 │  │Sn  │  │■ │  │    │  │  6 lanes × 16 columns             │
-│  …                                                           │
+│  …     row header: label + **Level** (0–100) per lane       │
 │  └────┴──┴──┴──┴──…─┴──┘                                    │
+│  No per-track pan on this tab — stereo via SID 4 card only  │
 │  Optional later: per-row factory preset dropdown            │
-└─────────────────────────────────────────────────────────────┘
+└────────────────────────────────
 ```
 
 - **DOM:** `#tabDrum` → `#drumPanel` (mirror `tabPlay` / `playPanel` / `tabLfos` wiring in `seq-ui.css` + `sid-studio.js`).
@@ -161,8 +162,8 @@ Per-row preset dropdown is **v1 stretch**; fixed map is acceptable for first imp
 | **D0** | Tab shell: `#tabDrum`, `#drumPanel`, workspace `data-tab` CSS |
 | **D1** | `drum-step-sequencer.js` data model + tests (16×6 booleans, validate) |
 | **D1b** | **SID 4 (drum chip):** native `sid_bridge.cpp` + worklet mix + engine index `3`; **full SID engine card**; **chip pan** only (same as 1–3); **requires WASM rebuild** |
-| **D3b** | Optional per-lane **level** trim on row headers (maps to voice volume at trigger — authentic); no lane pan sliders |
-| **D3c** | **Drum LFO** on DRUM SEQ tab; `sound.drumLfo`; targets SID 4 **chip pan**, filter, volume, pulse/ADSR — **no** `drumPeripheralPan` |
+| **D3b** | Per-lane **Level** on grid row headers (all six lanes → voice volume at trigger) |
+| **D3c** | **Drum LFO** on DRUM SEQ tab; `sound.drumLfo`; targets SID 4 filter, volume, pulse/ADSR (chip **pan** only on SID 4 card or LFO, not on grid) |
 | **D2** | `mountDrumPerformance` clock — separate from `game.timer` / `arp.timer` |
 | **D3** | Grid UI + tab transport; wire **DRUM** pill (**first** in `generator-led-ui.js`) via extended `generator-led-ui.js` + drum performance state |
 | **D4** | Preset v5+ `performance.drumSequence` + `performance.drumKit` + `sound.engines[3]` defaults; **standalone groove** import/export (pattern+kit); user kit bank optional |
@@ -186,7 +187,7 @@ Preserve reSIDfp note path. Voice budget: one short hit per row per step (monoph
 
 **Why a real fourth chip (not “borrow SID 2”):** Owner wants drums **isolated** — six-lane steps and short decays should not compete with lead polyphony or steal melodic voices.
 
-**Preset schema (additive):** `sound.engines[3]` stores drum-chip model/filter/volume defaults; `performance.drumKit` stores per-lane `presetId` + `midiNote`. Full synth save includes all four engines when present; v5 imports without engine 4 get a **factory drum-engine template** on first drum feature use.
+**Preset schema (additive):** `sound.engines[3]` stores drum-chip model/filter/volume defaults; `performance.drumKit` stores per-lane `presetId`, `midiNote`, `level`. Full synth save includes all four engines when present; v5 imports without engine 4 get a **factory drum-engine template** on first drum feature use.
 
 **UI placement:** **SID 4** uses `mountSidEnginePanels` parity (owner 2026-11-18). Rhythm editing stays on DRUM SEQ; sound design on SYNTH card 4.
 
@@ -211,7 +212,7 @@ Preserve reSIDfp note path. Voice budget: one short hit per row per step (monoph
 
 So **re-hitting kick on step 5** cuts the tail of the kick from step 3 on the **same lane only** — desirable for drums.
 
-4. **Timbre:** Read lane from `performance.drumKit`. Resolve `presetId` through preset library once per kit change; at hit time pass **voice + filter snapshot** (and pitch envelope when present) into `sidController.noteOn` with **`chipMask: [3]`** (SID 4) and fixed `midiNote` (factory audition map: kick C1/C2, snare C3/C4, etc.).
+4. **Timbre:** Read lane from `performance.drumKit`. Resolve `presetId` through preset library once per kit change; at hit time pass **voice + filter snapshot** (apply lane **`level`** to voice volume register; pitch envelope when present) into `sidController.noteOn` with **`chipMask: [3]`** (SID 4) and fixed `midiNote` (factory audition map: kick C1/C2, snare C3/C4, etc.).
 5. **Release:** Do **not** hold drum notes indefinitely. Schedule `noteOff` after `max(decay+release, pitchEnvLength)` per lane (timer or register-driven), clearing `activeOwners` for that lane when the one-shot completes.
 
 ### Voice stealing on SID 4
@@ -238,37 +239,26 @@ Same `triggerDrumLane` as the sequencer — one preview hit, no clock advance.
 
 ---
 
-## 6d. Stereo / mix (authentic SID — decomposition **shelved**)
+## 6d. Mix (authentic SID)
 
-**Owner (2026-11-18):** Shelve **mix decomposition** (no triple-render / fake per-oscillator stereo). Stay on **true SID behavior**: one mono bus per chip, then **chip pan** in the bridge — same as engines 1–3.
+**Owner (2026-11-18):** No **per-track pan** on the DRUM SEQ grid. One mono bus per chip; **chip pan** on the SID 4 engine card (SYNTH tab) only, same as engines 1–3. Mix decomposition shelved.
 
-### What we ship instead
-
-| Control | Authentic? | Use |
+| Control | Where | Use |
 | --- | --- | --- |
-| **SID 4 card Pan** | Yes (app mixer, like other chips) | Position the **whole drum kit** in the stereo field |
-| **SID 4 filter / volume** | Yes | Tone and bus level |
-| **Per-lane `level` (optional)** | Yes (per-voice volume register at hit time) | Balance hats vs clap vs tom — **not** stereo pan |
-| **Drum LFO → chip pan / filter / volume** | Yes | Motion on the drum bus |
+| **Lane Level** | DRUM SEQ row header (all 6 lanes) | Per-hit voice volume (authentic register) |
+| **SID 4 card** | SYNTH tab | Model, voice, filter, **pan**, pitch envelope, enable |
+| **Drum LFO** | DRUM SEQ tab | SID 4 filter / volume / ADSR / pulse (not per-lane) |
 
-### Shelved (do not implement without new owner decision)
-
-- Per-lane stereo pan sliders (`lanes[].pan`)
-- `drumPeripheralPan` LFO target
-- WASM voice decomposition on SID 4
-
-**Note:** Kick and snare remain **musically centered** by convention (kit defaults, not fake stereo). When the user pans SID 4, kick and CH **move together** — correct for a single SID chip.
+Factory kit defaults can emphasize kick/sn with higher **level**; hats/tom lower — balance, not stereo.
 
 ### Dedicated **Drum LFO** (one)
 
 | Item | Detail |
 | --- | --- |
-| **Placement** | **DRUM SEQ** tab — “Drum LFO” beside rate/transport |
-| **Scope** | **SID 4 only** (`engines: '4'` or hard-scoped in drum mod path) |
-| **Preset** | `sound.drumLfo` — same shape as one melodic LFO; separate from the three global LFOs |
-| **Targets (v1)** | `pan` (chip 4), `volume`, `cutoff`, `resonance`, `pulse`, ADSR as needed — same register semantics as melodic LFOs on one engine |
-
-**Recommendation:** **D1b** = fourth chip + standard `sid_set_pan(3, …)` + full engine card; **D3c** Drum LFO without lane-pan targets.
+| **Placement** | **DRUM SEQ** tab — beside rate/transport |
+| **Scope** | **SID 4 only** |
+| **Preset** | `sound.drumLfo` — separate from the three global LFOs |
+| **Targets (v1)** | `volume`, `cutoff`, `resonance`, `pulse`, ADSR; chip `pan` modulates **whole** SID 4 bus (same as engine card) |
 
 ---
 
@@ -290,7 +280,9 @@ Extend `performance` in preset format **v5** (additive; validate in `validatePre
 "drumKit": {
   "name": "Factory 6581",
   "lanes": [
-    { "id": "kick", "presetId": "low-thud-kick", "midiNote": 36 },
+    { "id": "kick", "presetId": "low-thud-kick", "midiNote": 36, "level": 100 },
+    { "id": "sn", "presetId": "noise-snare", "midiNote": 38, "level": 92 },
+    { "id": "ch", "presetId": "closed-noise-hat", "midiNote": 42, "level": 70 },
     ...
   ]
 }
@@ -332,7 +324,7 @@ Factory showcase presets may ship with a **default groove** baked in for demo; G
 ## 7. Acceptance (UI)
 
 - [ ] 16 step columns labeled 1–16 (sr-only or tiny header)
-- [ ] 6 rows identifiable on iPad portrait without mis-taps
+- [ ] 6 rows identifiable on iPad portrait without mis-taps; **Level** control per row (no pan on grid)
 - [ ] Playhead visible during preview
 - [ ] Distinct from Game Arp (no pitch sliders in drum block)
 - [ ] Own **DRUM SEQ** tab; ARP tab unchanged
@@ -343,7 +335,7 @@ Factory showcase presets may ship with a **default groove** baked in for demo; G
 - [ ] Import/export **6581drum** groove (pattern + kit together)
 - [ ] Generator LED order: **DRUM** left of **ROOT**
 - [ ] SID 4 card matches SID 1–3 controls on SYNTH tab
-- [ ] SID 4 chip pan only; optional lane **level** trims; Drum LFO on chip pan/filter/volume (no lane stereo)
+- [ ] Per-lane **level** in kit + grid; pan only on SID 4 engine card
 
 ---
 
