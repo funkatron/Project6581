@@ -399,15 +399,14 @@ Distinguish **in-app timing** (footer, Diagnostics Activity log, worklet metrics
 
 ## Planned: drum level boost (mix parity)
 
-**Goal:** Factory and live **drum/noise** hits often read quieter than **PWM-heavy** bass, keys, and leads in the same mix. Provide an explicit, **toggle-able level boost** so percussion is usable in musical balance without manually cranking per-preset filter volume on every drum patch.
+**Goal:** Factory and live **drum/noise** hits often read quieter than **PWM-heavy** bass, keys, and leads. **Ship with SID 4 + drum sequencer** ([agents/roadmap-drum-sequencer-ui.md](agents/roadmap-drum-sequencer-ui.md) §6e): post-mix **output boost** on the drum chip only.
 
-- [ ] **Product behavior:** global or performance-level **Drum boost** (owner preference: toggle) that applies a documented gain curve when playing drum-category factory sounds and/or when the drum sequencer (above) fires — not a hidden rewrite of all factory JSON.
-- [ ] Measure representative factory drums vs PWM leads on the **master rainbow meter**; pick a default boost (dB or linear) from evidence, with user-adjustable amount if scope allows.
-- [ ] Ensure boost respects **recording** (WAV/M4A), **layer** stacks, and **6581/8580**; avoid clipping on stacked unison + boost.
-- [ ] Optional: per-preset override; default **off** for backward compatibility with saved user presets until the user opts in.
-- [ ] iPad listening pass: kick/snare/hat vs a reference PWM bass/lead at comfortable master level.
+- [ ] **Product behavior:** SID 4 **Boost** control: **0 dB / +6 dB / +12 dB** (default **+6**); stored in `sound.engines[3].outputBoostDb`; not a hidden rewrite of factory JSON.
+- [ ] WASM `sid_set_chip_gain` (or equivalent) applied before master pan sum; meters and recording reflect boosted drum bus.
+- [ ] Presets without engine 4: no boost until drum feature; engine 4 template uses **+6 dB**.
+- [ ] iPad listening pass: drum seq vs PWM lead at **+6** and **+12**; document clip risk at +12 with full unison.
 
-**Completion checks:** With boost **on**, owner-agreed drum presets are audibly in the same ballpark as PWM patches at default master listening level; with boost **off**, behavior matches current `main`.
+**Completion checks:** At default **+6 dB**, owner-agreed drum grooves sit in the same ballpark as PWM patches; **0 dB** matches unboosted chip level.
 
 ## Planned investigation: audio-clock LFO scheduling
 

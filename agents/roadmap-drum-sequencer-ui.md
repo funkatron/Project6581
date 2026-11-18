@@ -161,7 +161,7 @@ Per-row preset dropdown is **v1 stretch**; fixed map is acceptable for first imp
 | --- | --- |
 | **D0** | Tab shell: `#tabDrum`, `#drumPanel`, workspace `data-tab` CSS |
 | **D1** | `drum-step-sequencer.js` data model + tests (16×6 booleans, validate) |
-| **D1b** | **SID 4 (drum chip):** native `sid_bridge.cpp` + worklet mix + engine index `3`; **full SID engine card**; **chip pan** only (same as 1–3); **requires WASM rebuild** |
+| **D1b** | **SID 4 (drum chip):** native `sid_bridge.cpp` + worklet mix + engine index `3`; **full SID engine card**; chip pan; **`outputBoostDb`** 0 / +6 / +12 post-mix gain; **requires WASM rebuild** |
 | **D3b** | Per-lane **Level** on grid row headers (all six lanes → voice volume at trigger) |
 | **D3c** | **Drum LFO** on DRUM SEQ tab; `sound.drumLfo`; targets SID 4 filter, volume, pulse/ADSR (chip **pan** only on SID 4 card or LFO, not on grid) |
 | **D2** | `mountDrumPerformance` clock — separate from `game.timer` / `arp.timer` |
@@ -182,12 +182,12 @@ Preserve reSIDfp note path. Voice budget: one short hit per row per step (monoph
 | **Melodic engines** | SID 1–3 unchanged: routing, layer mode, voice budget, preset `sound.engines[0..2]` |
 | **Drum engine** | SID 4 holds kit timbres (per-lane snapshots + optional global drum filter/model on the card) |
 | **Routing** | Drum clock **never** uses `performance.routing.keyboard|arp|game`; always `chipMask: [3]` |
-| **Mix** | **Chip-level pan** + meter like engines 1–3 (§6d — no mix decomposition) |
-| **UI** | **Fourth engine card** on SYNTH tab — same surface as SID 1–3 (model, voice, filter, pan, pitch envelope, enable, meter); DRUM SEQ tab links/focuses SID 4 |
+| **Mix** | Chip pan + **output boost** (§6e) + meter; no mix decomposition (§6d) |
+| **UI** | **Fourth engine card** on SYNTH tab — same as 1–3 plus **Boost** `0 · +6 · +12 dB`; DRUM SEQ links to SID 4 |
 
 **Why a real fourth chip (not “borrow SID 2”):** Owner wants drums **isolated** — six-lane steps and short decays should not compete with lead polyphony or steal melodic voices.
 
-**Preset schema (additive):** `sound.engines[3]` stores drum-chip model/filter/volume defaults; `performance.drumKit` stores per-lane `presetId`, `midiNote`, `level`. Full synth save includes all four engines when present; v5 imports without engine 4 get a **factory drum-engine template** on first drum feature use.
+**Preset schema (additive):** `sound.engines[3]` stores drum-chip defaults including **`outputBoostDb`** (`0`|`6`|`12`); `performance.drumKit` stores per-lane `presetId`, `midiNote`, `level`. Factory drum-engine template defaults **`outputBoostDb: 6`** so seq drums sit with PWM-heavy engines 1–3 (see §6e). Full synth save includes all four engines when present.
 
 **UI placement:** **SID 4** uses `mountSidEnginePanels` parity (owner 2026-11-18). Rhythm editing stays on DRUM SEQ; sound design on SYNTH card 4.
 
@@ -259,6 +259,28 @@ Factory kit defaults can emphasize kick/sn with higher **level**; hats/tom lower
 | **Scope** | **SID 4 only** |
 | **Preset** | `sound.drumLfo` — separate from the three global LFOs |
 | **Targets (v1)** | `volume`, `cutoff`, `resonance`, `pulse`, ADSR; chip `pan` modulates **whole** SID 4 bus (same as engine card) |
+
+---
+
+## 6e. SID 4 **output boost** (mix parity)
+
+**Owner (2026-11-18):** Short drum/noise hits on SID 4 often read **quieter** than PWM-heavy leads on engines 1–3 on the master meter. Add an explicit **post-chip gain** on the drum bus — same class as chip pan (not a fake SID register).
+
+| Item | Decision |
+| --- | --- |
+| **Options** | `0 dB` (off), **`+6 dB`**, **`+12 dB`** — discrete only (no slider) |
+| **Default** | **`+6 dB`** on new factory templates and when engine 4 is first created |
+| **UI** | **SID 4 engine card** — segmented control **Boost: Off · +6 · +12**; optional duplicate on DRUM SEQ transport row (same state) |
+| **Preset** | `sound.engines[3].outputBoostDb`: `0` \| `6` \| `12` |
+| **WASM** | `sid_set_chip_gain(chip, db)` or stored gain per chip; multiply chip PCM **before** pan into master L/R in `sid_render` |
+| **Meters** | SID 4 rainbow meter reflects **boosted** bus (so level trims match audition) |
+| **Recording** | Boost in WASM path → **WAV/M4A** include it automatically |
+
+**Headroom:** +12 dB with full melodic stack may clip the master bus; help text: prefer **+6** with layered unison, use **+12** for drum-forward grooves or lower SID 1–3 filter volumes. D5 iPad QA: factory groove + Galway-style lead at default boost.
+
+**Relation to lane Level:** Register **level** balances lanes inside the kit; **outputBoostDb** lifts the **entire SID 4** contribution vs engines 1–3. Implements [ROADMAP.md](../ROADMAP.md) “drum level boost” on the drum chip rather than a hidden global fudge.
+
+**6581drum:** Include `drumEngine.outputBoostDb` when `drumEngine` block is exported.
 
 ---
 
@@ -336,6 +358,7 @@ Factory showcase presets may ship with a **default groove** baked in for demo; G
 - [ ] Generator LED order: **DRUM** left of **ROOT**
 - [ ] SID 4 card matches SID 1–3 controls on SYNTH tab
 - [ ] Per-lane **level** in kit + grid; pan only on SID 4 engine card
+- [ ] SID 4 **Boost** 0 / +6 / +12 dB; default +6; drums audible vs PWM leads on master meter
 
 ---
 
