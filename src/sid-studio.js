@@ -160,6 +160,10 @@ function scheduleUnisonFollowUp(run){
 function syncEnginePans(){
  for(let chip=0;chip<3;chip++)sidAudio?.setPan?.(chip,engines[chip].pan);
 }
+async function syncEngineChipModels(){
+ if(!sidAudio?.setChipModel)return;
+ await Promise.all(engines.map((engine,chip)=>sidAudio.setChipModel(chip,engine.model)));
+}
 const ranges=[['attack','Attack',0,2,.01],['decay','Decay',0,3,.01],['sustain','Sustain',0,1,.01],['release','Release',.01,4,.01],['pulse','Pulse width',5,95,1],['pwmDepth','PWM depth',0,45,1],['pwmRate','PWM rate (Hz)',.1,12,.1]];
 enginePanelsUi=mountSidEnginePanels({
  $,engines,getEngines:()=>engines,ranges,formatControlValue,
@@ -236,13 +240,21 @@ function playOne(note,ownerKey,chipMask,{layer=false}={}){
  traceStudio('note-on',{note,source:ownerKey,chipMask});
  diagnosticsUi.afterNoteEvent?.();
 }
+function dispatchUsesLayer(route,source,chips){
+ if(route==='layer')return true;
+ if(route!=='all'||chips.length<=1)return false;
+ const root=typeof source==='string'&&source.includes('@')?source.slice(0,source.lastIndexOf('@')):source;
+ if(root==='keyboard'||root.startsWith('key:'))return false;
+ return root==='arp'||root==='game';
+}
 function play(note,source='key:'+note){
  note=resolvePerformanceNote(note,readScaleStateFromDom($));
  restoreSidOutput();
  const route=routingSelectForSource(source);
  const chips=routeMask(route);
- if(route==='layer'){
-  for(const chip of chips)playOne(note,source+'@'+chip,[chip],{layer:true});
+ if(dispatchUsesLayer(route,source,chips)){
+  const root=typeof source==='string'&&source.includes('@')?source.slice(0,source.lastIndexOf('@')):source;
+  for(const chip of chips)playOne(note,root+'@'+chip,[chip],{layer:true});
   return;
  }
  playOne(note,source,chips);
@@ -251,10 +263,12 @@ function stop(note,source='key:'+note){
  note=resolvePerformanceNote(note,readScaleStateFromDom($));
  const eventId=sidEventLog.enabled?sidEventLog.begin('note-command',{note,source,action:'off',inputEventId:sidInputEvent}):null;
  const route=routingSelectForSource(source);
- if(route==='layer'){
+ const chips=routeMask(route);
+ if(dispatchUsesLayer(route,source,chips)){
+  const root=typeof source==='string'&&source.includes('@')?source.slice(0,source.lastIndexOf('@')):source;
   let stopped=false;
-  for(const chip of routeMask(route)){
-   const key=source+'@'+chip;
+  for(const chip of chips){
+   const key=root+'@'+chip;
    const owner=activeOwners.get(key);
    if(!owner||owner.note!==note)continue;
    const traceStart=sidAudio?.beginNoteTrace();
@@ -730,6 +744,7 @@ async function startSid({gesture=false}={}){
     progress('SID '+activeSidModel+' ready.');
     sidEventLog.add('sid-ready',{contextId:attempt,model:activeSidModel});
     for(let chip=0;chip<3;chip++)sidAudio?.setPan?.(chip,engines[chip].pan);
+    await syncEngineChipModels();
     updateModulation();
     // LFO runs on the audio clock in the worklet; no main-thread modulation timer.
     const base=audio.context.baseLatency,output=audio.context.outputLatency;
@@ -968,6 +983,7 @@ function applyPresetControls(next,{silenceAudio=true}={}){
  loadBuiltInPhrase($('gameArpStyle').value);
  renderKeyboard();
  enginePanelsUi?.render();renderLfos();updateUnison();updateModulation();
+ void syncEngineChipModels();
  $('arpStatus').textContent=silenceAudio?'Preset ready · press a key':'Preset ready · held notes may continue';
 }
 async function applyPresetSettings(value){

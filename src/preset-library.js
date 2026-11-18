@@ -260,7 +260,7 @@ export const FACTORY_PRESETS=Object.freeze([
   ],
   performance:{
    masterBpm:128,
-   routing:{keyboard:'layer',arp:'layer',game:'all'},
+   routing:{keyboard:'layer',arp:'layer',game:'layer'},
    arp:{enabled:true,latch:false,pattern:'updown',rate:4,sync:true,localBpm:128},
    game:{enabled:true,style:'arcade',rate:8},
    scale:{tonic:0,id:'chromatic',lock:false}
@@ -284,7 +284,7 @@ export const FACTORY_PRESETS=Object.freeze([
   ],
   performance:{
    masterBpm:96,
-   routing:{keyboard:'layer',arp:'layer',game:'sid2'},
+   routing:{keyboard:'layer',arp:'layer',game:'layer'},
    arp:{enabled:true,latch:true,pattern:'up',rate:2,sync:true,localBpm:96},
    game:{enabled:false,style:'action',rate:4},
    scale:{tonic:0,id:'chromatic',lock:false}
@@ -307,7 +307,7 @@ export const FACTORY_PRESETS=Object.freeze([
   ],
   performance:{
    masterBpm:138,
-   routing:{keyboard:'layer',arp:'layer',game:'all'},
+   routing:{keyboard:'layer',arp:'layer',game:'layer'},
    arp:{enabled:true,latch:false,pattern:'up',rate:8,sync:true,localBpm:138},
    game:{enabled:true,style:'action',rate:8},
    scale:{tonic:0,id:'chromatic',lock:false}
@@ -330,7 +330,7 @@ export const FACTORY_PRESETS=Object.freeze([
   ],
   performance:{
    masterBpm:132,
-   routing:{keyboard:'layer',arp:'layer',game:'all'},
+   routing:{keyboard:'layer',arp:'layer',game:'layer'},
    arp:{enabled:true,latch:false,pattern:'updown',rate:4,sync:true,localBpm:132},
    game:{enabled:true,style:'adventure',rate:4},
    scale:{tonic:0,id:'chromatic',lock:false}
