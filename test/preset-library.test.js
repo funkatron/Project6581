@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
- PRESET_VERSION,PRESET_STORAGE_KEY,LEGACY_PRESET_STORAGE_KEY_V3,LEGACY_PRESET_STORAGE_KEY_V4,FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,LAYER_FACTORY_IDS,STARTUP_FACTORY_PRESET_ID,
+ PRESET_VERSION,PRESET_STORAGE_KEY,LEGACY_PRESET_STORAGE_KEY_V3,LEGACY_PRESET_STORAGE_KEY_V4,FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,LAYER_FACTORY_IDS,SHOWCASE_FACTORY_IDS,STARTUP_FACTORY_PRESET_ID,
  defaultPresetSettings,validatePresetSettings,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,
  importPresetFile,presetLoadRequiresSilence,
 } from '../src/preset-library.js';
@@ -152,11 +152,13 @@ test('C64-inspired prototype bank covers four distinct categories without changi
 });
 
 test('composer showcase presets demonstrate triple-SID layers and LFOs',()=>{
- for(const id of ['showcase-galway-epic','showcase-hubbard-commando','showcase-hubbard-monty']){
+ for(const id of SHOWCASE_FACTORY_IDS){
   const preset=FACTORY_PRESETS.find(p=>p.id===id);
   assert.ok(preset,id);
   assert.equal(preset.category,'Showcase');
   assert.equal(preset.settings.performance.routing.keyboard,'layer');
+  assert.equal(preset.settings.performance.routing.arp,'layer');
+  assert.equal(preset.settings.performance.routing.game,'layer');
   assert.ok(preset.settings.sound.engines.every(engine=>engine.voice.enabled));
   assert.ok(preset.settings.sound.lfos.filter(lfo=>lfo.enabled).length>=2);
   assert.deepEqual(validatePresetSettings(preset.settings),preset.settings);
@@ -183,6 +185,7 @@ test('Init factory preset is the loud three-SID startup showcase',()=>{
  assert.equal(sound.instrument.mode,'poly');
  assert.equal(performance.routing.keyboard,'layer');
  assert.equal(performance.routing.arp,'layer');
+ assert.equal(performance.routing.game,'layer');
  assert.ok(sound.engines.every(engine=>engine.voice.enabled));
  assert.ok(sound.engines[0].filter.volume>=85);
  assert.ok(sound.engines[1].filter.volume>=80);

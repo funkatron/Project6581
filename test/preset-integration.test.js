@@ -18,6 +18,8 @@ test('preset UI compiles without changing SID native code',()=>{
  assert.match(script,/STARTUP_FACTORY_PRESET_ID/);
  assert.match(library,/selectFactoryPreset/);
  assert.match(script,/applyPresetControls\(startupPreset\.settings/);
+ assert.match(script,/dispatchUsesLayer/);
+ assert.match(script,/syncEngineChipModels/);
  assert.match(library,/import \{FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,PRESET_VERSION,cleanPresetName/);
 });
 test('preset editor provides factory/user collections, save, export, import and backup',()=>{
