@@ -1,0 +1,39 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  drumBpm,
+  drumLaneTimbre,
+  drumOwnerKey,
+  drumReleaseMilliseconds,
+  isDrumOwner,
+} from '../src/drum-lane-trigger.js';
+import {defaultDrumKit} from '../src/drum-step-sequencer.js';
+import {FACTORY_PRESETS} from '../src/preset-library.js';
+
+test('drumOwnerKey and isDrumOwner', () => {
+  assert.equal(drumOwnerKey('kick'), 'drum:kick');
+  assert.equal(isDrumOwner('drum:sn'), true);
+  assert.equal(isDrumOwner('game'), false);
+});
+
+test('drumLaneTimbre applies lane level to filter volume', () => {
+  const kick = FACTORY_PRESETS.find((p) => p.id === 'low-thud-kick');
+  const lane = defaultDrumKit().lanes.kick;
+  const {voice, filter} = drumLaneTimbre(kick.settings, lane);
+  assert.equal(voice.wave, 'triangle');
+  assert.equal(filter.volume, 92);
+  const half = drumLaneTimbre(kick.settings, {...lane, level: 50});
+  assert.equal(half.filter.volume, 46);
+});
+
+test('drumBpm respects sync and local tempo', () => {
+  const seq = {sync: true, localBpm: 90};
+  assert.equal(drumBpm(seq, 120), 120);
+  assert.equal(drumBpm({...seq, sync: false}, 120), 90);
+});
+
+test('drumReleaseMilliseconds is positive for factory kick', () => {
+  const kick = FACTORY_PRESETS.find((p) => p.id === 'low-thud-kick');
+  const ms = drumReleaseMilliseconds(kick.settings.sound.engines[0].voice);
+  assert.ok(ms >= 80);
+});

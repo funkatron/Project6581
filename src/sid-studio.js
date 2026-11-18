@@ -17,6 +17,10 @@ import {readScaleStateFromDom,resolvePerformanceNote,isPitchInScale} from "./wes
 import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from "./pitch-envelope.js?v=__BUILD_ID__";
 import {mountEditorTabs} from "./editor-tabs.js?v=__BUILD_ID__";
 import {mountDrumPanelShell} from "./drum-panel-ui.js?v=__BUILD_ID__";
+import {mountDrumPerformance} from "./drum-performance.js?v=__BUILD_ID__";
+import {defaultDrumKit,defaultDrumSequence,validateDrumKit,validateDrumSequence} from "./drum-step-sequencer.js?v=__BUILD_ID__";
+import {DRUM_ENGINE_INDEX} from "./sid-engines.js?v=__BUILD_ID__";
+import {drumOwnerKey,drumLaneTimbre,drumReleaseMilliseconds,isDrumOwner} from "./drum-lane-trigger.js?v=__BUILD_ID__";
 import {mountGeneratorLeds} from "./generator-led-ui.js?v=__BUILD_ID__";
 import {createPerformanceArpState} from "./performance-arp-state.js?v=__BUILD_ID__";
 import {createPerformanceRoutingState} from "./performance-routing-state.js?v=__BUILD_ID__";
@@ -225,6 +229,70 @@ function routingSelectForSource(source){
  const key=routingKeyForSource(source);
  return performanceRouting.getState()[key];
 }
+function filterRegistersFromUi(filter){
+ const hz=Number(filter.cutoff);
+ const cutoff=Math.round(Math.max(0,Math.min(1,(hz-50)/9950))*2047);
+ const resonancePct=Number(filter.resonance);
+ const volumePct=Number(filter.volume);
+ const mode=filter.mode??'lowpass';
+ return {cutoff,resonance:Math.round(resonancePct*15/100),mode,volume:Math.round(volumePct*15/100)};
+}
+function clearDrumReleaseTimer(ownerKey){
+ const pending=drumReleaseTimers.get(ownerKey);
+ if(pending===undefined)return;
+ clearTimeout(pending);
+ drumReleaseTimers.delete(ownerKey);
+}
+function stopDrumOwner(ownerKey){
+ clearDrumReleaseTimer(ownerKey);
+ const owner=activeOwners.get(ownerKey);
+ if(!owner)return;
+ activeOwners.delete(ownerKey);
+ sidController?.noteOff(owner.note,owner.token);
+ traceStudio('note-off',{note:owner.note,source:ownerKey});
+}
+function stopDrumVoices(){
+ for(const key of [...activeOwners.keys()])if(isDrumOwner(key))stopDrumOwner(key);
+}
+function triggerDrumLane(laneId){
+ if(!sidController)return;
+ const kit=validateDrumKit(drumKit);
+ const lane=kit.lanes[laneId];
+ if(!lane)return;
+ const factory=FACTORY_PRESETS.find(preset=>preset.id===lane.presetId);
+ if(!factory)return;
+ restoreSidOutput();
+ const {voice,filter}=drumLaneTimbre(factory.settings,lane);
+ const ownerKey=drumOwnerKey(laneId);
+ const note=lane.midiNote;
+ const gate=canDispatchNote({
+  blocked:sidMusicalInputBlocked(),
+  hasController:Boolean(sidController),
+  voiceEnabled:Boolean(engines[DRUM_ENGINE_INDEX]?.voice?.enabled),
+  contextState:sidContext?.state??null
+ });
+ if(!gate.ok){
+  traceStudio('note-skipped',{note,source:ownerKey,reason:gate.reason});
+  return;
+ }
+ stopDrumOwner(ownerKey);
+ sidController.setFilter(filterRegistersFromUi(filter),DRUM_ENGINE_INDEX);
+ const settings={...voice,pitchEnvelope:voice.pitchEnvelope};
+ const traceStart=sidAudio?.beginNoteTrace();
+ const token=sidController.noteOn(note,()=>settings,{chipMask:[DRUM_ENGINE_INDEX],layerChip:DRUM_ENGINE_INDEX});
+ sidAudio?.endNoteTrace(null,traceStart);
+ sidAudio?.noteDispatched?.('drum');
+ activeOwners.set(ownerKey,{note,token});
+ traceStudio('note-on',{note,source:ownerKey,chipMask:[DRUM_ENGINE_INDEX]});
+ diagnosticsUi.afterNoteEvent?.();
+ const releaseMs=drumReleaseMilliseconds(voice);
+ clearDrumReleaseTimer(ownerKey);
+ drumReleaseTimers.set(ownerKey,setTimeout(()=>{
+  if(activeOwners.get(ownerKey)?.token!==token)return;
+  stopDrumOwner(ownerKey);
+  diagnosticsUi.afterNoteEvent?.();
+ },releaseMs));
+}
 function playOne(note,ownerKey,chipMask,{layer=false}={}){
  const eventId=sidEventLog.enabled?sidEventLog.begin('note-command',{note,source:ownerKey,action:'on',inputEventId:sidInputEvent,stepIndex:ownerKey==='game'&&activeSeqStep>=0?activeSeqStep:null,contextState:sidContext?.state??'unavailable',chipMask}):null;
  const gate=canDispatchNote({
@@ -335,7 +403,7 @@ updateUnison();
 function panic(reason=''){
  traceStudio('panic',{reason});
  releaseMidiNotes();
- gameStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.root=null;directOwned.clear();activeOwners.clear();arpKeyVisual.clear();sidController?.panic()}
+ gameStop();drumStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.root=null;directOwned.clear();activeOwners.clear();arpKeyVisual.clear();sidController?.panic()}
 $('panic').addEventListener('click',()=>{
  sidEventLog.add('stop-all',{contextId:sidAudio?sidAttempt:null,model:activeSidModel});
  performanceArp.set({rootOn:false,gameOn:false});
@@ -352,6 +420,11 @@ const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 const arp={held:new Set(),latched:new Set(),timer:null,step:0,root:null,last:null};
 const directOwned=new Set(); // Physical notes sounding independently of either generator.
 const game={timer:null,last:null,step:0,gateTimer:null};
+let drumKit=validateDrumKit(defaultDrumKit());
+let drumSequence=validateDrumSequence(defaultDrumSequence());
+const drum={timer:null,step:0,running:false};
+const drumReleaseTimers=new Map();
+let drumStop=()=>{};
 let seqState=defaultSequence(),seqPreview=false,activeSeqStep=-1;
 let gameStop=()=>{};
 let arpStopVoice=()=>{};
@@ -394,6 +467,14 @@ const performanceNote=note=>resolvePerformanceNote(note,readScaleStateFromDom($)
  getActiveSeqStep:()=>activeSeqStep,
  setActiveSeqStep:value=>{activeSeqStep=value},
  performanceArp
+}));
+({drumStop}=mountDrumPerformance({
+ $,drum,
+ getDrumSequence:()=>drumSequence,
+ getMasterBpm:()=>Number($('masterBpm').value),
+ triggerDrumLane,
+ stopDrumVoices,
+ refreshPresetDirty
 }));
 let renderKeyboard=()=>{};
 ({flushQueuedKeys,keyDown,keyUp,renderKeyboard}=mountKeyboard({
