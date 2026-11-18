@@ -2,7 +2,7 @@
 
 **Purpose:** Listening and patch-design **references only**. Project6581 factory presets are **original** designs; nothing here claims a note-for-note match or uses ripped game data.
 
-**Showcase factory presets** (triple-SID demos, not transcriptions): **16** sounds in the **Showcase** group — C64 composers plus **Knight Rider · Pursuit** and **Airwolf · Rotor Lift** (1980s TV-synth palette: pulsing bass ostinato vs. soaring “brass” stacks; original designs only). All use **Layer (per SID)** on keyboard, Root Arp, and Game Arp. Audition on HVSC references below when tuning.
+**Showcase factory presets** (triple-SID demos, not transcriptions): **20** sounds in the **Showcase** group — C64 composers plus **1980s TV/film synth** stacks (Knight Rider, Airwolf, Miami Vice, A-Team, Vangelis-style haze, Beverly Hills Cop pulse; original designs only). All use **Layer (per SID)** on keyboard, Root Arp, and Game Arp. Audition on HVSC references below when tuning.
 
 **HVSC paths (PAL 6581 unless noted):**
 
@@ -61,6 +61,10 @@ Metadata sources: [HVSC STIL via 6581.nl](https://6581.nl/), composer interviews
 | --- | --- | --- | --- |
 | **Knight Rider** | Stu Phillips | Minor-key pulse bass, syncopated ostinato, tight PWM “talking” squares | `showcase-knight-rider` — **F♯ harmonic minor** lock, sync LFOs on pulse/cutoff |
 | **Airwolf** | Sylvester Levay | Wide stacked “brass” saw+square, slow filter swells, heroic legato lead | `showcase-airwolf` — legato 9-voice layers, cutoff LFO swell |
+| **Miami Vice** | Jan Hammer | Warm pads, chorus detune, slow PWM, mixolydian “night drive” | `showcase-miami-vice` — latched pad arp, A mixolydian |
+| **The A-Team** | Mike Post | Punchy bass + trumpet-like saw brass hits | `showcase-a-team` — sync cutoff, action Game Arp |
+| **Blade Runner** (palette) | Vangelis | Slow-evolving filters, long releases, hazy dorian pads | `showcase-vangelis-blade` — sample-hold detune, 92 BPM |
+| **Beverly Hills Cop** | Harold Faltermeyer | Fast sync pulse bass hook | `showcase-faltermeyer-axel` — 1/16 pulse LFO, 128 BPM |
 
 Use official recordings or your own memory for A/B; do not ship theme audio.
 

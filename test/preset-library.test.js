@@ -152,7 +152,7 @@ test('C64-inspired prototype bank covers four distinct categories without changi
 });
 
 test('composer showcase presets demonstrate triple-SID layers and LFOs',()=>{
- assert.equal(SHOWCASE_FACTORY_IDS.length,16,'Showcase bank size');
+ assert.equal(SHOWCASE_FACTORY_IDS.length,20,'Showcase bank size');
  for(const id of SHOWCASE_FACTORY_IDS){
   const preset=FACTORY_PRESETS.find(p=>p.id===id);
   assert.ok(preset,id);
@@ -221,9 +221,9 @@ test('expanded C64 factory bank retains legacy sounds and has six originals per 
  const legacy=['deep-bass','arcade-lead','chiptune-pluck','pulsing-pad','soft-flute','filter-motion'];
  const allNew=Object.values(newIds).flat();
  assert.equal(allNew.length,24);
- assert.equal(FACTORY_PRESETS.length,46+LAYER_FACTORY_IDS.length);
+ assert.equal(FACTORY_PRESETS.length,50+LAYER_FACTORY_IDS.length);
  assert.deepEqual(new Set(FACTORY_PRESETS.map(p=>p.id)),new Set([...SHOWCASE_FACTORY_IDS,...legacy,...allNew,...LAYER_FACTORY_IDS]));
- assert.equal(new Set(FACTORY_PRESETS.map(p=>p.name.toLowerCase())).size,46+LAYER_FACTORY_IDS.length);
+ assert.equal(new Set(FACTORY_PRESETS.map(p=>p.name.toLowerCase())).size,50+LAYER_FACTORY_IDS.length);
  assert.deepEqual(FACTORY_GROUPS,['Showcase','Bass','Keys','Leads','Drums','FX']);
  for(const [category,ids] of Object.entries(newIds)){
   assert.equal(ids.length,6);
