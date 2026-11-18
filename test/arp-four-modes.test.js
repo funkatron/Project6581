@@ -24,7 +24,7 @@ function makeHarness({gameOn=false,arpOn=false,latch=false,seqPreview=false}={})
   arpNotes:()=>[...arp.held],
   isSeqPreview:()=>seqPreview,$
  });
- return {gesture,arp,calls};
+ return {gesture,arp,game,calls};
 }
 
 test('mode: both off plays and releases directly',()=>{
@@ -67,6 +67,17 @@ test('mode: Game Arp only does not restart clocks on every additional key',()=>{
  game.timer={};
  gesture.keyDown(64);
  assert.equal(calls.restart,1);
+});
+
+test('mode: Game Arp only does not restart clocks when releasing one key of a chord',()=>{
+ const {gesture,game,calls}=makeHarness({gameOn:true});
+ gesture.keyDown(60);
+ gesture.keyDown(64);
+ game.timer={};
+ calls.restart=0;
+ gesture.keyUp(64);
+ assert.equal(calls.restart,0);
+ assert.equal(calls.gameRestart,0);
 });
 
 test('mode: last key release with latch off stops generator clocks',()=>{

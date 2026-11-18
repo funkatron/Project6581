@@ -215,6 +215,7 @@ async function main(){
  const browser=await puppeteer.launch({
   executablePath,
   headless:'new',
+  protocolTimeout:180000,
   args:['--autoplay-policy=no-user-gesture-required','--use-fake-device-for-media-stream','--allow-file-access-from-files']
  });
  const page=await browser.newPage();

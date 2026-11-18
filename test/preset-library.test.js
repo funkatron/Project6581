@@ -163,6 +163,7 @@ test('composer showcase presets demonstrate triple-SID layers and LFOs',()=>{
   assert.ok(preset.settings.sound.engines.every(engine=>engine.voice.enabled));
   assert.ok(preset.settings.sound.lfos.filter(lfo=>lfo.enabled).length>=2);
   assert.deepEqual(validatePresetSettings(preset.settings),preset.settings);
+  assert.equal(preset.settings.performance.game.enabled,false,'Showcase uses Root Arp only by default');
  }
  const galway=FACTORY_PRESETS.find(p=>p.id==='showcase-galway-epic');
  assert.ok(galway.settings.sound.engines[1].voice.pwmDepth>=20);

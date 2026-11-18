@@ -61,8 +61,8 @@ export function createKeyGesture({
   if(arp.held.size===0&&(!latchOn()||arp.latched.size===0)&&!isSeqPreview()){
    stopGenerators();$('arpStatus').textContent='No notes held';return;
   }
-  if(gameEnabled()&&!arpEnabled())gameRestart();
-  else if(arpEnabled()&&!latchOn()&&arp.root===note){
+  // Game Arp keeps its clock while the held set changes; gameTick() picks up the new root.
+  if(arpEnabled()&&!latchOn()&&arp.root===note){
    // Keep the root valid, without firing an extra off-grid arpeggio note.
    const notes=arpNotes();
    arp.root=notes.length?selectRoot(notes,$('arpPattern').value,arp.step):null;
