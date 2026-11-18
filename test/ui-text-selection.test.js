@@ -32,4 +32,6 @@ test('main shell disables accidental text selection on controls and keys',()=>{
  assert.match(keyBlock,/(?:^|;)\s*user-select:\s*none/);
  assert.match(exceptionBlock,/(?:^|;)\s*user-select:\s*text/);
  assert.match(exceptionBlock,/(?:^|;)\s*-webkit-touch-callout:\s*default/);
+ const presetBlock=declarationBlock(css,'#presetDialog .preset-item,#presetDialog input[type=search],#presetDialog input[type=text]{');
+ assert.match(presetBlock,/(?:^|;)\s*user-select:\s*text/);
 });

@@ -71,6 +71,7 @@
  <span id="arpLatchHelpSr" class="sr-only">Held notes stay for Game Arp and Root Arp.</span>
  <button id="arpClear" type="button">Clear latch</button>
 </div>
+<div class="arp-generators-grid" id="arpGeneratorsGrid">
 <section class="root-arp-panel" id="rootArpPanel" aria-labelledby="rootArpTitle">
 <h2 id="rootArpTitle">ROOT ARPEGGIATOR <button type="button" class="help-trigger" data-help="root-arp" aria-label="Help: root arpeggiator">?</button></h2>
 <div class="root-arp-transport controls" aria-label="Root arpeggiator transport">
@@ -81,6 +82,7 @@
 </div>
 <small id="arpStatus" role="status" aria-live="polite">Arp off</small>
 </section>
+<section class="game-arp-panel" id="gameArpPanel" aria-labelledby="gameArpTitle">
 <h2 id="gameArpTitle">GAME ARP STEP SEQUENCER <button type="button" class="help-trigger" data-help="game-arp" aria-label="Help: game arp">?</button></h2>
 <div class="seq-transport" aria-label="Game Arp transport">
  <button type="button" id="seqRun" title="Preview the custom pattern at the current keyboard octave">▶ Preview</button>
@@ -106,6 +108,8 @@
  </div>
  <p class="seq-summary" id="seqStatus">Choosing Action, Adventure, or Arcade loads that phrase. Editing a step makes it Custom. Preview runs at the current octave until stopped.</p>
 </section>
+</section>
+</div>
 </section><section class="panel lfo-panel" id="lfoPanel" hidden role="tabpanel" aria-labelledby="tabLfos" aria-label="Low frequency oscillators"><h2>Modulation · LFOs</h2><div id="lfoControls"></div></section>
 <section class="panel diag-panel" id="diagPanel" hidden role="tabpanel" aria-label="Diagnostics">
  <div class="diag-panel-header"><h2 id="diagPanelTitle">Diagnostics</h2><button type="button" id="diagnosticsBack" class="diag-back-btn">Back to editor</button></div>
