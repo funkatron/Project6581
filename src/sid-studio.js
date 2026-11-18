@@ -16,6 +16,7 @@ import {mountKeyboard} from "./keyboard-input.js?v=__BUILD_ID__";
 import {readScaleStateFromDom,resolvePerformanceNote,isPitchInScale} from "./western-scales.js?v=__BUILD_ID__";
 import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from "./pitch-envelope.js?v=__BUILD_ID__";
 import {mountEditorTabs} from "./editor-tabs.js?v=__BUILD_ID__";
+import {mountDrumPanelShell} from "./drum-panel-ui.js?v=__BUILD_ID__";
 import {mountGeneratorLeds} from "./generator-led-ui.js?v=__BUILD_ID__";
 import {createPerformanceArpState} from "./performance-arp-state.js?v=__BUILD_ID__";
 import {createPerformanceRoutingState} from "./performance-routing-state.js?v=__BUILD_ID__";
@@ -99,10 +100,10 @@ function restoreSidOutput(){
 const engines=createDefaultEngines(6581);
 const settings=[engines[0].voice];
 let currentSidSettings={...settings[0]};
-const engineLiveSettings=[null,null,null];
+const engineLiveSettings=[null,null,null,null];
 const useAudioClockLfo=true;
 let enginePanelsUi=null;
-let chipPeakLevels=[0,0,0];
+let chipPeakLevels=[0,0,0,0];
 const masterLoudnessMeter=mountMasterLoudnessMeter($);
 function updateMasterLoudnessFromLevels(masterPeak,chipPeaks){
  if(Number.isFinite(masterPeak))masterLoudnessMeter.update(masterPeak);
@@ -158,12 +159,18 @@ function scheduleUnisonFollowUp(run){
  });
 }
 function syncEnginePans(){
- for(let chip=0;chip<3;chip++)sidAudio?.setPan?.(chip,engines[chip].pan);
+ for(let chip=0;chip<engines.length;chip++)sidAudio?.setPan?.(chip,engines[chip].pan);
+}
+function syncEngineChipGains(){
+ for(let chip=0;chip<engines.length;chip++){
+  const db=chip===3?(engines[chip].outputBoostDb??6):0;
+  sidAudio?.setChipGain?.(chip,db);
+ }
 }
 async function syncEngineChipModels(){
  if(!sidAudio?.setChipModel)return;
  // createReSidFpAudio tracks one in-flight setChipModel at a time.
- for(let chip=0;chip<3;chip++)await sidAudio.setChipModel(chip,engines[chip].model);
+ for(let chip=0;chip<engines.length;chip++)await sidAudio.setChipModel(chip,engines[chip].model);
 }
 const ranges=[['attack','Attack',0,2,.01],['decay','Decay',0,3,.01],['sustain','Sustain',0,1,.01],['release','Release',.01,4,.01],['pulse','Pulse width',5,95,1],['pwmDepth','PWM depth',0,45,1],['pwmRate','PWM rate (Hz)',.1,12,.1]];
 enginePanelsUi=mountSidEnginePanels({
@@ -172,6 +179,7 @@ enginePanelsUi=mountSidEnginePanels({
  onEngineChange:(_index,kind)=>{
   syncLegacyFilterInputs();
   syncEnginePans();
+  syncEngineChipGains();
   if(kind==='model'){
    if(_index===0){
     $('chip').value=String(engines[0].model);
@@ -190,6 +198,7 @@ const lfoState=Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sin
 const syncedRates=[{value:0.25,label:'4/1'},{value:0.5,label:'2/1'},...([1,2,4,8,16,32].map(value=>({value,label:'1/'+value})))];
 const {renderLfos}=mountLfoPanel({$,lfoState,lfoTargets:LFO_TARGET_ORDER,lfoTargetNames:LFO_TARGET_LABELS,syncedRates,onChange:()=>{updateModulation();syncModulationUiLoop()}});
 const editorTabs=mountEditorTabs({$});
+mountDrumPanelShell({$});
 const helpUi=mountHelpDialog($);
 mountHelpTriggers($,{openHelp:helpUi.openHelp});
 const performanceArp=createPerformanceArpState($);
@@ -537,8 +546,8 @@ function updateModulation({uiOnly=false}={}){
   ?{...lfo,rate:modulation.syncedLfoHz(bpm,lfo.syncDivision)}:lfo);
  const time=(performance.now()-lfoStarted)/1000;
  const detuneBase={detune:performanceInstrument.detune};
- const engineModValues=new Array(3);
- for(let chip=0;chip<3;chip++){
+ const engineModValues=new Array(engines.length);
+ for(let chip=0;chip<engines.length;chip++){
   const sound=engines[chip].voice;
   const pulseActive=sound.wave==='square';
   const base=modulationBaseForEngine(chip);
@@ -574,10 +583,10 @@ function updateModulation({uiOnly=false}={}){
  if(uiOnly)return;
  if(useAudioClockLfo)pushAudioModulationConfig();
  else{
-  for(let chip=0;chip<3;chip++)updateSidFilter(engineModValues[chip],chip);
+  for(let chip=0;chip<engines.length;chip++)updateSidFilter(engineModValues[chip],chip);
  }
  sidController.setLiveDetune(globalDetune);
- for(let chip=0;chip<3;chip++){
+ for(let chip=0;chip<engines.length;chip++){
   const live=engineLiveSettings[chip];
   const values=engineModValues[chip];
   sidController.setEnvelope(live,chip);
@@ -744,7 +753,8 @@ async function startSid({gesture=false}={}){
     activeSidModel=requestedModel;
     progress('SID '+activeSidModel+' ready.');
     sidEventLog.add('sid-ready',{contextId:attempt,model:activeSidModel});
-    for(let chip=0;chip<3;chip++)sidAudio?.setPan?.(chip,engines[chip].pan);
+    syncEnginePans();
+    syncEngineChipGains();
     await syncEngineChipModels();
     updateModulation();
     // LFO runs on the audio clock in the worklet; no main-thread modulation timer.
@@ -999,10 +1009,10 @@ async function applyPresetSettings(value){
   voices:next.sound.instrument.voiceCount,unison:next.sound.instrument.unisonCount,mode:next.sound.instrument.mode,
   keyboardRoute:performanceRouting.keyboard,silenceAudio});
  applyPresetControls(next,{silenceAudio});
- syncLegacyFilterInputs();syncEnginePans();
+ syncLegacyFilterInputs();syncEnginePans();syncEngineChipGains();
  try{
   await ensureSidModel(presetModel);
-  for(let chip=0;chip<3;chip++){
+  for(let chip=0;chip<engines.length;chip++){
    if(sidAudio?.setChipModel)await sidAudio.setChipModel(chip,engines[chip].model);
   }
   if(activeSidModel!==presetModel)throw new Error('SID chip model does not match the selected preset');

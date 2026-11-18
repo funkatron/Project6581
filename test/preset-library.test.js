@@ -38,7 +38,8 @@ test('factory bank contains useful original sounds and complete performance sett
   ids.add(p.id);names.add(p.name);
   const result=validatePresetSettings(p.settings);
   assert.deepEqual(result,p.settings);
-  assert.equal(result.sound.engines.length,3);
+  assert.equal(result.sound.engines.length,4);
+  assert.equal(result.sound.engines[3].outputBoostDb,6);
   assert.equal(result.sound.lfos.length,3);
   assert.equal(typeof result.performance.routing.keyboard,'string');
   assert.equal(typeof result.performance.masterBpm,'number');
@@ -343,7 +344,7 @@ test('local v4 bank migrates to v5 storage on read',()=>{
  }));
  const items=readUserPresets(storage);
  assert.equal(items.length,1);
- assert.equal(items[0].settings.sound.engines.length,3);
+ assert.equal(items[0].settings.sound.engines.length,4);
  assert.equal(storage.getItem(LEGACY_PRESET_STORAGE_KEY_V4),null);
 });
 

@@ -30,7 +30,7 @@
  </section>
 </dialog>
 <div class="statusbar"><span id="sidLed" class="sid-led" data-state="off" role="img" aria-label="SID engine off"></span><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine" hidden></span><p id="sidEngineStatus" role="status">Initializing SID…</p><output id="recordStatus" role="status" aria-live="polite"></output><a id="recordDownload" hidden>Download recording</a></div>
-<div class="tabbar" role="tablist" aria-label="Editor sections"><button id="tabVoice" type="button" role="tab" aria-selected="true" aria-controls="voicePanel">SYNTH</button><button id="tabPlay" type="button" role="tab" aria-selected="false" aria-controls="playPanel">ARP / SEQ</button><button id="tabLfos" type="button" role="tab" aria-selected="false" aria-controls="lfoPanel">LFOs</button></div>
+<div class="tabbar" role="tablist" aria-label="Editor sections"><button id="tabVoice" type="button" role="tab" aria-selected="true" aria-controls="voicePanel">SYNTH</button><button id="tabPlay" type="button" role="tab" aria-selected="false" aria-controls="playPanel">ARP / SEQ</button><button id="tabDrum" type="button" role="tab" aria-selected="false" aria-controls="drumPanel">DRUM SEQ</button><button id="tabLfos" type="button" role="tab" aria-selected="false" aria-controls="lfoPanel">LFOs</button></div>
 <div class="workspace" id="workspace" data-tab="voice">
 <section class="panel voice-panel" id="voicePanel" role="tabpanel" aria-labelledby="tabVoice" aria-label="Sound controls">
 <h2>Sound</h2>
@@ -110,7 +110,7 @@
 </section>
 </section>
 </div>
-</section><section class="panel lfo-panel" id="lfoPanel" hidden role="tabpanel" aria-labelledby="tabLfos" aria-label="Low frequency oscillators"><h2>Modulation · LFOs</h2><div id="lfoControls"></div></section>
+</section><section class="panel drum-panel" id="drumPanel" hidden role="tabpanel" aria-labelledby="tabDrum" aria-label="Drum step sequencer"><h2>DRUM STEP SEQUENCER <button type="button" class="help-trigger" data-help="drum-seq" aria-label="Help: drum sequencer">?</button></h2><div class="drum-transport controls" aria-label="Drum transport"><button type="button" id="drumSeqRun" disabled title="Drum preview ships with the drum clock slice">▶ Preview</button><button type="button" id="drumSeqStop" disabled>■ Stop</button></div><div id="drumGrid" class="drum-grid" role="group" aria-label="Drum step grid"></div><p class="drum-summary" id="drumStatus" role="status">16 steps · 6 lanes</p></section><section class="panel lfo-panel" id="lfoPanel" hidden role="tabpanel" aria-labelledby="tabLfos" aria-label="Low frequency oscillators"><h2>Modulation · LFOs</h2><div id="lfoControls"></div></section>
 <section class="panel diag-panel" id="diagPanel" hidden role="tabpanel" aria-label="Diagnostics">
  <div class="diag-panel-header"><h2 id="diagPanelTitle">Diagnostics</h2><button type="button" id="diagnosticsBack" class="diag-back-btn">Back to editor</button></div>
  <p class="diagnostics-lead">Always-on studio trace includes compact note on/off lines. Detailed note events turn on when you open this panel.</p>

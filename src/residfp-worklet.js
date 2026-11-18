@@ -8,9 +8,9 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     this.queue=[];
     this.pitchEnvelopes=new Map();
     this.blocks=0;this.lastPeak=0;this.writes=0;
-    this.chipPeakHold=[0,0,0];this.chipPeakInterval=[0,0,0];this.masterPeakHold=0;
+    this.chipPeakHold=[0,0,0,0];this.chipPeakInterval=[0,0,0,0];this.masterPeakHold=0;
     this.meterBlocks=0;
-    this.mixedMeterGain=3;
+    this.mixedMeterGain=4;
     this.pendingNoteEvents=[];this.eventLogEnabled=false;
     this.pendingLatencyProbes=[];this.timingEnabled=false;
     this.keyLatencyEnabled=true;
@@ -33,8 +33,12 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
         this.setChipModel(data.chip,data.model);
       }
       else if(data?.type==='set-pan'){
-        if(Number.isInteger(data.chip)&&data.chip>=0&&data.chip<=2&&Number.isFinite(data.pan))
+        if(Number.isInteger(data.chip)&&data.chip>=0&&data.chip<=3&&Number.isFinite(data.pan))
           this.exports?.sid_set_pan?.(data.chip,Math.round(data.pan));
+      }
+      else if(data?.type==='set-chip-gain'){
+        if(Number.isInteger(data.chip)&&data.chip>=0&&data.chip<=3&&Number.isFinite(data.gainDb))
+          this.exports?.sid_set_chip_gain?.(data.chip,Math.round(data.gainDb));
       }
       else if(data?.type==='modulation-config'){
         this.modulationConfig=data;
@@ -147,7 +151,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     const e=this.exports;
     try{
       if(!e?.sid_set_chip_model)throw Error('Per-chip model switch is unavailable');
-      if(!Number.isInteger(chip)||chip<0||chip>2)throw Error('Invalid chip index');
+      if(!Number.isInteger(chip)||chip<0||chip>3)throw Error('Invalid chip index');
       if(!e.sid_set_chip_model(chip,model))throw Error('SID chip model switch failed');
       this.port.postMessage({type:'chip-model-ready',chip,model});
     }catch(err){this.port.postMessage({type:'error',message:String(err)})}
@@ -179,7 +183,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       const phase=this.lfoPhase[index]??0;
       this.lfoPhase[index]=phase+rate*blockSec;
     });
-    for(let chip=0;chip<3;chip++){
+    for(let chip=0;chip<4;chip++){
       const engine=config.engines[chip];
       if(!engine)continue;
       const base={
@@ -310,8 +314,8 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     let peak=0;
     let chipPeaks=null;
     const peaksPtr=e.sid_chip_peaks_ptr?.();
-    if(Number.isInteger(peaksPtr)&&peaksPtr>=0&&peaksPtr+12<=e.memory.buffer.byteLength)
-      chipPeaks=Array.from(new Float32Array(e.memory.buffer,peaksPtr,3));
+    if(Number.isInteger(peaksPtr)&&peaksPtr>=0&&peaksPtr+16<=e.memory.buffer.byteLength)
+      chipPeaks=Array.from(new Float32Array(e.memory.buffer,peaksPtr,4));
     for(let i=0;i<frames;i++){
       const left=stereo?pcm[i*2]/32768:pcm[i]/32768;
       const right=stereo?pcm[i*2+1]/32768:left;

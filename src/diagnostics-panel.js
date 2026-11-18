@@ -2,13 +2,13 @@ import {formatSidDiagnosticReport} from './sid-event-log.js?v=__BUILD_ID__';
 import {formatStudioTraceReport} from './studio-trace-log.js?v=__BUILD_ID__';
 import {formatDiagnosticActivityText} from './diagnostics-format.js?v=__BUILD_ID__';
 
-const EDITOR_TABS=['voice','play','lfos'];
+const EDITOR_TABS=['voice','play','drum','lfos'];
 
 function setWorkspaceTab($,name,options={}){
  const workspace=$('workspace');
  if(!workspace)return;
  workspace.dataset.tab=name;
- const tabButtons={voice:'tabVoice',play:'tabPlay',lfos:'tabLfos'};
+ const tabButtons={voice:'tabVoice',play:'tabPlay',drum:'tabDrum',lfos:'tabLfos'};
  for(const [tabName,id] of Object.entries(tabButtons))
   $(id)?.setAttribute('aria-selected',String(name===tabName));
  for(const panel of workspace.querySelectorAll(':scope > [role="tabpanel"]')){
@@ -120,7 +120,7 @@ export function mountDiagnosticsPanel({
   if(status)status.textContent='Diagnostic bundle downloaded.';
  });
  // Main editor tabs exit diagnostics without leaving a stale data-tab value.
- for(const id of ['tabVoice','tabPlay','tabLfos'])
+ for(const id of ['tabVoice','tabPlay','tabDrum','tabLfos'])
   $(id)?.addEventListener('click',()=>{if(isVisible())if(status)status.textContent=''});
  return {refresh,isVisible:()=>isVisible(),afterNoteEvent:()=>{if(isVisible())refresh()}};
 }

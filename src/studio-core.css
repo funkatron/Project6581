@@ -98,9 +98,9 @@ footer details{flex-basis:100%}
  main{grid-template-rows:auto auto auto minmax(0,1fr) auto auto;gap:6px;padding:6px}
  .workspace{grid-template-columns:1fr;display:block}
  .workspace .panel{height:100%;overflow-y:auto;overflow-x:hidden}
- .voice-panel,.performance-panel,.workspace .lfo-panel,.workspace .diag-panel{display:none}
- .workspace[data-tab="voice"] .voice-panel,.workspace[data-tab="play"] .performance-panel,.workspace[data-tab="lfos"] .lfo-panel{display:block}
- .workspace[data-tab="diag"] .voice-panel,.workspace[data-tab="diag"] .performance-panel,.workspace[data-tab="diag"] .lfo-panel{display:none!important}
+ .voice-panel,.performance-panel,.drum-panel,.workspace .lfo-panel,.workspace .diag-panel{display:none}
+ .workspace[data-tab="voice"] .voice-panel,.workspace[data-tab="play"] .performance-panel,.workspace[data-tab="drum"] .drum-panel,.workspace[data-tab="lfos"] .lfo-panel{display:block}
+ .workspace[data-tab="diag"] .voice-panel,.workspace[data-tab="diag"] .performance-panel,.workspace[data-tab="diag"] .lfo-panel,.workspace[data-tab="diag"] .drum-panel{display:none!important}
  .workspace[data-tab="diag"] .diag-panel{display:block}
  .workspace .diag-panel{display:none}
  .workspace[data-tab="diag"] .voice-panel,.workspace[data-tab="diag"] .performance-panel,.workspace[data-tab="diag"] .lfo-panel{display:none!important}
@@ -121,7 +121,7 @@ footer details{flex-basis:100%}
 @media(max-width:520px){.voice-grid{gap:0 6px}label{font-size:10px}label>output{min-width:25px}.keyboard-heading small{display:none}.performance-panel .controls{gap:3px 6px}}
 /* Extremely short landscape viewports cannot fit all controls; keep them reachable. */
 @media(max-height:520px){.workspace .panel{overflow-y:auto;overscroll-behavior:contain}.keyboard-panel{height:108px}.keyboard{min-height:64px}.keyboard-heading small{display:none}}
-@media(min-width:901px) and (min-height:621px){.tabbar{display:flex!important}.tabbar button{min-height:40px}.workspace{grid-template-columns:minmax(0,1fr)}.workspace .voice-panel,.workspace .performance-panel,.workspace .lfo-panel,.workspace .diag-panel{display:none}.workspace[data-tab="voice"] .voice-panel,.workspace[data-tab="play"] .performance-panel,.workspace[data-tab="lfos"] .lfo-panel{display:block}.workspace[data-tab="diag"] .voice-panel,.workspace[data-tab="diag"] .performance-panel,.workspace[data-tab="diag"] .lfo-panel{display:none!important}.workspace[data-tab="diag"] .diag-panel{display:block}.keyboard-panel{height:clamp(150px,28dvh,300px)}}
+@media(min-width:901px) and (min-height:621px){.tabbar{display:flex!important}.tabbar button{min-height:40px}.workspace{grid-template-columns:minmax(0,1fr)}.workspace .voice-panel,.workspace .performance-panel,.workspace .drum-panel,.workspace .lfo-panel,.workspace .diag-panel{display:none}.workspace[data-tab="voice"] .voice-panel,.workspace[data-tab="play"] .performance-panel,.workspace[data-tab="drum"] .drum-panel,.workspace[data-tab="lfos"] .lfo-panel{display:block}.workspace[data-tab="diag"] .voice-panel,.workspace[data-tab="diag"] .performance-panel,.workspace[data-tab="diag"] .lfo-panel,.workspace[data-tab="diag"] .drum-panel{display:none!important}.workspace[data-tab="diag"] .diag-panel{display:block}.keyboard-panel{height:clamp(150px,28dvh,300px)}}
 @media(prefers-reduced-motion:reduce){.sid-spinner{animation:none}}
 
 

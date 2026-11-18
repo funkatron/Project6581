@@ -45,6 +45,7 @@ em++ -O2 -std=c++17 -fwasm-exceptions -Ivendor/libresidfp/src \
   -Wl,--export=sid_init -Wl,--export=sid_write \
   -Wl,--export=sid_render -Wl,--export=sid_pcm_ptr \
   -Wl,--export=sid_reset -Wl,--export=sid_init_stage -Wl,--export=sid_init_error \
-  -Wl,--export=sid_set_chip_model -Wl,--export=sid_set_pan -Wl,--export=sid_chip_peaks_ptr \
+  -Wl,--export=sid_set_chip_model -Wl,--export=sid_set_pan -Wl,--export=sid_set_chip_gain \
+  -Wl,--export=sid_chip_peaks_ptr \
   -o dist/residfp.wasm
 echo 'Built dist/residfp.wasm'

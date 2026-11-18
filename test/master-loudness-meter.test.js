@@ -33,8 +33,8 @@ function masterPeakWorkletHarness(){
    pcm[index*2+1]=right;
   }
  };
- const setChipPeaks=(a,b,c)=>{
-  new Float32Array(buffer,chipPeakOffset,3).set([a,b,c]);
+ const setChipPeaks=(a,b,c,d=0)=>{
+  new Float32Array(buffer,chipPeakOffset,4).set([a,b,c,d]);
  };
  const render=()=>{
   processor.process([],[ [new Float32Array(128),new Float32Array(128)] ]);
@@ -94,7 +94,7 @@ test('worklet master peak follows mixed stereo PCM and resets every 16 blocks',(
  const first=h.meterLevels().at(-1);
  assert.ok(first);
  assert.ok(Math.abs(first.masterPeak-1)<0.001);
- assert.deepEqual(first.chipPeaks,[0,0,0]);
+ assert.deepEqual(first.chipPeaks,[0,0,0,0]);
  block(0,0,16);
  const second=h.meterLevels().at(-1);
  assert.equal(second.masterPeak,0);

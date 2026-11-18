@@ -25,10 +25,12 @@ main>header #presetOpen{max-width:min(140px,28vw)}
 .tabbar button{min-height:42px;padding:7px clamp(12px,2vw,28px);background:linear-gradient(#f5ede1,#e0d5c6);color:#30312f;border:1px solid #aa9c8a;box-shadow:inset 0 1px #fff,0 2px 2px #a9988440;text-transform:uppercase;font-weight:800;font-size:12px;letter-spacing:.03em}
 .tabbar button[aria-selected="true"]{background:linear-gradient(#c54a15,#ad3c0c);color:#fff;border-color:#cc521b;box-shadow:inset 0 1px #ffaf6c}
 .workspace{grid-row:3;display:grid;grid-template-columns:minmax(0,1fr);gap:0;min-height:0;overflow:hidden}
-.workspace .voice-panel,.workspace .performance-panel{grid-column:1}
+.workspace .voice-panel,.workspace .performance-panel,.workspace .drum-panel{grid-column:1}
 .workspace .diag-panel{display:none}
-.workspace[data-tab="voice"] .performance-panel,.workspace[data-tab="play"] .voice-panel,.workspace[data-tab="diag"] .voice-panel,.workspace[data-tab="diag"] .performance-panel,.workspace[data-tab="diag"] .lfo-panel{display:none!important}
-.workspace[data-tab="voice"] .voice-panel,.workspace[data-tab="play"] .performance-panel,.workspace[data-tab="lfos"] .lfo-panel,.workspace[data-tab="diag"] .diag-panel{display:block}
+.workspace[data-tab="voice"] .performance-panel,.workspace[data-tab="play"] .voice-panel,.workspace[data-tab="drum"] .voice-panel,.workspace[data-tab="drum"] .performance-panel,.workspace[data-tab="diag"] .voice-panel,.workspace[data-tab="diag"] .performance-panel,.workspace[data-tab="diag"] .lfo-panel,.workspace[data-tab="diag"] .drum-panel{display:none!important}
+.workspace[data-tab="voice"] .voice-panel,.workspace[data-tab="play"] .performance-panel,.workspace[data-tab="drum"] .drum-panel,.workspace[data-tab="lfos"] .lfo-panel,.workspace[data-tab="diag"] .diag-panel{display:block}
+.drum-panel{--drum-chrome:#6b5c4f;--drum-fill:#e8e0d6;border-top-color:var(--drum-chrome)}
+.drum-summary{font-size:12px;color:#4d524b;margin:8px 0 0}
 .workspace .panel{scroll-padding-bottom:28px;padding:clamp(11px,1.4vw,20px);background:linear-gradient(#f5eee4,#eee5d8);color:#252925;border:2px solid #c8b8a4;border-top:3px solid var(--seq-orange);border-radius:12px;box-shadow:inset 0 1px #fff;scrollbar-gutter:stable}
 .workspace .panel h2{font-size:clamp(14px,1.5vw,19px);color:#252925}
 .workspace .panel small{color:#4d524b}
