@@ -130,7 +130,7 @@ Per-row preset dropdown is **v1 stretch**; fixed map is acceptable for first imp
 | Artifact | What it stores | User mental model |
 | --- | --- | --- |
 | **Pattern** | 16×6 hit grid + transport (`rate`, `sync`, optional `length` 8/16 later) | “The beat” (like a TR pattern) |
-| **Kit** | Six **lanes**, each `{ presetId, midiNote, pan }` (implicit **SID 4**); optional `sound.drumLfo` | “The sounds” + stereo kit + motion |
+| **Kit** | Six **lanes**, each `{ presetId, midiNote, pan? }` — **kick + snare always center** (`pan` ignored / 0); pan on **CH, OH, clap, tom** only | “The sounds” + stereo kit + motion |
 
 - Changing the **pattern** does not change timbres; changing the **kit** does not erase steps (same as hardware: load pattern + load kit).
 - **v1 kit UI:** embedded default factory kit only; lane preset picker = **v1.1** slice (can ship hidden behind long-press row label).
@@ -161,8 +161,8 @@ Per-row preset dropdown is **v1 stretch**; fixed map is acceptable for first imp
 | **D0** | Tab shell: `#tabDrum`, `#drumPanel`, workspace `data-tab` CSS |
 | **D1** | `drum-step-sequencer.js` data model + tests (16×6 booleans, validate) |
 | **D1b** | **SID 4 (drum chip):** native `sid_bridge.cpp` + worklet mix + engine index `3`; **full SID engine card** (same controls as 1–3); **per-voice pan mix** for lane pans; **requires WASM rebuild** |
-| **D3b** | Per-lane **pan** on grid row headers; persist in `drumKit.lanes[].pan` |
-| **D3c** | **Drum LFO** UI on DRUM SEQ tab; preset field `sound.drumLfo`; targets lane pan (±100) + optional SID 4 filter/volume/pan |
+| **D3b** | **Pan** on grid row headers for **CH, OH, clap, tom** only; kick/snare fixed center (no control or locked at 0) |
+| **D3c** | **Drum LFO** on DRUM SEQ tab; `sound.drumLfo`; v1 target **`drumPeripheralPan`** (CH/OH/clap/tom only) + SID 4 filter/volume/chip pan |
 | **D2** | `mountDrumPerformance` clock — separate from `game.timer` / `arp.timer` |
 | **D3** | Grid UI + tab transport; wire **DRUM** pill (**first** in `generator-led-ui.js`) via extended `generator-led-ui.js` + drum performance state |
 | **D4** | Preset v5+ `performance.drumSequence` + `performance.drumKit` + `sound.engines[3]` defaults; **standalone groove** import/export (pattern+kit); user kit bank optional |
@@ -242,12 +242,19 @@ Same `triggerDrumLane` as the sequencer — one preview hit, no clock advance.
 
 ### Per-drum-track pan
 
+**Owner mix rule (2026-11-18):** **Kick and snare stay centered.** Panning is for **CH, OH, clap, tom** — the “peripheral” lanes that benefit from width.
+
+| Lane | Pan in UI | Default |
+| --- | --- | --- |
+| Kick, Snare | **None** (always `0`, center) | `0` |
+| CH, OH, Clap, Tom | Slider `-100…+100` | Factory kit suggests mild spread (e.g. CH `-35`, OH `+35`, clap `0`, tom `-20`) — tweakable |
+
 | Item | Detail |
 | --- | --- |
-| **UX** | Pan slider per row (kick…tom), `-100…+100`, default `0`; in kit + **6581drum** export |
+| **Schema** | `lanes[].pan` optional; for `kick` / `sn` import coerce to `0` |
 | **Not hardware SID** | Real 6581 has **one mono mix per chip**; pan is not per-voice in the chip |
-| **Engine approach** | On SID 4, extend `sid_bridge` render to apply **`voicePan[3][0..2]`** when summing that chip (map active voice → lane at `noteOn` time). Up to **three** lanes panned correctly at once; when 4–6 hits steal voices, pan follows **whichever lane owns that voice** — acceptable with owner sign-off on steal behavior |
-| **Chip pan** | Engine card **Pan** still pans the whole drum bus; lane pans are **relative** inside the bus |
+| **Engine approach** | On SID 4, extend `sid_bridge` render to apply **`voicePan[3][0..2]`** when summing that chip (map active voice → lane at `noteOn` time). Kick/sn always pass **center** gains. Up to **three** lanes panned correctly at once; when 4–6 hits steal voices, pan follows **whichever lane owns that voice** — acceptable with owner sign-off on steal behavior |
+| **Chip pan** | Engine card **Pan** still pans the whole drum bus; peripheral lane pans are **relative** inside the bus |
 
 ### Dedicated **Drum LFO** (one)
 
@@ -256,10 +263,10 @@ Same `triggerDrumLane` as the sequencer — one preview hit, no clock advance.
 | **Placement** | **DRUM SEQ** tab (not the global LFOs tab) — “Drum LFO” block beside rate/transport |
 | **Scope** | Affects **SID 4 only** + drum kit lanes; never modulates SID 1–3 unless user copies a trick manually |
 | **Preset** | `sound.drumLfo` — same shape as one melodic LFO (`enabled`, `wave`, `rate`, `sync`, `depth`, `target`, …); **separate** from the fixed **three** melodic LFOs so v5 validation stays stable |
-| **Targets (v1)** | `drumLanePan` (modulates **all six** lane pans with same waveform/depth — stereo wobble on the kit), `volume`, `cutoff`, `resonance`, `pan` (chip 4), plus ADSR/pulse if useful |
-| **v1.1** | Per-lane LFO target pickers (kick pan only, etc.) if `drumLanePan` macro is too coarse |
+| **Targets (v1)** | **`drumPeripheralPan`** — LFO offsets pan on **CH, OH, clap, tom only** (kick/sn excluded); `volume`, `cutoff`, `resonance`, `pan` (whole SID 4), plus ADSR/pulse if useful |
+| **v1.1** | Single-lane pick (e.g. hats only) if one macro is still too wide |
 
-**Primary owner ask:** LFO changing pans on tracks → implement **`drumLanePan`** as bipolar offset on each `lanes[].pan` in `updateModulation` / drum mod tick (main thread, like chip pan today).
+**Drum LFO + pan:** implement **`drumPeripheralPan`** as bipolar offset on the four peripheral `lanes[].pan` values in `updateModulation` / drum mod tick (main thread, like chip pan today). Foundation stays **centered kick/sn**.
 
 ### Is this too much? SID limits?
 
@@ -346,7 +353,7 @@ Factory showcase presets may ship with a **default groove** baked in for demo; G
 - [ ] Import/export **6581drum** groove (pattern + kit together)
 - [ ] Generator LED order: **DRUM** left of **ROOT**
 - [ ] SID 4 card matches SID 1–3 controls on SYNTH tab
-- [ ] Per-lane pan; Drum LFO modulates lane pans (or chip targets)
+- [ ] Pan on CH/OH/clap/tom; kick/sn centered; Drum LFO **`drumPeripheralPan`** (or chip targets)
 
 ---
 
