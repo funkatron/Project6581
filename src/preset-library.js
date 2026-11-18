@@ -226,6 +226,7 @@ function factory(id,name,category,patch={}){
   if(patch.performance.arp)Object.assign(settings.performance.arp,patch.performance.arp);
   if(patch.performance.game)Object.assign(settings.performance.game,patch.performance.game);
   if(patch.performance.routing)Object.assign(settings.performance.routing,patch.performance.routing);
+  if(patch.performance.scale)settings.performance.scale=validateScaleSettings({...settings.performance.scale,...patch.performance.scale});
  }
  return Object.freeze({id,name,category,settings:validatePresetSettings(settings)});
 }
@@ -333,6 +334,237 @@ export const FACTORY_PRESETS=Object.freeze([
    routing:{keyboard:'layer',arp:'layer',game:'layer'},
    arp:{enabled:true,latch:false,pattern:'updown',rate:4,sync:true,localBpm:132},
    game:{enabled:true,style:'adventure',rate:4},
+   scale:{tonic:0,id:'chromatic',lock:false}
+  }
+ }),
+ // More Showcase stacks — original designs after classic C64 palettes (not transcriptions).
+ factory('showcase-huelsbeck-deep','Hülsbeck · Deep Run','Showcase',{
+  instrument:{voiceCount:9,unisonCount:3,mode:'poly',detune:22},
+  engines:[
+   {model:6581,pan:-46,voice:{wave:'sawtooth',attack:0,decay:.12,sustain:.86,release:.14},
+    filter:{cutoff:1120,resonance:42,volume:86,mode:'lowpass'}},
+   {model:6581,pan:0,voice:{wave:'square',attack:0,decay:.09,sustain:.82,release:.11,pulse:22,pwmDepth:12,pwmRate:3.4},
+    filter:{cutoff:2840,resonance:38,volume:82,mode:'lowpass'}},
+   {model:8580,pan:44,voice:{wave:'sawtooth',attack:0,decay:.08,sustain:.78,release:.1},
+    filter:{cutoff:5980,resonance:28,volume:76,mode:'lowpass'}}
+  ],
+  lfos:[
+   {enabled:true,wave:'sawtooth',rate:5.2,depth:.22,target:'cutoff',engines:'all'},
+   {enabled:true,wave:'triangle',rate:7.8,depth:.18,target:'detune',engines:'all'},
+   {enabled:true,wave:'square',sync:true,syncDivision:4,rate:1,depth:.26,target:'resonance',engines:'2'}
+  ],
+  performance:{
+   masterBpm:152,
+   routing:{keyboard:'layer',arp:'layer',game:'layer'},
+   arp:{enabled:true,latch:false,pattern:'up',rate:8,sync:true,localBpm:152},
+   game:{enabled:true,style:'action',rate:8},
+   scale:{tonic:0,id:'chromatic',lock:false}
+  }
+ }),
+ factory('showcase-hubbard-sanxion','Hubbard · Sanxion Pulse','Showcase',{
+  instrument:{voiceCount:6,unisonCount:2,mode:'duo',detune:18},
+  engines:[
+   {model:6581,pan:-40,voice:{wave:'square',attack:0,decay:.11,sustain:.88,release:.12,pulse:14,pwmDepth:10,pwmRate:4.8},
+    filter:{cutoff:520,resonance:36,volume:90,mode:'lowpass'}},
+   {model:6581,pan:-2,voice:{wave:'sawtooth',attack:0,decay:.08,sustain:.72,release:.09},
+    filter:{cutoff:3460,resonance:34,volume:78,mode:'bandpass'}},
+   {model:6581,pan:42,voice:{wave:'square',attack:0,decay:.06,sustain:.64,release:.07,pulse:20,pwmDepth:8,pwmRate:5.6},
+    filter:{cutoff:7020,resonance:24,volume:72,mode:'highpass'}}
+  ],
+  lfos:[
+   {enabled:true,wave:'square',sync:true,syncDivision:8,rate:1,depth:.34,target:'pulse',engines:'3'},
+   {enabled:true,wave:'triangle',rate:3.8,depth:.24,target:'cutoff',engines:'all'},
+   {enabled:true,wave:'sawtooth',rate:9.2,depth:.14,target:'detune',engines:'all'}
+  ],
+  performance:{
+   masterBpm:126,
+   routing:{keyboard:'layer',arp:'layer',game:'layer'},
+   arp:{enabled:true,latch:false,pattern:'random',rate:8,sync:true,localBpm:126},
+   game:{enabled:true,style:'action',rate:8},
+   scale:{tonic:0,id:'chromatic',lock:false}
+  }
+ }),
+ factory('showcase-follin-ghouls','Follin · Layer Tempest','Showcase',{
+  instrument:{voiceCount:9,unisonCount:3,mode:'poly',detune:35},
+  engines:[
+   {model:6581,pan:-48,voice:{wave:'sawtooth',attack:0,decay:.1,sustain:.9,release:.15},
+    filter:{cutoff:1680,resonance:46,volume:84,mode:'lowpass'}},
+   {model:6581,pan:0,voice:{wave:'square',attack:0,decay:.08,sustain:.86,release:.12,pulse:28,pwmDepth:18,pwmRate:6.2},
+    filter:{cutoff:3920,resonance:40,volume:80,mode:'bandpass'}},
+   {model:8580,pan:46,voice:{wave:'triangle',attack:0,decay:.07,sustain:.82,release:.1},
+    filter:{cutoff:7200,resonance:32,volume:74,mode:'lowpass'}}
+  ],
+  lfos:[
+   {enabled:true,wave:'triangle',rate:11,depth:.2,target:'detune',engines:'all'},
+   {enabled:true,wave:'sample-hold',rate:4.2,depth:.28,target:'cutoff',engines:'all'},
+   {enabled:true,wave:'sine',rate:2.6,depth:.22,target:'resonance',engines:'2'}
+  ],
+  performance:{
+   masterBpm:118,
+   routing:{keyboard:'layer',arp:'layer',game:'layer'},
+   arp:{enabled:true,latch:true,pattern:'updown',rate:4,sync:true,localBpm:118},
+   game:{enabled:true,style:'arcade',rate:8},
+   scale:{tonic:0,id:'chromatic',lock:false}
+  }
+ }),
+ factory('showcase-tel-myth','Tel · Myth Assault','Showcase',{
+  instrument:{voiceCount:6,unisonCount:2,mode:'poly',detune:12},
+  engines:[
+   {model:6581,pan:-44,voice:{wave:'square',attack:0,decay:.07,sustain:.7,release:.08,pulse:10,pwmDepth:6,pwmRate:5.8},
+    filter:{cutoff:640,resonance:34,volume:88,mode:'lowpass'}},
+   {model:6581,pan:0,voice:{wave:'sawtooth',attack:0,decay:.06,sustain:.66,release:.07},
+    filter:{cutoff:2580,resonance:38,volume:82,mode:'lowpass'}},
+   {model:8580,pan:44,voice:{wave:'square',attack:0,decay:.05,sustain:.6,release:.06,pulse:8,pwmDepth:4,pwmRate:7.2},
+    filter:{cutoff:5280,resonance:26,volume:76,mode:'highpass'}}
+  ],
+  lfos:[
+   {enabled:true,wave:'square',rate:8.6,depth:.26,target:'pulse',engines:'3'},
+   {enabled:true,wave:'sawtooth',rate:5.4,depth:.18,target:'cutoff',engines:'all'},
+   {enabled:true,wave:'triangle',sync:true,syncDivision:16,rate:1,depth:.3,target:'volume',engines:'2'}
+  ],
+  performance:{
+   masterBpm:144,
+   routing:{keyboard:'layer',arp:'layer',game:'layer'},
+   arp:{enabled:true,latch:false,pattern:'up',rate:16,sync:true,localBpm:144},
+   game:{enabled:true,style:'action',rate:8},
+   scale:{tonic:0,id:'chromatic',lock:false}
+  }
+ }),
+ factory('showcase-daglish-gauntlet','Daglish · Gauntlet March','Showcase',{
+  instrument:{voiceCount:3,unisonCount:3,mode:'legato',detune:14},
+  engines:[
+   {model:6581,pan:-36,voice:{wave:'square',attack:0,decay:.16,sustain:.92,release:.2,pulse:32,pwmDepth:10,pwmRate:2.2},
+    filter:{cutoff:880,resonance:28,volume:86,mode:'lowpass'}},
+   {model:6581,pan:0,voice:{wave:'triangle',attack:0,decay:.14,sustain:.88,release:.18},
+    filter:{cutoff:2420,resonance:22,volume:80,mode:'lowpass'}},
+   {model:6581,pan:36,voice:{wave:'sawtooth',attack:0,decay:.12,sustain:.84,release:.16},
+    filter:{cutoff:4680,resonance:18,volume:74,mode:'lowpass'}}
+  ],
+  lfos:[
+   {enabled:true,wave:'sine',rate:.55,depth:.38,target:'cutoff',engines:'all'},
+   {enabled:true,wave:'triangle',rate:1.2,depth:.2,target:'pulse',engines:'1'},
+   {enabled:true,wave:'sine',sync:true,syncDivision:2,rate:1,depth:.24,target:'volume',engines:'all'}
+  ],
+  performance:{
+   masterBpm:104,
+   routing:{keyboard:'layer',arp:'layer',game:'layer'},
+   arp:{enabled:true,latch:true,pattern:'up',rate:2,sync:true,localBpm:104},
+   game:{enabled:true,style:'adventure',rate:4},
+   scale:{tonic:2,id:'natural-minor',lock:true}
+  }
+ }),
+ factory('showcase-whittaker-chain','Whittaker · Chain Drive','Showcase',{
+  instrument:{voiceCount:6,unisonCount:2,mode:'poly',detune:10},
+  engines:[
+   {model:6581,pan:-42,voice:{wave:'square',attack:0,decay:.2,sustain:.76,release:.22,pulse:20,pwmDepth:14,pwmRate:1.6},
+    filter:{cutoff:720,resonance:30,volume:88,mode:'lowpass'}},
+   {model:6581,pan:0,voice:{wave:'sawtooth',attack:.002,decay:.16,sustain:.72,release:.18},
+    filter:{cutoff:1980,resonance:32,volume:82,mode:'lowpass'}},
+   {model:8580,pan:42,voice:{wave:'square',attack:0,decay:.14,sustain:.68,release:.16,pulse:26,pwmDepth:12,pwmRate:2.4},
+    filter:{cutoff:4380,resonance:24,volume:76,mode:'bandpass'}}
+  ],
+  lfos:[
+   {enabled:true,wave:'triangle',rate:3.2,depth:.32,target:'cutoff',engines:'all'},
+   {enabled:true,wave:'sine',rate:1.4,depth:.26,target:'pwmDepth',engines:'3'},
+   {enabled:true,wave:'square',rate:6.8,depth:.16,target:'pulse',engines:'2'}
+  ],
+  performance:{
+   masterBpm:120,
+   routing:{keyboard:'layer',arp:'layer',game:'layer'},
+   arp:{enabled:true,latch:false,pattern:'down',rate:4,sync:true,localBpm:120},
+   game:{enabled:true,style:'action',rate:8},
+   scale:{tonic:0,id:'chromatic',lock:false}
+  }
+ }),
+ factory('showcase-gray-ninja','Gray · Ninja Stack','Showcase',{
+  instrument:{voiceCount:3,unisonCount:3,mode:'legato',detune:24},
+  engines:[
+   {model:6581,pan:-34,voice:{wave:'triangle',attack:.006,decay:.18,sustain:.9,release:.22},
+    filter:{cutoff:1580,resonance:36,volume:80,mode:'lowpass'}},
+   {model:6581,pan:0,voice:{wave:'sawtooth',attack:.004,decay:.15,sustain:.88,release:.2},
+    filter:{cutoff:3680,resonance:32,volume:76,mode:'lowpass'}},
+   {model:8580,pan:34,voice:{wave:'square',attack:.003,decay:.12,sustain:.84,release:.18,pulse:22,pwmDepth:16,pwmRate:3},
+    filter:{cutoff:6120,resonance:22,volume:70,mode:'lowpass'}}
+  ],
+  lfos:[
+   {enabled:true,wave:'sine',rate:4.8,depth:.24,target:'cutoff',engines:'all'},
+   {enabled:true,wave:'triangle',rate:2.2,depth:.18,target:'detune',engines:'all'},
+   {enabled:true,wave:'sine',rate:.9,depth:.22,target:'volume',engines:'2'}
+  ],
+  performance:{
+   masterBpm:128,
+   routing:{keyboard:'layer',arp:'layer',game:'layer'},
+   arp:{enabled:true,latch:false,pattern:'updown',rate:4,sync:true,localBpm:128},
+   game:{enabled:true,style:'adventure',rate:8},
+   scale:{tonic:5,id:'natural-minor',lock:true}
+  }
+ }),
+ factory('showcase-fredgray-cauldron','Fred Gray · Cauldron Brew','Showcase',{
+  instrument:{voiceCount:6,unisonCount:2,mode:'duo',detune:20},
+  engines:[
+   {model:6581,pan:-40,voice:{wave:'square',attack:0,decay:.24,sustain:.82,release:.28,pulse:40,pwmDepth:28,pwmRate:1.2},
+    filter:{cutoff:1380,resonance:24,volume:82,mode:'lowpass'}},
+   {model:6581,pan:0,voice:{wave:'triangle',attack:.02,decay:.2,sustain:.78,release:.24},
+    filter:{cutoff:3020,resonance:20,volume:76,mode:'lowpass'}},
+   {model:8580,pan:40,voice:{wave:'square',attack:0,decay:.18,sustain:.74,release:.2,pulse:48,pwmDepth:22,pwmRate:.9},
+    filter:{cutoff:5480,resonance:16,volume:72,mode:'lowpass'}}
+  ],
+  lfos:[
+   {enabled:true,wave:'sine',rate:.4,depth:.45,target:'pwmDepth',engines:'all'},
+   {enabled:true,wave:'triangle',rate:.28,depth:.36,target:'cutoff',engines:'all'},
+   {enabled:true,wave:'sample-hold',rate:1.6,depth:.18,target:'pulse',engines:'3'}
+  ],
+  performance:{
+   masterBpm:98,
+   routing:{keyboard:'layer',arp:'layer',game:'layer'},
+   arp:{enabled:true,latch:true,pattern:'up',rate:2,sync:true,localBpm:98},
+   game:{enabled:false,style:'adventure',rate:4},
+   scale:{tonic:0,id:'chromatic',lock:false}
+  }
+ }),
+ factory('showcase-tel-lotus','Tel · Lotus Sprint','Showcase',{
+  instrument:{voiceCount:9,unisonCount:3,mode:'poly',detune:26},
+  engines:[
+   {model:6581,pan:-46,voice:{wave:'square',attack:0,decay:.08,sustain:.74,release:.09,pulse:16,pwmDepth:10,pwmRate:6.4},
+    filter:{cutoff:980,resonance:36,volume:90,mode:'lowpass'}},
+   {model:6581,pan:0,voice:{wave:'sawtooth',attack:0,decay:.06,sustain:.7,release:.08},
+    filter:{cutoff:3180,resonance:40,volume:84,mode:'lowpass'}},
+   {model:8580,pan:46,voice:{wave:'square',attack:0,decay:.05,sustain:.66,release:.07,pulse:12,pwmDepth:8,pwmRate:7.8},
+    filter:{cutoff:6480,resonance:30,volume:78,mode:'highpass'}}
+  ],
+  lfos:[
+   {enabled:true,wave:'triangle',rate:10.5,depth:.22,target:'detune',engines:'all'},
+   {enabled:true,wave:'square',sync:true,syncDivision:8,rate:1,depth:.3,target:'cutoff',engines:'all'},
+   {enabled:true,wave:'sawtooth',rate:4.2,depth:.2,target:'pulse',engines:'3'}
+  ],
+  performance:{
+   masterBpm:156,
+   routing:{keyboard:'layer',arp:'layer',game:'layer'},
+   arp:{enabled:true,latch:false,pattern:'up',rate:16,sync:true,localBpm:156},
+   game:{enabled:true,style:'arcade',rate:8},
+   scale:{tonic:0,id:'chromatic',lock:false}
+  }
+ }),
+ factory('showcase-maniacs-speedball','Maniacs · Speedball Riot','Showcase',{
+  instrument:{voiceCount:6,unisonCount:2,mode:'poly',detune:16},
+  engines:[
+   {model:6581,pan:-44,voice:{wave:'sawtooth',attack:0,decay:.1,sustain:.8,release:.11},
+    filter:{cutoff:1420,resonance:44,volume:86,mode:'lowpass'}},
+   {model:6581,pan:0,voice:{wave:'square',attack:0,decay:.08,sustain:.76,release:.1,pulse:18,pwmDepth:14,pwmRate:4.2},
+    filter:{cutoff:3280,resonance:38,volume:80,mode:'bandpass'}},
+   {model:8580,pan:44,voice:{wave:'noise',attack:0,decay:.04,sustain:0,release:.03},
+    filter:{cutoff:6200,resonance:28,volume:62,mode:'highpass'}}
+  ],
+  lfos:[
+   {enabled:true,wave:'square',rate:12,depth:.24,target:'volume',engines:'3'},
+   {enabled:true,wave:'triangle',rate:6.6,depth:.2,target:'cutoff',engines:'all'},
+   {enabled:true,wave:'sawtooth',rate:3.4,depth:.16,target:'detune',engines:'all'}
+  ],
+  performance:{
+   masterBpm:148,
+   routing:{keyboard:'layer',arp:'layer',game:'layer'},
+   arp:{enabled:true,latch:false,pattern:'random',rate:8,sync:true,localBpm:148},
+   game:{enabled:true,style:'arcade',rate:8},
    scale:{tonic:0,id:'chromatic',lock:false}
   }
  }),

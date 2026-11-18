@@ -2,7 +2,7 @@
 
 **Purpose:** Listening and patch-design **references only**. Project6581 factory presets are **original** designs; nothing here claims a note-for-note match or uses ripped game data.
 
-**Showcase factory presets** (triple-SID demos, not transcriptions): `Init` (general capability), `Galway · Epic Pad` (Parallax-style slow PWM + filter drift), `Hubbard · Commando` (punchy square bass + action arps), `Hubbard · Monty Drive` (legato stacked leads + adventure Game Arp). All four use **Layer (per SID)** on keyboard, Root Arp, and Game Arp so each engine card’s timbre sounds together. Audition on HVSC references below when tuning.
+**Showcase factory presets** (triple-SID demos, not transcriptions): **14** sounds in the **Showcase** browser group — `Init` plus composer-inspired stacks (Galway, Hubbard, Hülsbeck/Turrican, Follin, Tel, Daglish, Whittaker, Gray, Fred Gray, Maniacs of Noise, and more). All use **Layer (per SID)** on keyboard, Root Arp, and Game Arp. Audition on HVSC references below when tuning.
 
 **HVSC paths (PAL 6581 unless noted):**
 
