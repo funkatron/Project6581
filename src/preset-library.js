@@ -309,8 +309,8 @@ export const FACTORY_PRESETS=Object.freeze([
   performance:{
    masterBpm:138,
    routing:{keyboard:'layer',arp:'layer',game:'layer'},
-   arp:{enabled:true,latch:false,pattern:'up',rate:8,sync:true,localBpm:138},
-   game:{enabled:false,style:'action',rate:8},
+   arp:{enabled:true,latch:false,pattern:'up',rate:4,sync:true,localBpm:138},
+   game:{enabled:false,style:'action',rate:4},
    scale:{tonic:0,id:'chromatic',lock:false}
   }
  }),
@@ -356,8 +356,8 @@ export const FACTORY_PRESETS=Object.freeze([
   performance:{
    masterBpm:152,
    routing:{keyboard:'layer',arp:'layer',game:'layer'},
-   arp:{enabled:true,latch:false,pattern:'up',rate:8,sync:true,localBpm:152},
-   game:{enabled:false,style:'action',rate:8},
+   arp:{enabled:true,latch:false,pattern:'up',rate:4,sync:true,localBpm:152},
+   game:{enabled:false,style:'action',rate:4},
    scale:{tonic:0,id:'chromatic',lock:false}
   }
  }),
@@ -379,8 +379,8 @@ export const FACTORY_PRESETS=Object.freeze([
   performance:{
    masterBpm:126,
    routing:{keyboard:'layer',arp:'layer',game:'layer'},
-   arp:{enabled:true,latch:false,pattern:'random',rate:8,sync:true,localBpm:126},
-   game:{enabled:false,style:'action',rate:8},
+   arp:{enabled:true,latch:false,pattern:'random',rate:4,sync:true,localBpm:126},
+   game:{enabled:false,style:'action',rate:4},
    scale:{tonic:0,id:'chromatic',lock:false}
   }
  }),
@@ -403,7 +403,7 @@ export const FACTORY_PRESETS=Object.freeze([
    masterBpm:118,
    routing:{keyboard:'layer',arp:'layer',game:'layer'},
    arp:{enabled:true,latch:true,pattern:'updown',rate:4,sync:true,localBpm:118},
-   game:{enabled:false,style:'arcade',rate:8},
+   game:{enabled:false,style:'arcade',rate:4},
    scale:{tonic:0,id:'chromatic',lock:false}
   }
  }),
@@ -426,7 +426,7 @@ export const FACTORY_PRESETS=Object.freeze([
    masterBpm:144,
    routing:{keyboard:'layer',arp:'layer',game:'layer'},
    arp:{enabled:true,latch:false,pattern:'up',rate:4,sync:true,localBpm:144},
-   game:{enabled:false,style:'action',rate:8},
+   game:{enabled:false,style:'action',rate:4},
    scale:{tonic:0,id:'chromatic',lock:false}
   }
  }),
@@ -472,7 +472,7 @@ export const FACTORY_PRESETS=Object.freeze([
    masterBpm:120,
    routing:{keyboard:'layer',arp:'layer',game:'layer'},
    arp:{enabled:true,latch:false,pattern:'down',rate:4,sync:true,localBpm:120},
-   game:{enabled:false,style:'action',rate:8},
+   game:{enabled:false,style:'action',rate:4},
    scale:{tonic:0,id:'chromatic',lock:false}
   }
  }),
@@ -495,7 +495,7 @@ export const FACTORY_PRESETS=Object.freeze([
    masterBpm:128,
    routing:{keyboard:'layer',arp:'layer',game:'layer'},
    arp:{enabled:true,latch:false,pattern:'updown',rate:4,sync:true,localBpm:128},
-   game:{enabled:false,style:'adventure',rate:8},
+   game:{enabled:false,style:'adventure',rate:4},
    scale:{tonic:5,id:'natural-minor',lock:true}
   }
  }),
@@ -541,7 +541,7 @@ export const FACTORY_PRESETS=Object.freeze([
    masterBpm:156,
    routing:{keyboard:'layer',arp:'layer',game:'layer'},
    arp:{enabled:true,latch:false,pattern:'up',rate:4,sync:true,localBpm:156},
-   game:{enabled:false,style:'arcade',rate:8},
+   game:{enabled:false,style:'arcade',rate:4},
    scale:{tonic:0,id:'chromatic',lock:false}
   }
  }),
@@ -563,8 +563,8 @@ export const FACTORY_PRESETS=Object.freeze([
   performance:{
    masterBpm:148,
    routing:{keyboard:'layer',arp:'layer',game:'layer'},
-   arp:{enabled:true,latch:false,pattern:'random',rate:8,sync:true,localBpm:148},
-   game:{enabled:false,style:'arcade',rate:8},
+   arp:{enabled:true,latch:false,pattern:'random',rate:4,sync:true,localBpm:148},
+   game:{enabled:false,style:'arcade',rate:4},
    scale:{tonic:0,id:'chromatic',lock:false}
   }
  }),
@@ -587,8 +587,8 @@ export const FACTORY_PRESETS=Object.freeze([
   performance:{
    masterBpm:116,
    routing:{keyboard:'layer',arp:'layer',game:'layer'},
-   arp:{enabled:true,latch:false,pattern:'updown',rate:8,sync:true,localBpm:116},
-   game:{enabled:false,style:'action',rate:8},
+   arp:{enabled:true,latch:false,pattern:'updown',rate:4,sync:true,localBpm:116},
+   game:{enabled:false,style:'action',rate:4},
    scale:{tonic:6,id:'harmonic-minor',lock:true}
   }
  }),
@@ -656,8 +656,8 @@ export const FACTORY_PRESETS=Object.freeze([
   performance:{
    masterBpm:122,
    routing:{keyboard:'layer',arp:'layer',game:'layer'},
-   arp:{enabled:true,latch:false,pattern:'up',rate:8,sync:true,localBpm:122},
-   game:{enabled:false,style:'action',rate:8},
+   arp:{enabled:true,latch:false,pattern:'up',rate:4,sync:true,localBpm:122},
+   game:{enabled:false,style:'action',rate:4},
    scale:{tonic:2,id:'major',lock:false}
   }
  }),
@@ -703,7 +703,7 @@ export const FACTORY_PRESETS=Object.freeze([
    masterBpm:128,
    routing:{keyboard:'layer',arp:'layer',game:'layer'},
    arp:{enabled:true,latch:false,pattern:'updown',rate:4,sync:true,localBpm:128},
-   game:{enabled:false,style:'arcade',rate:8},
+   game:{enabled:false,style:'arcade',rate:4},
    scale:{tonic:0,id:'chromatic',lock:false}
   }
  }),
@@ -739,7 +739,7 @@ export const FACTORY_PRESETS=Object.freeze([
    {pan:32,voice:{wave:'sawtooth',attack:.003,decay:.11,sustain:.85,release:.14},filter:{cutoff:8600,resonance:8,volume:50}}
   ],
   lfos:[{enabled:true,wave:'triangle',rate:4.2,depth:.14,target:'detune',engines:'all'}],
-  performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:true,style:'arcade'}}
+  performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false},arp:{enabled:true,pattern:'up',rate:4,sync:true}}
  }),
  factory('complex-layer-brass','Brass Chord Layer','Keys',{
   instrument:{voiceCount:6,unisonCount:2,mode:'poly',detune:9},
@@ -785,7 +785,7 @@ export const FACTORY_PRESETS=Object.freeze([
    {pan:0,voice:{wave:'sawtooth',attack:0,decay:.1,sustain:.6,release:.08},filter:{cutoff:3050,resonance:24,volume:67}},
    {pan:38,voice:{wave:'square',attack:0,decay:.06,sustain:.44,release:.05,pulse:14},filter:{cutoff:6600,resonance:14,volume:57}}
   ],
-  performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:true,style:'action',rate:8},arp:{enabled:true,pattern:'up',rate:4,sync:true}}
+  performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false},arp:{enabled:true,pattern:'up',rate:4,sync:true}}
  }),
  factory('complex-layer-turrican','Heroic Storm Layer','Leads',{
   instrument:{voiceCount:3,unisonCount:3,mode:'legato',detune:22},
@@ -795,7 +795,7 @@ export const FACTORY_PRESETS=Object.freeze([
    {pan:36,voice:{wave:'square',attack:.002,decay:.08,sustain:.81,release:.13,pulse:28,pwmDepth:9,pwmRate:1.9},filter:{cutoff:7400,resonance:17,volume:55}}
   ],
   lfos:[{enabled:true,wave:'triangle',rate:.32,depth:.22,target:'resonance',engines:'2'}],
-  performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:true,style:'adventure',rate:4}}
+  performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false},arp:{enabled:true,pattern:'up',rate:4,sync:true}}
  }),
  factory('complex-layer-synthpop','Neon Chorus Layer','Keys',{
   instrument:{voiceCount:6,unisonCount:2,mode:'poly',detune:17},
@@ -808,7 +808,7 @@ export const FACTORY_PRESETS=Object.freeze([
    {enabled:true,wave:'sine',rate:6.5,depth:.18,target:'volume',engines:'3'},
    {enabled:true,wave:'triangle',rate:.5,depth:.1,target:'detune',engines:'all'}
   ],
-  performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false},arp:{enabled:true,pattern:'updown',rate:8,sync:true}}
+  performance:{routing:{keyboard:'layer',arp:'layer',game:'sid1'},game:{enabled:false},arp:{enabled:true,pattern:'updown',rate:4,sync:true}}
  }),
  factory('complex-layer-firestart','Firestart Corridor Layer','FX',{
   instrument:{voiceCount:4,unisonCount:2,mode:'legato',detune:13},
