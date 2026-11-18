@@ -130,7 +130,7 @@ Per-row preset dropdown is **v1 stretch**; fixed map is acceptable for first imp
 | Artifact | What it stores | User mental model |
 | --- | --- | --- |
 | **Pattern** | 16×6 hit grid + transport (`rate`, `sync`, optional `length` 8/16 later) | “The beat” (like a TR pattern) |
-| **Kit** | Six **lanes**, each `{ presetId, midiNote, pan? }` — **kick + snare always center** (`pan` ignored / 0); pan on **CH, OH, clap, tom** only | “The sounds” + stereo kit + motion |
+| **Kit** | Six **lanes**, each `{ presetId, midiNote, level? }` — optional **per-hit volume trim** (authentic register gain); **no per-lane stereo pan** (shelved — §6d) | “The sounds” + balance |
 
 - Changing the **pattern** does not change timbres; changing the **kit** does not erase steps (same as hardware: load pattern + load kit).
 - **v1 kit UI:** embedded default factory kit only; lane preset picker = **v1.1** slice (can ship hidden behind long-press row label).
@@ -160,9 +160,9 @@ Per-row preset dropdown is **v1 stretch**; fixed map is acceptable for first imp
 | --- | --- |
 | **D0** | Tab shell: `#tabDrum`, `#drumPanel`, workspace `data-tab` CSS |
 | **D1** | `drum-step-sequencer.js` data model + tests (16×6 booleans, validate) |
-| **D1b** | **SID 4 (drum chip):** native `sid_bridge.cpp` + worklet mix + engine index `3`; **full SID engine card** (same controls as 1–3); **per-voice pan mix** for lane pans; **requires WASM rebuild** |
-| **D3b** | **Pan** on grid row headers for **CH, OH, clap, tom** only; kick/snare fixed center (no control or locked at 0) |
-| **D3c** | **Drum LFO** on DRUM SEQ tab; `sound.drumLfo`; v1 target **`drumPeripheralPan`** (CH/OH/clap/tom only) + SID 4 filter/volume/chip pan |
+| **D1b** | **SID 4 (drum chip):** native `sid_bridge.cpp` + worklet mix + engine index `3`; **full SID engine card**; **chip pan** only (same as 1–3); **requires WASM rebuild** |
+| **D3b** | Optional per-lane **level** trim on row headers (maps to voice volume at trigger — authentic); no lane pan sliders |
+| **D3c** | **Drum LFO** on DRUM SEQ tab; `sound.drumLfo`; targets SID 4 **chip pan**, filter, volume, pulse/ADSR — **no** `drumPeripheralPan` |
 | **D2** | `mountDrumPerformance` clock — separate from `game.timer` / `arp.timer` |
 | **D3** | Grid UI + tab transport; wire **DRUM** pill (**first** in `generator-led-ui.js`) via extended `generator-led-ui.js` + drum performance state |
 | **D4** | Preset v5+ `performance.drumSequence` + `performance.drumKit` + `sound.engines[3]` defaults; **standalone groove** import/export (pattern+kit); user kit bank optional |
@@ -181,7 +181,7 @@ Preserve reSIDfp note path. Voice budget: one short hit per row per step (monoph
 | **Melodic engines** | SID 1–3 unchanged: routing, layer mode, voice budget, preset `sound.engines[0..2]` |
 | **Drum engine** | SID 4 holds kit timbres (per-lane snapshots + optional global drum filter/model on the card) |
 | **Routing** | Drum clock **never** uses `performance.routing.keyboard|arp|game`; always `chipMask: [3]` |
-| **Mix** | Chip-level pan + meter like 1–3; **lane pan** via per-voice stereo weights in WASM (§6d) |
+| **Mix** | **Chip-level pan** + meter like engines 1–3 (§6d — no mix decomposition) |
 | **UI** | **Fourth engine card** on SYNTH tab — same surface as SID 1–3 (model, voice, filter, pan, pitch envelope, enable, meter); DRUM SEQ tab links/focuses SID 4 |
 
 **Why a real fourth chip (not “borrow SID 2”):** Owner wants drums **isolated** — six-lane steps and short decays should not compete with lead polyphony or steal melodic voices.
@@ -238,48 +238,37 @@ Same `triggerDrumLane` as the sequencer — one preview hit, no clock advance.
 
 ---
 
-## 6d. Per-lane pan + **Drum LFO** (feasibility)
+## 6d. Stereo / mix (authentic SID — decomposition **shelved**)
 
-### Per-drum-track pan
+**Owner (2026-11-18):** Shelve **mix decomposition** (no triple-render / fake per-oscillator stereo). Stay on **true SID behavior**: one mono bus per chip, then **chip pan** in the bridge — same as engines 1–3.
 
-**Owner mix rule (2026-11-18):** **Kick and snare stay centered.** Panning is for **CH, OH, clap, tom** — the “peripheral” lanes that benefit from width.
+### What we ship instead
 
-| Lane | Pan in UI | Default |
+| Control | Authentic? | Use |
 | --- | --- | --- |
-| Kick, Snare | **None** (always `0`, center) | `0` |
-| CH, OH, Clap, Tom | Slider `-100…+100` | Factory kit suggests mild spread (e.g. CH `-35`, OH `+35`, clap `0`, tom `-20`) — tweakable |
+| **SID 4 card Pan** | Yes (app mixer, like other chips) | Position the **whole drum kit** in the stereo field |
+| **SID 4 filter / volume** | Yes | Tone and bus level |
+| **Per-lane `level` (optional)** | Yes (per-voice volume register at hit time) | Balance hats vs clap vs tom — **not** stereo pan |
+| **Drum LFO → chip pan / filter / volume** | Yes | Motion on the drum bus |
 
-| Item | Detail |
-| --- | --- |
-| **Schema** | `lanes[].pan` optional; for `kick` / `sn` import coerce to `0` |
-| **Not hardware SID** | Real 6581 has **one mono mix per chip** — **no per-oscillator pan**. Today `sid_render` calls `chip->clock(scratch)` once; **chip pan** moves kick and CH together. |
-| **Kick + CH same step** | Must **not** move kick when CH pans. Requires **decomposed mix on SID 4 only** (see below), not the current single-scratch path. |
-| **Engine approach (D1b)** | After reSIDfp emits audio, **sum each of the three voices into L/R separately** (per-voice tap if lib supports it, else **up to 3 muted-voice render passes** per drum block — CPU bounded to chip 4). Apply lane pan only to the voice index that lane owns at `noteOn`; kick/sn lanes always **center** weights. When 4–6 hits steal voices, pan follows **whichever lane owns that voice** — acceptable with owner sign-off on steal behavior. |
-| **Chip pan** | Engine card **Pan** still pans the whole drum bus; peripheral lane pans are **relative** inside the bus |
+### Shelved (do not implement without new owner decision)
+
+- Per-lane stereo pan sliders (`lanes[].pan`)
+- `drumPeripheralPan` LFO target
+- WASM voice decomposition on SID 4
+
+**Note:** Kick and snare remain **musically centered** by convention (kit defaults, not fake stereo). When the user pans SID 4, kick and CH **move together** — correct for a single SID chip.
 
 ### Dedicated **Drum LFO** (one)
 
 | Item | Detail |
 | --- | --- |
-| **Placement** | **DRUM SEQ** tab (not the global LFOs tab) — “Drum LFO” block beside rate/transport |
-| **Scope** | Affects **SID 4 only** + drum kit lanes; never modulates SID 1–3 unless user copies a trick manually |
-| **Preset** | `sound.drumLfo` — same shape as one melodic LFO (`enabled`, `wave`, `rate`, `sync`, `depth`, `target`, …); **separate** from the fixed **three** melodic LFOs so v5 validation stays stable |
-| **Targets (v1)** | **`drumPeripheralPan`** — LFO offsets pan on **CH, OH, clap, tom only** (kick/sn excluded); `volume`, `cutoff`, `resonance`, `pan` (whole SID 4), plus ADSR/pulse if useful |
-| **v1.1** | Single-lane pick (e.g. hats only) if one macro is still too wide |
+| **Placement** | **DRUM SEQ** tab — “Drum LFO” beside rate/transport |
+| **Scope** | **SID 4 only** (`engines: '4'` or hard-scoped in drum mod path) |
+| **Preset** | `sound.drumLfo` — same shape as one melodic LFO; separate from the three global LFOs |
+| **Targets (v1)** | `pan` (chip 4), `volume`, `cutoff`, `resonance`, `pulse`, ADSR as needed — same register semantics as melodic LFOs on one engine |
 
-**Drum LFO + pan:** implement **`drumPeripheralPan`** as bipolar offset on the four peripheral `lanes[].pan` values in `updateModulation` / drum mod tick (main thread, like chip pan today). Foundation stays **centered kick/sn**.
-
-### Is this too much? SID limits?
-
-| Concern | Verdict |
-| --- | --- |
-| **Oscillators** | Drum LFO is **software** — does **not** use a fourth SID voice. Still **3 voices** on SID 4; LFO only moves registers / mix gains. |
-| **Full SID 4 card** | **Low risk** — reuse existing panel code + `engines[3]`; preset/import grow to four engines. |
-| **Per-lane pan** | **Medium** — needs WASM mixer work with D1b; UI + schema are easy. Correct stereo with 6 simultaneous hits is **approximate** when voices steal (same as steal tails). |
-| **Drum LFO** | **Medium-low** — new `sound.drumLfo`, target enum, mod hook; no audio-thread requirement for pan in v1. |
-| **CPU / iPad** | Fourth chip + same LFO math as today; monitor in D5 QA. |
-
-**Recommendation:** Ship **D1b + full card + lane pan + drum LFO** in the drum epic; treat **per-lane LFO targets** (one LFO per row) as v1.1 unless scope creeps.
+**Recommendation:** **D1b** = fourth chip + standard `sid_set_pan(3, …)` + full engine card; **D3c** Drum LFO without lane-pan targets.
 
 ---
 
@@ -354,7 +343,7 @@ Factory showcase presets may ship with a **default groove** baked in for demo; G
 - [ ] Import/export **6581drum** groove (pattern + kit together)
 - [ ] Generator LED order: **DRUM** left of **ROOT**
 - [ ] SID 4 card matches SID 1–3 controls on SYNTH tab
-- [ ] Pan on CH/OH/clap/tom; kick/sn centered; Drum LFO **`drumPeripheralPan`** (or chip targets)
+- [ ] SID 4 chip pan only; optional lane **level** trims; Drum LFO on chip pan/filter/volume (no lane stereo)
 
 ---
 
