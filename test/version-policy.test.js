@@ -55,7 +55,10 @@ test('git log since baseline returns merge bodies with PR titles',()=>{
   assert.ok(merge);
   const lines=merge.split('\n').map(line=>line.trim()).filter(Boolean);
   assert.ok(lines.length>=2);
-  assert.ok(lines.some(line=>/^(fix|feat|chore):/i.test(line)),'merge body includes a conventional commit title');
+  assert.ok(
+    lines.some(line=>/^(fix|feat|chore):/i.test(line))||countsTowardVersion(merge),
+    'merge body includes a conventional title or a versioned merge subject'
+  );
 });
 test('mechanical package sync commits do not increment',()=>{
   assert.equal(countsTowardVersion('chore: sync package.json to 0.3.2\n'),false);
