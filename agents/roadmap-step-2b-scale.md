@@ -11,6 +11,7 @@
 ## Automated
 
 - [x] `src/western-scales.js` + `test/western-scales.test.js`
+- [x] Direct polyphony: colliding scale-lock keys share one voice until the last physical key-up (`test/scale-lock-hold.test.js`)
 - [x] Full `node --test`
 
 ## Device (owner)

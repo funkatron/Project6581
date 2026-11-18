@@ -82,6 +82,15 @@ export function resolvePerformanceNote(midi,state){
  return quantizeToScale(clamped,normalizeScaleState(state));
 }
 
+/** Count held physical MIDI notes that resolve to the same performance pitch. */
+export function countHeldResolvingTo(heldNotes,resolveNote,resolvedMidi){
+ let count=0;
+ for(const physical of heldNotes){
+  if(resolveNote(physical)===resolvedMidi)count++;
+ }
+ return count;
+}
+
 export function readScaleStateFromDom($){
  if(!$('scaleKey'))return normalizeScaleState({});
  return normalizeScaleState({

@@ -165,7 +165,13 @@ export function mountPerformance({
   arpStopVoice();arp.root=null;
  }
  function releaseDirectNotes(){
-  for(const note of directOwned)stop(note);
+  const seen=new Set();
+  for(const physical of directOwned){
+   const resolved=performanceNote(physical);
+   if(seen.has(resolved))continue;
+   seen.add(resolved);
+   stop(physical);
+  }
   directOwned.clear();
  }
  function restartGenerators(){
@@ -174,8 +180,13 @@ export function mountPerformance({
   if(!gameEnabled()&&!arpEnabled()){
    // Return physically held keys to direct sound; never retain stale latches.
    arp.latched.clear();
+   const heard=new Set();
    for(const note of arp.held){
-    if(!directOwned.has(note)){play(note);directOwned.add(note)}
+    const resolved=performanceNote(note);
+    directOwned.add(note);
+    if(heard.has(resolved))continue;
+    heard.add(resolved);
+    play(note);
    }
    $('arpStatus').textContent='Arps off';return;
   }

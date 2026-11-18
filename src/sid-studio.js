@@ -397,7 +397,7 @@ let renderKeyboard=()=>{};
   $('sidPlaybackStatus').textContent='SID key presses: '+sidKeys+' · waiting for audio samples…';
  },
  activeNotes,arp,game,gameEnabled,arpEnabled,latchOn,directOwned,play,stop,restartGenerators,stopGenerators,
- gameRestart,arpStopVoice,arpNotes,
+ gameRestart,arpStopVoice,arpNotes,performanceNote,
  isSeqPreview:()=>seqPreview,
  getScaleState:()=>readScaleStateFromDom($),
  pitchInScale:note=>isPitchInScale(note,readScaleStateFromDom($)),
