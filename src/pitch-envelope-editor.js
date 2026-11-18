@@ -30,6 +30,14 @@ export function pitchEnvelopeTemplates(){
   laser:validatePitchEnvelope({
    enabled:true,interpolation:'linear',end:'zero',
    points:[{ms:0,semitones:-8},{ms:60,semitones:18},{ms:180,semitones:0}]
+  }),
+  snare:validatePitchEnvelope({
+   enabled:true,interpolation:'linear',end:'zero',
+   points:[{ms:0,semitones:5},{ms:40,semitones:-7},{ms:110,semitones:-14}]
+  }),
+  clap:validatePitchEnvelope({
+   enabled:true,interpolation:'linear',end:'zero',
+   points:[{ms:0,semitones:-3},{ms:28,semitones:9},{ms:95,semitones:0}]
   })
  };
 }

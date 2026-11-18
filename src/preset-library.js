@@ -936,7 +936,7 @@ export const FACTORY_PRESETS=Object.freeze([
  factory('tight-pulse-bass','Tight Pulse Bass','Bass',{voice:{wave:'square',attack:0,decay:.09,sustain:.28,release:.06,pulse:22},filter:{cutoff:1180,resonance:22,volume:74},performance:{game:{enabled:false}}}),
  factory('shimmer-pwm-keys','Shimmer PWM Keys','Keys',{voice:{wave:'square',attack:.05,decay:.42,sustain:.64,release:.68,pulse:43,pwmDepth:16,pwmRate:.48},filter:{cutoff:4600,resonance:14,volume:58},performance:{game:{enabled:false}}}),
  factory('bright-pulse-lead','Bright Pulse Lead','Leads',{voice:{wave:'square',attack:.002,decay:.12,sustain:.84,release:.11,pulse:17},filter:{cutoff:7350,resonance:10,volume:65},lfos:[{enabled:true,wave:'sine',rate:5.2,depth:.09,target:'pulse'}],performance:{game:{enabled:false}}}),
- factory('noise-snare','Noise Snare','Drums',{voice:{wave:'noise',attack:0,decay:.09,sustain:0,release:.01},filter:{cutoff:6200,resonance:10,volume:70,mode:'highpass'},performance:{game:{enabled:false}}}),
+ factory('noise-snare','Noise Snare','Drums',{voice:{wave:'noise',attack:0,decay:.09,sustain:0,release:.01,pitchEnvelope:FACTORY_PITCH.snare},filter:{cutoff:6200,resonance:10,volume:70,mode:'highpass'},performance:{game:{enabled:false}}}),
  // Five additional original sounds in each category; retains the four approved prototypes.
  // Bass: contrasting PWM, filter, tone and octave-arpeggio behaviors.
  factory('pwm-drive-bass','PWM Drive Bass','Bass',{voice:{wave:'square',attack:.002,decay:.18,sustain:.58,release:.09,pulse:32,pwmDepth:21,pwmRate:1.22},filter:{cutoff:1780,resonance:22,volume:71},performance:{game:{enabled:false}}}),
@@ -960,7 +960,7 @@ export const FACTORY_PRESETS=Object.freeze([
  factory('low-thud-kick','Low Thud Kick','Drums',{voice:{wave:'triangle',attack:0,decay:.18,sustain:0,release:.01,pitchEnvelope:FACTORY_PITCH.kick},filter:{cutoff:540,resonance:11,volume:92},performance:{game:{enabled:false}}}),
  factory('closed-noise-hat','Closed Noise Hat','Drums',{voice:{wave:'noise',attack:0,decay:.03,sustain:0,release:.01},filter:{cutoff:7600,resonance:7,volume:60,mode:'highpass'},performance:{game:{enabled:false}}}),
  factory('open-noise-hat','Open Noise Hat','Drums',{voice:{wave:'noise',attack:0,decay:.34,sustain:0,release:.1},filter:{cutoff:8000,resonance:9,volume:58,mode:'highpass'},performance:{game:{enabled:false}}}),
- factory('noise-clap','Noise Clap','Drums',{voice:{wave:'noise',attack:0,decay:.14,sustain:0,release:.06},filter:{cutoff:3000,resonance:30,volume:68,mode:'bandpass'},lfos:[{enabled:true,wave:'square',rate:18,depth:.52,target:'volume'}],performance:{game:{enabled:false}}}),
+ factory('noise-clap','Noise Clap','Drums',{voice:{wave:'noise',attack:0,decay:.14,sustain:0,release:.06,pitchEnvelope:FACTORY_PITCH.clap},filter:{cutoff:3000,resonance:30,volume:68,mode:'bandpass'},lfos:[{enabled:true,wave:'square',rate:18,depth:.52,target:'volume'}],performance:{game:{enabled:false}}}),
  factory('low-tom','Low Tom','Drums',{voice:{wave:'triangle',attack:0,decay:.26,sustain:0,release:.07,pitchEnvelope:FACTORY_PITCH.tom},filter:{cutoff:1180,resonance:21,volume:84},performance:{game:{enabled:false}}})
 ]);
 export const SHOWCASE_FACTORY_IDS=Object.freeze(
