@@ -18,7 +18,8 @@ import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from "./pitch-envelope.js?
 import {mountEditorTabs} from "./editor-tabs.js?v=__BUILD_ID__";
 import {mountDrumPanel} from "./drum-panel-ui.js?v=__BUILD_ID__";
 import {createPerformanceDrumState} from "./performance-drum-state.js?v=__BUILD_ID__";
-import {mountDrumPerformance} from "./drum-performance.js?v=__BUILD_ID__";
+import {mountDrumPerformance,readDrumSequenceFromDom} from "./drum-performance.js?v=__BUILD_ID__";
+import {mountDrumGrooveIo} from "./drum-groove-ui.js?v=__BUILD_ID__";
 import {defaultDrumKit,defaultDrumSequence,validateDrumKit,validateDrumSequence} from "./drum-step-sequencer.js?v=__BUILD_ID__";
 import {DRUM_ENGINE_INDEX} from "./sid-engines.js?v=__BUILD_ID__";
 import {drumOwnerKey,drumLaneTimbre,drumReleaseMilliseconds,isDrumOwner} from "./drum-lane-trigger.js?v=__BUILD_ID__";
@@ -495,6 +496,17 @@ function toggleDrumTransport(){
  refreshPresetDirty();
 }
 mountGeneratorLeds($,{performanceArp,performanceDrum,toggleDrumTransport,onGeneratorToggle:()=>refreshPresetDirty()});
+mountDrumGrooveIo({
+ $,
+ collectGroove:()=>({
+  name:drumKit.name,
+  drumSequence:validateDrumSequence({...drumSequence,...readDrumSequenceFromDom($,drumSequence),enabled:false}),
+  drumKit:validateDrumKit(drumKit),
+  drumEngine:engines[3]
+ }),
+ applyGroove:applyDrumGroove,
+ onStatus:()=>{}
+});
 let renderKeyboard=()=>{};
 ({flushQueuedKeys,keyDown,keyUp,renderKeyboard}=mountKeyboard({
  $,keys,names,keyboardState,audioTiming,sidEventLog,
@@ -1034,7 +1046,7 @@ function snapshotPresetSettings(){
  const arpPattern=$('arpPattern').value||'up';
  return validatePresetSettings({
   sound:{
-   engines:engines.map(engine=>({model:engine.model,pan:engine.pan,
+   engines:engines.map(engine=>({model:engine.model,pan:engine.pan,outputBoostDb:engine.outputBoostDb,
     voice:{...engine.voice},filter:{...engine.filter}})),
    instrument:performanceInstrument.getState(),
    lfos:lfoState.map(lfo=>({...lfo}))
@@ -1046,11 +1058,50 @@ function snapshotPresetSettings(){
     rate:Number($('arpRate').value),sync:$('arpSync').checked,localBpm:Number($('arpBpm').value)},
    game:{enabled:performanceArp.gameOn,style:$('gameArpStyle').value||'action',
     rate:Number($('gameRate').value),sequence:seqState},
+   drumSequence:validateDrumSequence({...drumSequence,...readDrumSequenceFromDom($,drumSequence),enabled:false}),
+   drumKit:validateDrumKit(drumKit),
    scale:readScaleStateFromDom($)
   }
  });
 }
+function applyDrumFromPreset(perf){
+ drumStop();
+ performanceDrum.setRunning(false);
+ drumSequence=validateDrumSequence(perf.drumSequence);
+ drumKit=validateDrumKit(perf.drumKit);
+ $('drumRate').value=String(drumSequence.rate);
+ $('drumSync').checked=drumSequence.sync;
+ $('drumBpm').value=String(drumSequence.localBpm);
+ $('drumBpmValue').textContent=String(drumSequence.localBpm);
+ setLayoutInert(document.querySelector('.drum-local-bpm'),drumSequence.sync);
+ drumPanelUi.render();
+}
+function applyDrumGroove(groove){
+ drumStop();
+ performanceDrum.setRunning(false);
+ drumSequence=validateDrumSequence(groove.drumSequence);
+ drumKit=validateDrumKit(groove.drumKit);
+ $('drumRate').value=String(drumSequence.rate);
+ $('drumSync').checked=drumSequence.sync;
+ $('drumBpm').value=String(drumSequence.localBpm);
+ $('drumBpmValue').textContent=String(drumSequence.localBpm);
+ setLayoutInert(document.querySelector('.drum-local-bpm'),drumSequence.sync);
+ if(groove.drumEngine){
+  const engine=groove.drumEngine;
+  engines[3].model=engine.model;
+  engines[3].pan=engine.pan;
+  engines[3].outputBoostDb=engine.outputBoostDb;
+  Object.assign(engines[3].voice,engine.voice);
+  Object.assign(engines[3].filter,engine.filter);
+  syncEngineChipGains();
+  enginePanelsUi?.render();
+ }
+ drumPanelUi.render();
+ refreshPresetDirty();
+}
 function resetPerformanceGenerators(){
+ drumStop();
+ performanceDrum.setRunning(false);
  gameStop();
  if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}
  arpStopVoice();
@@ -1065,6 +1116,7 @@ function applyPresetControls(next,{silenceAudio=true}={}){
  next.sound.engines.forEach((engine,index)=>{
   engines[index].model=engine.model;
   engines[index].pan=engine.pan;
+  engines[index].outputBoostDb=engine.outputBoostDb??engines[index].outputBoostDb;
   Object.assign(engines[index].voice,engine.voice);
   Object.assign(engines[index].filter,engine.filter);
  });
@@ -1092,6 +1144,7 @@ function applyPresetControls(next,{silenceAudio=true}={}){
  seqState=validateSequence(next.performance.game.sequence);
  renderSequenceSteps();
  loadBuiltInPhrase($('gameArpStyle').value);
+ applyDrumFromPreset(next.performance);
  renderKeyboard();
  enginePanelsUi?.render();renderLfos();updateUnison();updateModulation();
  void syncEngineChipModels();

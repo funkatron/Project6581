@@ -3,7 +3,7 @@ import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from './pitch-envelope.js'
 import {pitchEnvelopeTemplates} from './pitch-envelope-editor.js';
 const FACTORY_PITCH=pitchEnvelopeTemplates();
 import {createDefaultEngines,DEFAULT_ROUTING,ROUTE_OPTIONS,defaultDrumEngineSettings,defaultEngineSettings} from './sid-engines.js';
-import {validateDrumEngineBoost} from './drum-step-sequencer.js';
+import {defaultDrumKit,defaultDrumSequence,validateDrumEngineBoost,validateDrumKit,validateDrumSequence} from './drum-step-sequencer.js';
 import {validateScaleSettings} from './western-scales.js';
 import {LFO_TARGET_ORDER,LFO_WAVES} from './lfo-modulation.js';
 // Project6581 preset format v5: per-engine sound blocks and performance.routing (v4 imports upgrade).
@@ -63,9 +63,14 @@ export function defaultPresetSettings(){
    routing:{...DEFAULT_ROUTING},
    arp:{enabled:false,latch:false,pattern:'up',rate:4,sync:true,localBpm:120},
    game:{enabled:false,style:'action',rate:4,sequence:defaultSequence()},
+   drumSequence:defaultDrumSequence(),
+   drumKit:defaultDrumKit(),
    scale:{tonic:0,id:'chromatic',lock:false}
   }
  });
+}
+export function validateDrumEngineSlice(engine){
+ return validateEngine({...defaultDrumEngineSettings(),...object(engine??{},'drumEngine')},3);
 }
 function validateEngine(engine,index){
  const e=object(engine,'SID '+(index+1));
@@ -170,6 +175,8 @@ export function validatePresetSettings(value){
    game:{enabled:boolean(game.enabled,'Game Arp enabled'),style:choice(game.style,'Game Arp style',STYLES),
     rate:divisionChoice(game.rate,'Game Arp pattern rate',DIVISIONS,4),
     sequence:validateSequence(game.sequence??defaultSequence())},
+   drumSequence:validateDrumSequence(perf.drumSequence??defaultDrumSequence()),
+   drumKit:validateDrumKit(perf.drumKit??defaultDrumKit()),
    scale:validateScaleSettings(perf.scale)
   }
  };

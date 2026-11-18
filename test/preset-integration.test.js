@@ -130,10 +130,16 @@ test('chip selection switches the live engine and restores the previous model on
 
 test('empty live Arp selections snapshot as Up and Action so presets can still load',()=>{
  const source=script.slice(script.indexOf('function snapshotPresetSettings()'),script.indexOf('function applyPresetControls('));
- const engines=[{model:6581,pan:0,voice:{enabled:true},filter:{}},{model:6581,pan:0,voice:{enabled:true},filter:{}},{model:6581,pan:0,voice:{enabled:true},filter:{}}];
+ const engines=[{model:6581,pan:0,outputBoostDb:0,voice:{enabled:true},filter:{}},{model:6581,pan:0,outputBoostDb:0,voice:{enabled:true},filter:{}},{model:6581,pan:0,outputBoostDb:0,voice:{enabled:true},filter:{}},{model:6581,pan:0,outputBoostDb:6,voice:{enabled:true},filter:{}}];
+ const drumSequence={enabled:false,rate:4,sync:true,localBpm:120,steps:16,grid:[]};
+ const drumKit={name:'Factory 6581',lanes:{}};
  const app={
-  $:id=>({value:['arpPattern','gameArpStyle'].includes(id)?'':'1',checked:false}),
-  validatePresetSettings:value=>value,engines,lfoState:[],seqState:{},
+  $:id=>({value:['arpPattern','gameArpStyle','drumRate'].includes(id)?(id==='drumRate'?'4':''):'1',checked:id!=='drumSync'}),
+  validatePresetSettings:value=>value,
+  validateDrumSequence:value=>value,
+  validateDrumKit:value=>value,
+  readDrumSequenceFromDom:(_,seq)=>seq,
+  engines,lfoState:[],seqState:{},drumSequence,drumKit,
   readRoutingFromDom:()=>({keyboard:'all',arp:'all',game:'sid1'}),
   performanceArp:{rootOn:false,latchOn:false,gameOn:false},
   performanceRouting:{getState:()=>({keyboard:'all',arp:'all',game:'sid1'})},
