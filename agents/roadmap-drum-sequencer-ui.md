@@ -1,6 +1,6 @@
 # Drum sequencer UI plan (16 steps)
 
-**Status:** design approved (2026-11-18); tab + transport refined same day.  
+**Status:** design approved (2026-11-18); tab + transport + **SID 4 drum engine** + **standalone groove files** + **DRUM pill left of ROOT** (owner 2026-11-18).  
 **Owner request:** **16 steps**, own **DRUM SEQ** tab, preview **separate from arps**, **DRUM** control on keyboard strip.  
 **Goal:** Row-based drum grid — **not** a copy of the melodic Game Arp editor.
 
@@ -45,7 +45,8 @@
 | **Steps** | **16** fixed columns (v1); optional 8/16 *length* like Game Arp in v1.1 if needed |
 | **Rows** | **6 lanes** mapped to factory **Drums** category IDs (see §4) |
 | **Cell** | Boolean **hit** (on/off); **velocity** later slice |
-| **Sound** | Each row bound to a **kit lane** (factory preset id + fixed MIDI note + engine index); trigger applies **inline voice+filter snapshot**, not a full preset load per hit (§9) |
+| **Sound** | Each row bound to a **kit lane** on **dedicated SID 4** (index `3`); snapshot voice+filter at hit time (§6a–6b) |
+| **Drum engine** | **Fourth reSIDfp chip** — not in keyboard / arp / game routing; melodic triple SID unchanged |
 | **Clock** | Own **rate + sync** to master BPM; **fully independent** timer from Root/Game arps |
 | **Preview** | **Only** starts the drum clock — does **not** enable Root/Game, does **not** require held keys |
 | **Coexistence** | May run **in parallel** with keyboard + Root/Game; **Stop all** stops drum transport + releases drum hits |
@@ -80,7 +81,9 @@ Tab bar becomes: **SYNTH · ARP / SEQ · DRUM SEQ · LFOs** (Diagnostics unchang
 
 ## 3b. Keyboard strip — **DRUM** generator control
 
-Extend `#generatorLeds` (same component family as Root / Game / Latch in `generator-led-ui.js`):
+Extend `#generatorLeds` (same component family as Root / Game / Latch in `generator-led-ui.js`).
+
+**Order (left → right):** `DRUM` · `ROOT` · `GAME` · `LATCH` — drum transport is first so rhythm is one tap from the keyboard.
 
 | Control | Label shown | Tap behavior |
 | --- | --- | --- |
@@ -100,8 +103,8 @@ Extend `#generatorLeds` (same component family as Root / Game / Latch in `genera
 | Does the drum pattern follow held keys? | **No.** Drum hits use **fixed factory drum timbres** and default kit MIDI notes per row — not keyboard root / scale lock. |
 | Can I play chords under a drum loop? | **Yes.** Keyboard + Root/Game use normal `keyDown` / arp clocks; drum clock fires **one-shot hits** on its own grid. |
 | Does enabling Root Arp start the drum seq? | **No.** Only **DRUM** pill, tab **Preview**, or an explicit “arm” if we add one later. |
-| Voice budget | **Per-lane monophonic** owners (`drum:kick`, …); steal **only among drum hits on the same SID** (§9). Keyboard / arp voices on other chips are not stolen. |
-| Routing | Default kit spreads **2 lanes per engine** (6÷3 chips); `performance.routing.drum` optional later — v1 fixed map. |
+| Voice budget | All drum lanes → **SID 4 only**; per-lane owners; 3-voice steal **only on that chip** (§6b). Engines 1–3 never see drum hits. |
+| Routing | Keyboard / Root / Game routes ignore SID 4; drum seq is hard-wired to engine index `3`. |
 
 **Mental model:** Drum seq = **band drummer**; keyboard/arps = **bassist/lead** — same BPM when Sync on, separate start buttons.
 
@@ -127,11 +130,12 @@ Per-row preset dropdown is **v1 stretch**; fixed map is acceptable for first imp
 | Artifact | What it stores | User mental model |
 | --- | --- | --- |
 | **Pattern** | 16×6 hit grid + transport (`rate`, `sync`, optional `length` 8/16 later) | “The beat” (like a TR pattern) |
-| **Kit** | Six **lanes**, each `{ presetId, midiNote, engine }` | “The sounds” (like swapping 808 vs 909 samples) |
+| **Kit** | Six **lanes**, each `{ presetId, midiNote }` (implicit **engine `3` / SID 4**) | “The sounds” (like swapping 808 vs 909 samples) |
 
 - Changing the **pattern** does not change timbres; changing the **kit** does not erase steps (same as hardware: load pattern + load kit).
 - **v1 kit UI:** embedded default factory kit only; lane preset picker = **v1.1** slice (can ship hidden behind long-press row label).
 - **Named kits (user bank):** optional `category: "Drum kits"` entries — same JSON shape as a kit fragment; recall from DRUM SEQ header later. Not required for D0–D3.
+- **Standalone groove file (v1):** **pattern + kit together** — see §6c (`6581drum` / import on DRUM SEQ tab).
 
 ---
 
@@ -156,18 +160,38 @@ Per-row preset dropdown is **v1 stretch**; fixed map is acceptable for first imp
 | --- | --- |
 | **D0** | Tab shell: `#tabDrum`, `#drumPanel`, workspace `data-tab` CSS |
 | **D1** | `drum-step-sequencer.js` data model + tests (16×6 booleans, validate) |
+| **D1b** | **SID 4 (drum chip):** native `sid_bridge.cpp` + worklet mix + engine index `3`; compact **Drum SID** card (or 4th SYNTH card); **requires WASM rebuild** |
 | **D2** | `mountDrumPerformance` clock — separate from `game.timer` / `arp.timer` |
-| **D3** | Grid UI + tab transport; wire **DRUM** pill via extended `generator-led-ui.js` + `performanceArp` or sibling state |
-| **D4** | Preset v5+ `performance.drumSequence` + `performance.drumKit`; user kit bank (optional); import/export fragments |
+| **D3** | Grid UI + tab transport; wire **DRUM** pill (**first** in `generator-led-ui.js`) via extended `generator-led-ui.js` + drum performance state |
+| **D4** | Preset v5+ `performance.drumSequence` + `performance.drumKit` + `sound.engines[3]` defaults; **standalone groove** import/export (pattern+kit); user kit bank optional |
 | **D5** | Help entries + iPad QA (drum-only preview, keyboard + drum parallel) |
 
-No WASM. Preserve reSIDfp note path. Voice budget: one short hit per row per step (monophonic per lane).
+Preserve reSIDfp note path. Voice budget: one short hit per row per step (monophonic per lane) on SID 4 only.
+
+---
+
+## 6a. Dedicated **SID 4** drum engine
+
+| Layer | Decision |
+| --- | --- |
+| **Hardware model** | Fourth **reSIDfp** instance in native bridge (today: `std::array<…, 3>` in `native/sid_bridge.cpp`) |
+| **User label** | **SID 4** or **Drums** in UI; runtime index **`3`** |
+| **Melodic engines** | SID 1–3 unchanged: routing, layer mode, voice budget, preset `sound.engines[0..2]` |
+| **Drum engine** | SID 4 holds kit timbres (per-lane snapshots + optional global drum filter/model on the card) |
+| **Routing** | Drum clock **never** uses `performance.routing.keyboard|arp|game`; always `chipMask: [3]` |
+| **Mix** | Fourth pan + meter on master bus like chips 1–3 |
+
+**Why a real fourth chip (not “borrow SID 2”):** Owner wants drums **isolated** — six-lane steps and short decays should not compete with lead polyphony or steal melodic voices.
+
+**Preset schema (additive):** `sound.engines[3]` stores drum-chip model/filter/volume defaults; `performance.drumKit` stores per-lane `presetId` + `midiNote`. Full synth save includes all four engines when present; v5 imports without engine 4 get a **factory drum-engine template** on first drum feature use.
+
+**UI placement:** Prefer **Drum SID** controls on **DRUM SEQ** tab header (model, filter, volume) so SYNTH tab stays three melodic cards; optional link “Open drum chip” for power users.
 
 ---
 
 ## 6b. Playback architecture — do drum hits steal voices?
 
-**Short answer:** Each **lane** is monophonic (retrigger on that lane replaces only the previous hit on that lane). **Physical SID voices** are shared only **within the drum rack’s assigned chip(s)** — drums do **not** steal keyboard or arp voices on other engines.
+**Short answer:** Each **lane** is monophonic (retrigger on that lane replaces only the previous hit on that lane). All physical voices for drums come from **SID 4 only** — engines 1–3 are unaffected.
 
 ### Trigger path (implementation target)
 
@@ -184,20 +208,20 @@ No WASM. Preserve reSIDfp note path. Voice budget: one short hit per row per ste
 
 So **re-hitting kick on step 5** cuts the tail of the kick from step 3 on the **same lane only** — desirable for drums.
 
-4. **Timbre:** Read lane from `performance.drumKit`. Resolve `presetId` through preset library once per kit change; at hit time pass **voice + filter snapshot** (and pitch envelope when present) into `sidController.noteOn` for the lane’s `engine` and fixed `midiNote` (factory audition map: kick C1/C2, snare C3/C4, etc.).
+4. **Timbre:** Read lane from `performance.drumKit`. Resolve `presetId` through preset library once per kit change; at hit time pass **voice + filter snapshot** (and pitch envelope when present) into `sidController.noteOn` with **`chipMask: [3]`** (SID 4) and fixed `midiNote` (factory audition map: kick C1/C2, snare C3/C4, etc.).
 5. **Release:** Do **not** hold drum notes indefinitely. Schedule `noteOff` after `max(decay+release, pitchEnvLength)` per lane (timer or register-driven), clearing `activeOwners` for that lane when the one-shot completes.
 
-### Voice stealing on the chip
+### Voice stealing on SID 4
 
-Each SID chip has **3** oscillators (`VoiceAllocator` in `live-sid-controller.js`; unison stack uses the same budget per chip).
+SID 4 has **3** oscillators (same as each melodic chip). Six lanes share that budget.
 
-| Layout | Behavior |
+| Case | Behavior |
 | --- | --- |
-| **Default kit (v1)** | **2 lanes per engine** (kick+sn → E1, CH+OH → E2, clap+tom → E3). Worst case **2 voices per chip per step** — fits without steal. |
-| **Dense step (6 hits)** | All six fire together → **6 voices** needed → **oldest drum hit on that chip** is stolen (FIFO age), **never** a `keyboard` / `arp` / `game` owner. |
-| **Same lane retrigger** | Owner `drum:*` already noteOff’d before noteOn — no extra steal. |
+| **≤3 lanes on one step** | One voice per sounding lane — no steal. |
+| **4–6 hits same step** | Oldest **drum** voice on chip 3 is stolen (FIFO); never keyboard / arp / game owners (different chip). |
+| **Same lane retrigger** | Owner `drum:*` noteOff before noteOn — lane self-replace. |
 
-Implement **scoped steal:** drum hits only participate in allocation on the chip indices listed in the kit. Keyboard poly on engine 1 does not see engine 2’s drum allocator (already true when `chipMask` is a single chip in unison mode).
+Drum allocator is scoped to **index 3 only** in the unison controller path used by `triggerDrumLane`.
 
 ### Audition (tap cell)
 
@@ -205,8 +229,8 @@ Same `triggerDrumLane` as the sequencer — one preview hit, no clock advance.
 
 ### What we are **not** doing in v1
 
-- Loading a full factory preset into all three voices per hit (too slow, fights synth preset).
-- Sharing one voice for all drums (would choke six-lane steps).
+- Routing drums through SID 1–3 or user routing dropdown.
+- Loading a full synth preset into the drum chip per hit.
 - Transposing drums from held keyboard root (pattern is fixed MIDI per kit).
 
 ---
@@ -229,24 +253,35 @@ Extend `performance` in preset format **v5** (additive; validate in `validatePre
 "drumKit": {
   "name": "Factory 6581",
   "lanes": [
-    { "id": "kick", "presetId": "low-thud-kick", "midiNote": 36, "engine": 0 },
+    { "id": "kick", "presetId": "low-thud-kick", "midiNote": 36 },
     ...
   ]
 }
 ```
 
-- **Dirty / Save** includes pattern + kit like arp + routing today.
+- **Dirty / Save** includes pattern + kit + drum engine settings like arp + routing today.
 - **Recall synth preset** restores drum grid and kit; drum transport **stopped** (same as arp preview off on load).
 
-### Standalone saves (stretch)
+### Standalone **drum groove** files (v1 — owner required)
 
-| Feature | Format |
+Primary share format bundles **pattern + kit** (and optionally **SID 4** engine defaults) so a beat is portable without a full synth preset.
+
+| Field | Purpose |
 | --- | --- |
-| Export pattern | JSON fragment `drumSequence` only (share beats) |
-| Export kit | JSON fragment `drumKit` only |
-| User kit bank | Full mini-preset rows `{ name, category: "Drum kits", settings: { performance: { drumKit } } }` |
+| `format` | `"6581drum"` |
+| `version` | `1` |
+| `name` | Display name (1–64 chars, same rules as presets) |
+| `drumSequence` | Grid + rate/sync |
+| `drumKit` | Six lanes |
+| `drumEngine` | Optional `sound.engines[3]` slice (model/filter/volume); if omitted, import uses factory drum-chip template |
 
-Factory showcase presets may ship with a **default pattern** baked in for demo; Galway stays melody-focused.
+**UI (DRUM SEQ tab):** **Export groove…** / **Import groove…** (file picker + paste JSON). Import replaces current pattern + kit (and drum engine block if present); does **not** alter SID 1–3 or performance arp/game.
+
+**Secondary exports (same menu, optional):** pattern-only or kit-only fragments for power users — not required for v1 menu if groove export covers sharing.
+
+**User library:** Grooves can also be saved as user rows `category: "Drum grooves"` with the same payload embedded under `settings.performance` + `settings.sound.engines[3]`.
+
+Factory showcase presets may ship with a **default groove** baked in for demo; Galway stays melody-focused.
 
 ### Tests (D4)
 
@@ -266,7 +301,9 @@ Factory showcase presets may ship with a **default pattern** baked in for demo; 
 - [ ] **DRUM** pill start/stop without opening tab
 - [ ] Preview runs with **no** Root/Game enabled and **no** keys held
 - [ ] Help `?` on section title + long-press on cell
-- [ ] Save / load restores `drumSequence` + `drumKit` with main preset
+- [ ] Save / load restores `drumSequence` + `drumKit` + SID 4 settings with main preset
+- [ ] Import/export **6581drum** groove (pattern + kit together)
+- [ ] Generator LED order: **DRUM** left of **ROOT**
 
 ---
 
