@@ -24,7 +24,7 @@ function makeHarness({gameOn=false,arpOn=false,latch=false,seqPreview=false}={})
   arpNotes:()=>[...arp.held],
   isSeqPreview:()=>seqPreview,$
  });
- return {gesture,arp,calls};
+ return {gesture,arp,game,calls};
 }
 
 test('mode: both off plays and releases directly',()=>{
