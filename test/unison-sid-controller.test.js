@@ -166,3 +166,14 @@ test('capacity respects full stacks and changes release active voices',()=>{
  assert.equal(sid.polyNotes.size,0);
  assert.equal(sid.held.length,0);
 });
+
+test('SID 4 drum layer stays poly when global mode is mono',()=>{
+ const sid=new UnisonSidController(()=>{},{voiceCount:3,unisonCount:1,mode:'mono'});
+ const a=sid.noteOn(36,sound,{chipMask:[3],layerChip:3});
+ const b=sid.noteOn(38,sound,{chipMask:[3],layerChip:3});
+ assert.ok(Number.isInteger(a));
+ assert.ok(Number.isInteger(b));
+ assert.equal(sid.layerPoly[3].size,2);
+ sid.noteOff(36,a);
+ assert.equal(sid.layerPoly[3].size,1);
+});

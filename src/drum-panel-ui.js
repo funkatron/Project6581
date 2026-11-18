@@ -5,5 +5,5 @@ export function mountDrumPanelShell({ $ } = {}) {
   if (!grid) return;
   grid.replaceChildren();
   const status = $('drumStatus');
-  if (status) status.textContent = 'Drum sequencer shell — pattern editor coming in the next slice.';
+  if (status) status.textContent = '16 steps · 6 lanes · stopped';
 }
