@@ -568,6 +568,53 @@ export const FACTORY_PRESETS=Object.freeze([
    scale:{tonic:0,id:'chromatic',lock:false}
   }
  }),
+ // TV-synth palettes (original; not transcriptions of Stu Phillips / Sylvester Levay scores).
+ factory('showcase-knight-rider','Knight Rider · Pursuit','Showcase',{
+  instrument:{voiceCount:6,unisonCount:2,mode:'duo',detune:12},
+  engines:[
+   {model:6581,pan:-46,voice:{wave:'square',attack:0,decay:.14,sustain:.9,release:.16,pulse:12,pwmDepth:8,pwmRate:4.4},
+    filter:{cutoff:420,resonance:38,volume:90,mode:'lowpass'}},
+   {model:6581,pan:0,voice:{wave:'square',attack:0,decay:.1,sustain:.82,release:.12,pulse:24,pwmDepth:18,pwmRate:5.6},
+    filter:{cutoff:1880,resonance:36,volume:84,mode:'bandpass'}},
+   {model:8580,pan:44,voice:{wave:'sawtooth',attack:.004,decay:.08,sustain:.78,release:.1},
+    filter:{cutoff:4680,resonance:32,volume:78,mode:'lowpass'}}
+  ],
+  lfos:[
+   {enabled:true,wave:'square',sync:true,syncDivision:8,rate:1,depth:.32,target:'pulse',engines:'all'},
+   {enabled:true,wave:'triangle',sync:true,syncDivision:4,rate:1,depth:.28,target:'cutoff',engines:'all'},
+   {enabled:true,wave:'sine',rate:6.2,depth:.16,target:'volume',engines:'2'}
+  ],
+  performance:{
+   masterBpm:116,
+   routing:{keyboard:'layer',arp:'layer',game:'layer'},
+   arp:{enabled:true,latch:false,pattern:'updown',rate:8,sync:true,localBpm:116},
+   game:{enabled:true,style:'action',rate:8},
+   scale:{tonic:6,id:'harmonic-minor',lock:true}
+  }
+ }),
+ factory('showcase-airwolf','Airwolf · Rotor Lift','Showcase',{
+  instrument:{voiceCount:9,unisonCount:3,mode:'legato',detune:18},
+  engines:[
+   {model:6581,pan:-44,voice:{wave:'sawtooth',attack:.12,decay:.28,sustain:.88,release:.32},
+    filter:{cutoff:1420,resonance:28,volume:82,mode:'lowpass'}},
+   {model:6581,pan:0,voice:{wave:'square',attack:.08,decay:.22,sustain:.9,release:.28,pulse:46,pwmDepth:12,pwmRate:1.8},
+    filter:{cutoff:2880,resonance:34,volume:86,mode:'bandpass'}},
+   {model:8580,pan:44,voice:{wave:'sawtooth',attack:.06,decay:.18,sustain:.86,release:.24},
+    filter:{cutoff:5680,resonance:22,volume:80,mode:'lowpass'}}
+  ],
+  lfos:[
+   {enabled:true,wave:'sine',rate:.62,depth:.48,target:'cutoff',engines:'all'},
+   {enabled:true,wave:'triangle',rate:1.1,depth:.22,target:'resonance',engines:'2'},
+   {enabled:true,wave:'sawtooth',sync:true,syncDivision:2,rate:1,depth:.2,target:'detune',engines:'all'}
+  ],
+  performance:{
+   masterBpm:108,
+   routing:{keyboard:'layer',arp:'layer',game:'layer'},
+   arp:{enabled:true,latch:true,pattern:'up',rate:4,sync:true,localBpm:108},
+   game:{enabled:true,style:'adventure',rate:4},
+   scale:{tonic:0,id:'major',lock:false}
+  }
+ }),
  factory('deep-bass','Deep Bass','Bass',{voice:{wave:'square',decay:.22,sustain:.74,pulse:30},instrument:{voiceCount:2,detune:8},filter:{cutoff:1580,resonance:10,volume:79},performance:{game:{enabled:false}}}),
  factory('arcade-lead','Arcade Lead','Lead',{voice:{wave:'sawtooth',decay:.09,release:.13},instrument:{voiceCount:2,detune:12},filter:{cutoff:7100,resonance:17,volume:66},performance:{game:{enabled:true,style:'arcade'}}}),
  factory('chiptune-pluck','Chiptune Pluck','Pluck',{voice:{wave:'triangle',decay:.07,sustain:0,release:.07},instrument:{detune:0},filter:{cutoff:7800,resonance:2,volume:76},performance:{game:{enabled:false}}}),
