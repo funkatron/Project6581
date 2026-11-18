@@ -252,8 +252,9 @@ Same `triggerDrumLane` as the sequencer — one preview hit, no clock advance.
 | Item | Detail |
 | --- | --- |
 | **Schema** | `lanes[].pan` optional; for `kick` / `sn` import coerce to `0` |
-| **Not hardware SID** | Real 6581 has **one mono mix per chip**; pan is not per-voice in the chip |
-| **Engine approach** | On SID 4, extend `sid_bridge` render to apply **`voicePan[3][0..2]`** when summing that chip (map active voice → lane at `noteOn` time). Kick/sn always pass **center** gains. Up to **three** lanes panned correctly at once; when 4–6 hits steal voices, pan follows **whichever lane owns that voice** — acceptable with owner sign-off on steal behavior |
+| **Not hardware SID** | Real 6581 has **one mono mix per chip** — **no per-oscillator pan**. Today `sid_render` calls `chip->clock(scratch)` once; **chip pan** moves kick and CH together. |
+| **Kick + CH same step** | Must **not** move kick when CH pans. Requires **decomposed mix on SID 4 only** (see below), not the current single-scratch path. |
+| **Engine approach (D1b)** | After reSIDfp emits audio, **sum each of the three voices into L/R separately** (per-voice tap if lib supports it, else **up to 3 muted-voice render passes** per drum block — CPU bounded to chip 4). Apply lane pan only to the voice index that lane owns at `noteOn`; kick/sn lanes always **center** weights. When 4–6 hits steal voices, pan follows **whichever lane owns that voice** — acceptable with owner sign-off on steal behavior. |
 | **Chip pan** | Engine card **Pan** still pans the whole drum bus; peripheral lane pans are **relative** inside the bus |
 
 ### Dedicated **Drum LFO** (one)
