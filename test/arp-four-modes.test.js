@@ -22,7 +22,9 @@ function makeHarness({gameOn=false,arpOn=false,latch=false,seqPreview=false}={})
   gameRestart:()=>{calls.gameRestart++},
   arpStopVoice:()=>{calls.arpStop++},
   arpNotes:()=>[...arp.held],
-  isSeqPreview:()=>seqPreview,$
+  isSeqPreview:()=>seqPreview,
+  performanceNote:note=>note,
+  $
  });
  return {gesture,arp,game,calls};
 }

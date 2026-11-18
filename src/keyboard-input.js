@@ -1,12 +1,13 @@
 import {needsAudioResume} from './sid-note-gate.js?v=__BUILD_ID__';
 import {selectRoot} from './arp-composition.js?v=__BUILD_ID__';
+import {countHeldResolvingTo} from './western-scales.js?v=__BUILD_ID__';
 
 // Physical keys and the on-screen keyboard. The studio still owns play(), stop(),
 // and the arp clock; this module asks those to run.
 export function createKeyGesture({
   audioTiming,sidEventLog,getSidContext,sidMusicalInputBlocked,armSidResume,hasController,countKeyPress,
   activeNotes,arp,game,gameEnabled,arpEnabled,latchOn,directOwned,play,stop,restartGenerators,stopGenerators,
-  gameRestart,arpStopVoice,arpNotes,isSeqPreview,$
+  gameRestart,arpStopVoice,arpNotes,isSeqPreview,performanceNote,$
 }){
  if(!latchOn)latchOn=()=>Boolean($('arpLatch')?.checked);
  let queuedKeyNotes=[];
@@ -47,7 +48,10 @@ export function createKeyGesture({
    }
   }
   if(!gameEnabled()&&!arpEnabled()){
-   if(!directOwned.has(note)){play(note);directOwned.add(note)}
+   const resolved=performanceNote(note);
+   const playNow=countHeldResolvingTo(arp.held,performanceNote,resolved)===1;
+   if(playNow)play(note);
+   directOwned.add(note);
    return;
   }
   const restart=!hadNotes||(!game.timer&&!arp.timer);
@@ -56,8 +60,13 @@ export function createKeyGesture({
  function keyDown(note){beginKey(note)}
  function keyUp(note){
   arp.held.delete(note);
+  if(!gameEnabled()&&!arpEnabled()){
+   const resolved=performanceNote(note);
+   directOwned.delete(note);
+   if(countHeldResolvingTo(arp.held,performanceNote,resolved)===0)stop(note);
+   return;
+  }
   if(directOwned.delete(note))stop(note);
-  if(!gameEnabled()&&!arpEnabled())return;
   if(arp.held.size===0&&(!latchOn()||arp.latched.size===0)&&!isSeqPreview()){
    stopGenerators();$('arpStatus').textContent='No notes held';return;
   }

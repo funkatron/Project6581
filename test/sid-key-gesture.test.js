@@ -20,6 +20,7 @@ function harness({state}){
  const audioTiming={keyAt:null,keyEnergyMs:null,keyEnergyMissed:false};
  const scope=vm.createContext({
   needsAudioResume,
+  countHeldResolvingTo:(held,resolve,resolved)=>{let c=0;for(const p of held)if(resolve(p)===resolved)c++;return c},
   performance:{now:()=>0},
   matchMedia:()=>({matches:false})
  });
@@ -46,6 +47,7 @@ function harness({state}){
   arpStopVoice(){},
   arpNotes:()=>[],
   isSeqPreview:()=>false,
+  performanceNote:note=>note,
   $
  });
  return {gesture,played,context,resumeCalls:()=>resumeCalls};
