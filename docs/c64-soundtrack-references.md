@@ -2,7 +2,7 @@
 
 **Purpose:** Listening and patch-design **references only**. Project6581 factory presets are **original** designs; nothing here claims a note-for-note match or uses ripped game data.
 
-**Showcase factory presets** (triple-SID demos, not transcriptions): `Init` (general capability), `Galway · Epic Pad` (Parallax-style slow PWM + filter drift), `Hubbard · Commando` (punchy square bass + action arps), `Hubbard · Monty Drive` (legato stacked leads + adventure Game Arp). All four use **Layer (per SID)** on keyboard, Root Arp, and Game Arp so each engine card’s timbre sounds together. Audition on HVSC references below when tuning.
+**Showcase factory presets** (triple-SID demos, not transcriptions): **20** sounds in the **Showcase** group — C64 composers plus **1980s TV/film synth** stacks (Knight Rider, Airwolf, Miami Vice, A-Team, Vangelis-style haze, Beverly Hills Cop pulse; original designs only). All use **Layer (per SID)** on keyboard, Root Arp, and Game Arp. Audition on HVSC references below when tuning.
 
 **HVSC paths (PAL 6581 unless noted):**
 
@@ -52,6 +52,21 @@ Metadata sources: [HVSC STIL via 6581.nl](https://6581.nl/), composer interviews
 | 3–19 | SFX / jingles | &lt;6 s each | per subtune | Short noise bursts, stab notes | `noise-clap`, `closed-noise-hat`, `open-noise-hat`, `low-tom` |
 
 **Pitch envelope (2026-11-16 tuning):** `low-thud-kick` and `low-tom` use editor **kick** / **tom** templates; iPad listening still required before calling drums validated.
+
+---
+
+## TV synth references (listening only)
+
+| Show | Composer (original broadcast) | Audible traits (subjective) | Showcase preset |
+| --- | --- | --- | --- |
+| **Knight Rider** | Stu Phillips | Minor-key pulse bass, syncopated ostinato, tight PWM “talking” squares | `showcase-knight-rider` — **F♯ harmonic minor** lock, sync LFOs on pulse/cutoff |
+| **Airwolf** | Sylvester Levay | Wide stacked “brass” saw+square, slow filter swells, heroic legato lead | `showcase-airwolf` — legato 9-voice layers, cutoff LFO swell |
+| **Miami Vice** | Jan Hammer | Warm pads, chorus detune, slow PWM, mixolydian “night drive” | `showcase-miami-vice` — latched pad arp, A mixolydian |
+| **The A-Team** | Mike Post | Punchy bass + trumpet-like saw brass hits | `showcase-a-team` — sync cutoff, action Game Arp |
+| **Blade Runner** (palette) | Vangelis | Slow-evolving filters, long releases, hazy dorian pads | `showcase-vangelis-blade` — sample-hold detune, 92 BPM |
+| **Beverly Hills Cop** | Harold Faltermeyer | Fast sync pulse bass hook | `showcase-faltermeyer-axel` — 1/16 pulse LFO, 128 BPM |
+
+Use official recordings or your own memory for A/B; do not ship theme audio.
 
 ---
 
