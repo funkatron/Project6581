@@ -222,8 +222,16 @@ export function mountPresetLibrary({$,snapshotSettings,applySettings,setLoading,
    refreshDirty();
  });
  renderPresetLibrary();
+ function selectFactoryPreset(id){
+  if(!FACTORY_PRESETS.some(preset=>preset.id===id))return false;
+  selectedPreset={kind:'factory',id};
+  presetDirty=false;
+  renderPresetLibrary();
+  return true;
+ }
  return {
   refreshDirty,
+  selectFactoryPreset,
   selectedKind(){return selectedPreset?.kind??null},
   userCount(){return userPresets.length}
  };
