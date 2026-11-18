@@ -28,7 +28,7 @@ test('createPerformanceArpState mirrors DOM and notifies subscribers',()=>{
   assert.equal(seen.at(-1).rootOn,true);
 });
 
-test('applyFromPreset emits changes and updates slice',()=>{
+test('applyFromPreset updates slice without firing DOM change by default',()=>{
   const {$}=mockControls({gameOn:false});
   const arp=createPerformanceArpState($);
   let gameChanges=0;
@@ -37,5 +37,7 @@ test('applyFromPreset emits changes and updates slice',()=>{
   assert.equal(arp.rootOn,true);
   assert.equal(arp.latchOn,true);
   assert.equal(arp.gameOn,true);
-  assert.ok(gameChanges>=1);
+  assert.equal(gameChanges,0);
+  arp.applyFromPreset({game:{enabled:false}},{emitChange:true});
+  assert.equal(gameChanges,1);
 });

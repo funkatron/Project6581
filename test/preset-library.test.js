@@ -211,7 +211,7 @@ test('Init factory preset is the loud three-SID startup showcase',()=>{
  assert.ok(sound.lfos.some(lfo=>lfo.target==='pwmDepth'));
  assert.ok(sound.lfos.some(lfo=>lfo.target==='cutoff'));
  assert.equal(performance.arp.enabled,true);
- assert.equal(performance.game.enabled,true);
+ assert.equal(performance.game.enabled,false);
 });
 
 test('layer factory presets use three distinct engines and layer routing',()=>{

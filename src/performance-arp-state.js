@@ -64,7 +64,7 @@ export function createPerformanceArpState($){
     return ()=>listeners.delete(fn);
   }
 
-  function applyFromPreset(performance){
+  function applyFromPreset(performance,{emitChange=false}={}){
     if(!performance)return false;
     const patch={};
     const arp=performance.arp;
@@ -72,7 +72,7 @@ export function createPerformanceArpState($){
     if(arp&&arp.enabled!==undefined)patch.rootOn=arp.enabled;
     if(arp&&arp.latch!==undefined)patch.latchOn=arp.latch;
     if(game&&game.enabled!==undefined)patch.gameOn=game.enabled;
-    return set(patch,{emitChange:true});
+    return set(patch,{emitChange});
   }
 
   readDom();

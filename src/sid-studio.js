@@ -985,6 +985,7 @@ function applyPresetControls(next,{silenceAudio=true}={}){
  renderKeyboard();
  enginePanelsUi?.render();renderLfos();updateUnison();updateModulation();
  void syncEngineChipModels();
+ if(performanceArp.gameOn||performanceArp.rootOn)restartGenerators();
  $('arpStatus').textContent=silenceAudio?'Preset ready · press a key':'Preset ready · held notes may continue';
 }
 async function applyPresetSettings(value){
