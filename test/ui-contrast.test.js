@@ -49,7 +49,7 @@ const samples=[
  ['highlighted black piano keys (game arp)','.key.black.arp-playing-game:not(.down)','.key.black.arp-playing-game:not(.down)'],
  ['modulated slider readout','label>.modulated-value','.panel,.keyboard-panel'],
  ['LFO legends','.lfo-controls legend','.lfo-controls'],
- ['master BPM number','.master-tempo output','header'],
+ ['master BPM number','.master-tempo output','main>header'],
  ['normal buttons','button,select,.master-tempo input','button,select,.master-tempo input'],
  ['selected preset','.preset-item[aria-current="true"]','.preset-item[aria-current="true"]']
 ];
