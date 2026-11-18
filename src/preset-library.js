@@ -287,7 +287,7 @@ export const FACTORY_PRESETS=Object.freeze([
    masterBpm:96,
    routing:{keyboard:'layer',arp:'layer',game:'layer'},
    arp:{enabled:true,latch:true,pattern:'up',rate:2,sync:true,localBpm:96},
-   game:{enabled:false,style:'action',rate:4},
+   game:{enabled:true,style:'adventure',rate:4},
    scale:{tonic:0,id:'chromatic',lock:false}
   }
  }),
