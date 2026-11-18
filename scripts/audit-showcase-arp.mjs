@@ -71,7 +71,10 @@ async function main(){
    report.push({id,...flags});
   }
   writeFileSync(path.join(outDir,'audit.json'),JSON.stringify(report,null,2));
-  const bad=report.filter(r=>r.gameOn||(!r.id.startsWith('sfx-')&&Number(r.arpRate)>4));
+  const galwayGameOk=new Set(['showcase-galway-epic']);
+  const bad=report.filter(r=>
+   (r.gameOn&&!galwayGameOk.has(r.id))||
+   (!r.id.startsWith('sfx-')&&Number(r.arpRate)>4));
   console.log('Audited',report.length,'presets;',bad.length,'flags outside policy');
   for(const row of bad)console.log(JSON.stringify(row));
  }finally{

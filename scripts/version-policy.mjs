@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 // shipping code on main. BASELINE is the commit where package.json last synced.
 // Rules: feat/behavior → minor (reset patch); any other counted change → patch.
 // Floor v0.4.0: western scale lock + performance arp/latch state (#130, #134).
-export const BASELINE='789b89bde5ab9b2cadc51414d0dd7131a868ff12';
+export const BASELINE='72e97d53bec33ebc56b5705a034e5b57cecd640f';
 
 const RELEASE_FLOOR=/^chore(?:\([^)]+\))?:\s*release\b/i;
 const RELEASE_TAG=/^release v\d+\.\d+\.\d+/i;

@@ -31,7 +31,8 @@ test('reference constants match documented calibration', () => {
 test('master meter reaches full on realistic loud PCM peaks', () => {
  assert.equal(meterDisplayMasterFraction(0), 0);
  assert.equal(meterDisplayMasterFraction(0.08), 1);
- assert.equal(meterDisplayMasterFraction(0.045), 1);
- assert.ok(meterDisplayMasterFraction(0.028) > 0.7);
- assert.ok(meterDisplayMasterFraction(0.018) > 0.35);
+ assert.ok(meterDisplayMasterFraction(0.068) >= 0.98);
+ assert.ok(meterDisplayMasterFraction(0.045) > 0.75 && meterDisplayMasterFraction(0.045) < 0.95);
+ assert.ok(meterDisplayMasterFraction(0.028) > 0.5 && meterDisplayMasterFraction(0.028) < 0.7);
+ assert.ok(meterDisplayMasterFraction(0.018) > 0.3);
 });

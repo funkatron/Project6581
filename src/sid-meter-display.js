@@ -10,9 +10,9 @@ export const METER_LOG_FLOOR = 0.008;
 /** ~−18 dBFS: per-chip strip calibration (WASM chip peaks). */
 export const METER_LOG_REFERENCE = 0.13;
 
-/** Master PCM peaks are often ~0.04–0.12 before clipping; map loud mixes to the top. */
-export const METER_LOG_REFERENCE_MASTER = 0.052;
-export const METER_MASTER_INPUT_GAIN = 1.22;
+/** Master PCM peaks ~0.04–0.12; reference above typical mix so the bar keeps headroom. */
+export const METER_LOG_REFERENCE_MASTER = 0.072;
+export const METER_MASTER_INPUT_GAIN = 1.05;
 
 const DB_FLOOR = DB(METER_LOG_FLOOR);
 const DB_REFERENCE = DB(METER_LOG_REFERENCE);
