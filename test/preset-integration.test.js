@@ -15,6 +15,9 @@ test('preset UI compiles without changing SID native code',()=>{
  const result=spawnSync(process.execPath,['--check','--input-type=module'],{input:script,encoding:'utf8'});
  assert.equal(result.status,0,result.stderr);
  assert.match(script,/import \{mountPresetLibrary\} from "\.\/preset-library-ui\.js\?v=__BUILD_ID__";/);
+ assert.match(script,/STARTUP_FACTORY_PRESET_ID/);
+ assert.match(library,/selectFactoryPreset/);
+ assert.match(script,/applyPresetControls\(startupPreset\.settings/);
  assert.match(library,/import \{FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,PRESET_VERSION,cleanPresetName/);
 });
 test('preset editor provides factory/user collections, save, export, import and backup',()=>{

@@ -237,11 +237,35 @@ function octaveSequence(offsets){
  return sequence;
 }
 // Keep legacy category labels stable in saved preset metadata while grouping the browser.
-export const FACTORY_GROUPS=Object.freeze(['Bass','Keys','Leads','Drums','FX']);
+export const FACTORY_GROUPS=Object.freeze(['Showcase','Bass','Keys','Leads','Drums','FX']);
+export const STARTUP_FACTORY_PRESET_ID='init';
 export function factoryGroup(category){
  return ({Lead:'Leads',Pluck:'Keys',Pad:'Keys'})[category]??category;
 }
 export const FACTORY_PRESETS=Object.freeze([
+ factory('init','Init','Showcase',{
+  instrument:{voiceCount:9,unisonCount:3,mode:'poly',detune:24},
+  engines:[
+   {model:6581,pan:-44,voice:{wave:'square',attack:0,decay:.14,sustain:.84,release:.2,pulse:26,pwmDepth:32,pwmRate:2.6},
+    filter:{cutoff:620,resonance:40,volume:90,mode:'lowpass'}},
+   {model:6581,pan:0,voice:{wave:'sawtooth',attack:.002,decay:.11,sustain:.92,release:.16,pulse:50,pwmDepth:8,pwmRate:1.4},
+    filter:{cutoff:2200,resonance:44,volume:84,mode:'lowpass'}},
+   {model:8580,pan:42,voice:{wave:'square',attack:0,decay:.09,sustain:.88,release:.12,pulse:16,pwmDepth:22,pwmRate:5.2},
+    filter:{cutoff:7400,resonance:26,volume:78,mode:'lowpass'}}
+  ],
+  lfos:[
+   {enabled:true,wave:'triangle',rate:5.5,depth:.38,target:'pwmDepth',engines:'3'},
+   {enabled:true,wave:'sine',sync:true,syncDivision:4,rate:1,depth:.52,target:'cutoff',engines:'all'},
+   {enabled:true,wave:'sample-hold',rate:2.8,depth:.24,target:'pulse',engines:'2'}
+  ],
+  performance:{
+   masterBpm:128,
+   routing:{keyboard:'layer',arp:'layer',game:'all'},
+   arp:{enabled:true,latch:false,pattern:'updown',rate:4,sync:true,localBpm:128},
+   game:{enabled:true,style:'arcade',rate:8},
+   scale:{tonic:0,id:'chromatic',lock:false}
+  }
+ }),
  factory('deep-bass','Deep Bass','Bass',{voice:{wave:'square',decay:.22,sustain:.74,pulse:30},instrument:{voiceCount:2,detune:8},filter:{cutoff:1580,resonance:10,volume:79},performance:{game:{enabled:false}}}),
  factory('arcade-lead','Arcade Lead','Lead',{voice:{wave:'sawtooth',decay:.09,release:.13},instrument:{voiceCount:2,detune:12},filter:{cutoff:7100,resonance:17,volume:66},performance:{game:{enabled:true,style:'arcade'}}}),
  factory('chiptune-pluck','Chiptune Pluck','Pluck',{voice:{wave:'triangle',decay:.07,sustain:0,release:.07},instrument:{detune:0},filter:{cutoff:7800,resonance:2,volume:76},performance:{game:{enabled:false}}}),

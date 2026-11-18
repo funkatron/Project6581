@@ -10,7 +10,7 @@ import {lfosForEngine,LFO_TARGET_ORDER,LFO_TARGET_LABELS} from "./lfo-modulation
 import {createSidRecorder,prepareRecordingDownload} from "./sid-recorder.js?v=__BUILD_ID__";
 import {defaultSequence,validateSequence} from "./game-step-sequencer.js?v=__BUILD_ID__";
 import {mountPerformance} from "./performance-play.js?v=__BUILD_ID__";
-import {presetLoadRequiresSilence,validatePresetSettings} from "./preset-library.js?v=__BUILD_ID__";
+import {FACTORY_PRESETS,presetLoadRequiresSilence,STARTUP_FACTORY_PRESET_ID,validatePresetSettings} from "./preset-library.js?v=__BUILD_ID__";
 import {mountPresetLibrary} from "./preset-library-ui.js?v=__BUILD_ID__";
 import {mountKeyboard} from "./keyboard-input.js?v=__BUILD_ID__";
 import {readScaleStateFromDom,resolvePerformanceNote,isPitchInScale} from "./western-scales.js?v=__BUILD_ID__";
@@ -1025,6 +1025,11 @@ presetLibrary=mountPresetLibrary({
  setLoading:setPresetLoading,
  isLoading:()=>presetLoading
 });
+const startupPreset=FACTORY_PRESETS.find(preset=>preset.id===STARTUP_FACTORY_PRESET_ID);
+if(startupPreset){
+ applyPresetControls(startupPreset.settings,{silenceAudio:false});
+ presetLibrary.selectFactoryPreset(STARTUP_FACTORY_PRESET_ID);
+}
 $('chip').addEventListener('change',async event=>{
  const chip=event.currentTarget;
  const model=Number(chip.value);

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
- PRESET_VERSION,PRESET_STORAGE_KEY,LEGACY_PRESET_STORAGE_KEY_V3,LEGACY_PRESET_STORAGE_KEY_V4,FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,LAYER_FACTORY_IDS,
+ PRESET_VERSION,PRESET_STORAGE_KEY,LEGACY_PRESET_STORAGE_KEY_V3,LEGACY_PRESET_STORAGE_KEY_V4,FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,LAYER_FACTORY_IDS,STARTUP_FACTORY_PRESET_ID,
  defaultPresetSettings,validatePresetSettings,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,
  importPresetFile,presetLoadRequiresSilence,
 } from '../src/preset-library.js';
@@ -147,7 +147,29 @@ test('C64-inspired prototype bank covers four distinct categories without changi
  for(const id of [...legacy,...prototypes.map(([id])=>id)])
   assert.ok(FACTORY_PRESETS.some(p=>p.id===id),'legacy or prototype factory sound removed: '+id);
  assert.equal(PRESET_VERSION,5);
+ assert.equal(FACTORY_PRESETS[0].id,STARTUP_FACTORY_PRESET_ID);
  assert.equal(FACTORY_PRESETS[0].settings.sound.engines[0].voice.pitchEnvelope.enabled,false);
+});
+
+test('Init factory preset is the loud three-SID startup showcase',()=>{
+ const init=FACTORY_PRESETS.find(p=>p.id===STARTUP_FACTORY_PRESET_ID);
+ assert.ok(init);
+ assert.equal(init.name,'Init');
+ assert.equal(init.category,'Showcase');
+ const {sound,performance}=init.settings;
+ assert.equal(sound.instrument.voiceCount,9);
+ assert.equal(sound.instrument.unisonCount,3);
+ assert.equal(sound.instrument.mode,'poly');
+ assert.equal(performance.routing.keyboard,'layer');
+ assert.equal(performance.routing.arp,'layer');
+ assert.ok(sound.engines.every(engine=>engine.voice.enabled));
+ assert.ok(sound.engines[0].filter.volume>=85);
+ assert.ok(sound.engines[1].filter.volume>=80);
+ assert.ok(sound.lfos.every(lfo=>lfo.enabled));
+ assert.ok(sound.lfos.some(lfo=>lfo.target==='pwmDepth'));
+ assert.ok(sound.lfos.some(lfo=>lfo.target==='cutoff'));
+ assert.equal(performance.arp.enabled,true);
+ assert.equal(performance.game.enabled,true);
 });
 
 test('layer factory presets use three distinct engines and layer routing',()=>{
@@ -174,10 +196,10 @@ test('expanded C64 factory bank retains legacy sounds and has six originals per 
  const legacy=['deep-bass','arcade-lead','chiptune-pluck','pulsing-pad','soft-flute','filter-motion'];
  const allNew=Object.values(newIds).flat();
  assert.equal(allNew.length,24);
- assert.equal(FACTORY_PRESETS.length,30+LAYER_FACTORY_IDS.length);
- assert.deepEqual(new Set(FACTORY_PRESETS.map(p=>p.id)),new Set([...legacy,...allNew,...LAYER_FACTORY_IDS]));
- assert.equal(new Set(FACTORY_PRESETS.map(p=>p.name.toLowerCase())).size,30+LAYER_FACTORY_IDS.length);
- assert.deepEqual(FACTORY_GROUPS,['Bass','Keys','Leads','Drums','FX']);
+ assert.equal(FACTORY_PRESETS.length,31+LAYER_FACTORY_IDS.length);
+ assert.deepEqual(new Set(FACTORY_PRESETS.map(p=>p.id)),new Set([STARTUP_FACTORY_PRESET_ID,...legacy,...allNew,...LAYER_FACTORY_IDS]));
+ assert.equal(new Set(FACTORY_PRESETS.map(p=>p.name.toLowerCase())).size,31+LAYER_FACTORY_IDS.length);
+ assert.deepEqual(FACTORY_GROUPS,['Showcase','Bass','Keys','Leads','Drums','FX']);
  for(const [category,ids] of Object.entries(newIds)){
   assert.equal(ids.length,6);
   for(const id of ids){
