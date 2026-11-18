@@ -69,6 +69,17 @@ test('mode: Game Arp only does not restart clocks on every additional key',()=>{
  assert.equal(calls.restart,1);
 });
 
+test('mode: Game Arp only does not restart clocks when releasing one key of a chord',()=>{
+ const {gesture,game,calls}=makeHarness({gameOn:true});
+ gesture.keyDown(60);
+ gesture.keyDown(64);
+ game.timer={};
+ calls.restart=0;
+ gesture.keyUp(64);
+ assert.equal(calls.restart,0);
+ assert.equal(calls.gameRestart,0);
+});
+
 test('mode: last key release with latch off stops generator clocks',()=>{
  const {gesture,calls}=makeHarness({gameOn:true,arpOn:true});
  gesture.keyDown(60);
