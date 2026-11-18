@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {calculateVersion,countsTowardVersion,resolveVersion} from '../scripts/version-policy.mjs';
+import {calculateVersion,countsTowardVersion,gitCommitsSinceBaseline,resolveVersion} from '../scripts/version-policy.mjs';
 
 test('patch for fixes and documentation',()=>{
   assert.equal(calculateVersion('0.1.0',['fix: resolve audio startup']),'0.1.1');
@@ -43,6 +43,19 @@ test('untyped merge PR title increments patch',()=>{
 test('LFO visualization PR is a patch on v0.4.0 floor',()=>{
   const merge='Merge pull request #135 from funkatron/cursor/lfo-modulation-ui-fa36\n\nRestore LFO slider modulation visualization';
   assert.equal(calculateVersion('0.4.0',[merge]),'0.4.1');
+});
+test('fix merge commits increment patch',()=>{
+  const merge='Merge pull request #146 from funkatron/cursor/sync-chip-models-serial-fa36\n\nfix: serialize per-chip SID model sync on startup';
+  assert.equal(calculateVersion('0.5.1',[merge]),'0.5.2');
+});
+test('git log since baseline returns merge bodies with PR titles',()=>{
+  const commits=gitCommitsSinceBaseline('4ee5fba');
+  assert.ok(commits.length>=1);
+  const merge=commits.find(message=>message.startsWith('Merge pull request'));
+  assert.ok(merge);
+  const lines=merge.split('\n').map(line=>line.trim()).filter(Boolean);
+  assert.ok(lines.length>=2);
+  assert.match(lines.at(-1),/fix:/i);
 });
 test('mechanical package sync commits do not increment',()=>{
   assert.equal(countsTowardVersion('chore: sync package.json to 0.3.2\n'),false);
