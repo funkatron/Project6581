@@ -16,7 +16,8 @@ import {mountKeyboard} from "./keyboard-input.js?v=__BUILD_ID__";
 import {readScaleStateFromDom,resolvePerformanceNote,isPitchInScale} from "./western-scales.js?v=__BUILD_ID__";
 import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from "./pitch-envelope.js?v=__BUILD_ID__";
 import {mountEditorTabs} from "./editor-tabs.js?v=__BUILD_ID__";
-import {mountDrumPanelShell} from "./drum-panel-ui.js?v=__BUILD_ID__";
+import {mountDrumPanel} from "./drum-panel-ui.js?v=__BUILD_ID__";
+import {createPerformanceDrumState} from "./performance-drum-state.js?v=__BUILD_ID__";
 import {mountDrumPerformance} from "./drum-performance.js?v=__BUILD_ID__";
 import {defaultDrumKit,defaultDrumSequence,validateDrumKit,validateDrumSequence} from "./drum-step-sequencer.js?v=__BUILD_ID__";
 import {DRUM_ENGINE_INDEX} from "./sid-engines.js?v=__BUILD_ID__";
@@ -202,16 +203,15 @@ const lfoState=Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sin
 const syncedRates=[{value:0.25,label:'4/1'},{value:0.5,label:'2/1'},...([1,2,4,8,16,32].map(value=>({value,label:'1/'+value})))];
 const {renderLfos}=mountLfoPanel({$,lfoState,lfoTargets:LFO_TARGET_ORDER,lfoTargetNames:LFO_TARGET_LABELS,syncedRates,onChange:()=>{updateModulation();syncModulationUiLoop()}});
 const editorTabs=mountEditorTabs({$});
-mountDrumPanelShell({$});
 const helpUi=mountHelpDialog($);
 mountHelpTriggers($,{openHelp:helpUi.openHelp});
 const performanceArp=createPerformanceArpState($);
+const performanceDrum=createPerformanceDrumState();
 const performanceRouting=createPerformanceRoutingState($,{onChange:()=>refreshPresetDirty()});
 const performanceInstrument=createPerformanceInstrumentState($,{
  onChange:()=>{refreshPresetDirty();updateUnison()},
  formatDetune:value=>formatControlValue('detune',value)
 });
-mountGeneratorLeds($,{performanceArp,onGeneratorToggle:()=>refreshPresetDirty()});
 for(const [id,helpId] of [['rootArpTitle','root-arp'],['gameArpTitle','game-arp']]){
  const el=$(id);
  if(el)bindHelpGesture(el,{helpId,$});
@@ -425,6 +425,8 @@ let drumSequence=validateDrumSequence(defaultDrumSequence());
 const drum={timer:null,step:0,running:false};
 const drumReleaseTimers=new Map();
 let drumStop=()=>{};
+let drumStart=()=>{};
+let drumPanelUi={setActiveStep:()=>{},render:()=>{}};
 let seqState=defaultSequence(),seqPreview=false,activeSeqStep=-1;
 let gameStop=()=>{};
 let arpStopVoice=()=>{};
@@ -468,14 +470,31 @@ const performanceNote=note=>resolvePerformanceNote(note,readScaleStateFromDom($)
  setActiveSeqStep:value=>{activeSeqStep=value},
  performanceArp
 }));
-({drumStop}=mountDrumPerformance({
+drumPanelUi=mountDrumPanel({
+ $,
+ getDrumSequence:()=>drumSequence,
+ setDrumSequence:value=>{drumSequence=validateDrumSequence(value);},
+ getDrumKit:()=>drumKit,
+ setDrumKit:value=>{drumKit=validateDrumKit(value);},
+ triggerDrumLane,
+ onPatternChange:()=>refreshPresetDirty()
+});
+({drumStart,drumStop}=mountDrumPerformance({
  $,drum,
  getDrumSequence:()=>drumSequence,
  getMasterBpm:()=>Number($('masterBpm').value),
  triggerDrumLane,
  stopDrumVoices,
- refreshPresetDirty
+ refreshPresetDirty,
+ onTransportChange:running=>performanceDrum.setRunning(running),
+ onStep:index=>drumPanelUi.setActiveStep(index)
 }));
+function toggleDrumTransport(){
+ if(drum.running)drumStop();
+ else drumStart();
+ refreshPresetDirty();
+}
+mountGeneratorLeds($,{performanceArp,performanceDrum,toggleDrumTransport,onGeneratorToggle:()=>refreshPresetDirty()});
 let renderKeyboard=()=>{};
 ({flushQueuedKeys,keyDown,keyUp,renderKeyboard}=mountKeyboard({
  $,keys,names,keyboardState,audioTiming,sidEventLog,
