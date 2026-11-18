@@ -131,7 +131,7 @@ Per-row preset dropdown is **v1 stretch**; fixed map is acceptable for first imp
 | Artifact | What it stores | User mental model |
 | --- | --- | --- |
 | **Pattern** | 16×6 hit grid + transport (`rate`, `sync`, optional `length` 8/16 later) | “The beat” (like a TR pattern) |
-| **Kit** | Six **lanes**, each `{ presetId, midiNote, level? }` — optional **per-hit volume trim** (authentic register gain); **no per-lane stereo pan** (shelved — §6d) | “The sounds” + balance |
+| **Kit** | Six **lanes**, each `{ presetId, midiNote, level }` — **per-lane level** (0–100, voice volume at hit) | “The sounds” + balance |
 
 - Changing the **pattern** does not change timbres; changing the **kit** does not erase steps (same as hardware: load pattern + load kit).
 - **v1 kit UI:** embedded default factory kit only; lane preset picker = **v1.1** slice (can ship hidden behind long-press row label).
