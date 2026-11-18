@@ -30,6 +30,9 @@ main>header #presetOpen{max-width:min(140px,28vw)}
 .workspace[data-tab="voice"] .performance-panel,.workspace[data-tab="play"] .voice-panel,.workspace[data-tab="drum"] .voice-panel,.workspace[data-tab="drum"] .performance-panel,.workspace[data-tab="diag"] .voice-panel,.workspace[data-tab="diag"] .performance-panel,.workspace[data-tab="diag"] .lfo-panel,.workspace[data-tab="diag"] .drum-panel{display:none!important}
 .workspace[data-tab="voice"] .voice-panel,.workspace[data-tab="play"] .performance-panel,.workspace[data-tab="drum"] .drum-panel,.workspace[data-tab="lfos"] .lfo-panel,.workspace[data-tab="diag"] .diag-panel{display:block}
 .drum-panel{--drum-chrome:#6b5c4f;--drum-fill:#e8e0d6;border-top-color:var(--drum-chrome)}
+.drum-lfo-controls{margin:8px 0 6px}
+.drum-lfo-controls .drum-lfo-block{border-color:var(--drum-chrome)}
+.drum-lfo-controls .lfo-slider-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
 .drum-transport{display:flex;flex-wrap:wrap;align-items:center;gap:7px 12px;margin:7px 0 10px;padding:8px;border:1px solid #b8aaa0;border-radius:8px;background:#ebe3d8}
 .drum-transport button{min-height:42px;font-weight:750;padding:7px 14px}
 #drumSeqRun{background:#6b5c4f;color:#fff;border-color:#56483e}

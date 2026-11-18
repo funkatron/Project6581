@@ -26,6 +26,7 @@ export function lfosForEngine(lfos,chipIndex){
  return lfos.filter(lfo=>{
   const scope=lfo.engines??'all';
   if(scope==='all')return true;
+  if(scope==='4')return chipIndex===3;
   return Number(scope)===chipIndex+1;
  });
 }

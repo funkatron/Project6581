@@ -22,7 +22,7 @@ test('the Arp/Seq workspace is usable and the original Sound controls remain',()
  assert.match(html,/src\/seq-ui\.css\?v=__BUILD_ID__/);
  assert.match(css,/\.workspace\[data-tab="play"\] \.voice-panel\{display:none!important\}/);
  assert.match(css,/\.keyboard-panel\{grid-row:4/);
- const play=html.slice(html.indexOf('id="playPanel"'),html.indexOf('id="lfoPanel"'));
+ const play=html.slice(html.indexOf('id="playPanel"'),html.indexOf('id="drumPanel"'));
  const latchAt=play.indexOf('id="arpLatch"');
  const gameAt=play.indexOf('id="gameArpTitle"');
  const rootAt=play.indexOf('id="rootArpTitle"');

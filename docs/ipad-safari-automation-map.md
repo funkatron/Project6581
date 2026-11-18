@@ -72,6 +72,19 @@ Legend:
 | Unison start/stop/panic | Auto | `test/pitch-envelope-controller.test.js` |
 | Kick/tom listening | Manual | Audition UI; no factory preset changes yet |
 
+## Drum sequencer (DRUM SEQ)
+
+| QA item | Coverage | Test / artifact |
+| --- | --- | --- |
+| 16×6 grid model + kit validation | Auto | `test/drum-step-sequencer.test.js`, `test/drum-groove.test.js` |
+| Groove 6581drum round-trip | Auto | `test/drum-groove.test.js` |
+| Drum panel markup + lane levels | Auto | `test/drum-panel-ui.test.js`, `test/editor-tabs.test.js` |
+| Drum clock independence | Partial | `test/drum-performance.test.js`; audio Manual |
+| Drum-only preview, parallel keyboard | Manual | [drum-sequencer-ipad-qa.md](drum-sequencer-ipad-qa.md) |
+| Long-press cell help | Partial | `ui-help-gesture` + `drum-panel-ui.js`; gesture Manual |
+| SID 4 boost headroom | Manual | — |
+| Drum LFO audible on SID 4 | Partial | `test/lfo-modulation.test.js`, preset validate; audio Manual |
+
 ## Layout and tabs
 
 | QA item | Coverage | Test / artifact |

@@ -58,7 +58,7 @@ test('preset loading restores performance settings without stored notes or autop
  assert.match(script,/instrument:performanceInstrument\.getState\(\)/);
  assert.match(script,/performanceInstrument\.applyFromPreset/);
  assert.match(script,/\$\('gameRate'\)\.value=String\(next\.performance\.game\.rate\)/);
- assert.match(script,/enginePanelsUi\?\.render\(\);renderLfos\(\);updateUnison\(\);updateModulation\(\)/);
+ assert.match(script,/enginePanelsUi\?\.render\(\);renderLfos\(\);renderDrumLfo\(\);updateUnison\(\);updateModulation\(\)/);
  assert.match(script,/await ensureSidModel\(presetModel\)/);
  assert.match(script,/const presetModel=next\.sound\.engines\[0\]\.model/);
  assert.match(script,/if\(pendingSidStartup\)await pendingSidStartup/);
@@ -139,7 +139,7 @@ test('empty live Arp selections snapshot as Up and Action so presets can still l
   validateDrumSequence:value=>value,
   validateDrumKit:value=>value,
   readDrumSequenceFromDom:(_,seq)=>seq,
-  engines,lfoState:[],seqState:{},drumSequence,drumKit,
+  engines,lfoState:[],drumLfoState:{enabled:false,depth:0},validateDrumLfo:v=>v,seqState:{},drumSequence,drumKit,
   readRoutingFromDom:()=>({keyboard:'all',arp:'all',game:'sid1'}),
   performanceArp:{rootOn:false,latchOn:false,gameOn:false},
   performanceRouting:{getState:()=>({keyboard:'all',arp:'all',game:'sid1'})},

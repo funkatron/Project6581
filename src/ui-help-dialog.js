@@ -27,6 +27,7 @@ export function openHelp(helpId,{leadIn=null,$=id=>document.getElementById(id)}=
    dialog.close('go');
    if(entry.relatedTab==='play')$('tabPlay')?.click();
    else if(entry.relatedTab==='voice')$('tabVoice')?.click();
+   else if(entry.relatedTab==='drum')$('tabDrum')?.click();
    requestAnimationFrame(()=>{
     const target=$(entry.focusId);
     target?.scrollIntoView?.({block:'nearest',behavior:'smooth'});
@@ -48,9 +49,9 @@ export function mountHelpDialog($){
  return {openHelp:id=>openHelp(id,{$})};
 }
 
-export function mountHelpTriggers($,{openHelp:open}={}){
+export function mountHelpTriggers($,{openHelp:open,root=null}={}){
  const show=open??(id=>openHelp(id,{$}));
- document.querySelectorAll('[data-help]').forEach(node=>{
+ (root??document).querySelectorAll('[data-help]').forEach(node=>{
   if(node.dataset.helpBound==='1')return;
   node.dataset.helpBound='1';
   node.addEventListener('click',event=>{
