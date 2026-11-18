@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import {
  METER_LOG_FLOOR,
  METER_LOG_REFERENCE,
+ METER_LOG_REFERENCE_MASTER,
  meterDisplayFraction,
+ meterDisplayMasterFraction,
  meterDisplayHeight,
 } from '../src/sid-meter-display.js';
 
@@ -23,4 +25,13 @@ test('log meter maps quiet and loud SID peaks across the strip', () => {
 test('reference constants match documented calibration', () => {
  assert.ok(METER_LOG_REFERENCE > METER_LOG_FLOOR);
  assert.ok(METER_LOG_FLOOR < 0.02);
+ assert.ok(METER_LOG_REFERENCE_MASTER < METER_LOG_REFERENCE);
+});
+
+test('master meter reaches full on realistic loud PCM peaks', () => {
+ assert.equal(meterDisplayMasterFraction(0), 0);
+ assert.equal(meterDisplayMasterFraction(0.08), 1);
+ assert.equal(meterDisplayMasterFraction(0.045), 1);
+ assert.ok(meterDisplayMasterFraction(0.028) > 0.7);
+ assert.ok(meterDisplayMasterFraction(0.018) > 0.35);
 });

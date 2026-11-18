@@ -64,7 +64,7 @@ test('master loudness meter updates fill width',()=>{
 test('header master meter is a full-bleed horizontal rainbow bar',()=>{
  const css=readStudioCoreCss();
  assert.match(css,/\.header-meter-band \.master-rainbow-meter\{[^}]*width:100%/);
- assert.match(css,/\.header-meter-band \.master-rainbow-meter\{[^}]*height:10px/);
+ assert.match(css,/\.header-meter-band \.master-rainbow-meter\{[^}]*height:15px/);
  assert.match(css,/\.master-rainbow-meter-fill\{[^}]*width:0/);
 });
 

@@ -7,20 +7,36 @@ const DB = (level) => 20 * Math.log10(level);
 /** ~−42 dBFS: meter bottom (idle / very quiet). */
 export const METER_LOG_FLOOR = 0.008;
 
-/** ~−18 dBFS: calibrate typical playing peaks nearer the top of the strip. */
+/** ~−18 dBFS: per-chip strip calibration (WASM chip peaks). */
 export const METER_LOG_REFERENCE = 0.13;
+
+/** Master PCM peaks are often ~0.04–0.12 before clipping; map loud mixes to the top. */
+export const METER_LOG_REFERENCE_MASTER = 0.052;
+export const METER_MASTER_INPUT_GAIN = 1.22;
 
 const DB_FLOOR = DB(METER_LOG_FLOOR);
 const DB_REFERENCE = DB(METER_LOG_REFERENCE);
 const DB_SPAN = DB_REFERENCE - DB_FLOOR;
+const DB_REFERENCE_MASTER = DB(METER_LOG_REFERENCE_MASTER);
+const DB_SPAN_MASTER = DB_REFERENCE_MASTER - DB_FLOOR;
+
+function logMeterFraction(level, reference, dbSpan) {
+ const clamped = Math.max(METER_LOG_FLOOR, Math.min(1, Number(level) || 0));
+ if (clamped <= METER_LOG_FLOOR) return 0;
+ if (clamped >= reference) return 1;
+ const db = DB(clamped);
+ return Math.max(0, Math.min(1, (db - DB_FLOOR) / dbSpan));
+}
 
 /** @param {number} level Normalized peak 0–1 */
 export function meterDisplayFraction(level) {
- const clamped = Math.max(METER_LOG_FLOOR, Math.min(1, Number(level) || 0));
- if (clamped <= METER_LOG_FLOOR) return 0;
- if (clamped >= METER_LOG_REFERENCE) return 1;
- const db = DB(clamped);
- return Math.max(0, Math.min(1, (db - DB_FLOOR) / DB_SPAN));
+ return logMeterFraction(level, METER_LOG_REFERENCE, DB_SPAN);
+}
+
+/** Header master loudness from mixed PCM (hotter mapping than chip telemetry). */
+export function meterDisplayMasterFraction(level) {
+ const boosted = Math.min(1, Math.max(0, Number(level) || 0) * METER_MASTER_INPUT_GAIN);
+ return logMeterFraction(boosted, METER_LOG_REFERENCE_MASTER, DB_SPAN_MASTER);
 }
 
 export function meterDisplayHeight(level) {
@@ -29,4 +45,8 @@ export function meterDisplayHeight(level) {
 
 export function meterDisplayWidth(level) {
  return meterDisplayHeight(level);
+}
+
+export function meterDisplayMasterWidth(level) {
+ return `${(meterDisplayMasterFraction(level) * 100).toFixed(1)}%`;
 }
