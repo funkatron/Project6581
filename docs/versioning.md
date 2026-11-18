@@ -3,7 +3,7 @@
 ## Owner policy (2026-11-17)
 
 1. **`package.json` tracks the true app version** — it must match `node scripts/resolve-version.mjs` on every merge to `main`. Run `node scripts/sync-package-version.mjs` after shipping code and commit the result when the version changes.
-2. **Patch (rightmost):** any change to the codebase that is not a feature/behavior milestone.
+2. **Patch (micro, rightmost):** bug fixes, docs, and any shipped change that is not a feature — use **`fix:`** in commit/PR titles so patch bumps stay visible in history.
 3. **Minor (middle):** new features or **behavior changes** — use **`feat:`** in commit/PR titles so version history stays honest.
 
 Displayed footer: `Project6581 vX.Y.Z · Built … (UTC)` from [stamp-build.mjs](../scripts/stamp-build.mjs). Cache-bust id is `version+timestamp` on module URLs.
@@ -12,7 +12,7 @@ Displayed footer: `Project6581 vX.Y.Z · Built … (UTC)` from [stamp-build.mjs]
 
 ## Current release floor: v0.4.0+
 
-**App semver on `main`:** **v0.5.0** (LFO pan target, instrument state slice, Step E QA guards — [#139](https://github.com/funkatron/Project6581/pull/139)).
+**App semver on `main`:** **v0.5.2** ([#146](https://github.com/funkatron/Project6581/pull/146) SID startup chip-model sync; **v0.5.1** was showcase layer routing [#145](https://github.com/funkatron/Project6581/pull/145)).
 
 ## Historical floors: v0.3.0
 

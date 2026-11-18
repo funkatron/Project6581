@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 // shipping code on main. BASELINE is the commit where package.json last synced.
 // Rules: feat/behavior → minor (reset patch); any other counted change → patch.
 // Floor v0.4.0: western scale lock + performance arp/latch state (#130, #134).
-export const BASELINE='7e75e8e8155f3e0cddca394da92ec7cd35d03f04';
+export const BASELINE='5e45958ae8f81bdfe677a571932c72a87f501f0c';
 
 const RELEASE_FLOOR=/^chore(?:\([^)]+\))?:\s*release\b/i;
 const RELEASE_TAG=/^release v\d+\.\d+\.\d+/i;
@@ -53,8 +53,9 @@ export function calculateVersion(base,commits){
 }
 
 export function gitCommitsSinceBaseline(baseline=BASELINE){
-  const raw=execFileSync('git',['log','--first-parent','--format=%s%n%b%x00',baseline+'..HEAD'],{encoding:'utf8'});
-  return raw.split('\0').filter(Boolean);
+  // -z record separators; %B includes PR title line on merge commits (see commitTitle).
+  const raw=execFileSync('git',['log','--first-parent','-z','--format=%B',baseline+'..HEAD'],{encoding:'utf8'});
+  return raw.split('\0').filter(message=>message.trim());
 }
 
 export function packageBaseVersion(){
