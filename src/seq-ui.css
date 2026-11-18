@@ -38,7 +38,15 @@ main>header #presetOpen{max-width:min(140px,28vw)}
 #rootArpTitle{display:flex;align-items:center;gap:10px;margin:0 0 8px;color:var(--root-teal)}
 #rootArpTitle::before{content:"⌃";color:var(--root-teal-accent);font-size:22px;font-weight:900}
 #rootArpTitle::after{content:"";height:3px;flex:1;background:repeating-linear-gradient(180deg,var(--root-teal) 0 1px,transparent 1px 3px)}
+.arp-generators-grid{display:flex;flex-direction:column;gap:12px;margin-top:4px}
 .root-arp-panel{margin:0 0 12px;padding:10px 12px;border:2px solid var(--root-teal);border-radius:11px;background:linear-gradient(#f0f5f3,#e5ebe8);box-shadow:inset 0 1px #fff}
+.game-arp-panel{min-width:0}
+@container (min-width:560px){
+ .arp-generators-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+ .arp-generators-grid .root-arp-panel,.arp-generators-grid .game-arp-panel{margin:0}
+ .game-arp-panel{padding:10px 12px;border:2px solid var(--seq-orange);border-radius:11px;background:linear-gradient(#f7efe5,#efe4d6);box-shadow:inset 0 1px #fff}
+ .game-arp-panel .seq-editor{border:none;padding:0;box-shadow:none;background:transparent}
+}
 .root-arp-transport{margin:4px 0}
 #gameArpTitle{display:flex;align-items:center;gap:10px;margin:0 0 8px}
 #gameArpTitle::before{content:"▦";color:var(--seq-orange);font-size:24px}

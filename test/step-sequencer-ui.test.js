@@ -13,7 +13,7 @@ test('the Arp/Seq workspace is usable and the original Sound controls remain',()
  assert.ok(script,'App module must exist');
  const syntax=spawnSync(process.execPath,['--input-type=module','--check'],{input:script,encoding:'utf8'});
  assert.equal(syntax.status,0,syntax.stderr);
- for(const id of ['tabVoice','tabPlay','voicePanel','playPanel','seqGrid','seqRun','seqStop',
+ for(const id of ['tabVoice','tabPlay','voicePanel','playPanel','arpGeneratorsGrid','gameArpPanel','seqGrid','seqRun','seqStop',
   'seqLength','seqReset','gameArpOn','gameArpStyle','arpSync','arpLatch','gameRate',
   'keyboardPanel','keyboardToggle','keyboard','presetOpen','sidStart','recordToggle'])
   assert.match(html,new RegExp('id="'+id+'"'));
@@ -27,6 +27,9 @@ test('the Arp/Seq workspace is usable and the original Sound controls remain',()
  const gameAt=play.indexOf('id="gameArpTitle"');
  const rootAt=play.indexOf('id="rootArpTitle"');
  assert.ok(latchAt>=0&&latchAt<rootAt&&rootAt<gameAt,'latch, Root Arp, then Game Arp');
+ assert.match(play,/class="arp-generators-grid"/);
+ assert.match(css,/\.arp-generators-grid\{[^}]*flex-direction:column/);
+ assert.match(css,/@container \(min-width:560px\)\{[^}]*grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/);
  assert.equal(play.includes('LFO'),false,'the Arp panel does not mention LFOs');
  assert.equal(play.includes('<details'),false,'the Root Arp stays visible');
 });

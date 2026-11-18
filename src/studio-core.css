@@ -254,6 +254,7 @@ button,select,.master-tempo input{font-family:inherit}
 #presetCurrent{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:140px}
 #presetDialog,#preferencesDialog{width:min(760px,calc(100vw - 24px));max-width:100%;max-height:calc(100dvh - 32px);margin:auto;padding:clamp(12px,2vw,20px);color:#f3f5fa;background:#1b2736;border:1px solid #52647d;border-radius:13px;box-shadow:0 20px 65px #0009;overflow-y:auto;overscroll-behavior:contain}
 #presetDialog:not([open]),#preferencesDialog:not([open]){display:none}
+#presetDialog .preset-item,#presetDialog input[type=search],#presetDialog input[type=text]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 #presetDialog h2,#presetDialog h3{color:#f3f5fa}
 #preferencesDialog h2,#preferencesDialog h3{color:#f3f5fa}
 #presetDialog small,#presetDialog .preset-empty,#presetDialog .preset-item-category{color:#c8d6e5}
