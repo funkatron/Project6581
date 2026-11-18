@@ -5,7 +5,10 @@ main{height:100%;max-width:1400px;margin:auto;padding:clamp(8px,1.5vw,18px);disp
 /* Keys and piano rows opt out of browser text selection while dragging; allow
    copy only where users explicitly need it (diagnostics textarea, typed fields). */
 textarea,input[type=text],input[type=search],input[type=number],#sidReportFallback{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
-header{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+header{display:flex;flex-direction:column;align-items:stretch;gap:0;min-width:0}
+.header-meter-band{width:100%;padding:0;margin:0;flex:none}
+.header-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;flex:1}
+.header-brand{min-width:0}
 h1{font-size:clamp(18px,2.3vw,28px);margin:0;letter-spacing:-.03em}h2{font-size:14px;margin:0 0 6px}p,small{color:#b6c2d2}
 .subtitle{font-size:11px;margin:2px 0 0}.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 button,select{font:inherit;background:#29384b;color:#f3f5fa;border:1px solid #52647d;border-radius:9px;padding:9px 12px;min-height:44px;touch-action:manipulation}
@@ -203,14 +206,14 @@ button,select,.master-tempo input{font-family:inherit}
 #detune:disabled{opacity:.45;cursor:not-allowed}
 /* Keep labels and status text clear of recessed panel edges, including
    compact landscape layouts where the original padding becomes very small. */
-header{padding:8px 12px;min-width:0}
+.header-toolbar{padding:8px 12px;min-width:0}
 .statusbar{padding:3px 10px;min-width:0}
 .workspace .panel{padding:clamp(10px,1.25vw,16px)}
 .lfo-controls{padding:8px 10px 9px;min-width:0}
 .lfo-controls legend{padding:0 5px;margin-left:2px}
 .keyboard-panel{padding:9px 12px 12px}
 @media(max-height:760px){.workspace .panel{padding:9px 11px}.lfo-controls{padding:7px 8px 8px}}
-@media(max-width:520px){header{padding:7px 9px}.statusbar{padding:3px 8px}.workspace .panel{padding:9px 10px}.lfo-controls{padding:7px 8px 8px}}
+@media(max-width:520px){.header-toolbar{padding:7px 9px}.statusbar{padding:3px 8px}.workspace .panel{padding:9px 10px}.lfo-controls{padding:7px 8px 8px}}
 /* Compact hardware fader for master tempo with always-visible BPM readout. */
 .master-tempo{display:flex;align-items:center;gap:5px;white-space:nowrap;font-size:11px}
 .master-tempo input[type=range]{width:clamp(72px,8vw,110px);max-width:none;min-width:65px;height:28px;padding:0;border:0;background:transparent;box-shadow:none;accent-color:#454b49;touch-action:pan-x}
@@ -226,7 +229,7 @@ header{padding:8px 12px;min-width:0}
 .lfo-controls select{min-height:40px;font-size:12px;max-width:72%}
 .lfo-controls input[type=range]{height:40px;touch-action:pan-x}
 .lfo-controls output{font-size:11px}
-@media(max-width:520px){header{display:grid;grid-template-columns:minmax(0,1fr);gap:5px}header .controls{justify-content:space-between}}
+@media(max-width:520px){.header-toolbar{display:grid;grid-template-columns:minmax(0,1fr);gap:5px}header .controls{justify-content:space-between}}
 /* Arp-generated notes: separate from gold physical-press; root vs Game Arp colors. */
 .key.arp-playing-root:not(.down){background:#7bcabb;color:#16362d;border-bottom-color:#2d7465;box-shadow:inset 0 0 0 3px #236858}
 .key.black.arp-playing-root:not(.down){background:#2d7768;color:#fff;border-bottom-color:#22584c;box-shadow:inset 0 0 0 3px #a1eedf}
@@ -319,7 +322,8 @@ label:not(:has(.param-track))>.base-value,label:not(:has(.param-track))>.modulat
 .workspace .panel label>select{min-width:0;max-width:65%}
 .workspace .panel label:not(:has(.param-track))>input[type=range],.workspace .panel label:not(:has(.param-track))>.slider-stack{flex:1 1 0;min-width:0;max-width:62%}
 .workspace .lfo-panel{grid-column:1/-1;margin-top:0;container-type:inline-size}
-.workspace .lfo-panel #lfoControls{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:10px}
+.workspace .lfo-panel #lfoControls{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:10px 14px}
+.workspace .lfo-panel .lfo-slider-grid{--label-w:5.25rem;--value-w:4.5rem}
 .workspace .lfo-panel .lfo-controls{min-width:0}
 .workspace .lfo-panel .lfo-controls label>select{max-width:65%}
 @media(max-width:520px){.workspace{--control-gap:6px;--control-value-width:32px}}
@@ -332,10 +336,10 @@ label:not(:has(.param-track))>.base-value,label:not(:has(.param-track))>.modulat
 .sid-rainbow-meter{flex:1 1 100%;min-width:0;width:100%;height:14px;position:relative;border:1px solid #4c3b2d;border-radius:2px;background:#120e0a;overflow:hidden;box-shadow:inset 0 1px 2px #0006;order:10;flex-basis:100%}
 .sid-rainbow-meter-track{position:absolute;inset:1px;opacity:.38;pointer-events:none;background:linear-gradient(90deg,#e35a4f 0%,#f3a23c 14%,#f7d24f 28%,#4bc067 42%,#2cb4c2 57%,#4a6fe3 72%,#8a4dc9 100%)}
 .sid-rainbow-meter-fill{position:absolute;left:1px;top:1px;bottom:1px;width:0;background:linear-gradient(90deg,#e35a4f 0%,#f3a23c 14%,#f7d24f 28%,#4bc067 42%,#2cb4c2 57%,#4a6fe3 72%,#8a4dc9 100%);box-shadow:0 0 7px rgba(243,162,60,.3);transition:width .08s linear}
-/* Commodore Plus/4–style horizontal rainbow (master loudness in header) */
-.master-rainbow-meter{width:min(300px,100%);max-width:300px;height:14px;flex:1 1 180px;position:relative;border:1px solid #4c3b2d;border-radius:2px;background:#120e0a;overflow:hidden;box-shadow:inset 0 1px 2px #0006}
-.master-rainbow-meter-track{position:absolute;inset:1px;opacity:.38;pointer-events:none;background:linear-gradient(90deg,#e35a4f 0%,#f3a23c 14%,#f7d24f 28%,#4bc067 42%,#2cb4c2 57%,#4a6fe3 72%,#8a4dc9 100%)}
-.master-rainbow-meter-fill{position:absolute;left:1px;top:1px;bottom:1px;width:0;background:linear-gradient(90deg,#e35a4f 0%,#f3a23c 14%,#f7d24f 28%,#4bc067 42%,#2cb4c2 57%,#4a6fe3 72%,#8a4dc9 100%);box-shadow:0 0 7px rgba(243,162,60,.3);transition:width .08s linear}
+/* Commodore Plus/4–style horizontal rainbow (master loudness — full-bleed header band) */
+.header-meter-band .master-rainbow-meter{width:100%;max-width:none;height:15px;flex:none;position:relative;border:0;border-bottom:1px solid #4c3b2d;border-radius:0;background:#120e0a;overflow:hidden;box-shadow:inset 0 1px 2px #0006}
+.master-rainbow-meter-track{position:absolute;inset:1px;top:0;bottom:1px;opacity:.38;pointer-events:none;background:linear-gradient(90deg,#e35a4f 0%,#f3a23c 14%,#f7d24f 28%,#4bc067 42%,#2cb4c2 57%,#4a6fe3 72%,#8a4dc9 100%)}
+.master-rainbow-meter-fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#e35a4f 0%,#f3a23c 14%,#f7d24f 28%,#4bc067 42%,#2cb4c2 57%,#4a6fe3 72%,#8a4dc9 100%);box-shadow:0 0 7px rgba(243,162,60,.3);transition:width .08s linear}
 .sid-engine-control-grid{margin:6px 0 0}
 .sid-engine-voice-heading{margin:10px 0 4px;font-size:13px}
 .voice-toggles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 12px;margin-bottom:2px}

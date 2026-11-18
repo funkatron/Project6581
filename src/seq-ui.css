@@ -2,11 +2,13 @@
 :root{color-scheme:light;background:#d8cdbb;color:#262b2a;--seq-orange:#e15a24;--seq-edge:#b1a392}
 body{background:#d8cdbb}
 main{max-width:none;background:linear-gradient(#f1e6d6,#dfd5c6);padding:clamp(5px,.8vw,12px);gap:6px;grid-template-rows:auto auto minmax(0,1fr) auto auto auto;overflow:hidden}
-header{grid-row:1;background:linear-gradient(165deg,#fff8ed,#e7d9c6);border:1px solid #b5a894;border-top:4px solid var(--seq-orange);border-radius:11px;padding:9px clamp(10px,1vw,18px);box-shadow:inset 0 1px #fff,0 2px 5px #9a8c7830;gap:10px}
+header{grid-row:1;display:flex;flex-direction:column;align-items:stretch;gap:0;background:linear-gradient(165deg,#fff8ed,#e7d9c6);border:1px solid #b5a894;border-top:0;border-radius:11px;padding:0;overflow:hidden;box-shadow:inset 0 1px #fff,0 2px 5px #9a8c7830}
+.header-toolbar{padding:9px clamp(10px,1vw,18px);gap:10px}
+.header-meter-band .master-rainbow-meter{border-bottom-color:#7a6a58;box-shadow:inset 0 1px 2px #0005,inset 0 -1px #fff6}
 h1{font-size:clamp(19px,2.2vw,29px);letter-spacing:-.035em;text-transform:none;white-space:nowrap}
 header .subtitle{color:#555149;font-size:10px;letter-spacing:.08em;text-transform:uppercase}
 header .controls{justify-content:flex-end;align-items:center;gap:6px 9px}
-header .controls > label,header .controls > button,header #masterLoudnessMeter{min-height:var(--bar-h,38px);align-self:center}
+header .controls > label,header .controls > button{min-height:var(--bar-h,38px);align-self:center}
 header button,header select{box-shadow:0 1px 1px #786c5938;min-height:var(--bar-h,38px);font-size:11px;padding:6px 10px}
 header #presetOpen{max-width:min(140px,28vw)}
 #presetCurrent{max-width:100px}
@@ -149,7 +151,7 @@ footer{grid-row:6;padding:1px 8px;color:#4e4e48;font-size:10px}
  .keyboard-panel{height:clamp(230px,24dvh,335px)}
 }
 @media (max-width:1100px){
- header{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:6px;padding:7px 10px}
+ .header-toolbar{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:6px;padding:7px 10px}
  header h1{font-size:clamp(18px,2.3vw,24px);white-space:normal;line-height:1.12}
  header .controls{justify-content:flex-start;gap:5px 8px}
 }

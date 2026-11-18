@@ -1,4 +1,4 @@
-import {meterDisplayWidth} from './sid-meter-display.js?v=__BUILD_ID__';
+import {meterDisplayMasterWidth} from './sid-meter-display.js?v=__BUILD_ID__';
 
 /** Combined output level from worklet mixed PCM (0–1). */
 export function normalizeMasterPeak(level){
@@ -12,7 +12,7 @@ export function mountMasterLoudnessMeter($){
  if(!root)return {update:()=>{}};
  const fill=root.querySelector('.master-rainbow-meter-fill');
  function update(level){
-  const width=meterDisplayWidth(normalizeMasterPeak(level));
+  const width=meterDisplayMasterWidth(normalizeMasterPeak(level));
   if(fill)fill.style.width=width;
   root.setAttribute('aria-label','Overall output level '+width);
  }
