@@ -12,7 +12,7 @@ test('dist/residfp.wasm exports per-chip metering and panning',t=>{
  const bytes=readFileSync(wasmPath);
  const mod=new WebAssembly.Module(bytes);
  const names=WebAssembly.Module.exports(mod).map(entry=>entry.name);
- const required=['sid_chip_peaks_ptr','sid_set_pan','sid_set_chip_model'];
+ const required=['sid_chip_peaks_ptr','sid_set_pan','sid_set_chip_model','sid_set_chip_gain'];
  const missing=required.filter(symbol=>!names.includes(symbol));
  if(missing.length){
   const strict=process.env.CI==='true'||process.env.SID_REQUIRE_WASM_EXPORTS==='1';

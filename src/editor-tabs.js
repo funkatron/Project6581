@@ -1,5 +1,5 @@
-const TAB_BINDINGS=[['voice','tabVoice'],['play','tabPlay'],['lfos','tabLfos']];
-const TAB_ID={voice:'tabVoice',play:'tabPlay',lfos:'tabLfos'};
+const TAB_BINDINGS=[['voice','tabVoice'],['play','tabPlay'],['drum','tabDrum'],['lfos','tabLfos']];
+const TAB_ID={voice:'tabVoice',play:'tabPlay',drum:'tabDrum',lfos:'tabLfos'};
 
 export function activateEditorTab($,name){
  const id=TAB_ID[name];
@@ -15,9 +15,9 @@ export function mountEditorTabs({$}={}){
     if(panel.id==='diagPanel'){panel.hidden=true;continue}
     panel.hidden=panel.getAttribute('aria-labelledby')!==id;
    }
-   $('tabVoice').setAttribute('aria-selected',String(name==='voice'));
-   $('tabPlay').setAttribute('aria-selected',String(name==='play'));
-   $('tabLfos').setAttribute('aria-selected',String(name==='lfos'));
+   for(const [tabName,tabId] of TAB_BINDINGS){
+    $(tabId).setAttribute('aria-selected',String(name===tabName));
+   }
   });
  }
  return {activateTab:name=>activateEditorTab($,name)};

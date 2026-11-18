@@ -1,17 +1,17 @@
 import {SidRegisters} from './sid-registers.js';
 
-// Eight available SID oscillators across three three-voice chips.
+// Up to nine melodic oscillators on SID 1–3; SID 4 adds three drum slots (9–11).
 // voiceCount is the total budget; unisonCount is the layers per sounding pitch.
 export class UnisonSidController {
  constructor(write,{voiceCount=1,unisonCount=1,mode='mono',detune=0,onPitchStart=()=>{},onPitchStop=()=>{},onPitchRetune=()=>{}}={}){
-  this.chips=Array.from({length:3},(_,chip)=>new SidRegisters((reg,value)=>write(chip*0x20+reg,value)));
+  this.chips=Array.from({length:4},(_,chip)=>new SidRegisters((reg,value)=>write(chip*0x20+reg,value)));
   this.onPitchStart=onPitchStart;this.onPitchStop=onPitchStop;this.onPitchRetune=onPitchRetune;
   this.voiceCount=1;this.unisonCount=1;this.mode='mono';
   this.detune=0;this.liveDetune=0;this.held=[];this.monoTokens=new Map();
   this.current=null;this.currentToken=null;this.settings=null;this.currentSlotMap=null;
   this.polyNotes=new Map();this.sequence=0;
-  this.layerStacks=[null,null,null];
-  this.layerPoly=[new Map(),new Map(),new Map()];
+  this.layerStacks=[null,null,null,null];
+  this.layerPoly=[new Map(),new Map(),new Map(),new Map()];
   this.configure({voiceCount,unisonCount,mode,detune});
  }
  configure({voiceCount=this.voiceCount,unisonCount=this.unisonCount,mode=this.mode,detune=this.detune}={}){
@@ -54,7 +54,7 @@ export class UnisonSidController {
    this.mode==='duo'?Math.min(2,available):available;
  }
  get capacity(){return this.capacityFor(this.buildSlotMap(null))}
-  chip(slot){return this.chips[Math.min(2,Math.floor(slot/3))]}
+  chip(slot){return this.chips[Math.min(3,Math.floor(slot/3))]}
  voice(slot){return slot%3}
  offset(index){
   return this.unisonCount===1?0:
@@ -85,7 +85,7 @@ export class UnisonSidController {
   this.layerStacks[chip]=null;
  }
  noteOnLayer(chip,note,settings,chipMask){
-  if(!Number.isInteger(chip)||chip<0||chip>2)throw new RangeError('layer chip');
+  if(!Number.isInteger(chip)||chip<0||chip>3)throw new RangeError('layer chip');
   const token=++this.sequence;
   const getter=typeof settings==='function'?settings:()=>settings;
   const mask=Array.isArray(chipMask)&&chipMask.length?chipMask:[chip];

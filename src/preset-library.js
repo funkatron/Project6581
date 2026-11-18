@@ -2,7 +2,8 @@ import {defaultSequence,validateSequence} from './game-step-sequencer.js';
 import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from './pitch-envelope.js';
 import {pitchEnvelopeTemplates} from './pitch-envelope-editor.js';
 const FACTORY_PITCH=pitchEnvelopeTemplates();
-import {createDefaultEngines,DEFAULT_ROUTING,ROUTE_OPTIONS,defaultEngineSettings} from './sid-engines.js';
+import {createDefaultEngines,DEFAULT_ROUTING,ROUTE_OPTIONS,defaultDrumEngineSettings,defaultEngineSettings} from './sid-engines.js';
+import {validateDrumEngineBoost} from './drum-step-sequencer.js';
 import {validateScaleSettings} from './western-scales.js';
 import {LFO_TARGET_ORDER,LFO_WAVES} from './lfo-modulation.js';
 // Project6581 preset format v5: per-engine sound blocks and performance.routing (v4 imports upgrade).
@@ -70,9 +71,11 @@ function validateEngine(engine,index){
  const e=object(engine,'SID '+(index+1));
  const voice=attachDefaultPitchEnvelope(e.voice??{});
  const filter=object(e.filter??defaultEngineSettings().filter,'filter');
+ const boost=index===3?validateDrumEngineBoost(e.outputBoostDb):0;
  return {
   model:choice(e.model,'chip model',[6581,8580]),
   pan:numeric(e.pan??0,'pan',-100,100),
+  outputBoostDb:boost,
   voice:{
    enabled:boolean(voice.enabled,'enabled'),wave:choice(voice.wave,'waveform',WAVES),
    attack:numeric(voice.attack,'attack',0,2),decay:numeric(voice.decay,'decay',0,3),
@@ -89,8 +92,13 @@ function validateEngine(engine,index){
  };
 }
 function migrateLegacySound(sound){
- if(Array.isArray(sound.engines)&&sound.engines.length===3){
+ if(Array.isArray(sound.engines)&&sound.engines.length===4){
   return sound.engines.map((engine,i)=>validateEngine(engine,i));
+ }
+ if(Array.isArray(sound.engines)&&sound.engines.length===3){
+  const engines=sound.engines.map((engine,i)=>validateEngine(engine,i));
+  engines.push(validateEngine(defaultDrumEngineSettings(),3));
+  return engines;
  }
  const model=choice(sound.model??6581,'chip model',[6581,8580]);
  const engines=defaultEngineBank();

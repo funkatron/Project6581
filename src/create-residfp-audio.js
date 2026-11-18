@@ -157,6 +157,7 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
         });
       },
       setPan(chip,pan){if(!closed&&node)node.port.postMessage({type:'set-pan',chip,pan:Math.round(pan)});},
+      setChipGain(chip,gainDb){if(!closed&&node)node.port.postMessage({type:'set-chip-gain',chip,gainDb:Math.round(gainDb)});},
       setModulationConfig(config){if(!closed&&node)node.port.postMessage({type:'modulation-config',...config});},
       startPitchEnvelope(slot,note,envelope){
         if(!Number.isInteger(slot)||slot<0||slot>=8||!Number.isFinite(note))return;

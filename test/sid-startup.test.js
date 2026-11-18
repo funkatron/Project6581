@@ -28,8 +28,15 @@ function app({closeHangs=false,closeRejects=false,moduleHang=false,engineError=f
  const lifecycle=readFileSync(new URL('../src/sid-audio-lifecycle.js',import.meta.url),'utf8').replace('export function','function');
  const statusUi=readFileSync(new URL('../src/sid-engine-status-ui.js',import.meta.url),'utf8').replace(/export function/g,'function');
  const scope=vm.createContext({$,AudioContext:Context,performance:{now:()=>0},needsAudioResume,
-  engines:[{model:6581,pan:0,voice:{enabled:true},filter:{}},{model:6581,pan:0,voice:{enabled:true},filter:{}},{model:6581,pan:0,voice:{enabled:true},filter:{}}],
+  engines:[
+   {model:6581,pan:0,outputBoostDb:0,voice:{enabled:true},filter:{}},
+   {model:6581,pan:0,outputBoostDb:0,voice:{enabled:true},filter:{}},
+   {model:6581,pan:0,outputBoostDb:0,voice:{enabled:true},filter:{}},
+   {model:6581,pan:0,outputBoostDb:6,voice:{enabled:true},filter:{}}
+  ],
   syncEngineChipModels:async()=>{},
+  syncEnginePans(){},
+  syncEngineChipGains(){},
   performanceInstrument:{getState:()=>({voiceCount:1,unisonCount:1,mode:'mono',detune:12}),detune:12,unisonCount:1,syncDetuneDisplay(){}},
   setTimeout(fn,ms){const id=++timerId;timers.set(id,{fn,ms});return id},clearTimeout:id=>timers.delete(id),
   sidAudio:null,sidContext:null,sidController:null,sidRecorder:null,activeSidModel:null,sidStarting:false,
