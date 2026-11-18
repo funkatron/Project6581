@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {readStudioCoreCss} from './studio-css.mjs';
+import {readStudioCoreCss,readStudioCss} from './studio-css.mjs';
 
 test('per-chip rainbow meter is horizontal with width-driven fill',()=>{
  const css=readStudioCoreCss();
@@ -14,4 +14,11 @@ test('per-chip rainbow meter is horizontal with width-driven fill',()=>{
  assert.match(ui,/fill\.style\.width/);
  assert.doesNotMatch(ui,/fill\.style\.height/);
  assert.match(ui,/sid-rainbow-meter-track/);
+});
+
+test('app header layout does not style sid-engine headers',()=>{
+ const css=readStudioCss();
+ assert.match(css,/main>header\{[^}]*flex-direction:column/);
+ assert.match(css,/\.sid-engine-header\{[^}]*flex-direction:row/);
+ assert.doesNotMatch(css,/[^>]header\{[^}]*flex-direction:column/);
 });
