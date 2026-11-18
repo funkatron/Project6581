@@ -236,6 +236,17 @@ test('layer factory presets use three distinct engines and layer routing',()=>{
  }
 });
 
+test('noise snare and clap use short pitch envelopes for transients',()=>{
+ for(const id of ['noise-snare','noise-clap']){
+  const preset=FACTORY_PRESETS.find(p=>p.id===id);
+  const env=preset.settings.sound.engines[0].voice.pitchEnvelope;
+  assert.equal(env.enabled,true,id);
+  assert.ok(env.points.length>=2,id);
+ }
+ const kick=FACTORY_PRESETS.find(p=>p.id==='low-thud-kick');
+ assert.equal(kick.settings.sound.engines[0].voice.pitchEnvelope.enabled,true);
+});
+
 test('expanded C64 factory bank retains legacy sounds and has six originals per new category',()=>{
  const newIds={
   Bass:['tight-pulse-bass','pwm-drive-bass','filtered-saw-bass','hollow-square-bass','octave-runner-bass','warm-triangle-bass'],
