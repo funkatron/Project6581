@@ -166,7 +166,9 @@ test('composer showcase presets demonstrate triple-SID layers and LFOs',()=>{
  }
  const galway=FACTORY_PRESETS.find(p=>p.id==='showcase-galway-epic');
  assert.ok(galway.settings.sound.engines[1].voice.pwmDepth>=20);
- assert.equal(galway.settings.performance.game.enabled,false);
+ assert.equal(galway.settings.performance.game.enabled,true,'Galway Epic Pad ships with gentle Game Arp');
+ assert.equal(galway.settings.performance.game.style,'adventure');
+ assert.equal(galway.settings.performance.game.rate,4);
  const commando=FACTORY_PRESETS.find(p=>p.id==='showcase-hubbard-commando');
  assert.ok(commando.settings.sound.engines[0].filter.volume>=85);
  assert.equal(commando.settings.performance.game.style,'action');
