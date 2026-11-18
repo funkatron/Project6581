@@ -1,23 +1,39 @@
 import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from './pitch-envelope.js';
 
+export const SID_CHIP_COUNT=4;
+export const DRUM_ENGINE_INDEX=3;
 export const MAX_SID_OSCILLATORS=9;
-export const SID_ENGINE_COUNT=3;
+export const SID_ENGINE_COUNT=SID_CHIP_COUNT;
 
 export function defaultEngineSettings(model=6581){
  return {
   model,
   pan:0,
+  outputBoostDb:0,
   voice:{wave:'square',attack:0.002,decay:0.12,sustain:0.8,release:0.12,pulse:50,pwmDepth:0,pwmRate:1,enabled:true,
    pitchEnvelope:validatePitchEnvelope(DEFAULT_PITCH_ENVELOPE)},
   filter:{cutoff:7000,resonance:10,volume:55,mode:'lowpass'}
  };
 }
 
-export function createDefaultEngines(chipModel=6581){
- return [0,1,2].map(()=>defaultEngineSettings(chipModel));
+export function defaultDrumEngineSettings(model=6581){
+ return {
+  ...defaultEngineSettings(model),
+  outputBoostDb:6,
+  filter:{cutoff:6200,resonance:12,volume:70,mode:'highpass'}
+ };
 }
 
-/** Total oscillator budget across three SID chips (always nine). */
+export function createDefaultEngines(chipModel=6581){
+ return [
+  defaultEngineSettings(chipModel),
+  defaultEngineSettings(chipModel),
+  defaultEngineSettings(chipModel),
+  defaultDrumEngineSettings(chipModel)
+ ];
+}
+
+/** Melodic oscillator budget across SID 1–3 (nine voices). SID 4 is drum-only. */
 export function maxVoicesForEngines(){
  return MAX_SID_OSCILLATORS;
 }

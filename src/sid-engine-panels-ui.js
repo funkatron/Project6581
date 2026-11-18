@@ -1,5 +1,5 @@
 import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=__BUILD_ID__';
-import {SID_ENGINE_COUNT} from './sid-engines.js';
+import {DRUM_ENGINE_INDEX,SID_ENGINE_COUNT} from './sid-engines.js';
 import {meterDisplayWidth} from './sid-meter-display.js?v=__BUILD_ID__';
 import {formatPanBrief,formatHzBrief,formatPercent} from './control-format.js?v=__BUILD_ID__';
 import {setLayoutInert} from './ui-layout.js?v=__BUILD_ID__';
@@ -33,7 +33,7 @@ export function mountSidEnginePanels({
   const header=document.createElement('header');
   header.className='sid-engine-header';
   const title=document.createElement('h3');
-  title.textContent='SID '+(index+1);
+  title.textContent=index===DRUM_ENGINE_INDEX?'SID 4 · Drums':'SID '+(index+1);
   const meter=renderRainbowMeter(getMeterLevels?.()[index]??0);
   meter.dataset.chip=String(index);
   const modelLabel=document.createElement('label');
@@ -102,6 +102,27 @@ export function mountSidEnginePanels({
   mode.value=engine.filter.mode;
   modeLabel.append(mode);
   controlGrid.append(modeLabel);
+  if(index===DRUM_ENGINE_INDEX){
+   const boostLabel=document.createElement('label');
+   boostLabel.className='control-span-full';
+   boostLabel.textContent='Boost ';
+   const boostSelect=document.createElement('select');
+   boostSelect.dataset.prop='outputBoostDb';
+   for(const db of [0,6,12]){
+    const option=document.createElement('option');
+    option.value=String(db);
+    option.textContent=db===0?'Off':('+'+db+' dB');
+    boostSelect.append(option);
+   }
+   boostSelect.value=String(engine.outputBoostDb??6);
+   boostSelect.setAttribute('aria-label','SID 4 output boost');
+   boostLabel.append(boostSelect);
+   controlGrid.append(boostLabel);
+   boostSelect.addEventListener('change',()=>{
+    engine.outputBoostDb=Number(boostSelect.value);
+    onEngineChange?.(index,'boost');
+   });
+  }
   const s=engine.voice;
   const voiceHeading=document.createElement('h4');
   voiceHeading.className='control-span-full sid-engine-voice-heading';
@@ -200,7 +221,7 @@ export function mountSidEnginePanels({
  function updateMeters(levels){
   $('sidEngines')?.querySelectorAll('.sid-rainbow-meter').forEach(meter=>{
    const chip=Number(meter.dataset.chip);
-   if(!Number.isInteger(chip)||chip<0||chip>2)return;
+   if(!Number.isInteger(chip)||chip<0||chip>=SID_ENGINE_COUNT)return;
    const fill=meter.querySelector('.sid-rainbow-meter-fill');
    if(!fill)return;
    const width=meterDisplayWidth(levels?.[chip]);
