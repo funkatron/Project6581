@@ -162,7 +162,8 @@ function syncEnginePans(){
 }
 async function syncEngineChipModels(){
  if(!sidAudio?.setChipModel)return;
- await Promise.all(engines.map((engine,chip)=>sidAudio.setChipModel(chip,engine.model)));
+ // createReSidFpAudio tracks one in-flight setChipModel at a time.
+ for(let chip=0;chip<3;chip++)await sidAudio.setChipModel(chip,engines[chip].model);
 }
 const ranges=[['attack','Attack',0,2,.01],['decay','Decay',0,3,.01],['sustain','Sustain',0,1,.01],['release','Release',.01,4,.01],['pulse','Pulse width',5,95,1],['pwmDepth','PWM depth',0,45,1],['pwmRate','PWM rate (Hz)',.1,12,.1]];
 enginePanelsUi=mountSidEnginePanels({
