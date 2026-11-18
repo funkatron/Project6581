@@ -1,3 +1,4 @@
+import {bindHelpGesture} from './ui-help-gesture.js?v=__BUILD_ID__';
 import {
   DRUM_LANE_COUNT,
   DRUM_LANE_IDS,
@@ -24,6 +25,7 @@ export function mountDrumPanel({
   setDrumKit,
   triggerDrumLane,
   onPatternChange,
+  help$ = id => document.getElementById(id),
 } = {}) {
   if (!$) throw new TypeError('mountDrumPanel requires $');
   const scroller = $('drumGridScroller');
@@ -116,6 +118,7 @@ export function mountDrumPanel({
         setDrumKit(next);
         onPatternChange?.();
       });
+      bindHelpGesture(level, {helpId: 'drum-lane-level', $: help$});
       head.append(title, level);
       row.append(head);
 
@@ -131,20 +134,24 @@ export function mountDrumPanel({
           'aria-label',
           (LANE_LABEL[laneId] ?? laneId) + ' step ' + (step + 1) + (on ? ', hit' : ', rest'),
         );
-        cell.addEventListener('click', () => {
-          const nextGrid = seq.grid.map((r, ri) =>
-            ri === rowIndex ? r.map((c, ci) => (ci === step ? !c : c)) : [...r],
-          );
-          const next = {...seq, grid: nextGrid};
-          setDrumSequence(next);
-          const nowOn = !on;
-          syncCell(cell, nowOn);
-          cell.setAttribute(
-            'aria-label',
-            (LANE_LABEL[laneId] ?? laneId) + ' step ' + (step + 1) + (nowOn ? ', hit' : ', rest'),
-          );
-          if (nowOn) triggerDrumLane?.(laneId);
-          onPatternChange?.();
+        bindHelpGesture(cell, {
+          helpId: 'drum-cell',
+          $: help$,
+          onTap: () => {
+            const nextGrid = seq.grid.map((r, ri) =>
+              ri === rowIndex ? r.map((c, ci) => (ci === step ? !c : c)) : [...r],
+            );
+            const next = {...seq, grid: nextGrid};
+            setDrumSequence(next);
+            const nowOn = cell.dataset.on !== '1';
+            syncCell(cell, nowOn);
+            cell.setAttribute(
+              'aria-label',
+              (LANE_LABEL[laneId] ?? laneId) + ' step ' + (step + 1) + (nowOn ? ', hit' : ', rest'),
+            );
+            if (nowOn) triggerDrumLane?.(laneId);
+            onPatternChange?.();
+          },
         });
         cellByStep[step].push(cell);
         row.append(cell);

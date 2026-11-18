@@ -480,6 +480,7 @@ const performanceNote=note=>resolvePerformanceNote(note,readScaleStateFromDom($)
 }));
 drumPanelUi=mountDrumPanel({
  $,
+ help$: $,
  getDrumSequence:()=>drumSequence,
  setDrumSequence:value=>{drumSequence=validateDrumSequence(value);},
  getDrumKit:()=>drumKit,

@@ -13,6 +13,8 @@ test('drum panel module builds grid cells and lane levels', () => {
   const src = readFileSync(new URL('../src/drum-panel-ui.js', import.meta.url), 'utf8');
   assert.match(src, /drum-cell/);
   assert.match(src, /drum-lane-level/);
+  assert.match(src, /bindHelpGesture/);
+  assert.match(src, /helpId: 'drum-cell'/);
   assert.match(src, /setActiveStep/);
   assert.match(src, /DRUM_LANE_IDS/);
   assert.match(src, /DRUM_STEP_COUNT/);
@@ -20,4 +22,5 @@ test('drum panel module builds grid cells and lane levels', () => {
   assert.match(html, /drumGrooveExport/);
   assert.match(html, /drumGrooveImportBtn/);
   assert.match(html, /id="drumLfoControls"/);
+  assert.match(html, /data-help="drum-groove"/);
 });

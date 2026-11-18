@@ -26,6 +26,7 @@ Central index for maintainer and device-verification docs. User-facing synth hel
 | Doc | Purpose |
 | --- | --- |
 | [ipad-safari-qa.md](ipad-safari-qa.md) | Manual device checklist (required for audio claims) |
+| [drum-sequencer-ipad-qa.md](drum-sequencer-ipad-qa.md) | Drum tab / SID 4 device verification |
 | [desktop-chromium-qa.md](desktop-chromium-qa.md) | Desktop Chrome/Edge baseline before MIDI and cross-browser latency claims |
 | [ipad-safari-automation-map.md](ipad-safari-automation-map.md) | What CI/browser smoke can vs cannot cover |
 | [c64-factory-bank.md](c64-factory-bank.md) | Factory sound bank notes and audition status |
