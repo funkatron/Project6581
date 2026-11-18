@@ -266,6 +266,76 @@ export const FACTORY_PRESETS=Object.freeze([
    scale:{tonic:0,id:'chromatic',lock:false}
   }
  }),
+ // Showcase stacks — original designs after Galway / Hubbard C64 palette (not transcriptions).
+ factory('showcase-galway-epic','Galway · Epic Pad','Showcase',{
+  instrument:{voiceCount:6,unisonCount:2,mode:'poly',detune:11},
+  engines:[
+   {model:6581,pan:-40,voice:{wave:'triangle',attack:.62,decay:.58,sustain:.86,release:1.8},
+    filter:{cutoff:1450,resonance:14,volume:76,mode:'lowpass'}},
+   {model:6581,pan:0,voice:{wave:'square',attack:.48,decay:.52,sustain:.8,release:1.55,pulse:54,pwmDepth:26,pwmRate:.34},
+    filter:{cutoff:3200,resonance:20,volume:72,mode:'lowpass'}},
+   {model:8580,pan:38,voice:{wave:'square',attack:.42,decay:.48,sustain:.74,release:1.4,pulse:62,pwmDepth:20,pwmRate:.26},
+    filter:{cutoff:5600,resonance:16,volume:66,mode:'lowpass'}}
+  ],
+  lfos:[
+   {enabled:true,wave:'sine',rate:.14,depth:.55,target:'cutoff',engines:'all'},
+   {enabled:true,wave:'triangle',rate:.22,depth:.36,target:'pwmDepth',engines:'3'},
+   {enabled:true,wave:'sine',rate:.08,depth:.22,target:'volume',engines:'2'}
+  ],
+  performance:{
+   masterBpm:96,
+   routing:{keyboard:'layer',arp:'layer',game:'sid2'},
+   arp:{enabled:true,latch:true,pattern:'up',rate:2,sync:true,localBpm:96},
+   game:{enabled:false,style:'action',rate:4},
+   scale:{tonic:0,id:'chromatic',lock:false}
+  }
+ }),
+ factory('showcase-hubbard-commando','Hubbard · Commando','Showcase',{
+  instrument:{voiceCount:6,unisonCount:2,mode:'poly',detune:14},
+  engines:[
+   {model:6581,pan:-44,voice:{wave:'square',attack:0,decay:.09,sustain:.72,release:.08,pulse:18,pwmDepth:6,pwmRate:3.2},
+    filter:{cutoff:580,resonance:32,volume:88,mode:'lowpass'}},
+   {model:6581,pan:-4,voice:{wave:'sawtooth',attack:0,decay:.07,sustain:.68,release:.07},
+    filter:{cutoff:2680,resonance:36,volume:80,mode:'lowpass'}},
+   {model:6581,pan:40,voice:{wave:'square',attack:0,decay:.05,sustain:.55,release:.05,pulse:12,pwmDepth:4,pwmRate:4.6},
+    filter:{cutoff:6120,resonance:22,volume:74,mode:'highpass'}}
+  ],
+  lfos:[
+   {enabled:true,wave:'triangle',rate:6.4,depth:.2,target:'pulse',engines:'3'},
+   {enabled:true,wave:'sawtooth',rate:4.5,depth:.16,target:'detune',engines:'all'},
+   {enabled:true,wave:'square',sync:true,syncDivision:8,rate:1,depth:.28,target:'cutoff',engines:'2'}
+  ],
+  performance:{
+   masterBpm:138,
+   routing:{keyboard:'layer',arp:'layer',game:'all'},
+   arp:{enabled:true,latch:false,pattern:'up',rate:8,sync:true,localBpm:138},
+   game:{enabled:true,style:'action',rate:8},
+   scale:{tonic:0,id:'chromatic',lock:false}
+  }
+ }),
+ factory('showcase-hubbard-monty','Hubbard · Monty Drive','Showcase',{
+  instrument:{voiceCount:3,unisonCount:3,mode:'legato',detune:20},
+  engines:[
+   {model:6581,pan:-32,voice:{wave:'sawtooth',attack:.004,decay:.13,sustain:.9,release:.18},
+    filter:{cutoff:1980,resonance:38,volume:78,mode:'lowpass'}},
+   {model:6581,pan:0,voice:{wave:'square',attack:.003,decay:.11,sustain:.92,release:.14,pulse:24,pwmDepth:14,pwmRate:2.8},
+    filter:{cutoff:4980,resonance:34,volume:74,mode:'bandpass'}},
+   {model:8580,pan:34,voice:{wave:'sawtooth',attack:.002,decay:.09,sustain:.86,release:.12},
+    filter:{cutoff:7800,resonance:18,volume:68,mode:'lowpass'}}
+  ],
+  lfos:[
+   {enabled:true,wave:'triangle',rate:5.8,depth:.26,target:'cutoff',engines:'2'},
+   {enabled:true,wave:'sine',rate:3.6,depth:.18,target:'pulse',engines:'2'},
+   {enabled:true,wave:'triangle',sync:true,syncDivision:4,rate:1,depth:.3,target:'resonance',engines:'all'}
+  ],
+  performance:{
+   masterBpm:132,
+   routing:{keyboard:'layer',arp:'layer',game:'all'},
+   arp:{enabled:true,latch:false,pattern:'updown',rate:4,sync:true,localBpm:132},
+   game:{enabled:true,style:'adventure',rate:4},
+   scale:{tonic:0,id:'chromatic',lock:false}
+  }
+ }),
  factory('deep-bass','Deep Bass','Bass',{voice:{wave:'square',decay:.22,sustain:.74,pulse:30},instrument:{voiceCount:2,detune:8},filter:{cutoff:1580,resonance:10,volume:79},performance:{game:{enabled:false}}}),
  factory('arcade-lead','Arcade Lead','Lead',{voice:{wave:'sawtooth',decay:.09,release:.13},instrument:{voiceCount:2,detune:12},filter:{cutoff:7100,resonance:17,volume:66},performance:{game:{enabled:true,style:'arcade'}}}),
  factory('chiptune-pluck','Chiptune Pluck','Pluck',{voice:{wave:'triangle',decay:.07,sustain:0,release:.07},instrument:{detune:0},filter:{cutoff:7800,resonance:2,volume:76},performance:{game:{enabled:false}}}),
@@ -415,6 +485,9 @@ export const FACTORY_PRESETS=Object.freeze([
  factory('noise-clap','Noise Clap','Drums',{voice:{wave:'noise',attack:0,decay:.14,sustain:0,release:.06},filter:{cutoff:3000,resonance:30,volume:68,mode:'bandpass'},lfos:[{enabled:true,wave:'square',rate:18,depth:.52,target:'volume'}],performance:{game:{enabled:false}}}),
  factory('low-tom','Low Tom','Drums',{voice:{wave:'triangle',attack:0,decay:.26,sustain:0,release:.07,pitchEnvelope:FACTORY_PITCH.tom},filter:{cutoff:1180,resonance:21,volume:84},performance:{game:{enabled:false}}})
 ]);
+export const SHOWCASE_FACTORY_IDS=Object.freeze(
+ FACTORY_PRESETS.filter(p=>p.category==='Showcase').map(p=>p.id)
+);
 export const LAYER_FACTORY_IDS=Object.freeze(
  FACTORY_PRESETS.filter(p=>p.id.startsWith('complex-layer-')).map(p=>p.id)
 );

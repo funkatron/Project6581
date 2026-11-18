@@ -151,6 +151,27 @@ test('C64-inspired prototype bank covers four distinct categories without changi
  assert.equal(FACTORY_PRESETS[0].settings.sound.engines[0].voice.pitchEnvelope.enabled,false);
 });
 
+test('composer showcase presets demonstrate triple-SID layers and LFOs',()=>{
+ for(const id of ['showcase-galway-epic','showcase-hubbard-commando','showcase-hubbard-monty']){
+  const preset=FACTORY_PRESETS.find(p=>p.id===id);
+  assert.ok(preset,id);
+  assert.equal(preset.category,'Showcase');
+  assert.equal(preset.settings.performance.routing.keyboard,'layer');
+  assert.ok(preset.settings.sound.engines.every(engine=>engine.voice.enabled));
+  assert.ok(preset.settings.sound.lfos.filter(lfo=>lfo.enabled).length>=2);
+  assert.deepEqual(validatePresetSettings(preset.settings),preset.settings);
+ }
+ const galway=FACTORY_PRESETS.find(p=>p.id==='showcase-galway-epic');
+ assert.ok(galway.settings.sound.engines[1].voice.pwmDepth>=20);
+ assert.equal(galway.settings.performance.game.enabled,false);
+ const commando=FACTORY_PRESETS.find(p=>p.id==='showcase-hubbard-commando');
+ assert.ok(commando.settings.sound.engines[0].filter.volume>=85);
+ assert.equal(commando.settings.performance.game.style,'action');
+ const monty=FACTORY_PRESETS.find(p=>p.id==='showcase-hubbard-monty');
+ assert.equal(monty.settings.sound.instrument.mode,'legato');
+ assert.equal(monty.settings.performance.game.style,'adventure');
+});
+
 test('Init factory preset is the loud three-SID startup showcase',()=>{
  const init=FACTORY_PRESETS.find(p=>p.id===STARTUP_FACTORY_PRESET_ID);
  assert.ok(init);
@@ -196,9 +217,10 @@ test('expanded C64 factory bank retains legacy sounds and has six originals per 
  const legacy=['deep-bass','arcade-lead','chiptune-pluck','pulsing-pad','soft-flute','filter-motion'];
  const allNew=Object.values(newIds).flat();
  assert.equal(allNew.length,24);
- assert.equal(FACTORY_PRESETS.length,31+LAYER_FACTORY_IDS.length);
- assert.deepEqual(new Set(FACTORY_PRESETS.map(p=>p.id)),new Set([STARTUP_FACTORY_PRESET_ID,...legacy,...allNew,...LAYER_FACTORY_IDS]));
- assert.equal(new Set(FACTORY_PRESETS.map(p=>p.name.toLowerCase())).size,31+LAYER_FACTORY_IDS.length);
+ assert.equal(FACTORY_PRESETS.length,34+LAYER_FACTORY_IDS.length);
+ const showcase=['showcase-galway-epic','showcase-hubbard-commando','showcase-hubbard-monty'];
+ assert.deepEqual(new Set(FACTORY_PRESETS.map(p=>p.id)),new Set([STARTUP_FACTORY_PRESET_ID,...showcase,...legacy,...allNew,...LAYER_FACTORY_IDS]));
+ assert.equal(new Set(FACTORY_PRESETS.map(p=>p.name.toLowerCase())).size,34+LAYER_FACTORY_IDS.length);
  assert.deepEqual(FACTORY_GROUPS,['Showcase','Bass','Keys','Leads','Drums','FX']);
  for(const [category,ids] of Object.entries(newIds)){
   assert.equal(ids.length,6);
