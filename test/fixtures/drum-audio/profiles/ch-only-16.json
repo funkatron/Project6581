@@ -1,0 +1,11 @@
+{
+  "fixtureId": "ch-only-16",
+  "bpm": 120,
+  "rate": 4,
+  "bars": 1,
+  "skipFirstBar": false,
+  "minActiveSteps": 14,
+  "minRms": 0.002,
+  "minHighToLowRatio": 0.35,
+  "maxLowDominanceRatio": 2.5
+}

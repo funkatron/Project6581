@@ -1,0 +1,11 @@
+{
+  "fixtureId": "kick-four-on-floor",
+  "bpm": 120,
+  "rate": 4,
+  "bars": 1,
+  "skipFirstBar": false,
+  "minActiveSteps": 3,
+  "maxActiveSteps": 5,
+  "minRms": 0.002,
+  "maxHighToLowRatio": 0.55
+}
