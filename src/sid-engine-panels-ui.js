@@ -6,6 +6,10 @@ import {setLayoutInert} from './ui-layout.js?v=__BUILD_ID__';
 
 const FILTER_MODES=['lowpass','bandpass','highpass'];
 
+export function querySidEngineCard(chip){
+ return document.querySelector('.sid-engine-card[data-engine="'+chip+'"]');
+}
+
 export function mountSidEnginePanels({
  $,engines,getEngines,ranges,formatControlValue,onEngineChange,getMeterLevels
 }={}){
@@ -210,16 +214,25 @@ export function mountSidEnginePanels({
   });
   return card;
  }
+ function engineHostForIndex(index){
+  if(index===DRUM_ENGINE_INDEX){
+   const drum=$('drumSidEngine');
+   if(drum)return drum;
+  }
+  return $('sidEngines');
+ }
  function render(){
-  const root=$('sidEngines');
-  if(!root)return;
-  root.replaceChildren();
+  const melodic=$('sidEngines');
+  const drum=$('drumSidEngine');
+  melodic?.replaceChildren();
+  drum?.replaceChildren();
   for(let index=0;index<SID_ENGINE_COUNT;index++){
-   root.append(renderEngineCard(index));
+   const host=engineHostForIndex(index);
+   host?.append(renderEngineCard(index));
   }
  }
  function updateMeters(levels){
-  $('sidEngines')?.querySelectorAll('.sid-rainbow-meter').forEach(meter=>{
+  document.querySelectorAll('.sid-engine-card .sid-rainbow-meter[data-chip]').forEach(meter=>{
    const chip=Number(meter.dataset.chip);
    if(!Number.isInteger(chip)||chip<0||chip>=SID_ENGINE_COUNT)return;
    const fill=meter.querySelector('.sid-rainbow-meter-fill');

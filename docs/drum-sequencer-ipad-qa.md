@@ -35,7 +35,7 @@ See [ipad-safari-automation-map.md](ipad-safari-automation-map.md) for CI covera
 
 ## SID 4 and mix
 
-- [ ] On **SYNTH**, SID 4 **Boost** Off / +6 / +12 changes drum bus level on the chip meter; default +6 is audible against a busy lead preset.
+- [ ] On **DRUM SEQ** (SID 4 card below the grid), **Boost** Off / +6 / +12 changes drum bus level on the chip meter; default +6 is audible against a busy lead preset.
 - [ ] Prefer +6 with layered unison; verify +12 does not clip the master bus on a factory groove + lead preset (owner policy).
 
 ## Drum LFO (D3c)

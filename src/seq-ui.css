@@ -29,7 +29,11 @@ main>header #presetOpen{max-width:min(140px,28vw)}
 .workspace .diag-panel{display:none}
 .workspace[data-tab="voice"] .performance-panel,.workspace[data-tab="play"] .voice-panel,.workspace[data-tab="drum"] .voice-panel,.workspace[data-tab="drum"] .performance-panel,.workspace[data-tab="diag"] .voice-panel,.workspace[data-tab="diag"] .performance-panel,.workspace[data-tab="diag"] .lfo-panel,.workspace[data-tab="diag"] .drum-panel{display:none!important}
 .workspace[data-tab="voice"] .voice-panel,.workspace[data-tab="play"] .performance-panel,.workspace[data-tab="drum"] .drum-panel,.workspace[data-tab="lfos"] .lfo-panel,.workspace[data-tab="diag"] .diag-panel{display:block}
-.drum-panel{--drum-chrome:#6b5c4f;--drum-fill:#e8e0d6;border-top-color:var(--drum-chrome)}
+.drum-panel{--drum-chrome:#6b5c4f;--drum-fill:#e8e0d6;border-top-color:var(--drum-chrome);container-type:inline-size}
+.drum-tuning-row{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:12px;align-items:start}
+.drum-tuning-row .drum-sid-engine{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.drum-tuning-row .drum-lfo-controls{margin:0}
+@container (min-width:640px){.drum-tuning-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .drum-lfo-controls{margin:8px 0 6px}
 .drum-lfo-controls .drum-lfo-block{border-color:var(--drum-chrome)}
 .drum-lfo-controls .lfo-slider-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}

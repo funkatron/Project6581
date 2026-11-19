@@ -33,7 +33,7 @@ import {mountLfoPanel} from "./lfo-panel-ui.js?v=__BUILD_ID__";
 import {mountAudioTimingPanel} from "./audio-timing-panel.js?v=__BUILD_ID__";
 import {applyFirstEnergyTiming} from "./audio-timing-metrics.js?v=__BUILD_ID__";
 import {createDefaultEngines,clampVoiceCount,maxVoicesForEngines,DEFAULT_ROUTING,routeMask,routingKeyForSource} from "./sid-engines.js?v=__BUILD_ID__";
-import {mountSidEnginePanels} from "./sid-engine-panels-ui.js?v=__BUILD_ID__";
+import {mountSidEnginePanels,querySidEngineCard} from "./sid-engine-panels-ui.js?v=__BUILD_ID__";
 import {mountMasterLoudnessMeter} from "./master-loudness-meter-ui.js?v=__BUILD_ID__";
 import {mountHelpDialog,mountHelpTriggers} from "./ui-help-dialog.js?v=__BUILD_ID__";
 import {mountMidiInput} from "./midi-input.js?v=__BUILD_ID__";
@@ -700,7 +700,7 @@ function updateModulation({uiOnly=false}={}){
    attack:values.attack,decay:values.decay,sustain:values.sustain,release:values.release};
   engineLiveSettings[chip]=live;
   if(chip===0)currentSidSettings=live;
-  const card=$('sidEngines')?.querySelector('[data-engine="'+chip+'"]');
+  const card=querySidEngineCard(chip);
   for(const target of SLIDER_TARGETS){
    if(target==='detune')continue;
    const enabled=modulationTargetEnabled(chipLfos,values,target,pulseActive,unisonActive);
@@ -840,7 +840,7 @@ async function startSid({gesture=false}={}){
         for(const entry of event.engines??[]){
           const chip=entry.chip;
           if(!Number.isInteger(chip)||chip<0||chip>2)continue;
-          const card=$('sidEngines')?.querySelector('[data-engine="'+chip+'"]');
+          const card=querySidEngineCard(chip);
           if(!card)continue;
           for(const key of ['volume','cutoff','resonance']){
             const base=Number(engines[chip].filter[key]);
