@@ -177,3 +177,17 @@ test('SID 4 drum layer stays poly when global mode is mono',()=>{
  sid.noteOff(36,a);
  assert.equal(sid.layerPoly[3].size,1);
 });
+
+test('SID 4 drum hits use three chip voices even when keyboard voice budget is 1',()=>{
+ const writes=[];
+ const sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:1,unisonCount:1,mode:'mono'});
+ sid.noteOn(36,sound,{chipMask:[3],layerChip:3});
+ sid.noteOn(38,sound,{chipMask:[3],layerChip:3});
+ sid.noteOn(42,sound,{chipMask:[3],layerChip:3});
+ const drumGateOns=gateOns(writes).filter(([r])=>r>=96&&r<128);
+ assert.equal(drumGateOns.length,3);
+ assert.deepEqual([...new Set(drumGateOns.map(([r])=>r))].sort((a,b)=>a-b),[100,107,114]);
+ const offAt=writes.length;
+ sid.panic();
+ assert.equal(gateOffs(writes.slice(offAt)).length,3);
+});
