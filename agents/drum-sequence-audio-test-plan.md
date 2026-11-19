@@ -57,6 +57,7 @@ Thresholds live in **fixture metadata** (expected profile per reference groove),
 | --- | --- |
 | `ch-only-16.json` | 16 steps, **CH row only** |
 | `kick-four-on-floor.json` | Kick 1/5/9/13 |
+| `four-on-floor.json` | Kick four + CH off-beats (voice/filter stress) |
 | `profiles/*.json` | Per-fixture analysis expectations |
 
 ## 4. Test hooks

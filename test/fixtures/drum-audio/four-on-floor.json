@@ -1,0 +1,19 @@
+{
+  "id": "four-on-floor",
+  "description": "Kick 1/5/9/13 plus closed hat on every step. Stresses overlapping kick+CH and SID4 voice/filter.",
+  "sequence": {
+    "enabled": true,
+    "rate": 4,
+    "sync": true,
+    "localBpm": 120,
+    "steps": 16,
+    "grid": [
+      [true, false, false, false, true, false, false, false, true, false, false, false, true, false, false, false],
+      [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false],
+      [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
+      [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false],
+      [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false],
+      [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]
+    ]
+  }
+}
