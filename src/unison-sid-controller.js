@@ -86,8 +86,8 @@ export class UnisonSidController {
   this.releaseSlots(this.stackSlots(0,stack.slotMap));
   this.layerStacks[chip]=null;
  }
- noteOnDrumLane(chip,note,getter,slotMap,poly,token,drumLaneIndex){
-  const slotIndex=((drumLaneIndex%slotMap.length)+slotMap.length)%slotMap.length;
+ noteOnDrumLane(chip,note,getter,slotMap,poly,token,drumSlot){
+  const slotIndex=Math.max(0,Math.min(slotMap.length-1,drumSlot));
   const targetSlot=slotMap[slotIndex];
   for(const [pitched,entry] of [...poly.entries()]){
    if(!entry.slots.includes(targetSlot))continue;
@@ -99,7 +99,7 @@ export class UnisonSidController {
   poly.set(note,{token,index:slotIndex,slots,slotMap,getter:this.trigger(slots,note,getter)});
   return token;
  }
- noteOnLayer(chip,note,settings,chipMask,drumLaneIndex=null){
+ noteOnLayer(chip,note,settings,chipMask,drumSlot=null){
   if(!Number.isInteger(chip)||chip<0||chip>DRUM_ENGINE_INDEX)throw new RangeError('layer chip');
   const token=++this.sequence;
   const getter=typeof settings==='function'?settings:()=>settings;
@@ -108,8 +108,8 @@ export class UnisonSidController {
   const slotMap=drumLane?drumVoiceSlots():this.buildSlotMap(mask);
   const mode=drumLane?'poly':this.mode;
   const capacity=drumLane?drumVoiceSlots().length:this.capacityFor(slotMap);
-  if(drumLane&&Number.isInteger(drumLaneIndex)){
-   return this.noteOnDrumLane(chip,note,getter,slotMap,this.layerPoly[chip],token,drumLaneIndex);
+  if(drumLane&&Number.isInteger(drumSlot)){
+   return this.noteOnDrumLane(chip,note,getter,slotMap,this.layerPoly[chip],token,drumSlot);
   }
   if(mode==='mono'||mode==='legato'){
    const prior=this.layerStacks[chip];
@@ -150,12 +150,12 @@ export class UnisonSidController {
   this.onPitchRetune(slot,tuned);
   this.chip(slot).setFrequency(this.voice(slot),tuned);
  })}
- noteOn(note,settings,{chipMask=null,layerChip=null,drumLaneIndex=null}={}){
+ noteOn(note,settings,{chipMask=null,layerChip=null,drumSlot=null}={}){
   if(!Number.isFinite(note))throw new RangeError('MIDI note');
   const isolated=Number.isInteger(layerChip)?layerChip:
    (Array.isArray(chipMask)&&chipMask.length===1?chipMask[0]:null);
   if(Number.isInteger(isolated)&&isolated>=0&&isolated<=DRUM_ENGINE_INDEX){
-   return this.noteOnLayer(isolated,note,settings,chipMask,drumLaneIndex);
+   return this.noteOnLayer(isolated,note,settings,chipMask,drumSlot);
   }
   const token=++this.sequence;
   const getter=typeof settings==='function'?settings:()=>settings;

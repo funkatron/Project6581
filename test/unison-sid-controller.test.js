@@ -178,20 +178,20 @@ test('SID 4 drum layer stays poly when global mode is mono',()=>{
  assert.equal(sid.layerPoly[3].size,1);
 });
 
-test('drum lane index pins oscillators and shared slots evict prior lane',()=>{
+test('drum slots pin oscillators and hat slot evicts prior hat note',()=>{
  let evicted=[];
  const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{
   voiceCount:1,unisonCount:1,mode:'mono',onDrumNoteEvicted:note=>evicted.push(note)
  });
- sid.noteOn(36,sound,{chipMask:[3],layerChip:3,drumLaneIndex:0});
- sid.noteOn(42,sound,{chipMask:[3],layerChip:3,drumLaneIndex:2});
+ sid.noteOn(36,sound,{chipMask:[3],layerChip:3,drumSlot:0});
+ sid.noteOn(42,sound,{chipMask:[3],layerChip:3,drumSlot:2});
  const chGate=gateOns(writes).find(([r])=>r===114);
  assert.ok(chGate,'closed hat uses SID4 voice 3 (register 114)');
  assert.equal(sid.layerPoly[3].size,2);
  evicted.length=0;
- sid.noteOn(46,sound,{chipMask:[3],layerChip:3,drumLaneIndex:3});
- assert.deepEqual(evicted,[36],'open hat reuses kick slot and evicts kick note owner');
- assert.deepEqual([...sid.layerPoly[3].keys()].sort((a,b)=>a-b),[42,46]);
+ sid.noteOn(46,sound,{chipMask:[3],layerChip:3,drumSlot:2});
+ assert.deepEqual(evicted,[42],'open hat reuses hat slot and evicts closed hat');
+ assert.deepEqual([...sid.layerPoly[3].keys()].sort((a,b)=>a-b),[36,46]);
 });
 
 test('SID 4 drum hits use three chip voices even when keyboard voice budget is 1',()=>{
