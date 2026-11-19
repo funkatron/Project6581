@@ -1,6 +1,6 @@
 # Plan: automated drum-sequence play + listen tests
 
-**Status:** **A1–A2** shipped (`?testHooks=1`, fixtures, `drum-audio-analysis.js`, trace smoke). **A3** in progress (WAV record + analyze CLI).
+**Status:** **A1–A3** shipped (record + analyze CLI). **A4** tune profiles from real WASM captures; **A5** optional GHA.
 
 **Goal:** Run a **known drum pattern** through the real **reSIDfp → AudioWorklet** path, capture audio, and **fail CI** when lanes sound wrong (e.g. CH step emits kick-like low thump) or when transport/timing drifts.
 

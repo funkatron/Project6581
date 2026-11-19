@@ -30,6 +30,15 @@ Output: one `&lt;preset-id&gt;.wav` or `.m4a` per factory sound plus `manifest.j
 
 Phrases follow [factory-audition-matrix.js](../src/factory-audition-matrix.js); layer/legacy presets without matrix rows use category defaults.
 
+## Drum sequence grooves
+
+```bash
+npm run drum-audio:record -- --out ./artifacts/drum-audio
+npm run drum-audio:analyze -- --manifest ./artifacts/drum-audio/manifest.json
+```
+
+Uses `index.html?testHooks=1` and fixtures under `test/fixtures/drum-audio/`. Profiles are tuned in **A4** after listening to real captures — synthetic thresholds may be too strict for live WAV until then.
+
 ## iPad (your M4A case)
 
 1. Open Project6581 on **GitHub Pages** or local HTTPS.
