@@ -4,6 +4,8 @@ Device checklist for the **DRUM SEQ** tab, **DRUM** generator LED, groove I/O, a
 
 See [ipad-safari-automation-map.md](ipad-safari-automation-map.md) for CI coverage. Run `npm test` before device testing.
 
+**Desktop drum WAVs (optional):** CI can record reference grooves for listening — [drum-audio-ci.md](drum-audio-ci.md) (download artifacts; no Mac required for capture).
+
 ## Environments
 
 - [ ] iPad Safari portrait — open **DRUM SEQ** tab; grid scrolls horizontally without trapping vertical page scroll.

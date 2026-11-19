@@ -1,12 +1,14 @@
 {
   "name": "project6581",
   "private": true,
-  "version": "0.15.0",
+  "version": "0.17.1",
   "type": "module",
   "scripts": {
     "test": "node --test",
     "build:wasm": "bash scripts/build-residfp.sh",
     "version:resolve": "node scripts/resolve-version.mjs",
-    "version:sync": "node scripts/sync-package-version.mjs"
+    "version:sync": "node scripts/sync-package-version.mjs",
+    "drum-audio:record": "node scripts/drum-sequence-audition-record.mjs",
+    "drum-audio:analyze": "node scripts/drum-sequence-audition-analyze.mjs"
   }
 }

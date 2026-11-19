@@ -34,6 +34,14 @@ function synthBar({sampleRate,bpm,rate,steps,stepTone}){
  return encodeWav(chunks,sampleRate);
 }
 
+test('four-on-floor hits kick and ch without snare',()=>{
+ const fixture=loadJson('four-on-floor.json');
+ const seq=drumSequenceFromFixture(fixture);
+ assert.deepEqual(hitsOnStep(seq,0).map(h=>h.lane).sort(),['ch','kick']);
+ assert.deepEqual(hitsOnStep(seq,1).map(h=>h.lane),['ch']);
+ assert.deepEqual(hitsOnStep(seq,4).map(h=>h.lane).sort(),['ch','kick']);
+});
+
 test('drum audio fixtures validate and ch-only hits every step',()=>{
  const fixture=loadJson('ch-only-16.json');
  const seq=drumSequenceFromFixture(fixture);

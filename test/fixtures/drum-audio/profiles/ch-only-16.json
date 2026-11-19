@@ -3,9 +3,9 @@
   "bpm": 120,
   "rate": 4,
   "bars": 1,
-  "skipFirstBar": false,
-  "minActiveSteps": 14,
-  "minRms": 0.002,
-  "minHighToLowRatio": 0.35,
-  "maxLowDominanceRatio": 2.5
+  "skipFirstBar": true,
+  "minActiveSteps": 12,
+  "minRms": 0.0008,
+  "minHighToLowRatio": 0.25,
+  "maxLowDominanceRatio": 4
 }

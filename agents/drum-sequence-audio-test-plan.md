@@ -1,6 +1,6 @@
 # Plan: automated drum-sequence play + listen tests
 
-**Status:** **A1–A2** shipped (`?testHooks=1`, fixtures, `drum-audio-analysis.js`, trace smoke). **A3** in progress (WAV record + analyze CLI).
+**Status:** **A1–A3** shipped (record + analyze CLI). **A4** tune profiles from real WASM captures; **A5** optional GHA.
 
 **Goal:** Run a **known drum pattern** through the real **reSIDfp → AudioWorklet** path, capture audio, and **fail CI** when lanes sound wrong (e.g. CH step emits kick-like low thump) or when transport/timing drifts.
 
@@ -57,6 +57,7 @@ Thresholds live in **fixture metadata** (expected profile per reference groove),
 | --- | --- |
 | `ch-only-16.json` | 16 steps, **CH row only** |
 | `kick-four-on-floor.json` | Kick 1/5/9/13 |
+| `four-on-floor.json` | Kick four + CH off-beats (voice/filter stress) |
 | `profiles/*.json` | Per-fixture analysis expectations |
 
 ## 4. Test hooks

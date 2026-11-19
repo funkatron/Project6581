@@ -1,0 +1,11 @@
+{
+  "fixtureId": "four-on-floor",
+  "bpm": 120,
+  "rate": 4,
+  "bars": 1,
+  "skipFirstBar": true,
+  "minActiveSteps": 18,
+  "maxActiveSteps": 32,
+  "minRms": 0.0006,
+  "comment": "Relaxed gates until CI WAV tuning (A4); catches silent transport or total steal failures."
+}

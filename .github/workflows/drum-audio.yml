@@ -1,0 +1,72 @@
+name: Drum sequence audio
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/drum-*.js'
+      - 'src/unison-sid-controller.js'
+      - 'src/sid-studio.js'
+      - 'src/drum-audio-*.js'
+      - 'src/studio-test-hooks.js'
+      - 'scripts/drum-sequence-*.mjs'
+      - 'test/fixtures/drum-audio/**'
+      - 'test/drum-audio-*.test.js'
+      - '.github/workflows/drum-audio.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  record-and-analyze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Restore compiled SID engine
+        id: sid-cache
+        uses: actions/cache@v4
+        with:
+          path: dist/residfp.wasm
+          key: sid-wasm-emsdk-4.0.15-linux-v1-${{ hashFiles('scripts/build-residfp.sh', 'native/**') }}
+      - uses: mymindstorm/setup-emsdk@v14
+        if: steps.sid-cache.outputs.cache-hit != 'true'
+        with:
+          version: '4.0.15'
+      - if: steps.sid-cache.outputs.cache-hit != 'true'
+        run: sudo apt-get update && sudo apt-get install -y autoconf automake libtool pkg-config
+      - if: steps.sid-cache.outputs.cache-hit != 'true'
+        run: bash scripts/build-residfp.sh
+      - run: test -s dist/residfp.wasm
+      - run: node scripts/stamp-build.mjs
+      - name: Install Chromium for headless recording
+        run: |
+          npm install --no-save puppeteer-core@23 playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Resolve Chrome path
+        id: chrome
+        run: |
+          CHROME_PATH=$(node -p 'require("playwright").chromium.executablePath()')
+          echo "path=$CHROME_PATH" >> "$GITHUB_OUTPUT"
+      - name: Record drum fixture WAVs (reSIDfp)
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.path }}
+        run: npm run drum-audio:record -- --out artifacts/drum-audio --bars 2 --bpm 120
+      - name: Analyze recordings vs profiles
+        run: npm run drum-audio:analyze -- --manifest artifacts/drum-audio/manifest.json
+      - name: Trace smoke (drum note-ons)
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.path }}
+        run: node scripts/drum-sequence-trace-smoke.mjs --fixture ch-only-16 --steps 8
+      - name: Upload drum WAVs and manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drum-audio-${{ github.run_id }}
+          path: artifacts/drum-audio/
+          retention-days: 14
