@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
- GAME_PATTERNS,selectRoot,patternPitch,stepMilliseconds,resolveGameRoot
+ GAME_PATTERNS,selectRoot,patternPitch,stepMilliseconds,resolveGameRoot,gamePhraseBoundary
 } from '../src/arp-composition.js';
 import {defaultSequence,sequenceEvent} from '../src/game-step-sequencer.js';
 
@@ -32,6 +32,13 @@ test('stepMilliseconds uses independent BPM and rate divisors',()=>{
  assert.equal(stepMilliseconds(120,16),31.25);
  assert.equal(stepMilliseconds(90,8),83.33333333333333);
  assert.throws(()=>stepMilliseconds(0,4),RangeError);
+});
+
+test('gamePhraseBoundary is true only at phrase start steps',()=>{
+ assert.equal(gamePhraseBoundary(0,8),true);
+ assert.equal(gamePhraseBoundary(8,8),true);
+ assert.equal(gamePhraseBoundary(4,8),false);
+ assert.equal(gamePhraseBoundary(3,16),false);
 });
 
 test('resolveGameRoot prefers regular Arp root when both generators run',()=>{

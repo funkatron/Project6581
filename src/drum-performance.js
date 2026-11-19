@@ -28,6 +28,7 @@ export function mountDrumPerformance({
   refreshPresetDirty,
   onTransportChange,
   onStep,
+  onDrumStart,
 }) {
   if (!$) throw new TypeError('mountDrumPerformance requires $');
 
@@ -86,6 +87,7 @@ export function mountDrumPerformance({
     drumTick();
     const ms = drumStepIntervalMs(seq, getMasterBpm());
     drum.timer = setInterval(drumTick, ms);
+    onDrumStart?.();
     refreshPresetDirty?.();
   }
 

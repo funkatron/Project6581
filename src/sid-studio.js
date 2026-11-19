@@ -476,7 +476,12 @@ const performanceNote=note=>resolvePerformanceNote(note,readScaleStateFromDom($)
  setSeqPreview:value=>{seqPreview=value},
  getActiveSeqStep:()=>activeSeqStep,
  setActiveSeqStep:value=>{activeSeqStep=value},
- performanceArp
+ performanceArp,
+ alignDrumTransport:()=>{
+  if(!drum.running)return;
+  drumStop({resetStep:true});
+  drumStart();
+ }
 }));
 drumPanelUi=mountDrumPanel({
  $,
@@ -496,7 +501,13 @@ drumPanelUi=mountDrumPanel({
  stopDrumVoices,
  refreshPresetDirty,
  onTransportChange:running=>performanceDrum.setRunning(running),
- onStep:index=>drumPanelUi.setActiveStep(index)
+ onStep:index=>drumPanelUi.setActiveStep(index),
+ onDrumStart:()=>{
+  if(performanceArp.gameOn&&seqPreview){
+   game.step=0;
+   gameRestart();
+  }
+ }
 }));
 function toggleDrumTransport(){
  if(drum.running)drumStop();

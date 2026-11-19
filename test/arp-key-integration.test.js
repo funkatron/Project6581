@@ -24,8 +24,8 @@ test('Game Arp voices its pattern, while regular Arp owns the selected root',()=
  assert.match(performance,/play\(game\.last,'game'\);getArpKeyVisual\(\)\.show\(game\.last,'game'\)/);
  assert.match(performance,/function arpTick\(\)[\s\S]*?selectRoot\(notes,\$\('arpPattern'\)\.value,arp\.step\+\+\)/);
  assert.match(performance,/getArpKeyVisual\(\)\.show\(note,'root'\)/);
- assert.match(performance,/if\(gameEnabled\(\)\)return;/);
- assert.doesNotMatch(performance,/if\(gameEnabled\(\)\)return;[\s\S]*?getArpKeyVisual\(\)\.show\(note,'root'\)/);
+ assert.match(performance,/if\(gameEnabled\(\)\)\{[\s\S]*?gamePhraseBoundary\(game\.step,seqState\.length\)\)arp\.root=note/);
+ assert.match(performance,/if\(gameEnabled\(\)\)\{[\s\S]*?return;\s*\}/);
 });
 test('both arpeggiators have independent rate selectors and timers',()=>{
  assert.match(html,/id="gameRate"/);
