@@ -4,8 +4,8 @@
   "rate": 4,
   "bars": 1,
   "skipFirstBar": true,
-  "minActiveSteps": 18,
+  "minActiveSteps": 14,
   "maxActiveSteps": 32,
   "minRms": 0.0006,
-  "comment": "Relaxed gates until CI WAV tuning (A4); catches silent transport or total steal failures."
+  "comment": "Kick+CH every step (CH on all 16); expect ~16 active windows after voice policy (no OH steal)."
 }
