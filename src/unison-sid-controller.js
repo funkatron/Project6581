@@ -4,9 +4,10 @@ import {DRUM_ENGINE_INDEX,drumVoiceSlots} from './sid-engines.js';
 // Up to nine melodic oscillators on SID 1–3; SID 4 adds three drum slots (9–11).
 // voiceCount is the total budget; unisonCount is the layers per sounding pitch.
 export class UnisonSidController {
- constructor(write,{voiceCount=1,unisonCount=1,mode='mono',detune=0,onPitchStart=()=>{},onPitchStop=()=>{},onPitchRetune=()=>{}}={}){
+ constructor(write,{voiceCount=1,unisonCount=1,mode='mono',detune=0,onPitchStart=()=>{},onPitchStop=()=>{},onPitchRetune=()=>{},onDrumNoteEvicted=()=>{}}={}){
   this.chips=Array.from({length:4},(_,chip)=>new SidRegisters((reg,value)=>write(chip*0x20+reg,value)));
   this.onPitchStart=onPitchStart;this.onPitchStop=onPitchStop;this.onPitchRetune=onPitchRetune;
+  this.onDrumNoteEvicted=onDrumNoteEvicted;
   this.voiceCount=1;this.unisonCount=1;this.mode='mono';
   this.detune=0;this.liveDetune=0;this.held=[];this.monoTokens=new Map();
   this.current=null;this.currentToken=null;this.settings=null;this.currentSlotMap=null;
@@ -85,7 +86,20 @@ export class UnisonSidController {
   this.releaseSlots(this.stackSlots(0,stack.slotMap));
   this.layerStacks[chip]=null;
  }
- noteOnLayer(chip,note,settings,chipMask){
+ noteOnDrumLane(chip,note,getter,slotMap,poly,token,drumLaneIndex){
+  const slotIndex=((drumLaneIndex%slotMap.length)+slotMap.length)%slotMap.length;
+  const targetSlot=slotMap[slotIndex];
+  for(const [pitched,entry] of [...poly.entries()]){
+   if(!entry.slots.includes(targetSlot))continue;
+   this.releaseLayerPoly(chip,pitched);
+   this.onDrumNoteEvicted(pitched);
+  }
+  if(poly.has(note))this.releaseLayerPoly(chip,note);
+  const slots=[targetSlot];
+  poly.set(note,{token,index:slotIndex,slots,slotMap,getter:this.trigger(slots,note,getter)});
+  return token;
+ }
+ noteOnLayer(chip,note,settings,chipMask,drumLaneIndex=null){
   if(!Number.isInteger(chip)||chip<0||chip>DRUM_ENGINE_INDEX)throw new RangeError('layer chip');
   const token=++this.sequence;
   const getter=typeof settings==='function'?settings:()=>settings;
@@ -94,6 +108,9 @@ export class UnisonSidController {
   const slotMap=drumLane?drumVoiceSlots():this.buildSlotMap(mask);
   const mode=drumLane?'poly':this.mode;
   const capacity=drumLane?drumVoiceSlots().length:this.capacityFor(slotMap);
+  if(drumLane&&Number.isInteger(drumLaneIndex)){
+   return this.noteOnDrumLane(chip,note,getter,slotMap,this.layerPoly[chip],token,drumLaneIndex);
+  }
   if(mode==='mono'||mode==='legato'){
    const prior=this.layerStacks[chip];
    if(mode==='legato'&&prior){
@@ -133,12 +150,12 @@ export class UnisonSidController {
   this.onPitchRetune(slot,tuned);
   this.chip(slot).setFrequency(this.voice(slot),tuned);
  })}
- noteOn(note,settings,{chipMask=null,layerChip=null}={}){
+ noteOn(note,settings,{chipMask=null,layerChip=null,drumLaneIndex=null}={}){
   if(!Number.isFinite(note))throw new RangeError('MIDI note');
   const isolated=Number.isInteger(layerChip)?layerChip:
    (Array.isArray(chipMask)&&chipMask.length===1?chipMask[0]:null);
   if(Number.isInteger(isolated)&&isolated>=0&&isolated<=DRUM_ENGINE_INDEX){
-   return this.noteOnLayer(isolated,note,settings,chipMask);
+   return this.noteOnLayer(isolated,note,settings,chipMask,drumLaneIndex);
   }
   const token=++this.sequence;
   const getter=typeof settings==='function'?settings:()=>settings;

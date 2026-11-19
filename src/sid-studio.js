@@ -23,6 +23,7 @@ import {mountDrumGrooveIo} from "./drum-groove-ui.js?v=__BUILD_ID__";
 import {mountDrumLfoPanel} from "./drum-lfo-panel-ui.js?v=__BUILD_ID__";
 import {defaultDrumKit,defaultDrumSequence,validateDrumKit,validateDrumSequence} from "./drum-step-sequencer.js?v=__BUILD_ID__";
 import {DRUM_ENGINE_INDEX} from "./sid-engines.js?v=__BUILD_ID__";
+import {DRUM_LANE_IDS} from "./drum-step-sequencer.js?v=__BUILD_ID__";
 import {drumOwnerKey,drumLaneTimbre,drumReleaseMilliseconds,isDrumOwner} from "./drum-lane-trigger.js?v=__BUILD_ID__";
 import {mountGeneratorLeds} from "./generator-led-ui.js?v=__BUILD_ID__";
 import {createPerformanceArpState} from "./performance-arp-state.js?v=__BUILD_ID__";
@@ -259,6 +260,16 @@ function stopDrumOwner(ownerKey){
  sidController?.noteOff(owner.note,owner.token);
  traceStudio('note-off',{note:owner.note,source:ownerKey});
 }
+function clearDrumOwnersForMidiNote(midiNote,{reason='slot-evict'}={}){
+ for(const key of [...activeOwners.keys()]){
+  if(!isDrumOwner(key))continue;
+  const owner=activeOwners.get(key);
+  if(owner?.note!==midiNote)continue;
+  clearDrumReleaseTimer(key);
+  activeOwners.delete(key);
+  traceStudio('note-off',{note:midiNote,source:key,reason});
+ }
+}
 function stopDrumVoices(){
  for(const key of [...activeOwners.keys()])if(isDrumOwner(key))stopDrumOwner(key);
 }
@@ -287,7 +298,12 @@ function triggerDrumLane(laneId){
  sidController.setFilter(filterRegistersFromUi(filter),DRUM_ENGINE_INDEX);
  const settings={...voice,pitchEnvelope:voice.pitchEnvelope};
  const traceStart=sidAudio?.beginNoteTrace();
- const token=sidController.noteOn(note,()=>settings,{chipMask:[DRUM_ENGINE_INDEX],layerChip:DRUM_ENGINE_INDEX});
+ const laneIndex=DRUM_LANE_IDS.indexOf(laneId);
+ const token=sidController.noteOn(note,()=>settings,{
+  chipMask:[DRUM_ENGINE_INDEX],
+  layerChip:DRUM_ENGINE_INDEX,
+  drumLaneIndex:laneIndex>=0?laneIndex:0,
+ });
  sidAudio?.endNoteTrace(null,traceStart);
  sidAudio?.noteDispatched?.('drum');
  activeOwners.set(ownerKey,{note,token});
@@ -898,7 +914,7 @@ async function startSid({gesture=false}={}){
     $('recordToggle').disabled=false;
     $('recordStatus').textContent=sidRecorder.supportsM4a?'WAV / M4A ready':'WAV ready';
     const inst=performanceInstrument.getState();
-    sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:inst.voiceCount,unisonCount:inst.unisonCount,mode:inst.mode,detune:inst.detune,onPitchStart:(slot,note,envelope)=>audio.startPitchEnvelope(slot,note,envelope),onPitchStop:slot=>audio.stopPitchEnvelope(slot),onPitchRetune:(slot,note)=>audio.retunePitchEnvelope(slot,note)});
+    sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:inst.voiceCount,unisonCount:inst.unisonCount,mode:inst.mode,detune:inst.detune,onPitchStart:(slot,note,envelope)=>audio.startPitchEnvelope(slot,note,envelope),onPitchStop:slot=>audio.stopPitchEnvelope(slot),onPitchRetune:(slot,note)=>audio.retunePitchEnvelope(slot,note),onDrumNoteEvicted:note=>clearDrumOwnersForMidiNote(note)});
     activeSidModel=requestedModel;
     progress('SID '+activeSidModel+' ready.');
     sidEventLog.add('sid-ready',{contextId:attempt,model:activeSidModel});
