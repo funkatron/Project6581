@@ -5,8 +5,8 @@
  *   node scripts/drum-sequence-audition-record.mjs --out artifacts/drum-audio
  */
 import {createServer} from 'node:http';
-import {writeFile,readFileSync,existsSync} from 'node:fs';
-import {mkdir} from 'node:fs/promises';
+import {readFileSync,existsSync} from 'node:fs';
+import {mkdir,writeFile} from 'node:fs/promises';
 import {createReadStream} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
