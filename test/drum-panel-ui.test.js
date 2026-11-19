@@ -22,5 +22,10 @@ test('drum panel module builds grid cells and lane levels', () => {
   assert.match(html, /drumGrooveExport/);
   assert.match(html, /drumGrooveImportBtn/);
   assert.match(html, /id="drumLfoControls"/);
+  assert.match(html, /id="drumSidEngine"/);
   assert.match(html, /data-help="drum-groove"/);
+  const drumStart = html.indexOf('id="drumPanel"');
+  const scrollerAt = html.indexOf('id="drumGridScroller"', drumStart);
+  const lfoAt = html.indexOf('id="drumLfoControls"', drumStart);
+  assert.ok(scrollerAt >= 0 && lfoAt >= 0 && scrollerAt < lfoAt, 'step grid precedes LFO on DRUM tab');
 });
