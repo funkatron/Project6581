@@ -23,7 +23,7 @@ import {mountDrumGrooveIo} from "./drum-groove-ui.js?v=__BUILD_ID__";
 import {mountDrumLfoPanel} from "./drum-lfo-panel-ui.js?v=__BUILD_ID__";
 import {defaultDrumKit,defaultDrumSequence,validateDrumKit,validateDrumSequence} from "./drum-step-sequencer.js?v=__BUILD_ID__";
 import {DRUM_ENGINE_INDEX} from "./sid-engines.js?v=__BUILD_ID__";
-import {DRUM_LANE_IDS} from "./drum-step-sequencer.js?v=__BUILD_ID__";
+import {defaultDrumSlotForLane,isDrumSlotIndex} from "./drum-voice-policy.js?v=__BUILD_ID__";
 import {drumOwnerKey,drumLaneTimbre,drumReleaseMilliseconds,isDrumOwner} from "./drum-lane-trigger.js?v=__BUILD_ID__";
 import {mountGeneratorLeds} from "./generator-led-ui.js?v=__BUILD_ID__";
 import {createPerformanceArpState} from "./performance-arp-state.js?v=__BUILD_ID__";
@@ -274,7 +274,7 @@ function clearDrumOwnersForMidiNote(midiNote,{reason='slot-evict'}={}){
 function stopDrumVoices(){
  for(const key of [...activeOwners.keys()])if(isDrumOwner(key))stopDrumOwner(key);
 }
-function triggerDrumLane(laneId){
+function triggerDrumLane(laneId,{drumSlot}={}){
  if(!sidController)return;
  const kit=validateDrumKit(drumKit);
  const lane=kit.lanes[laneId];
@@ -299,11 +299,11 @@ function triggerDrumLane(laneId){
  sidController.setFilter(filterRegistersFromUi(filter),DRUM_ENGINE_INDEX);
  const settings={...voice,pitchEnvelope:voice.pitchEnvelope};
  const traceStart=sidAudio?.beginNoteTrace();
- const laneIndex=DRUM_LANE_IDS.indexOf(laneId);
+ const slot=isDrumSlotIndex(drumSlot)?drumSlot:defaultDrumSlotForLane(laneId);
  const token=sidController.noteOn(note,()=>settings,{
   chipMask:[DRUM_ENGINE_INDEX],
   layerChip:DRUM_ENGINE_INDEX,
-  drumLaneIndex:laneIndex>=0?laneIndex:0,
+  drumSlot:slot,
  });
  sidAudio?.endNoteTrace(null,traceStart);
  sidAudio?.noteDispatched?.('drum');

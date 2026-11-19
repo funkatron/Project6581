@@ -15,6 +15,7 @@ test('drum panel module builds grid cells and lane levels', () => {
   assert.match(src, /drum-lane-level/);
   assert.match(src, /bindHelpGesture/);
   assert.match(src, /helpId: 'drum-cell'/);
+  assert.match(src, /LANE_HELP/);
   assert.match(src, /setActiveStep/);
   assert.match(src, /DRUM_LANE_IDS/);
   assert.match(src, /DRUM_STEP_COUNT/);

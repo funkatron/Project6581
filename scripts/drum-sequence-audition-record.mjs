@@ -5,7 +5,8 @@
  *   node scripts/drum-sequence-audition-record.mjs --out artifacts/drum-audio
  */
 import {createServer} from 'node:http';
-import {mkdir,writeFile,readFileSync,existsSync} from 'node:fs';
+import {readFileSync,existsSync} from 'node:fs';
+import {mkdir,writeFile} from 'node:fs/promises';
 import {createReadStream} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -125,7 +126,7 @@ async function main(){
   executablePath:chrome,
   headless:'new',
   protocolTimeout:180000,
-  args:['--autoplay-policy=no-user-gesture-required'],
+  args:['--no-sandbox','--disable-setuid-sandbox','--autoplay-policy=no-user-gesture-required'],
  });
  const manifest={generatedAt:new Date().toISOString(),format:'wav',bpm:opts.bpm,bars:opts.bars,fixtures:[]};
  try{
