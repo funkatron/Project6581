@@ -5,7 +5,7 @@ import {HELP_CONTENT} from '../src/ui-help-content.js';
 import {readStudioCoreCss} from './studio-css.mjs';
 
 test('help content includes core topics',()=>{
- for(const id of ['latch','play-target-keyboard','root-arp','game-arp','keyboard','drum-seq','drum-cell','drum-lane-level','drum-groove','drum-lfo','sid4-boost'])
+ for(const id of ['latch','play-target-keyboard','root-arp','game-arp','keyboard','drum-seq','drum-voice-allocation','drum-lane-kick','drum-lane-ch','drum-cell','drum-lane-level','drum-groove','drum-lfo','sid4-boost'])
   assert.ok(HELP_CONTENT[id],id);
 });
 

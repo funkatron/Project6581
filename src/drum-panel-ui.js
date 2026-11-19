@@ -14,6 +14,15 @@ const LANE_LABEL = {
   tom: 'Tom',
 };
 
+const LANE_HELP = {
+  kick: 'drum-lane-kick',
+  sn: 'drum-lane-sn',
+  ch: 'drum-lane-ch',
+  oh: 'drum-lane-oh',
+  clap: 'drum-lane-clap',
+  tom: 'drum-lane-tom',
+};
+
 /**
  * 16×6 drum grid, lane level sliders, playhead column highlight.
  */
@@ -105,6 +114,13 @@ export function mountDrumPanel({
       const title = document.createElement('span');
       title.className = 'drum-lane-label';
       title.textContent = LANE_LABEL[laneId] ?? laneId;
+      title.tabIndex = 0;
+      title.setAttribute('role', 'button');
+      title.setAttribute(
+        'aria-label',
+        (LANE_LABEL[laneId] ?? laneId) + ' lane — long-press for voice help',
+      );
+      bindHelpGesture(title, {helpId: LANE_HELP[laneId] ?? 'drum-voice-allocation', $: help$});
       const level = document.createElement('input');
       level.type = 'range';
       level.className = 'drum-lane-level';

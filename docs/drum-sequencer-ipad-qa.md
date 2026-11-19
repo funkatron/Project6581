@@ -29,6 +29,7 @@ See [ipad-safari-automation-map.md](ipad-safari-automation-map.md) for CI covera
 - [ ] Tap cells on/off; mis-taps are rare on portrait for all six lanes.
 - [ ] Lane **Level** sliders change balance; long-press help on a level slider opens **Lane level** help.
 - [ ] Long-press a step cell opens **Drum step cell** help without toggling the cell.
+- [ ] Tap **?** on the voice-allocation hint or long-press a **lane name** opens kick / hat / flex lane help; main topic **Drum voice allocation (SID 4)** matches kick+sn priority and CH xor OH behavior.
 
 ## Groove files
 
