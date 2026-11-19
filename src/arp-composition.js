@@ -27,6 +27,10 @@ export function stepMilliseconds(bpm,rate){
   throw new RangeError('Invalid arpeggiator tempo or rate');
  return 60000/tempo/division;
 }
+/** True when the Game Arp clock is on the first step of its phrase (before the next tick advances). */
+export function gamePhraseBoundary(step,length){
+ return Number.isInteger(length)&&length>0&&Number.isInteger(step)&&step>=0&&step%length===0;
+}
 /** Root fed into Game Arp: regular Arp root wins when enabled. */
 export function resolveGameRoot({arpEnabled,arpRoot,heldNotes,seqPreview,previewRootMidi}){
  if(arpEnabled&&arpRoot!==null)return arpRoot;

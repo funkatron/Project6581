@@ -1,4 +1,4 @@
-import {selectRoot,stepMilliseconds,resolveGameRoot} from './arp-composition.js?v=__BUILD_ID__';
+import {selectRoot,stepMilliseconds,resolveGameRoot,gamePhraseBoundary} from './arp-composition.js?v=__BUILD_ID__';
 import {defaultSequence,sequenceEvent,sequenceForStyle} from './game-step-sequencer.js?v=__BUILD_ID__';
 
 // Step grid plus the Game Arp and root-arp clocks. The studio still owns play(),
@@ -7,7 +7,8 @@ export function mountPerformance({
  $,names,keyboardState,arp,game,directOwned,play,stop,silenceSidOutput,refreshPresetDirty,getArpKeyVisual,
  performanceNote=note=>note,
  gameEnabled,arpEnabled,activeNotes,arpNotes,
- getSeqState,setSeqState,isSeqPreview,setSeqPreview,getActiveSeqStep,setActiveSeqStep,performanceArp
+ getSeqState,setSeqState,isSeqPreview,setSeqPreview,getActiveSeqStep,setActiveSeqStep,performanceArp,
+ alignDrumTransport
 }){
  function clearStepHighlight(){
   const activeSeqStep=getActiveSeqStep();
@@ -151,9 +152,14 @@ export function mountPerformance({
    $('arpStatus').textContent='No notes held';return;
   }
   const note=performanceNote(selectRoot(notes,$('arpPattern').value,arp.step++));
-  arp.root=note;
   getArpKeyVisual().show(note,'root');
-  if(gameEnabled())return; // Game Arp clock voices melody; root stays highlighted.
+  if(gameEnabled()){
+   const seqState=getSeqState();
+   if(arp.root===null||gamePhraseBoundary(game.step,seqState.length))arp.root=note;
+   $('arpStatus').textContent='Root Arp · '+names[note%12]+(Math.floor(note/12)-1)+' · '+notes.length+' notes';
+   return;
+  }
+  arp.root=note;
   if(arp.last!==null)stop(arp.last,'arp');
   arp.last=note;play(note,'arp');
   $('arpStatus').textContent='Root Arp · '+names[note%12]+(Math.floor(note/12)-1)+
@@ -219,7 +225,7 @@ export function mountPerformance({
  $('seqRun').addEventListener('click',()=>{
   setSeqPreview(true);$('gameArpStyle').value='custom';
   performanceArp.set({gameOn:true});
-  setSeqTransportLabel();restartGenerators();refreshPresetDirty();
+  setSeqTransportLabel();restartGenerators();alignDrumTransport?.();refreshPresetDirty();
  });
  $('seqStop').addEventListener('click',()=>{
   setSeqPreview(false);
