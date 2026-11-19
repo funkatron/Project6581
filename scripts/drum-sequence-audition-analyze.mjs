@@ -12,6 +12,7 @@ import {
   analyzeDrumStepWindows,
   evaluateDrumAudioProfile,
 } from '../src/drum-audio-analysis.js';
+import {stepMilliseconds} from '../src/arp-composition.js';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 
@@ -53,10 +54,17 @@ function main(){
   const profile=loadProfile(entry.fixtureId);
   const bpm=entry.bpm??profile.bpm??120;
   const rate=entry.rate??profile.rate??4;
-  const bars=entry.bars??profile.bars??1;
+  const recordedBars=entry.bars??1;
+  const analyzeBars=profile.bars??recordedBars;
+  const useTailBar=profile.skipFirstBar===true&&recordedBars>analyzeBars;
+  let view=samples;
+  if(useTailBar){
+   const stepSamples=Math.max(1,Math.round((sampleRate*stepMilliseconds(bpm,rate))/1000));
+   const want=stepSamples*16*analyzeBars;
+   view=samples.subarray(Math.max(0,samples.length-want));
+  }
   const analysis=analyzeDrumStepWindows({
-   samples,sampleRate,bpm,rate,bars,
-   skipFirstBar:Boolean(profile.skipFirstBar),
+   samples:view,sampleRate,bpm,rate,bars:analyzeBars,skipFirstBar:false,
   });
   const result=evaluateDrumAudioProfile(analysis,profile);
   const label=entry.fixtureId+': ';

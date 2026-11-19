@@ -80,7 +80,7 @@ Legend:
 | Groove 6581drum round-trip | Auto | `test/drum-groove.test.js` |
 | Drum panel markup + lane levels | Auto | `test/drum-panel-ui.test.js`, `test/editor-tabs.test.js` |
 | Drum clock independence | Partial | `test/drum-performance.test.js`; trace smoke `scripts/drum-sequence-trace-smoke.mjs` with `?testHooks=1` |
-| Drum lane timbre (CH vs kick) | Partial | `test/drum-audio-analysis.test.js` (synthetic WAV); PCM capture Manual / A3 script TBD |
+| Drum lane timbre (CH vs kick) | Partial | `test/drum-audio-analysis.test.js`; CI records WAV — [drum-audio-ci.md](drum-audio-ci.md) |
 | Drum-only preview, parallel keyboard | Manual | [drum-sequencer-ipad-qa.md](drum-sequencer-ipad-qa.md) |
 | Long-press cell help | Partial | `ui-help-gesture` + `drum-panel-ui.js`; gesture Manual |
 | SID 4 boost headroom | Manual | — |
