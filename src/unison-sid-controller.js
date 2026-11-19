@@ -1,5 +1,5 @@
 import {SidRegisters} from './sid-registers.js';
-import {DRUM_ENGINE_INDEX} from './sid-engines.js';
+import {DRUM_ENGINE_INDEX,drumVoiceSlots} from './sid-engines.js';
 
 // Up to nine melodic oscillators on SID 1–3; SID 4 adds three drum slots (9–11).
 // voiceCount is the total budget; unisonCount is the layers per sounding pitch.
@@ -90,10 +90,10 @@ export class UnisonSidController {
   const token=++this.sequence;
   const getter=typeof settings==='function'?settings:()=>settings;
   const mask=Array.isArray(chipMask)&&chipMask.length?chipMask:[chip];
-  const slotMap=this.buildSlotMap(mask);
   const drumLane=chip===DRUM_ENGINE_INDEX;
+  const slotMap=drumLane?drumVoiceSlots():this.buildSlotMap(mask);
   const mode=drumLane?'poly':this.mode;
-  const capacity=drumLane?3:this.capacityFor(slotMap);
+  const capacity=drumLane?drumVoiceSlots().length:this.capacityFor(slotMap);
   if(mode==='mono'||mode==='legato'){
    const prior=this.layerStacks[chip];
    if(mode==='legato'&&prior){
@@ -111,7 +111,7 @@ export class UnisonSidController {
   while(capacity>0&&poly.size>=capacity)this.releaseLayerPoly(chip,poly.keys().next().value);
   const used=new Set([...poly.values()].map(entry=>entry.index));
   let index=0;while(used.has(index))index++;
-  const slots=this.stackSlots(index,slotMap);
+  const slots=drumLane?[slotMap[index%slotMap.length]]:this.stackSlots(index,slotMap);
   poly.set(note,{token,index,slots,slotMap,getter:this.trigger(slots,note,getter)});
   return token;
  }

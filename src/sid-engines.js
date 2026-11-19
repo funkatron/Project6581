@@ -5,6 +5,12 @@ export const DRUM_ENGINE_INDEX=3;
 export const MAX_SID_OSCILLATORS=9;
 export const SID_ENGINE_COUNT=SID_CHIP_COUNT;
 
+/** Physical voice slot indices (9–11) on SID 4 — independent of keyboard voice budget. */
+export function drumVoiceSlots(){
+ const base=DRUM_ENGINE_INDEX*3;
+ return [base,base+1,base+2];
+}
+
 export function defaultEngineSettings(model=6581){
  return {
   model,
