@@ -126,7 +126,7 @@ async function main(){
   executablePath:chrome,
   headless:'new',
   protocolTimeout:180000,
-  args:['--autoplay-policy=no-user-gesture-required'],
+  args:['--no-sandbox','--disable-setuid-sandbox','--autoplay-policy=no-user-gesture-required'],
  });
  const manifest={generatedAt:new Date().toISOString(),format:'wav',bpm:opts.bpm,bars:opts.bars,fixtures:[]};
  try{
