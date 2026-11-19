@@ -50,7 +50,9 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Resolve Chrome path
         id: chrome
-        run: echo "path=$(node -p \"require('playwright').chromium.executablePath()\")" >> "$GITHUB_OUTPUT"
+        run: |
+          CHROME_PATH=$(node -p 'require("playwright").chromium.executablePath()')
+          echo "path=$CHROME_PATH" >> "$GITHUB_OUTPUT"
       - name: Record drum fixture WAVs (reSIDfp)
         env:
           CHROME_PATH: ${{ steps.chrome.outputs.path }}
