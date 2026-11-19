@@ -114,7 +114,11 @@ export function mountDrumPanel({
       level.value = String(kit.lanes[laneId]?.level ?? 80);
       level.setAttribute('aria-label', (LANE_LABEL[laneId] ?? laneId) + ' level');
       level.addEventListener('input', () => {
-        const next = {...kit, lanes: {...kit.lanes, [laneId]: {...kit.lanes[laneId], level: Number(level.value)}}};
+        const kitNow = getDrumKit();
+        const next = {
+          ...kitNow,
+          lanes: {...kitNow.lanes, [laneId]: {...kitNow.lanes[laneId], level: Number(level.value)}},
+        };
         setDrumKit(next);
         onPatternChange?.();
       });
@@ -138,12 +142,13 @@ export function mountDrumPanel({
           helpId: 'drum-cell',
           $: help$,
           onTap: () => {
-            const nextGrid = seq.grid.map((r, ri) =>
-              ri === rowIndex ? r.map((c, ci) => (ci === step ? !c : c)) : [...r],
+            const current = getDrumSequence();
+            const wasOn = Boolean(current.grid[rowIndex][step]);
+            const nowOn = !wasOn;
+            const nextGrid = current.grid.map((r, ri) =>
+              ri === rowIndex ? r.map((c, ci) => (ci === step ? nowOn : c)) : [...r],
             );
-            const next = {...seq, grid: nextGrid};
-            setDrumSequence(next);
-            const nowOn = cell.dataset.on !== '1';
+            setDrumSequence({...current, grid: nextGrid});
             syncCell(cell, nowOn);
             cell.setAttribute(
               'aria-label',
