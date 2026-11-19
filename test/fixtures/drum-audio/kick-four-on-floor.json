@@ -1,0 +1,19 @@
+{
+  "id": "kick-four-on-floor",
+  "description": "Kick on steps 1, 5, 9, 13 only.",
+  "sequence": {
+    "enabled": true,
+    "rate": 4,
+    "sync": true,
+    "localBpm": 120,
+    "steps": 16,
+    "grid": [
+      [true, false, false, false, true, false, false, false, true, false, false, false, true, false, false, false],
+      [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false],
+      [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false],
+      [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false],
+      [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false],
+      [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]
+    ]
+  }
+}

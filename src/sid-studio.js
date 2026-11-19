@@ -40,6 +40,7 @@ import {mountHelpDialog,mountHelpTriggers} from "./ui-help-dialog.js?v=__BUILD_I
 import {mountMidiInput} from "./midi-input.js?v=__BUILD_ID__";
 import {mountPreferencesDialog} from "./studio-preferences-ui.js?v=__BUILD_ID__";
 import {bindHelpGesture} from "./ui-help-gesture.js?v=__BUILD_ID__";
+import {testHooksEnabled,mountStudioTestHooks} from "./studio-test-hooks.js?v=__BUILD_ID__";
 
 export function startSidStudio(){
 const $=id=>document.getElementById(id);
@@ -1297,5 +1298,26 @@ $('chip').addEventListener('change',async event=>{
   refreshPresetDirty();
  }
 });
+if(testHooksEnabled()){
+ globalThis.__project6581Test=mountStudioTestHooks({
+  studioTrace,
+  getSidReady:()=>Boolean(sidController)&&sidContext?.state==='running',
+  validateDrumSequence,
+  setDrumSequence:value=>{drumSequence=validateDrumSequence(value);},
+  renderDrumPanel:()=>drumPanelUi.render(),
+  drumStart,
+  drumStop,
+  getDrumRunning:()=>drum.running,
+  setMasterBpm:bpm=>{
+   const n=Math.round(Number(bpm));
+   if(!Number.isFinite(n)||n<40||n>240)return;
+   $('masterBpm').value=String(n);
+   $('masterBpmValue').textContent=String(n);
+   updateModulation();
+   if($('arpSync').checked)restartGenerators();
+  },
+  panic,
+ });
+}
 startSid();
 }
