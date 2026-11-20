@@ -21,6 +21,8 @@ import {createPerformanceDrumState} from "./performance-drum-state.js?v=__BUILD_
 import {mountDrumPerformance,readDrumSequenceFromDom} from "./drum-performance.js?v=__BUILD_ID__";
 import {mountDrumGrooveIo} from "./drum-groove-ui.js?v=__BUILD_ID__";
 import {mountDrumLfoPanel} from "./drum-lfo-panel-ui.js?v=__BUILD_ID__";
+import {mountDrumSlotVoicePanels,effectiveLaneTimbre} from "./drum-slot-voice-ui.js?v=__BUILD_ID__";
+import {DRUM_BUS_LANES,drumLfoTargetsForKit} from "./drum-voice-ui-policy.js?v=__BUILD_ID__";
 import {defaultDrumKit,defaultDrumSequence,validateDrumKit,validateDrumSequence} from "./drum-step-sequencer.js?v=__BUILD_ID__";
 import {DRUM_ENGINE_INDEX} from "./sid-engines.js?v=__BUILD_ID__";
 import {defaultDrumSlotForLane,isDrumSlotIndex} from "./drum-voice-policy.js?v=__BUILD_ID__";
@@ -207,15 +209,20 @@ syncUnisonCountOptions();
 const lfoState=Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',engines:'all',phase:0,seed:i}));
 const syncedRates=[{value:0.25,label:'4/1'},{value:0.5,label:'2/1'},...([1,2,4,8,16,32].map(value=>({value,label:'1/'+value})))];
 const drumLfoState=validateDrumLfo(null);
+let drumKit=validateDrumKit(defaultDrumKit());
+function refreshDrumTuningUi(){
+ renderDrumLfo?.();
+ drumSlotVoiceUi?.render();
+}
+function drumBusWaveforms(){
+ return DRUM_BUS_LANES.map(bus=>effectiveLaneTimbre(FACTORY_PRESETS,drumKit.lanes[bus.laneId]).voice.wave);
+}
 const {renderLfos}=mountLfoPanel({$,lfoState,lfoTargets:LFO_TARGET_ORDER,lfoTargetNames:LFO_TARGET_LABELS,syncedRates,onChange:()=>{updateModulation();syncModulationUiLoop()}});
 const editorTabs=mountEditorTabs({$});
 const helpUi=mountHelpDialog($);
 mountHelpTriggers($,{openHelp:helpUi.openHelp});
-const {renderDrumLfo}=mountDrumLfoPanel({
- $,drumLfoState,lfoTargetNames:LFO_TARGET_LABELS,syncedRates,
- onChange:()=>{updateModulation();syncModulationUiLoop();refreshPresetDirty()},
- bindHelp:root=>mountHelpTriggers($,{openHelp:helpUi.openHelp,root})
-});
+let renderDrumLfo=()=>{};
+let drumSlotVoiceUi={render:()=>{}};
 const performanceArp=createPerformanceArpState($);
 const performanceDrum=createPerformanceDrumState();
 const performanceRouting=createPerformanceRoutingState($,{onChange:()=>refreshPresetDirty()});
@@ -449,7 +456,6 @@ const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 const arp={held:new Set(),latched:new Set(),timer:null,step:0,root:null,last:null};
 const directOwned=new Set(); // Physical notes sounding independently of either generator.
 const game={timer:null,last:null,step:0,gateTimer:null};
-let drumKit=validateDrumKit(defaultDrumKit());
 let drumSequence=validateDrumSequence(defaultDrumSequence());
 const drum={timer:null,step:0,running:false};
 const drumReleaseTimers=new Map();
@@ -504,13 +510,36 @@ const performanceNote=note=>resolvePerformanceNote(note,readScaleStateFromDom($)
   drumStart();
  }
 }));
+function applyDrumKit(value){
+ drumKit=validateDrumKit(value);
+ refreshDrumTuningUi();
+}
+function setDrumKitState(value){
+ drumKit=validateDrumKit(value);
+ refreshPresetDirty();
+}
+({render:drumSlotVoiceUi.render}=mountDrumSlotVoicePanels({
+ $,
+ getDrumKit:()=>drumKit,
+ setDrumKit:setDrumKitState,
+ factoryPresets:FACTORY_PRESETS,
+ formatControlValue,
+ onKitStructureChange:refreshDrumTuningUi,
+ bindHelp:root=>mountHelpTriggers($,{openHelp:helpUi.openHelp,root}),
+}));
+({renderDrumLfo}=mountDrumLfoPanel({
+ $,drumLfoState,lfoTargetNames:LFO_TARGET_LABELS,syncedRates,
+ getLfoTargets:()=>drumLfoTargetsForKit(drumBusWaveforms()),
+ onChange:()=>{updateModulation();syncModulationUiLoop();refreshPresetDirty()},
+ bindHelp:root=>mountHelpTriggers($,{openHelp:helpUi.openHelp,root})
+}));
 drumPanelUi=mountDrumPanel({
  $,
  help$: $,
  getDrumSequence:()=>drumSequence,
  setDrumSequence:value=>{drumSequence=validateDrumSequence(value);},
  getDrumKit:()=>drumKit,
- setDrumKit:value=>{drumKit=validateDrumKit(value);},
+ setDrumKit:setDrumKitState,
  triggerDrumLane,
  onPatternChange:()=>refreshPresetDirty()
 });
@@ -1130,7 +1159,7 @@ function applyDrumFromPreset(perf){
  drumStop();
  performanceDrum.setRunning(false);
  drumSequence=validateDrumSequence(perf.drumSequence);
- drumKit=validateDrumKit(perf.drumKit);
+ applyDrumKit(perf.drumKit);
  $('drumRate').value=String(drumSequence.rate);
  $('drumSync').checked=drumSequence.sync;
  $('drumBpm').value=String(drumSequence.localBpm);
@@ -1142,7 +1171,7 @@ function applyDrumGroove(groove){
  drumStop();
  performanceDrum.setRunning(false);
  drumSequence=validateDrumSequence(groove.drumSequence);
- drumKit=validateDrumKit(groove.drumKit);
+ applyDrumKit(groove.drumKit);
  $('drumRate').value=String(drumSequence.rate);
  $('drumSync').checked=drumSequence.sync;
  $('drumBpm').value=String(drumSequence.localBpm);

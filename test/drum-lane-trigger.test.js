@@ -16,6 +16,14 @@ test('drumOwnerKey and isDrumOwner', () => {
   assert.equal(isDrumOwner('game'), false);
 });
 
+test('drumLaneTimbre merges optional lane voice and filter patches', () => {
+  const kick = FACTORY_PRESETS.find((p) => p.id === 'low-thud-kick');
+  const lane = {...defaultDrumKit().lanes.kick, voice: {attack: 0.05}, filter: {cutoff: 400}};
+  const {voice, filter} = drumLaneTimbre(kick.settings, lane);
+  assert.equal(voice.attack, 0.05);
+  assert.equal(filter.cutoff, 400);
+});
+
 test('drumLaneTimbre applies lane level to filter volume', () => {
   const kick = FACTORY_PRESETS.find((p) => p.id === 'low-thud-kick');
   const lane = defaultDrumKit().lanes.kick;

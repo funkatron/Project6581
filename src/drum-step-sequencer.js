@@ -1,3 +1,5 @@
+import {validatePitchEnvelope} from './pitch-envelope.js';
+
 /** Six-lane × sixteen-step drum grid. No DOM or WASM dependencies. */
 
 export const DRUM_LANE_IDS = Object.freeze([
@@ -62,7 +64,55 @@ function validateLane(lane, id) {
   if (!Number.isInteger(level) || level < 0 || level > 100) {
     throw new RangeError('Drum lane ' + id + ' level must be 0–100');
   }
-  return { presetId: lane.presetId.trim(), midiNote: lane.midiNote, level };
+  const out = {presetId: lane.presetId.trim(), midiNote: lane.midiNote, level};
+  if (lane.voice !== undefined) out.voice = validateLaneVoicePatch(lane.voice, id);
+  if (lane.filter !== undefined) out.filter = validateLaneFilterPatch(lane.filter, id);
+  return out;
+}
+
+function validateLaneVoicePatch(patch, id) {
+  if (!patch || typeof patch !== 'object' || Array.isArray(patch)) {
+    throw new TypeError('Drum lane ' + id + ' voice patch must be an object');
+  }
+  const out = {};
+  for (const key of ['attack', 'decay', 'sustain', 'release', 'pulse', 'pwmDepth', 'pwmRate']) {
+    if (patch[key] === undefined) continue;
+    const value = Number(patch[key]);
+    if (!Number.isFinite(value)) throw new TypeError('Drum lane ' + id + ' voice.' + key + ' must be a number');
+    out[key] = value;
+  }
+  if (patch.pitchEnvelope !== undefined) {
+    out.pitchEnvelope = validatePitchEnvelope(patch.pitchEnvelope);
+  }
+  return out;
+}
+
+function validateLaneFilterPatch(patch, id) {
+  if (!patch || typeof patch !== 'object' || Array.isArray(patch)) {
+    throw new TypeError('Drum lane ' + id + ' filter patch must be an object');
+  }
+  const out = {};
+  if (patch.cutoff !== undefined) {
+    const cutoff = Number(patch.cutoff);
+    if (!Number.isFinite(cutoff) || cutoff < 50 || cutoff > 10000) {
+      throw new RangeError('Drum lane ' + id + ' filter.cutoff must be 50–10000');
+    }
+    out.cutoff = Math.round(cutoff);
+  }
+  if (patch.resonance !== undefined) {
+    const resonance = Number(patch.resonance);
+    if (!Number.isFinite(resonance) || resonance < 0 || resonance > 100) {
+      throw new RangeError('Drum lane ' + id + ' filter.resonance must be 0–100');
+    }
+    out.resonance = Math.round(resonance);
+  }
+  if (patch.mode !== undefined) {
+    if (!['lowpass', 'bandpass', 'highpass'].includes(patch.mode)) {
+      throw new RangeError('Drum lane ' + id + ' filter.mode is invalid');
+    }
+    out.mode = patch.mode;
+  }
+  return out;
 }
 
 export function validateDrumKit(kit) {

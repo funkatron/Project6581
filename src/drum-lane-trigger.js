@@ -18,6 +18,15 @@ export function drumLaneTimbre(factorySettings, lane) {
   const level = Math.max(0, Math.min(100, Math.round(Number(lane.level) || 0)));
   const voice = structuredClone(source.voice);
   const filter = structuredClone(source.filter);
+  if (lane.voice && typeof lane.voice === 'object') {
+    Object.assign(voice, lane.voice);
+    if (lane.voice.pitchEnvelope) {
+      voice.pitchEnvelope = {...voice.pitchEnvelope, ...lane.voice.pitchEnvelope};
+    }
+  }
+  if (lane.filter && typeof lane.filter === 'object') {
+    Object.assign(filter, lane.filter);
+  }
   filter.volume = Math.round((Number(filter.volume) || 0) * level / 100);
   return {voice, filter};
 }
