@@ -1,6 +1,6 @@
-import {formatSidDiagnosticReport} from './sid-event-log.js?v=0.20.1+20261120T195340473Z';
-import {formatStudioTraceReport} from './studio-trace-log.js?v=0.20.1+20261120T195340473Z';
-import {formatDiagnosticActivityText} from './diagnostics-format.js?v=0.20.1+20261120T195340473Z';
+import {formatSidDiagnosticReport} from './sid-event-log.js?v=0.20.1+20261120T202944466Z';
+import {formatStudioTraceReport} from './studio-trace-log.js?v=0.20.1+20261120T202944466Z';
+import {formatDiagnosticActivityText} from './diagnostics-format.js?v=0.20.1+20261120T202944466Z';
 
 const EDITOR_TABS=['voice','play','drum','lfos'];
 

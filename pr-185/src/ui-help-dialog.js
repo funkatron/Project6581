@@ -1,4 +1,4 @@
-import {HELP_CONTENT} from './ui-help-content.js?v=0.20.1+20261120T195340473Z';
+import {HELP_CONTENT} from './ui-help-content.js?v=0.20.1+20261120T202944466Z';
 
 let lastFocus=null;
 

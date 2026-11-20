@@ -1,4 +1,4 @@
-import {meterDisplayMasterWidth} from './sid-meter-display.js?v=0.20.1+20261120T195340473Z';
+import {meterDisplayMasterWidth} from './sid-meter-display.js?v=0.20.1+20261120T202944466Z';
 
 /** Combined output level from worklet mixed PCM (0–1). */
 export function normalizeMasterPeak(level){

@@ -1,6 +1,6 @@
-import {closeSidContext} from './sid-audio-lifecycle.js?v=0.20.1+20261120T195340473Z';
-import {loadSidWasm} from './sid-wasm-cache.js?v=0.20.1+20261120T195340473Z';
-import {createSidWriteBatcher} from './sid-write-batcher.js?v=0.20.1+20261120T195340473Z';
+import {closeSidContext} from './sid-audio-lifecycle.js?v=0.20.1+20261120T202944466Z';
+import {loadSidWasm} from './sid-wasm-cache.js?v=0.20.1+20261120T202944466Z';
+import {createSidWriteBatcher} from './sid-write-batcher.js?v=0.20.1+20261120T202944466Z';
 // Preload on page load; unlock audio separately during a trusted user gesture.
 export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=()=>{},onProgress=()=>{},eventLog=null,contextId=null,context=new AudioContext({latencyHint:'interactive'})}={}){
   let node=null,batcher=null,closed=false;
@@ -14,7 +14,7 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
     onContext(context);
     // Do not resume here. A resume started outside a user gesture can stay
     // pending on iPad and swallow later presses that wait on that promise.
-    const version='0.20.1+20261120T195340473Z';
+    const version='0.20.1+20261120T202944466Z';
     const deadline=async(promise,label)=>{
       let timer;
       try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label+' timed out after 15 seconds')),15000)})])}

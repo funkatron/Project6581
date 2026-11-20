@@ -1,4 +1,4 @@
-import {FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,PRESET_VERSION,cleanPresetName,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,importPresetFile} from "./preset-library.js?v=0.20.1+20261120T195340473Z";
+import {FACTORY_PRESETS,FACTORY_GROUPS,factoryGroup,PRESET_VERSION,cleanPresetName,readUserPresets,writeUserPresets,exportPreset,exportPresetBank,importPresetFile} from "./preset-library.js?v=0.20.1+20261120T202944466Z";
 
 // Dialog, save, rename, import, and export. Applying a sound and switching
 // the SID model stay with the studio, which owns the keyboard and the engine.
