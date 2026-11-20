@@ -1,5 +1,4 @@
 import {DRUM_STEP_COUNT, hitsOnStep} from './drum-step-sequencer.js';
-import {resolveDrumHitsOnStep} from './drum-voice-policy.js';
 import {stepMilliseconds} from './arp-composition.js';
 import {drumBpm} from './drum-lane-trigger.js';
 
@@ -24,7 +23,7 @@ export function mountDrumPerformance({
   drum,
   getDrumSequence,
   getMasterBpm,
-  triggerDrumLane,
+  triggerDrumStep,
   stopDrumVoices,
   refreshPresetDirty,
   onTransportChange,
@@ -62,7 +61,7 @@ export function mountDrumPerformance({
     const index = drum.step % DRUM_STEP_COUNT;
     const hits = hitsOnStep(seq, index);
     drum.step = (index + 1) % DRUM_STEP_COUNT;
-    for (const hit of resolveDrumHitsOnStep(hits)) triggerDrumLane(hit.lane, {drumSlot: hit.slot});
+    triggerDrumStep(hits);
     onStep?.(index);
     updateStatus(true, index);
   }
