@@ -3,6 +3,8 @@ import {
   DRUM_LANE_COUNT,
   DRUM_LANE_IDS,
   DRUM_STEP_COUNT,
+  defaultDrumSequence,
+  validateDrumSequence,
 } from './drum-step-sequencer.js';
 
 const LANE_LABEL = {
@@ -63,8 +65,29 @@ export function mountDrumPanel({
     cell.setAttribute('aria-pressed', String(on));
   }
 
+  function sequenceNeedsHeal(raw) {
+    if (!raw?.grid || !Array.isArray(raw.grid)) return true;
+    if (raw.grid.length !== DRUM_LANE_COUNT) return true;
+    return raw.grid.some(
+      (row) => !Array.isArray(row) || row.length !== DRUM_STEP_COUNT,
+    );
+  }
+
+  function sequenceForRender() {
+    const raw = getDrumSequence();
+    try {
+      const seq = validateDrumSequence(raw);
+      if (sequenceNeedsHeal(raw)) setDrumSequence(seq);
+      return seq;
+    } catch {
+      const seq = validateDrumSequence(defaultDrumSequence());
+      setDrumSequence(seq);
+      return seq;
+    }
+  }
+
   function render() {
-    const seq = getDrumSequence();
+    const seq = sequenceForRender();
     const kit = getDrumKit();
     host.replaceChildren();
     cellByStep.forEach((_, i) => {
