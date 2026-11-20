@@ -25,6 +25,7 @@ import {defaultDrumKit,defaultDrumSequence,validateDrumKit,validateDrumSequence}
 import {DRUM_ENGINE_INDEX} from "./sid-engines.js?v=__BUILD_ID__";
 import {defaultDrumSlotForLane,isDrumSlotIndex} from "./drum-voice-policy.js?v=__BUILD_ID__";
 import {drumOwnerKey,drumLaneTimbre,drumReleaseMilliseconds,isDrumOwner} from "./drum-lane-trigger.js?v=__BUILD_ID__";
+import {drumSlotFilterRegisters} from "./drum-slot-filter.js?v=__BUILD_ID__";
 import {mountGeneratorLeds} from "./generator-led-ui.js?v=__BUILD_ID__";
 import {createPerformanceArpState} from "./performance-arp-state.js?v=__BUILD_ID__";
 import {createPerformanceRoutingState} from "./performance-routing-state.js?v=__BUILD_ID__";
@@ -296,10 +297,13 @@ function triggerDrumLane(laneId,{drumSlot}={}){
   return;
  }
  stopDrumOwner(ownerKey);
- sidController.setFilter(filterRegistersFromUi(filter),DRUM_ENGINE_INDEX);
+ const slot=isDrumSlotIndex(drumSlot)?drumSlot:defaultDrumSlotForLane(laneId);
+ sidController.setFilter(
+  drumSlotFilterRegisters(filterRegistersFromUi(filter),slot),
+  DRUM_ENGINE_INDEX,
+ );
  const settings={...voice,pitchEnvelope:voice.pitchEnvelope};
  const traceStart=sidAudio?.beginNoteTrace();
- const slot=isDrumSlotIndex(drumSlot)?drumSlot:defaultDrumSlotForLane(laneId);
  const token=sidController.noteOn(note,()=>settings,{
   chipMask:[DRUM_ENGINE_INDEX],
   layerChip:DRUM_ENGINE_INDEX,
@@ -307,7 +311,7 @@ function triggerDrumLane(laneId,{drumSlot}={}){
  });
  sidAudio?.endNoteTrace(null,traceStart);
  sidAudio?.noteDispatched?.('drum');
- activeOwners.set(ownerKey,{note,token});
+ activeOwners.set(ownerKey,{note,token,drumSlot:slot});
  traceStudio('note-on',{note,source:ownerKey,chipMask:[DRUM_ENGINE_INDEX]});
  diagnosticsUi.afterNoteEvent?.();
  const releaseMs=drumReleaseMilliseconds(voice);
@@ -749,7 +753,10 @@ function updateModulation({uiOnly=false}={}){
  if(uiOnly)return;
  if(useAudioClockLfo)pushAudioModulationConfig();
  else{
-  for(let chip=0;chip<engines.length;chip++)updateSidFilter(engineModValues[chip],chip);
+  for(let chip=0;chip<engines.length;chip++){
+   if(chip===DRUM_ENGINE_INDEX)continue;
+   updateSidFilter(engineModValues[chip],chip);
+  }
  }
  sidController.setLiveDetune(globalDetune);
  for(let chip=0;chip<engines.length;chip++){

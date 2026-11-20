@@ -28,8 +28,8 @@ Treat **Drum Seq** as a mini-app inside Project6581:
 
 ## Simplification backlog (needs approval before large refactors)
 
-1. **Stop running `updateModulation` filter/envelope paths for chip 3** except drum LFO + drum engine card — today chip 3 still uses the same loop with a narrowed LFO list.
-2. **Worklet**: keep drum chip out of global audio-clock filter writes (kick lowpass); only drum-specific modulation targets.
+1. ~~**Stop running `updateModulation` filter paths for chip 3**~~ — filter stomp skipped for chip 3 in UI-clock path; see [drum-per-slot-voice.md](./drum-per-slot-voice.md). Envelope/pulse LFO on chip 3 may still need narrowing.
+2. ~~**Worklet**: keep drum chip out of global audio-clock filter writes**~~ — shipped for chip 3 filter registers; drum-specific LFO in worklet still open.
 3. **Optional split**: `src/drum-studio/` façade that owns sequence, kit, performance clock, and SID 4 I/O; `sid-studio.js` wires tabs only.
 4. **Level / headroom**: revisit +18 dB drum gain and multi-voice policy against a dedicated drum bus meter (see roadmap).
 
