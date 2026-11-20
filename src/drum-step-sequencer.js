@@ -156,18 +156,30 @@ export function validateDrumSequence(sequence) {
   return { enabled, rate, sync, localBpm, steps, grid };
 }
 
-/** Trim a legacy 6-row grid to the four shipped lanes (drops clap/tom rows). */
+function emptyDrumRow() {
+  return Array.from({length: DRUM_STEP_COUNT}, () => false);
+}
+
+function normalizeDrumRow(row) {
+  if (!Array.isArray(row)) {
+    return emptyDrumRow();
+  }
+  return Array.from({length: DRUM_STEP_COUNT}, (_, col) => Boolean(row[col]));
+}
+
+/**
+ * Normalize any saved grid to four rows × sixteen steps (legacy six-row grids lose clap/tom).
+ * Short or malformed rows pad with rests instead of failing studio startup.
+ */
 export function coalesceDrumGrid(grid) {
   if (!Array.isArray(grid)) {
-    throw new TypeError('Drum grid must be an array');
+    return DRUM_LANE_IDS.map(() => emptyDrumRow());
   }
-  if (grid.length === DRUM_LANE_COUNT) {
-    return grid;
+  const source = grid.length >= DRUM_LANE_COUNT ? grid.slice(0, DRUM_LANE_COUNT) : [...grid];
+  while (source.length < DRUM_LANE_COUNT) {
+    source.push(emptyDrumRow());
   }
-  if (grid.length === LEGACY_DRUM_LANE_COUNT) {
-    return grid.slice(0, DRUM_LANE_COUNT);
-  }
-  throw new RangeError('Drum grid must have ' + DRUM_LANE_COUNT + ' or legacy ' + LEGACY_DRUM_LANE_COUNT + ' rows');
+  return source.map((row) => normalizeDrumRow(row));
 }
 
 /** Lane index 0–3 for row; step index 0–15. */

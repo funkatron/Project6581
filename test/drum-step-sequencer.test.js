@@ -38,6 +38,18 @@ test('coalesceDrumGrid trims legacy six-row grids', () => {
   assert.equal(coalesced.length, DRUM_LANE_COUNT);
 });
 
+test('coalesceDrumGrid pads short grids and heals bad rows', () => {
+  const short = [Array(DRUM_STEP_COUNT).fill(false), null];
+  const coalesced = coalesceDrumGrid(short);
+  assert.equal(coalesced.length, DRUM_LANE_COUNT);
+  assert.equal(coalesced[1].every((cell) => cell === false), true);
+});
+
+test('validateDrumSequence accepts missing grid by resetting pattern', () => {
+  const seq = validateDrumSequence({ ...defaultDrumSequence(), grid: undefined });
+  assert.equal(seq.grid.length, DRUM_LANE_COUNT);
+});
+
 test('validateDrumSequence coalesces legacy six-row grids', () => {
   const legacy = Array.from({ length: 6 }, () => Array(DRUM_STEP_COUNT).fill(false));
   legacy[0][0] = true;
