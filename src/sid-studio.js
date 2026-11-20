@@ -185,7 +185,7 @@ function syncEnginePans(){
 }
 function syncEngineChipGains(){
  for(let chip=0;chip<engines.length;chip++){
-  const db=chip===3?(engines[chip].outputBoostDb??6):0;
+  const db=chip===3?(engines[chip].outputBoostDb??18):0;
   sidAudio?.setChipGain?.(chip,db);
  }
 }
@@ -330,7 +330,8 @@ function triggerDrumLane(laneId,{drumSlot,skipFilter=false}={}){
  restoreSidOutput();
  const {voice}=timbre;
  const ownerKey=drumOwnerKey(laneId);
- const note=laneRow.midiNote;
+ const offset=laneRow.pitchOffsetSemitones??0;
+ const note=Math.max(0,Math.min(127,laneRow.midiNote+offset));
  const gate=canDispatchNote({
   blocked:sidMusicalInputBlocked(),
   hasController:Boolean(sidController),

@@ -337,9 +337,12 @@ label:not(:has(.param-track))>.base-value,label:not(:has(.param-track))>.modulat
 .sid-rainbow-meter{flex:1 1 100%;min-width:0;width:100%;height:14px;position:relative;border:1px solid #4c3b2d;border-radius:2px;background:#120e0a;overflow:hidden;box-shadow:inset 0 1px 2px #0006;order:10;flex-basis:100%}
 .sid-rainbow-meter-track{position:absolute;inset:1px;opacity:.38;pointer-events:none;background:linear-gradient(90deg,#e35a4f 0%,#f3a23c 14%,#f7d24f 28%,#4bc067 42%,#2cb4c2 57%,#4a6fe3 72%,#8a4dc9 100%)}
 .sid-rainbow-meter-fill{position:absolute;left:1px;top:1px;bottom:1px;width:0;background:linear-gradient(90deg,#e35a4f 0%,#f3a23c 14%,#f7d24f 28%,#4bc067 42%,#2cb4c2 57%,#4a6fe3 72%,#8a4dc9 100%);box-shadow:0 0 7px rgba(243,162,60,.3);transition:width .08s linear}
-.sid-stereo-meter{flex:1 1 100%;min-width:0;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px;order:10;flex-basis:100%}
+.sid-stereo-meter{flex:1 1 100%;min-width:0;width:100%;order:10;flex-basis:100%}
+.sid-stereo-meter--stacked{display:flex;flex-direction:column;gap:0;height:14px;overflow:hidden;border:1px solid #4c3b2d;border-radius:2px;background:#120e0a;box-shadow:inset 0 1px 2px #0006}
+.sid-stereo-meter--stacked .sid-stereo-meter-channel{display:grid;grid-template-columns:12px minmax(0,1fr);gap:4px;align-items:center;min-width:0;height:7px;padding:0 2px}
 .sid-stereo-meter-channel{display:grid;grid-template-columns:12px minmax(0,1fr);gap:4px;align-items:center;min-width:0}
-.sid-stereo-meter-label{font-size:10px;color:#8b7355;line-height:1}
+.sid-stereo-meter-label{font-size:8px;color:#8b7355;line-height:1}
+.sid-stereo-meter--stacked .sid-rainbow-meter{height:5px;border:0;border-radius:0;box-shadow:none}
 .sid-stereo-meter .sid-rainbow-meter{height:12px}
 /* Commodore Plus/4–style horizontal rainbow (master loudness — full-bleed header band) */
 .header-meter-band .master-rainbow-meter{width:100%;max-width:none;height:15px;flex:none;position:relative;border:0;border-bottom:1px solid #4c3b2d;border-radius:0;background:#120e0a;overflow:hidden;box-shadow:inset 0 1px 2px #0006}

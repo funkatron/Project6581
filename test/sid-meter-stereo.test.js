@@ -23,5 +23,5 @@ test('worklet includes drum chip in meter hold arrays',()=>{
 test('SID 4 engine card uses stereo meter markup',()=>{
  const ui=readFileSync(new URL('../src/sid-engine-panels-ui.js',import.meta.url),'utf8');
  assert.match(ui,/renderStereoChipMeter/);
- assert.match(ui,/sid-stereo-meter/);
+ assert.match(ui,/sid-stereo-meter--stacked/);
 });

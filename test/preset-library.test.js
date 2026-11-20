@@ -39,7 +39,7 @@ test('factory bank contains useful original sounds and complete performance sett
   const result=validatePresetSettings(p.settings);
   assert.deepEqual(result,p.settings);
   assert.equal(result.sound.engines.length,4);
-  assert.equal(result.sound.engines[3].outputBoostDb,6);
+  assert.equal(result.sound.engines[3].outputBoostDb,18);
   assert.equal(result.sound.lfos.length,3);
   assert.equal(typeof result.performance.routing.keyboard,'string');
   assert.equal(typeof result.performance.masterBpm,'number');

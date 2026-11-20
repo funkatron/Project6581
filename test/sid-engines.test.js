@@ -25,5 +25,5 @@ test('default routing keeps keyboard and arp on SID 1',()=>{
 test('default engine bank includes three melodic chips plus SID 4 drums',()=>{
  const engines=createDefaultEngines();
  assert.equal(engines.length,4);
- assert.equal(engines[3].outputBoostDb,6);
+ assert.equal(engines[3].outputBoostDb,18);
 });
