@@ -7,5 +7,5 @@
   "minActiveSteps": 12,
   "minRms": 0.0005,
   "minHighToLowRatio": 0.15,
-  "maxLowDominanceRatio": 6
+  "maxLowDominanceRatio": 7
 }

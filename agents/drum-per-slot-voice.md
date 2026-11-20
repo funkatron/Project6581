@@ -10,7 +10,7 @@
 
 ## Limits (authentic SID)
 
-One filter block per chip: simultaneous voices that share the filter path still share cutoff/mode. Routing-only-per-slot means other sounding voices may be **direct** while the new hit uses the filter path. Full reconcile on note-off (re-apply filters for remaining slots) is future work.
+One filter block per chip: simultaneous voices cannot each use a different cutoff. **Preview** applies filter once per step (`drum-step-filter.js`): kick lane wins cutoff/mode; only that voice is routed through the filter and sn/hat on the same step play **direct**. Grid solo still sets the tapped lane’s filter. Full reconcile across overlapping steps (hat on step 2 while kick decays from step 1) is future work.
 
 ## Follow-ups
 
