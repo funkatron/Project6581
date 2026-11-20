@@ -103,6 +103,14 @@ test('lfosForEngine routes drum LFO scope to chip index 3 only',()=>{
  assert.deepEqual(lfosForEngine([drum],2),[]);
 });
 
+test('lfosForEngine excludes Apply All melodic LFOs from drum chip',()=>{
+ const all={enabled:true,depth:.5,target:'cutoff',engines:'all'};
+ const drum={enabled:true,depth:.3,target:'volume',engines:'4'};
+ assert.deepEqual(lfosForEngine([all,drum],3).map(lfo=>lfo.target),['volume']);
+ assert.deepEqual(lfosForEngine([all],3),[]);
+ assert.deepEqual(lfosForEngine([all,drum],0).map(lfo=>lfo.target),['cutoff']);
+});
+
 test('audible PWM sweeps around the pulse center and clips safely',()=>{
  assert.equal(pulseWithPwm(50,20,1,0),50);
  assert.equal(pulseWithPwm(50,20,1,0.25),70);

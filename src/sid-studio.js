@@ -1298,13 +1298,26 @@ $('chip').addEventListener('change',async event=>{
   refreshPresetDirty();
  }
 });
+async function captureTestHooksPcmWav(durationMs){
+ const ms=Math.round(Number(durationMs));
+ if(!Number.isFinite(ms)||ms<50||ms>180_000)throw new RangeError('durationMs must be 50–180000');
+ if(recordBusy||!sidRecorder)throw new Error('SID recorder is not ready');
+ if(sidRecorder.recording)throw new Error('A recording is already active');
+ await sidRecorder.start('wav');
+ await new Promise(resolve=>setTimeout(resolve,ms));
+ const {blob}=await sidRecorder.stop();
+ const buffer=await blob.arrayBuffer();
+ return {bytes:new Uint8Array(buffer),sampleRate:sidAudio?.context?.sampleRate??48000};
+}
 if(testHooksEnabled()){
  globalThis.__project6581Test=mountStudioTestHooks({
   studioTrace,
   getSidReady:()=>Boolean(sidController)&&sidContext?.state==='running',
   validateDrumSequence,
+  getDrumSequence:()=>drumSequence,
   setDrumSequence:value=>{drumSequence=validateDrumSequence(value);},
   renderDrumPanel:()=>drumPanelUi.render(),
+  triggerDrumLane,
   drumStart,
   drumStop,
   getDrumRunning:()=>drum.running,
@@ -1316,6 +1329,7 @@ if(testHooksEnabled()){
    updateModulation();
    if($('arpSync').checked)restartGenerators();
   },
+  capturePcmWav:captureTestHooksPcmWav,
   panic,
  });
 }

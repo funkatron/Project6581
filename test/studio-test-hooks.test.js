@@ -5,6 +5,7 @@ import {
  testHooksEnabled,
  mountStudioTestHooks,
  countDrumSourcesInTrace,
+ setDrumGridCell,
 } from '../src/studio-test-hooks.js';
 import {defaultDrumSequence,validateDrumSequence} from '../src/drum-step-sequencer.js';
 import {drumSequenceFromFixture} from '../src/drum-audio-fixture.js';
@@ -38,8 +39,10 @@ test('mountStudioTestHooks loads validated drum sequence',()=>{
   studioTrace,
   getSidReady:()=>true,
   validateDrumSequence,
+  getDrumSequence:()=>calls.set??defaultDrumSequence(),
   setDrumSequence:seq=>{calls.set=seq},
   renderDrumPanel:()=>{calls.render++},
+  triggerDrumLane:()=>{},
   drumStart:()=>{},
   drumStop:()=>{},
   getDrumRunning:()=>false,
@@ -49,6 +52,35 @@ test('mountStudioTestHooks loads validated drum sequence',()=>{
  hooks.loadDrumSequence(drumSequenceFromFixture(fixture));
  assert.equal(calls.render,1);
  assert.equal(calls.set.grid[2].every(Boolean),true);
+});
+
+test('setDrumGridCell updates one step without mutating input',()=>{
+ const seq=defaultDrumSequence();
+ const next=setDrumGridCell(seq,'kick',0,true);
+ assert.equal(next.grid[0][0],true);
+ assert.equal(seq.grid[0][0],false);
+});
+
+test('mountStudioTestHooks setDrumCell can audition lane',()=>{
+ let auditioned=null;
+ const calls={render:0,seq:defaultDrumSequence()};
+ const hooks=mountStudioTestHooks({
+  studioTrace:{snapshot:()=>({entries:[]})},
+  getSidReady:()=>true,
+  validateDrumSequence,
+  getDrumSequence:()=>calls.seq,
+  setDrumSequence:seq=>{calls.seq=seq},
+  renderDrumPanel:()=>{calls.render++},
+  triggerDrumLane:lane=>{auditioned=lane},
+  drumStart:()=>{},
+  drumStop:()=>{},
+  getDrumRunning:()=>false,
+  setMasterBpm:()=>{},
+  panic:()=>{},
+ });
+ hooks.setDrumCell('kick',3,true,{audition:true});
+ assert.equal(auditioned,'kick');
+ assert.equal(calls.seq.grid[0][3],true);
 });
 
 test('sid-studio exposes hooks when testHooks query is enabled',()=>{
