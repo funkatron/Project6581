@@ -1,6 +1,8 @@
-import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=0.19.3+20261120T192952079Z';
-import {setLayoutInert} from './ui-layout.js?v=0.19.3+20261120T192952079Z';
-import {drumLaneTimbre} from './drum-lane-trigger.js?v=0.19.3+20261120T192952079Z';
+import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=0.20.1+20261120T195340473Z';
+import {setLayoutInert} from './ui-layout.js?v=0.20.1+20261120T195340473Z';
+import {drumLaneTimbre} from './drum-lane-trigger.js?v=0.20.1+20261120T195340473Z';
+import {applyDrumVoiceColorTokens} from './drum-voice-colors.js?v=0.20.1+20261120T195340473Z';
+import {DRUM_PITCH_OFFSET_SEMITONES} from './drum-step-sequencer.js?v=0.20.1+20261120T195340473Z';
 import {
   DRUM_BUS_LANES,
   DRUM_VOICE_ADSR_FIELDS,
@@ -9,7 +11,14 @@ import {
   drumBusShowsPulse,
   drumBusWaveLabel,
   drumFactoryPresetOptions,
-} from './drum-voice-ui-policy.js?v=0.19.3+20261120T192952079Z';
+} from './drum-voice-ui-policy.js?v=0.20.1+20261120T195340473Z';
+
+const BUS_TAB_BUS = Object.freeze(['kick', 'sn', 'hat']);
+
+function formatPitchOffsetLabel(semitones) {
+  if (semitones > 0) return '+' + semitones;
+  return String(semitones);
+}
 
 const BUS_TAB_LABELS = Object.freeze(['Kick', 'Snare', 'Hat']);
 
@@ -99,9 +108,9 @@ export function mountDrumSlotVoicePanels({
 
     const presetLabel = document.createElement('label');
     presetLabel.className = 'drum-bus-preset';
-    presetLabel.textContent = 'Factory timbre ';
+    presetLabel.textContent = 'Sequence sound ';
     const presetSelect = document.createElement('select');
-    presetSelect.setAttribute('aria-label', bus.title + ' factory timbre');
+    presetSelect.setAttribute('aria-label', bus.title + ' sequence sound');
     for (const preset of drumPresets) {
       const option = document.createElement('option');
       option.value = preset.id;
@@ -114,13 +123,39 @@ export function mountDrumSlotVoicePanels({
     const meta = document.createElement('p');
     meta.className = 'drum-bus-meta';
     meta.textContent = 'Synthesis · ' + drumBusWaveLabel(voice.wave);
-    card.append(title, presetLabel, meta);
-    if (bus.laneId === 'ch') {
-      const note = document.createElement('p');
-      note.className = 'drum-bus-note';
-      note.textContent = 'Open hat uses its lane preset when it wins the hat bus on a step (CH has priority if both are on).';
-      card.append(note);
+      const pitchLabel = document.createElement('label');
+    pitchLabel.className = 'drum-bus-preset';
+    pitchLabel.textContent = 'Pitch offset ';
+    const pitchSelect = document.createElement('select');
+    pitchSelect.setAttribute('aria-label', bus.title + ' pitch offset semitones');
+    for (const step of DRUM_PITCH_OFFSET_SEMITONES) {
+      const option = document.createElement('option');
+      option.value = String(step);
+      option.textContent = formatPitchOffsetLabel(step);
+      pitchSelect.append(option);
     }
+    const kitLane = getDrumKit().lanes[bus.laneId];
+    pitchSelect.value = String(kitLane.pitchOffsetSemitones ?? 0);
+    pitchLabel.append(pitchSelect);
+
+    card.append(title, presetLabel, pitchLabel, meta);
+
+    pitchSelect.addEventListener('change', () => {
+      const semitones = Number(pitchSelect.value);
+      if (bus.laneId === 'ch') {
+        const kitNow = getDrumKit();
+        const lanes = {
+          ...kitNow.lanes,
+          ch: {...kitNow.lanes.ch, pitchOffsetSemitones: semitones},
+          oh: {...kitNow.lanes.oh, pitchOffsetSemitones: semitones},
+        };
+        setDrumKit({...kitNow, lanes});
+      } else {
+        const laneRow = {...getDrumKit().lanes[bus.laneId], pitchOffsetSemitones: semitones};
+        commitLane(bus, laneRow);
+      }
+      onKitStructureChange?.();
+    });
 
     presetSelect.addEventListener('change', () => {
       const laneRow = {...getDrumKit().lanes[bus.laneId], presetId: presetSelect.value};
@@ -221,12 +256,15 @@ export function mountDrumSlotVoicePanels({
     const host = $('drumSlotVoices');
     if (!host || !tablist) return;
 
+    applyDrumVoiceColorTokens($('drumPanel'));
+
     tablist.replaceChildren();
     DRUM_BUS_LANES.forEach((bus, index) => {
       const tab = document.createElement('button');
       tab.type = 'button';
       tab.className = 'drum-bus-tab';
       tab.id = 'drumBusTab' + bus.slot;
+      tab.dataset.bus = BUS_TAB_BUS[index] ?? 'kick';
       tab.setAttribute('role', 'tab');
       tab.setAttribute('aria-controls', 'drumBusPanel' + bus.slot);
       tab.textContent = BUS_TAB_LABELS[index] ?? bus.title;
@@ -237,6 +275,7 @@ export function mountDrumSlotVoicePanels({
 
     host.replaceChildren();
     const activeBus = DRUM_BUS_LANES[activeBusIndex] ?? DRUM_BUS_LANES[0];
+    host.dataset.activeBus = BUS_TAB_BUS[activeBusIndex] ?? 'kick';
     host.append(renderBus(activeBus));
   }
 

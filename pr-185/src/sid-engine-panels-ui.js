@@ -1,8 +1,8 @@
-import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=0.19.3+20261120T192952079Z';
+import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=0.20.1+20261120T195340473Z';
 import {DRUM_ENGINE_INDEX,SID_ENGINE_COUNT} from './sid-engines.js';
-import {chipPanStereoPeaks,meterDisplayWidth} from './sid-meter-display.js?v=0.19.3+20261120T192952079Z';
-import {formatPanBrief,formatHzBrief,formatPercent} from './control-format.js?v=0.19.3+20261120T192952079Z';
-import {setLayoutInert} from './ui-layout.js?v=0.19.3+20261120T192952079Z';
+import {chipPanStereoPeaks,meterDisplayWidth} from './sid-meter-display.js?v=0.20.1+20261120T195340473Z';
+import {formatPanBrief,formatHzBrief,formatPercent} from './control-format.js?v=0.20.1+20261120T195340473Z';
+import {setLayoutInert} from './ui-layout.js?v=0.20.1+20261120T195340473Z';
 
 const FILTER_MODES=['lowpass','bandpass','highpass'];
 
@@ -32,28 +32,22 @@ export function mountSidEnginePanels({
  function renderStereoChipMeter(chipIndex,monoLevel,panPercent){
   const {left,right}=chipPanStereoPeaks(monoLevel,panPercent);
   const wrap=document.createElement('div');
-  wrap.className='sid-stereo-meter';
+  wrap.className='sid-stereo-meter sid-stereo-meter--stacked';
   wrap.dataset.chip=String(chipIndex);
   wrap.setAttribute('role','img');
-  const leftLabel=document.createElement('span');
-  leftLabel.className='sid-stereo-meter-label';
-  leftLabel.textContent='L';
-  const rightLabel=document.createElement('span');
-  rightLabel.className='sid-stereo-meter-label';
-  rightLabel.textContent='R';
-  const leftMeter=renderRainbowMeter(left);
-  leftMeter.dataset.channel='left';
-  const rightMeter=renderRainbowMeter(right);
-  rightMeter.dataset.channel='right';
-  const leftChannel=document.createElement('div');
-  leftChannel.className='sid-stereo-meter-channel';
-  leftChannel.dataset.channel='left';
-  leftChannel.append(leftLabel,leftMeter);
-  const rightChannel=document.createElement('div');
-  rightChannel.className='sid-stereo-meter-channel';
-  rightChannel.dataset.channel='right';
-  rightChannel.append(rightLabel,rightMeter);
-  wrap.append(leftChannel,rightChannel);
+  function channel(side,labelText,level){
+   const channelEl=document.createElement('div');
+   channelEl.className='sid-stereo-meter-channel';
+   channelEl.dataset.channel=side;
+   const label=document.createElement('span');
+   label.className='sid-stereo-meter-label';
+   label.textContent=labelText;
+   const meter=renderRainbowMeter(level);
+   meter.dataset.channel=side;
+   channelEl.append(label,meter);
+   return channelEl;
+  }
+  wrap.append(channel('left','L',left),channel('right','R',right));
   const lWidth=meterDisplayWidth(left);
   const rWidth=meterDisplayWidth(right);
   wrap.setAttribute('aria-label','Drum bus level L '+lWidth+' R '+rWidth);
@@ -158,13 +152,13 @@ export function mountSidEnginePanels({
    boostLabel.textContent='Boost ';
    const boostSelect=document.createElement('select');
    boostSelect.dataset.prop='outputBoostDb';
-   for(const db of [0,6,12]){
+   for(const db of [0,6,12,18,24]){
     const option=document.createElement('option');
     option.value=String(db);
     option.textContent=db===0?'Off':('+'+db+' dB');
     boostSelect.append(option);
    }
-   boostSelect.value=String(engine.outputBoostDb??6);
+   boostSelect.value=String(engine.outputBoostDb??18);
    boostSelect.setAttribute('aria-label','SID 4 output boost');
    boostLabel.append(boostSelect);
    controlGrid.append(boostLabel);
@@ -189,7 +183,7 @@ export function mountSidEnginePanels({
    });
    const drumNote=document.createElement('p');
    drumNote.className='drum-chip-note control-span-full';
-   drumNote.textContent='One analog filter for all drum lanes. Per-lane voice and pitch settings are below the grid.';
+   drumNote.textContent='One analog filter for all drum lanes.';
    controlGrid.append(drumNote);
   }else{
    const voiceHeading=document.createElement('h4');

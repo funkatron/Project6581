@@ -10,7 +10,9 @@ export const LEGACY_DRUM_LANE_COUNT = 6;
 export const DRUM_STEP_COUNT = 16;
 export const DRUM_LANE_COUNT = DRUM_LANE_IDS.length;
 
-export const DRUM_BOOST_DB = Object.freeze([0, 6, 12]);
+export const DRUM_BOOST_DB = Object.freeze([0, 6, 12, 18, 24]);
+
+export const DRUM_PITCH_OFFSET_SEMITONES = Object.freeze([-48, -36, -24, -12, 0, 12, 24, 36, 48]);
 
 const DEFAULT_LEVELS = Object.freeze({
   kick: 100,
@@ -23,8 +25,8 @@ export function defaultDrumKit() {
   const lanes = {
     kick: { presetId: 'low-thud-kick', midiNote: 36, level: DEFAULT_LEVELS.kick },
     sn: { presetId: 'noise-snare', midiNote: 38, level: DEFAULT_LEVELS.sn },
-    ch: { presetId: 'closed-noise-hat', midiNote: 42, level: DEFAULT_LEVELS.ch },
-    oh: { presetId: 'open-noise-hat', midiNote: 46, level: DEFAULT_LEVELS.oh },
+    ch: { presetId: 'closed-noise-hat', midiNote: 42, level: DEFAULT_LEVELS.ch, pitchOffsetSemitones: 24 },
+    oh: { presetId: 'open-noise-hat', midiNote: 46, level: DEFAULT_LEVELS.oh, pitchOffsetSemitones: 24 },
   };
   return { name: 'Factory 6581', lanes };
 }
@@ -56,10 +58,25 @@ function validateLane(lane, id) {
   if (!Number.isInteger(level) || level < 0 || level > 100) {
     throw new RangeError('Drum lane ' + id + ' level must be 0–100');
   }
-  const out = {presetId: lane.presetId.trim(), midiNote: lane.midiNote, level};
+  let pitchOffsetSemitones = 0;
+  if (id === 'ch' || id === 'oh') pitchOffsetSemitones = 24;
+  if (lane.pitchOffsetSemitones !== undefined) {
+    pitchOffsetSemitones = validateLanePitchOffset(lane.pitchOffsetSemitones, id);
+  }
+  const out = {presetId: lane.presetId.trim(), midiNote: lane.midiNote, level, pitchOffsetSemitones};
   if (lane.voice !== undefined) out.voice = validateLaneVoicePatch(lane.voice, id);
   if (lane.filter !== undefined) out.filter = validateLaneFilterPatch(lane.filter, id);
   return out;
+}
+
+export function validateLanePitchOffset(value, laneId = 'lane') {
+  const semitones = Number(value);
+  if (!Number.isInteger(semitones) || !DRUM_PITCH_OFFSET_SEMITONES.includes(semitones)) {
+    throw new RangeError(
+      'Drum lane ' + laneId + ' pitchOffsetSemitones must be one of ' + DRUM_PITCH_OFFSET_SEMITONES.join(', '),
+    );
+  }
+  return semitones;
 }
 
 function validateLaneVoicePatch(patch, id) {
@@ -193,9 +210,9 @@ export function hitsOnStep(sequence, stepIndex) {
 }
 
 export function validateDrumEngineBoost(db) {
-  const value = db === undefined ? 6 : Number(db);
+  const value = db === undefined ? 18 : Number(db);
   if (!DRUM_BOOST_DB.includes(value)) {
-    throw new RangeError('Drum outputBoostDb must be 0, 6, or 12');
+    throw new RangeError('Drum outputBoostDb must be one of ' + DRUM_BOOST_DB.join(', '));
   }
   return value;
 }
