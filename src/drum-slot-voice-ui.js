@@ -1,6 +1,7 @@
 import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=__BUILD_ID__';
 import {setLayoutInert} from './ui-layout.js?v=__BUILD_ID__';
 import {drumLaneTimbre} from './drum-lane-trigger.js?v=__BUILD_ID__';
+import {applyDrumVoiceColorTokens} from './drum-voice-colors.js?v=__BUILD_ID__';
 import {DRUM_PITCH_OFFSET_SEMITONES} from './drum-step-sequencer.js?v=__BUILD_ID__';
 import {
   DRUM_BUS_LANES,
@@ -255,6 +256,8 @@ export function mountDrumSlotVoicePanels({
     const host = $('drumSlotVoices');
     if (!host || !tablist) return;
 
+    applyDrumVoiceColorTokens($('drumPanel'));
+
     tablist.replaceChildren();
     DRUM_BUS_LANES.forEach((bus, index) => {
       const tab = document.createElement('button');
@@ -272,6 +275,7 @@ export function mountDrumSlotVoicePanels({
 
     host.replaceChildren();
     const activeBus = DRUM_BUS_LANES[activeBusIndex] ?? DRUM_BUS_LANES[0];
+    host.dataset.activeBus = BUS_TAB_BUS[activeBusIndex] ?? 'kick';
     host.append(renderBus(activeBus));
   }
 
