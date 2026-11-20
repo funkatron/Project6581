@@ -61,7 +61,7 @@ export function mountDrumPerformance({
     const index = drum.step % DRUM_STEP_COUNT;
     const hits = hitsOnStep(seq, index);
     drum.step = (index + 1) % DRUM_STEP_COUNT;
-    triggerDrumStep(hits);
+    triggerDrumStep(hits, {stepIndex: index});
     onStep?.(index);
     updateStatus(true, index);
   }

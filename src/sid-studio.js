@@ -28,6 +28,7 @@ import {DRUM_ENGINE_INDEX} from "./sid-engines.js?v=__BUILD_ID__";
 import {defaultDrumSlotForLane,isDrumSlotIndex,resolveDrumHitsOnStep} from "./drum-voice-policy.js?v=__BUILD_ID__";
 import {drumOwnerKey,drumLaneTimbre,drumReleaseMilliseconds,isDrumOwner} from "./drum-lane-trigger.js?v=__BUILD_ID__";
 import {chooseDrumFilterLane,drumStepFilterRoutingMask} from "./drum-step-filter.js?v=__BUILD_ID__";
+import {projectedChipRenderMs} from "./sid-chip-render-diagnostic.js?v=__BUILD_ID__";
 import {mountGeneratorLeds} from "./generator-led-ui.js?v=__BUILD_ID__";
 import {createPerformanceArpState} from "./performance-arp-state.js?v=__BUILD_ID__";
 import {createPerformanceRoutingState} from "./performance-routing-state.js?v=__BUILD_ID__";
@@ -53,6 +54,15 @@ const studioTrace=createStudioTraceLog();
 let sidInputEvent=null;
 const audioTiming={source:null,roundTripMs:null,renderAvgMs:null,renderMaxMs:null,renderBudgetMs:null,baseMs:null,outputMs:null,
  keyAt:null,keyEnergyMs:null,keyBufferRemainderMs:null,keyToOutputEstimateMs:null,keyEnergyMissed:false,probeSkipped:false};
+function diagnosticTimingSnapshot(){
+ return {
+  ...audioTiming,
+  chipRenderProjection:projectedChipRenderMs({
+   renderAvgMs:audioTiming.renderAvgMs,
+   renderMaxMs:audioTiming.renderMaxMs,
+  }),
+ };
+}
 let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null,activeSidModel=null;
 const {updateAudioTimingReport}=mountAudioTimingPanel({
  $,sidEventLog,audioTiming,sidStartupLog,
@@ -63,7 +73,7 @@ const {updateAudioTimingReport}=mountAudioTimingPanel({
   contextState:sidContext?.state??'unavailable',sampleRate:sidContext?.sampleRate??null,
   baseLatencyMs:Number.isFinite(sidContext?.baseLatency)?sidContext.baseLatency*1000:null,
   outputLatencyMs:Number.isFinite(sidContext?.outputLatency)?sidContext.outputLatency*1000:null,
-  timing:{...audioTiming},startup:[...sidStartupLog]
+  timing:diagnosticTimingSnapshot(),startup:[...sidStartupLog]
  })
 });
 const diagnosticsUi=mountDiagnosticsPanel({
@@ -73,7 +83,7 @@ const diagnosticsUi=mountDiagnosticsPanel({
   contextState:sidContext?.state??'unavailable',sampleRate:sidContext?.sampleRate??null,
   baseLatencyMs:Number.isFinite(sidContext?.baseLatency)?sidContext.baseLatency*1000:null,
   outputLatencyMs:Number.isFinite(sidContext?.outputLatency)?sidContext.outputLatency*1000:null,
-  timing:{...audioTiming},startup:[...sidStartupLog]
+  timing:diagnosticTimingSnapshot(),startup:[...sidStartupLog]
  }),updateAudioTimingReport
 });
 function traceStudio(type,details={}){
@@ -297,14 +307,23 @@ function applyDrumChipFilter(laneId,slotIndex){
  regs.routing=drumStepFilterRoutingMask(slotIndex);
  sidController.setFilter(regs,DRUM_ENGINE_INDEX);
 }
-function triggerDrumStep(rawHits){
+function triggerDrumStep(rawHits,{stepIndex=null}={}){
  if(!sidController||!rawHits?.length)return;
  const hits=resolveDrumHitsOnStep(rawHits);
  if(!hits.length)return;
  const filterLane=chooseDrumFilterLane(hits);
  if(filterLane){
   const primary=hits.find(hit=>hit.lane===filterLane);
-  if(primary)applyDrumChipFilter(filterLane,primary.slot);
+  if(primary){
+   applyDrumChipFilter(filterLane,primary.slot);
+   traceStudio('drum-step-filter',{
+    step:Number.isInteger(stepIndex)?stepIndex:null,
+    filterLane,
+    lanes:hits.map(hit=>hit.lane),
+    filterSlot:primary.slot,
+    routing:drumStepFilterRoutingMask(primary.slot),
+   });
+  }
  }
  for(const hit of hits){
   triggerDrumLane(hit.lane,{drumSlot:hit.slot,skipFilter:true});

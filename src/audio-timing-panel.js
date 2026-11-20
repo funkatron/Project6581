@@ -1,5 +1,6 @@
 import {formatSidDiagnosticReport} from './sid-event-log.js?v=__BUILD_ID__';
 import {formatPlaybackLatencyStatus} from './sid-engine-status-ui.js?v=__BUILD_ID__';
+import {formatChipRenderDiagnosticLines, projectedChipRenderMs} from './sid-chip-render-diagnostic.js?v=__BUILD_ID__';
 
 export function mountAudioTimingPanel({
  $,sidEventLog,audioTiming,sidStartupLog,getSidAudio,getSidContext,getReportContext
@@ -24,6 +25,11 @@ export function mountAudioTimingPanel({
   lines.push(
    'WASM render per block: '+show(audioTiming.renderAvgMs)+' average / '+show(audioTiming.renderMaxMs)+' max',
    'Audio render block budget: '+show(audioTiming.renderBudgetMs),
+   ...formatChipRenderDiagnosticLines({
+    renderAvgMs:audioTiming.renderAvgMs,
+    renderMaxMs:audioTiming.renderMaxMs,
+    renderBudgetMs:audioTiming.renderBudgetMs,
+   }),
    'Browser base/output latency: '+show(audioTiming.baseMs)+' / '+show(audioTiming.outputMs),
    'Device output line is an estimate from loud PCM + AudioContext.outputLatency; not a DAC measurement. Screen recording A/V sync can differ.',
    ...sidStartupLog
