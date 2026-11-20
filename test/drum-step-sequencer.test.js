@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   DRUM_LANE_COUNT,
   DRUM_STEP_COUNT,
+  coalesceDrumGrid,
   defaultDrumKit,
   defaultDrumSequence,
   hitsOnStep,
@@ -29,6 +30,20 @@ test('hitsOnStep lists active lanes', () => {
     hits.map((h) => h.lane),
     ['kick', 'ch'],
   );
+});
+
+test('coalesceDrumGrid trims legacy six-row grids', () => {
+  const legacy = Array.from({ length: 6 }, () => Array(DRUM_STEP_COUNT).fill(false));
+  const coalesced = coalesceDrumGrid(legacy);
+  assert.equal(coalesced.length, DRUM_LANE_COUNT);
+});
+
+test('validateDrumSequence coalesces legacy six-row grids', () => {
+  const legacy = Array.from({ length: 6 }, () => Array(DRUM_STEP_COUNT).fill(false));
+  legacy[0][0] = true;
+  const seq = validateDrumSequence({ ...defaultDrumSequence(), grid: legacy });
+  assert.equal(seq.grid.length, DRUM_LANE_COUNT);
+  assert.equal(seq.grid[0][0], true);
 });
 
 test('validateDrumEngineBoost defaults to +6 dB', () => {

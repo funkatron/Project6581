@@ -54,7 +54,7 @@ export function mountDrumPerformance({
     const bpm = drumBpm(readDrumSequenceFromDom($, seq), getMasterBpm());
     const step = running ? ' step ' + ((stepIndex % DRUM_STEP_COUNT) + 1) : '';
     status.textContent =
-      (running ? 'Drum preview · ' + bpm + ' BPM · ' + rateLabel + step : '16 steps · 6 lanes · stopped');
+      (running ? 'Drum preview · ' + bpm + ' BPM · ' + rateLabel + step : '16 steps · 4 lanes · stopped');
   }
 
   function drumTick() {

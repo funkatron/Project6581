@@ -14,6 +14,8 @@ import {
 
 const FILTER_MODES = ['lowpass', 'bandpass', 'highpass'];
 
+const BUS_TAB_LABELS = Object.freeze(['Kick', 'Snare', 'Hat']);
+
 function factoryPresetForLane(presets, lane) {
   return presets.find(preset => preset.id === lane.presetId) ?? null;
 }
@@ -39,6 +41,7 @@ export function mountDrumSlotVoicePanels({
   }
 
   const drumPresets = drumFactoryPresetOptions(factoryPresets);
+  let activeBusIndex = 0;
 
   function appendSlider(parent, labelText, value, min, max, step, formatFn) {
     const row = document.createElement('div');
@@ -80,6 +83,10 @@ export function mountDrumSlotVoicePanels({
     card.className = 'drum-bus-card panel';
     card.dataset.drumBus = String(bus.slot);
     card.dataset.drumWave = voice.wave;
+    card.id = 'drumBusPanel' + bus.slot;
+    card.setAttribute('role', 'tabpanel');
+    card.setAttribute('aria-labelledby', 'drumBusTab' + bus.slot);
+
     const title = document.createElement('h4');
     title.className = 'drum-bus-title';
     title.textContent = bus.title;
@@ -110,13 +117,12 @@ export function mountDrumSlotVoicePanels({
     const meta = document.createElement('p');
     meta.className = 'drum-bus-meta';
     meta.textContent = 'Synthesis · ' + drumBusWaveLabel(voice.wave);
+    card.append(title, presetLabel, meta);
     if (bus.laneId === 'ch') {
       const note = document.createElement('p');
       note.className = 'drum-bus-note';
-      note.textContent = 'Open hat, clap, and tom keep their lane preset when they use this bus.';
-      card.append(title, presetLabel, meta, note);
-    } else {
-      card.append(title, presetLabel, meta);
+      note.textContent = 'Open hat uses its lane preset when it wins the hat bus on a step (CH has priority if both are on).';
+      card.append(note);
     }
 
     presetSelect.addEventListener('change', () => {
@@ -179,7 +185,7 @@ export function mountDrumSlotVoicePanels({
     }
 
     const filterHeading = document.createElement('h5');
-    filterHeading.className = 'drum-bus-filter-heading';
+    filterHeading.className = 'drum-bus-filter-heading drum-bus-controls-full';
     filterHeading.textContent = 'Filter';
     grid.append(filterHeading);
 
@@ -198,7 +204,7 @@ export function mountDrumSlotVoicePanels({
     });
 
     const modeLabel = document.createElement('label');
-    modeLabel.className = 'drum-bus-filter-mode';
+    modeLabel.className = 'drum-bus-filter-mode drum-bus-controls-full';
     modeLabel.textContent = 'Mode ';
     const mode = document.createElement('select');
     for (const value of FILTER_MODES) {
@@ -214,7 +220,7 @@ export function mountDrumSlotVoicePanels({
     grid.append(modeLabel);
 
     const pitchHost = document.createElement('div');
-    pitchHost.className = 'drum-bus-pitch';
+    pitchHost.className = 'drum-bus-pitch drum-bus-controls-full';
     const showPitch = drumBusShowsPitchEnvelope(voice);
     setLayoutInert(pitchHost, !showPitch);
     if (showPitch) {
@@ -238,15 +244,46 @@ export function mountDrumSlotVoicePanels({
     return card;
   }
 
+  function syncTabSelection(tablist) {
+    const tabs = tablist.querySelectorAll('[role="tab"]');
+    tabs.forEach((tab, index) => {
+      const selected = index === activeBusIndex;
+      tab.setAttribute('aria-selected', String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+      tab.classList.toggle('is-active', selected);
+    });
+  }
+
+  function selectBus(index) {
+    if (!Number.isInteger(index) || index < 0 || index >= DRUM_BUS_LANES.length) return;
+    activeBusIndex = index;
+    render();
+  }
+
   function render() {
+    const tablist = $('drumBusTablist');
     const host = $('drumSlotVoices');
-    if (!host) return;
+    if (!host || !tablist) return;
+
+    tablist.replaceChildren();
+    DRUM_BUS_LANES.forEach((bus, index) => {
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'drum-bus-tab';
+      tab.id = 'drumBusTab' + bus.slot;
+      tab.setAttribute('role', 'tab');
+      tab.setAttribute('aria-controls', 'drumBusPanel' + bus.slot);
+      tab.textContent = BUS_TAB_LABELS[index] ?? bus.title;
+      tab.addEventListener('click', () => selectBus(index));
+      tablist.append(tab);
+    });
+    syncTabSelection(tablist);
+
     host.replaceChildren();
-    for (const bus of DRUM_BUS_LANES) {
-      host.append(renderBus(bus));
-    }
+    const activeBus = DRUM_BUS_LANES[activeBusIndex] ?? DRUM_BUS_LANES[0];
+    host.append(renderBus(activeBus));
   }
 
   render();
-  return {render, syncFromKit: render};
+  return {render, syncFromKit: render, selectBus};
 }

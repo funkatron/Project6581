@@ -28,7 +28,7 @@ test('independent lanes on one step all appear in hitsOnStep', () => {
     seq = toggleCell(seq, row, step);
   }
   const hits = hitsOnStep(seq, step);
-  assert.equal(hits.length, 6);
+  assert.equal(hits.length, DRUM_LANE_IDS.length);
   assert.deepEqual(hits.map((h) => h.lane).sort(), [...DRUM_LANE_IDS].sort());
 });
 

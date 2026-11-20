@@ -35,7 +35,7 @@ export function mountDrumLfoPanel({$, drumLfoState, lfoTargetNames, syncedRates,
     const group = document.createElement('fieldset');
     group.className = 'lfo-controls drum-lfo-block';
     const legend = document.createElement('legend');
-    legend.innerHTML = 'Drum LFO · SID 4 <button type="button" class="help-trigger" data-help="drum-lfo" aria-label="Help: drum LFO">?</button>';
+    legend.textContent = 'Drum LFO · SID 4';
     group.append(legend);
     const sliderGrid = document.createElement('div');
     sliderGrid.className = 'lfo-slider-grid';

@@ -1,15 +1,11 @@
 import {validatePitchEnvelope} from './pitch-envelope.js';
 
-/** Six-lane × sixteen-step drum grid. No DOM or WASM dependencies. */
+/** Four-lane × sixteen-step drum grid. No DOM or WASM dependencies. */
 
-export const DRUM_LANE_IDS = Object.freeze([
-  'kick',
-  'sn',
-  'ch',
-  'oh',
-  'clap',
-  'tom',
-]);
+export const DRUM_LANE_IDS = Object.freeze(['kick', 'sn', 'ch', 'oh']);
+
+/** Legacy presets and grooves used six rows (kick … tom). */
+export const LEGACY_DRUM_LANE_COUNT = 6;
 
 export const DRUM_STEP_COUNT = 16;
 export const DRUM_LANE_COUNT = DRUM_LANE_IDS.length;
@@ -21,8 +17,6 @@ const DEFAULT_LEVELS = Object.freeze({
   sn: 92,
   ch: 70,
   oh: 72,
-  clap: 75,
-  tom: 80,
 });
 
 export function defaultDrumKit() {
@@ -31,8 +25,6 @@ export function defaultDrumKit() {
     sn: { presetId: 'noise-snare', midiNote: 38, level: DEFAULT_LEVELS.sn },
     ch: { presetId: 'closed-noise-hat', midiNote: 42, level: DEFAULT_LEVELS.ch },
     oh: { presetId: 'open-noise-hat', midiNote: 46, level: DEFAULT_LEVELS.oh },
-    clap: { presetId: 'noise-clap', midiNote: 39, level: DEFAULT_LEVELS.clap },
-    tom: { presetId: 'low-tom', midiNote: 45, level: DEFAULT_LEVELS.tom },
   };
   return { name: 'Factory 6581', lanes };
 }
@@ -150,10 +142,7 @@ export function validateDrumSequence(sequence) {
     throw new RangeError('Drum local BPM must be 40–240');
   }
   const steps = DRUM_STEP_COUNT;
-  if (!Array.isArray(sequence.grid) || sequence.grid.length !== DRUM_LANE_COUNT) {
-    throw new RangeError('Drum grid must have ' + DRUM_LANE_COUNT + ' rows');
-  }
-  const grid = sequence.grid.map((row, rowIndex) => {
+  const grid = coalesceDrumGrid(sequence.grid).map((row, rowIndex) => {
     if (!Array.isArray(row) || row.length !== steps) {
       throw new RangeError('Drum row ' + (rowIndex + 1) + ' must have ' + steps + ' steps');
     }
@@ -167,7 +156,21 @@ export function validateDrumSequence(sequence) {
   return { enabled, rate, sync, localBpm, steps, grid };
 }
 
-/** Lane index 0–5 for row; step index 0–15. */
+/** Trim a legacy 6-row grid to the four shipped lanes (drops clap/tom rows). */
+export function coalesceDrumGrid(grid) {
+  if (!Array.isArray(grid)) {
+    throw new TypeError('Drum grid must be an array');
+  }
+  if (grid.length === DRUM_LANE_COUNT) {
+    return grid;
+  }
+  if (grid.length === LEGACY_DRUM_LANE_COUNT) {
+    return grid.slice(0, DRUM_LANE_COUNT);
+  }
+  throw new RangeError('Drum grid must have ' + DRUM_LANE_COUNT + ' or legacy ' + LEGACY_DRUM_LANE_COUNT + ' rows');
+}
+
+/** Lane index 0–3 for row; step index 0–15. */
 export function hitsOnStep(sequence, stepIndex) {
   const index = stepIndex % DRUM_STEP_COUNT;
   const hits = [];

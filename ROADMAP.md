@@ -90,7 +90,7 @@ Finish the **active step** (code, doc, or device verification) in a single focus
 | Bass | Tight pulse, PWM bass, filtered saw, hollow square, octave pulse and soft triangle |
 | Keys | Pluck, bell, chord stab, organ, slow pad and shimmering PWM keys |
 | Leads | Bright pulse, nasal PWM, smooth legato, vibrato, octave lead and filtered saw |
-| Drums | Kick, snare, closed hat, open hat, clap and tom |
+| Drums | Kick, snare, closed hat, open hat (four sequencer lanes) |
 
 - [x] HVSC reference log for [Turrican](https://www.lemon64.com/game/turrican), [Parallax](https://www.slayradio.org/sidinfo/MUSICIANS%2FG%2FGalway_Martin%2FParallax.sid), and [Commando](https://www.slayradio.org/sidinfo/MUSICIANS%2FH%2FHubbard_Rob%2FCommando.sid): composer, subtune, time range, traits, factory mapping — [c64-soundtrack-references.md](docs/c64-soundtrack-references.md); audition phrases in [factory-audition-matrix.js](src/factory-audition-matrix.js).
 - [x] Listen for short, articulate bass and percussion, slow modulation and evolving keys, and clear pulse leads — owner qualitative pass on iPad Safari (2026-11-16; no per-preset adjust log). Register-trace tuning remains optional for future HVSC-close work.

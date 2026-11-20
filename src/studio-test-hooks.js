@@ -11,7 +11,7 @@ export function countDrumSourcesInTrace(snapshot,{type='note-on',prefix='drum:'}
 }
 
 const DRUM_LANE_INDEX={
- kick:0,sn:1,ch:2,oh:3,clap:4,tom:5,
+ kick:0,sn:1,ch:2,oh:3,
 };
 
 export function setDrumGridCell(sequence,laneId,stepIndex,on){
