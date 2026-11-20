@@ -47,6 +47,18 @@ export function meterDisplayWidth(level) {
  return meterDisplayHeight(level);
 }
 
+/** Split a mono chip peak (post-pan bus telemetry) into L/R for meter display. */
+export function chipPanStereoPeaks(monoPeak, panPercent) {
+ const peak = Math.max(0, Number(monoPeak) || 0);
+ const clamped = Math.max(-1, Math.min(1, (Number(panPercent) || 0) / 100));
+ const angle = (clamped + 1) * 0.25 * Math.PI;
+ const leftGain = Math.cos(angle);
+ const rightGain = Math.sin(angle);
+ const dominant = Math.max(leftGain, rightGain, 1e-6);
+ const scale = peak / dominant;
+ return {left: scale * leftGain, right: scale * rightGain};
+}
+
 export function meterDisplayMasterWidth(level) {
  return `${(meterDisplayMasterFraction(level) * 100).toFixed(1)}%`;
 }

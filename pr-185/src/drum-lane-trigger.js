@@ -28,14 +28,28 @@ export function drumLaneTimbre(factorySettings, lane) {
     Object.assign(filter, lane.filter);
   }
   const levelGain = level / 100;
-  if (levelGain < 1 && Number.isFinite(voice.sustain)) {
+  if (levelGain < 1 && Number.isFinite(voice.sustain) && voice.sustain > 0) {
     voice.sustain = Math.max(0, Math.min(1, voice.sustain * levelGain));
   }
-  if (levelGain < 1 && voice.wave === 'noise' && Number.isFinite(voice.decay)) {
-    voice.decay = Math.max(0.005, voice.decay * (0.65 + 0.35 * levelGain));
+  if (levelGain < 1 && Number.isFinite(voice.decay)) {
+    voice.decay = Math.max(0.005, voice.decay * (0.5 + 0.5 * levelGain));
   }
   filter.volume = Math.round((Number(filter.volume) || 0) * levelGain);
   return {voice, filter};
+}
+
+/** 0–1 gain from lane level (0 = silent). */
+export function drumLaneLevelGain(lane) {
+  const level = Math.max(0, Math.min(100, Math.round(Number(lane?.level) || 0)));
+  return level / 100;
+}
+
+/** Shared SID filter volume for one lane hit (engine bus × lane level). */
+export function drumBusVolumeForLane(engineFilter, lane) {
+  const gain = drumLaneLevelGain(lane);
+  const busVol = Number(engineFilter?.volume);
+  const base = Number.isFinite(busVol) ? busVol : 82;
+  return Math.round(Math.max(0, Math.min(100, base * gain)));
 }
 
 /** Approximate one-shot length in ms for scheduling noteOff (seconds-based ADSR). */

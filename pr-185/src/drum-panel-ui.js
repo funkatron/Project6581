@@ -1,4 +1,4 @@
-import {bindHelpGesture} from './ui-help-gesture.js?v=0.18.12+20261120T183917605Z';
+import {bindHelpGesture} from './ui-help-gesture.js?v=0.19.3+20261120T192952079Z';
 import {
   DRUM_LANE_COUNT,
   DRUM_LANE_IDS,
@@ -20,6 +20,21 @@ const LANE_HELP = {
   ch: 'drum-lane-ch',
   oh: 'drum-lane-oh',
 };
+
+/** SID 4 voice slot colors (mixer strip / rail). */
+const LANE_VOICE_RAIL = {
+  kick: ['drum-lane-rail--v1'],
+  sn: ['drum-lane-rail--v2'],
+  ch: ['drum-lane-rail--hat', 'drum-lane-rail--hat-first'],
+  oh: ['drum-lane-rail--hat', 'drum-lane-rail--hat-last'],
+};
+
+function syncLaneLevelReadout(head, levelInput, readout) {
+  const level = Number(levelInput.value);
+  if (readout) readout.textContent = String(level);
+  head.classList.toggle('is-muted', level <= 0);
+  levelInput.setAttribute('aria-valuenow', String(level));
+}
 
 /**
  * 16×4 drum grid, lane level sliders, playhead column highlight.
@@ -129,7 +144,18 @@ export function mountDrumPanel({
 
       const head = document.createElement('div');
       head.className = 'drum-lane-head';
+      if (laneId === 'ch') head.classList.add('drum-lane-head--hat-first');
+      if (laneId === 'oh') head.classList.add('drum-lane-head--hat-last');
       head.setAttribute('role', 'rowheader');
+
+      const rail = document.createElement('span');
+      rail.className = ['drum-lane-rail', ...(LANE_VOICE_RAIL[laneId] ?? [])].join(' ');
+      rail.setAttribute('aria-hidden', 'true');
+      let railTitle = 'SID voice 1';
+      if (laneId === 'sn') railTitle = 'SID voice 2';
+      if (laneId === 'ch' || laneId === 'oh') railTitle = 'SID voice 3 (hat)';
+      rail.title = railTitle;
+
       const title = document.createElement('span');
       title.className = 'drum-lane-label';
       title.textContent = LANE_LABEL[laneId] ?? laneId;
@@ -140,6 +166,13 @@ export function mountDrumPanel({
         (LANE_LABEL[laneId] ?? laneId) + ' lane — long-press for voice help',
       );
       bindHelpGesture(title, {helpId: LANE_HELP[laneId] ?? 'drum-voice-allocation', $: help$});
+
+      const mixer = document.createElement('div');
+      mixer.className = 'drum-lane-mixer';
+
+      const levelStack = document.createElement('span');
+      levelStack.className = 'slider-stack drum-lane-level-stack';
+
       const level = document.createElement('input');
       level.type = 'range';
       level.className = 'drum-lane-level';
@@ -148,17 +181,29 @@ export function mountDrumPanel({
       level.step = '1';
       level.value = String(kit.lanes[laneId]?.level ?? 80);
       level.setAttribute('aria-label', (LANE_LABEL[laneId] ?? laneId) + ' level');
+
+      const readout = document.createElement('output');
+      readout.className = 'drum-lane-level-readout';
+      readout.setAttribute('for', level.id || '');
+      readout.setAttribute('aria-hidden', 'true');
+
       level.addEventListener('input', () => {
         const kitNow = getDrumKit();
+        const nextLevel = Number(level.value);
         const next = {
           ...kitNow,
-          lanes: {...kitNow.lanes, [laneId]: {...kitNow.lanes[laneId], level: Number(level.value)}},
+          lanes: {...kitNow.lanes, [laneId]: {...kitNow.lanes[laneId], level: nextLevel}},
         };
         setDrumKit(next);
+        syncLaneLevelReadout(head, level, readout);
         onPatternChange?.();
       });
       bindHelpGesture(level, {helpId: 'drum-lane-level', $: help$});
-      head.append(title, level);
+
+      levelStack.append(level);
+      mixer.append(levelStack, readout);
+      head.append(rail, title, mixer);
+      syncLaneLevelReadout(head, level, readout);
       row.append(head);
 
       for (let step = 0; step < DRUM_STEP_COUNT; step++) {
