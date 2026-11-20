@@ -56,3 +56,22 @@ test('malformed worklet envelope points cannot replace active modulation',()=>{
  h.render(2400);
  assert.deepEqual(h.writes.slice(-2),[[0,134],[1,5]]);
 });
+
+test('audio-clock LFO does not stomp SID 4 filter (drum lane timbres own chip 3)',()=>{
+ const h=harness();
+ const engines=[0,1,2,3].map(()=>({
+  filter:{cutoff:6200,resonance:12,volume:70,mode:'highpass'},
+ }));
+ h.send({type:'modulation-config',bpm:120,engines,lfos:[]});
+ h.send({type:'writes',writes:[[0x75,1],[0x76,2],[0x77,3],[0x78,4]]});
+ h.render(0);
+ const drumFilterRegs=new Set([0x75,0x76,0x77,0x78]);
+ const drumWrites=h.writes.filter(([reg])=>drumFilterRegs.has(reg));
+ assert.equal(
+  drumWrites.length,
+  4,
+  'SID 4 filter should only get explicit drum lane writes, not LFO engine-card stomp',
+ );
+ assert.deepEqual(drumWrites,[[0x75,1],[0x76,2],[0x77,3],[0x78,4]]);
+ assert.ok(h.writes.some(([reg])=>reg===0x15),'melodic chips still receive LFO filter sync');
+});
