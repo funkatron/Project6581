@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   drumBpm,
+  drumBusVolumeForLane,
+  drumLaneLevelGain,
   drumLaneTimbre,
   drumOwnerKey,
   drumReleaseMilliseconds,
@@ -42,6 +44,14 @@ test('drumBpm respects sync and local tempo', () => {
   const seq = {sync: true, localBpm: 90};
   assert.equal(drumBpm(seq, 120), 120);
   assert.equal(drumBpm({...seq, sync: false}, 120), 90);
+});
+
+test('drumBusVolumeForLane scales engine bus volume by lane level', () => {
+  const lane = defaultDrumKit().lanes.kick;
+  assert.equal(drumLaneLevelGain(lane), 1);
+  assert.equal(drumBusVolumeForLane({volume: 80}, lane), 80);
+  assert.equal(drumBusVolumeForLane({volume: 80}, {...lane, level: 50}), 40);
+  assert.equal(drumBusVolumeForLane({volume: 80}, {...lane, level: 0}), 0);
 });
 
 test('drumReleaseMilliseconds is positive for factory kick', () => {
