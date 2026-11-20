@@ -315,9 +315,11 @@ function triggerDrumLane(laneId,{drumSlot,skipFilter=false}={}){
  const timbre=drumTimbreForLane(laneId);
  if(!timbre)return;
  restoreSidOutput();
- const {voice,filter}=timbre;
+ const {voice}=timbre;
  const ownerKey=drumOwnerKey(laneId);
- const note=lane.midiNote;
+ const laneRow=validateDrumKit(drumKit).lanes[laneId];
+ if(!laneRow)return;
+ const note=laneRow.midiNote;
  const gate=canDispatchNote({
   blocked:sidMusicalInputBlocked(),
   hasController:Boolean(sidController),
