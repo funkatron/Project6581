@@ -22,11 +22,17 @@ export function lfoValue(wave,phase,seed=0){
  throw new RangeError('Unknown LFO waveform');
 }
 // Add all modulation contributions before clamping. Never mutate base slider values.
+/** Melodic LFO scopes (1–3 or all) never route to the drum chip (index 3). */
+const DRUM_CHIP_INDEX=3;
 export function lfosForEngine(lfos,chipIndex){
  return lfos.filter(lfo=>{
   const scope=lfo.engines??'all';
+  if(chipIndex===DRUM_CHIP_INDEX){
+   if(scope==='4')return true;
+   return false;
+  }
   if(scope==='all')return true;
-  if(scope==='4')return chipIndex===3;
+  if(scope==='4')return false;
   return Number(scope)===chipIndex+1;
  });
 }

@@ -62,7 +62,11 @@ Thresholds live in **fixture metadata** (expected profile per reference groove),
 
 ## 4. Test hooks
 
-`index.html?testHooks=1` → `globalThis.__project6581Test` (see `src/studio-test-hooks.js`).
+`index.html?testHooks=1` → `globalThis.__project6581Test` (see `src/studio-test-hooks.js`):
+
+- `loadDrumSequence` / `getDrumSequence` / `setDrumCell(lane, step, on, {audition})`
+- `drumPreview`, `auditionDrumLane`, `capturePcmWav(ms)` (in-browser WAV bytes)
+- `exportStudioTrace`, `listDrumNoteOns`, `setMasterBpm`, `panic`
 
 ## 5–6. Capture and analysis
 
