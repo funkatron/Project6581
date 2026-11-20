@@ -28,13 +28,13 @@ test('preset settings include drum pattern and kit defaults', () => {
   assert.equal(validated.performance.drumSequence.grid[0][0], true);
 });
 
-test('six simultaneous lane hits use distinct drum owners', () => {
+test('four simultaneous lane hits use distinct drum owners', () => {
   const seq = validateDrumSequence(defaultDrumSequence());
   seq.grid.forEach((row) => {
     row[0] = true;
   });
   const hits = hitsOnStep(seq, 0);
-  assert.equal(hits.length, 6);
+  assert.equal(hits.length, 4);
   const owners = hits.map((h) => drumOwnerKey(h.lane));
-  assert.equal(new Set(owners).size, 6);
+  assert.equal(new Set(owners).size, 4);
 });

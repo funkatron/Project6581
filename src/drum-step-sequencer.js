@@ -1,13 +1,11 @@
-/** Six-lane × sixteen-step drum grid. No DOM or WASM dependencies. */
+import {validatePitchEnvelope} from './pitch-envelope.js';
 
-export const DRUM_LANE_IDS = Object.freeze([
-  'kick',
-  'sn',
-  'ch',
-  'oh',
-  'clap',
-  'tom',
-]);
+/** Four-lane × sixteen-step drum grid. No DOM or WASM dependencies. */
+
+export const DRUM_LANE_IDS = Object.freeze(['kick', 'sn', 'ch', 'oh']);
+
+/** Legacy presets and grooves used six rows (kick … tom). */
+export const LEGACY_DRUM_LANE_COUNT = 6;
 
 export const DRUM_STEP_COUNT = 16;
 export const DRUM_LANE_COUNT = DRUM_LANE_IDS.length;
@@ -19,8 +17,6 @@ const DEFAULT_LEVELS = Object.freeze({
   sn: 92,
   ch: 70,
   oh: 72,
-  clap: 75,
-  tom: 80,
 });
 
 export function defaultDrumKit() {
@@ -29,8 +25,6 @@ export function defaultDrumKit() {
     sn: { presetId: 'noise-snare', midiNote: 38, level: DEFAULT_LEVELS.sn },
     ch: { presetId: 'closed-noise-hat', midiNote: 42, level: DEFAULT_LEVELS.ch },
     oh: { presetId: 'open-noise-hat', midiNote: 46, level: DEFAULT_LEVELS.oh },
-    clap: { presetId: 'noise-clap', midiNote: 39, level: DEFAULT_LEVELS.clap },
-    tom: { presetId: 'low-tom', midiNote: 45, level: DEFAULT_LEVELS.tom },
   };
   return { name: 'Factory 6581', lanes };
 }
@@ -62,7 +56,55 @@ function validateLane(lane, id) {
   if (!Number.isInteger(level) || level < 0 || level > 100) {
     throw new RangeError('Drum lane ' + id + ' level must be 0–100');
   }
-  return { presetId: lane.presetId.trim(), midiNote: lane.midiNote, level };
+  const out = {presetId: lane.presetId.trim(), midiNote: lane.midiNote, level};
+  if (lane.voice !== undefined) out.voice = validateLaneVoicePatch(lane.voice, id);
+  if (lane.filter !== undefined) out.filter = validateLaneFilterPatch(lane.filter, id);
+  return out;
+}
+
+function validateLaneVoicePatch(patch, id) {
+  if (!patch || typeof patch !== 'object' || Array.isArray(patch)) {
+    throw new TypeError('Drum lane ' + id + ' voice patch must be an object');
+  }
+  const out = {};
+  for (const key of ['attack', 'decay', 'sustain', 'release', 'pulse', 'pwmDepth', 'pwmRate']) {
+    if (patch[key] === undefined) continue;
+    const value = Number(patch[key]);
+    if (!Number.isFinite(value)) throw new TypeError('Drum lane ' + id + ' voice.' + key + ' must be a number');
+    out[key] = value;
+  }
+  if (patch.pitchEnvelope !== undefined) {
+    out.pitchEnvelope = validatePitchEnvelope(patch.pitchEnvelope);
+  }
+  return out;
+}
+
+function validateLaneFilterPatch(patch, id) {
+  if (!patch || typeof patch !== 'object' || Array.isArray(patch)) {
+    throw new TypeError('Drum lane ' + id + ' filter patch must be an object');
+  }
+  const out = {};
+  if (patch.cutoff !== undefined) {
+    const cutoff = Number(patch.cutoff);
+    if (!Number.isFinite(cutoff) || cutoff < 50 || cutoff > 10000) {
+      throw new RangeError('Drum lane ' + id + ' filter.cutoff must be 50–10000');
+    }
+    out.cutoff = Math.round(cutoff);
+  }
+  if (patch.resonance !== undefined) {
+    const resonance = Number(patch.resonance);
+    if (!Number.isFinite(resonance) || resonance < 0 || resonance > 100) {
+      throw new RangeError('Drum lane ' + id + ' filter.resonance must be 0–100');
+    }
+    out.resonance = Math.round(resonance);
+  }
+  if (patch.mode !== undefined) {
+    if (!['lowpass', 'bandpass', 'highpass'].includes(patch.mode)) {
+      throw new RangeError('Drum lane ' + id + ' filter.mode is invalid');
+    }
+    out.mode = patch.mode;
+  }
+  return out;
 }
 
 export function validateDrumKit(kit) {
@@ -100,10 +142,7 @@ export function validateDrumSequence(sequence) {
     throw new RangeError('Drum local BPM must be 40–240');
   }
   const steps = DRUM_STEP_COUNT;
-  if (!Array.isArray(sequence.grid) || sequence.grid.length !== DRUM_LANE_COUNT) {
-    throw new RangeError('Drum grid must have ' + DRUM_LANE_COUNT + ' rows');
-  }
-  const grid = sequence.grid.map((row, rowIndex) => {
+  const grid = coalesceDrumGrid(sequence.grid).map((row, rowIndex) => {
     if (!Array.isArray(row) || row.length !== steps) {
       throw new RangeError('Drum row ' + (rowIndex + 1) + ' must have ' + steps + ' steps');
     }
@@ -117,7 +156,21 @@ export function validateDrumSequence(sequence) {
   return { enabled, rate, sync, localBpm, steps, grid };
 }
 
-/** Lane index 0–5 for row; step index 0–15. */
+/** Trim a legacy 6-row grid to the four shipped lanes (drops clap/tom rows). */
+export function coalesceDrumGrid(grid) {
+  if (!Array.isArray(grid)) {
+    throw new TypeError('Drum grid must be an array');
+  }
+  if (grid.length === DRUM_LANE_COUNT) {
+    return grid;
+  }
+  if (grid.length === LEGACY_DRUM_LANE_COUNT) {
+    return grid.slice(0, DRUM_LANE_COUNT);
+  }
+  throw new RangeError('Drum grid must have ' + DRUM_LANE_COUNT + ' or legacy ' + LEGACY_DRUM_LANE_COUNT + ' rows');
+}
+
+/** Lane index 0–3 for row; step index 0–15. */
 export function hitsOnStep(sequence, stepIndex) {
   const index = stepIndex % DRUM_STEP_COUNT;
   const hits = [];

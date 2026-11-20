@@ -43,7 +43,7 @@
 | Item | Decision |
 | --- | --- |
 | **Steps** | **16** fixed columns (v1); optional 8/16 *length* like Game Arp in v1.1 if needed |
-| **Rows** | **6 lanes** mapped to factory **Drums** category IDs (see §4) |
+| **Rows** | **4 lanes** (kick, sn, CH, OH) mapped to factory **Drums** kit IDs (clap/tom remain factory presets only) |
 | **Cell** | Boolean **hit** (on/off); **velocity** later slice |
 | **Sound** | Each row bound to a **kit lane** on **dedicated SID 4** (index `3`); snapshot voice+filter at hit time (§6a–6b) |
 | **Drum engine** | **Fourth reSIDfp chip** — not in keyboard / arp / game routing; melodic triple SID unchanged |
@@ -65,7 +65,7 @@ Tab bar becomes: **SYNTH · ARP / SEQ · DRUM SEQ · LFOs** (Diagnostics unchang
 │  Rate · Sync master BPM · ▶ Preview · ■ Stop                 │
 │  ┌────┬──┬──┬──┬──…─┬──┐  playhead on active column         │
 │  │Kick│■ │  │■ │    │  │                                   │
-│  │Sn  │  │■ │  │    │  │  6 lanes × 16 columns             │
+│  │Sn  │  │■ │  │    │  │  4 lanes × 16 columns             │
 │  …     row header: label + **Level** (0–100) per lane       │
 │  └────┴──┴──┴──┴──…─┴──┘                                    │
 │  No per-track pan on this tab — stereo via SID 4 card only  │
@@ -245,7 +245,7 @@ Same `triggerDrumLane` as the sequencer — one preview hit, no clock advance.
 
 | Control | Where | Use |
 | --- | --- | --- |
-| **Lane Level** | DRUM SEQ row header (all 6 lanes) | Per-hit voice volume (authentic register) |
+| **Lane Level** | DRUM SEQ row header (four lanes) | Per-hit voice volume (authentic register) |
 | **SID 4 card** | SYNTH tab | Model, voice, filter, **pan**, pitch envelope, enable |
 | **Drum LFO** | DRUM SEQ tab | SID 4 filter / volume / ADSR / pulse (not per-lane) |
 

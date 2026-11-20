@@ -31,16 +31,12 @@ test('open hat is dropped when closed hat is on the same step',()=>{
  assert.equal(resolved.find(h=>h.lane==='ch')?.slot,DRUM_SLOT.hat);
 });
 
-test('clap and tom share remaining slots; extra flex is omitted',()=>{
- const full=resolveDrumHitsOnStep([
-  hit('kick',0),hit('sn',1),hit('ch',2),hit('clap',4),hit('tom',5),
+test('full four-lane step resolves to at most three voices',()=>{
+ const resolved=resolveDrumHitsOnStep([
+  hit('kick',0),hit('sn',1),hit('ch',2),hit('oh',3),
  ]);
- assert.equal(full.length,3);
- assert.ok(full.every(h=>['kick','sn','ch'].includes(h.lane)));
-
- const room=resolveDrumHitsOnStep([hit('kick',0),hit('sn',1),hit('clap',4),hit('tom',5)]);
- assert.deepEqual(room.map(h=>h.lane).sort(),['clap','kick','sn']);
- assert.equal(room.find(h=>h.lane==='clap')?.slot,DRUM_SLOT.hat);
+ assert.equal(resolved.length,3);
+ assert.deepEqual(resolved.map(h=>h.lane).sort(),['ch','kick','sn']);
 });
 
 test('four-on-floor step uses policy on sequence grid',()=>{
@@ -53,4 +49,9 @@ test('four-on-floor step uses policy on sequence grid',()=>{
  const resolved=resolveDrumHitsOnStep(raw);
  assert.deepEqual(raw.map(h=>h.lane).sort(),['ch','kick','oh']);
  assert.deepEqual(resolved.map(h=>h.lane).sort(),['ch','kick']);
+});
+
+test('defaultDrumSlotForLane maps hats to hat bus',()=>{
+ assert.equal(defaultDrumSlotForLane('ch'),DRUM_SLOT.hat);
+ assert.equal(defaultDrumSlotForLane('oh'),DRUM_SLOT.hat);
 });

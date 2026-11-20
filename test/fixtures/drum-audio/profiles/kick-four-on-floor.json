@@ -4,8 +4,8 @@
   "rate": 4,
   "bars": 1,
   "skipFirstBar": true,
-  "minActiveSteps": 3,
-  "maxActiveSteps": 11,
-  "minRms": 0.0008,
+  "minActiveSteps": 4,
+  "maxActiveSteps": 8,
+  "minRms": 0.008,
   "maxHighToLowRatio": 0.65
 }

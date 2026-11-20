@@ -56,3 +56,22 @@ test('malformed worklet envelope points cannot replace active modulation',()=>{
  h.render(2400);
  assert.deepEqual(h.writes.slice(-2),[[0,134],[1,5]]);
 });
+
+test('audio-clock filter stomp skips drum chip filter registers',()=>{
+ const h=harness();
+ h.send({
+  type:'modulation-config',
+  bpm:120,
+  engines:Array.from({length:4},(_chip,i)=>({
+   filter:{volume:80,cutoff:8000,resonance:20,mode:i===3?'highpass':'lowpass'},
+   voice:{wave:'square'},
+  })),
+  lfos:[],
+ });
+ h.render(0);
+ const drumFilterRegs=new Set([0x75,0x76,0x77,0x78]);
+ const drumWrites=h.writes.filter(([reg])=>drumFilterRegs.has(reg));
+ assert.equal(drumWrites.length,0);
+ const melodic=h.writes.filter(([reg])=>reg>=0x15&&reg<=0x18);
+ assert.ok(melodic.length>0);
+});

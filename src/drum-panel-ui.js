@@ -10,8 +10,6 @@ const LANE_LABEL = {
   sn: 'Sn',
   ch: 'CH',
   oh: 'OH',
-  clap: 'Clap',
-  tom: 'Tom',
 };
 
 const LANE_HELP = {
@@ -19,12 +17,10 @@ const LANE_HELP = {
   sn: 'drum-lane-sn',
   ch: 'drum-lane-ch',
   oh: 'drum-lane-oh',
-  clap: 'drum-lane-clap',
-  tom: 'drum-lane-tom',
 };
 
 /**
- * 16×6 drum grid, lane level sliders, playhead column highlight.
+ * 16×4 drum grid, lane level sliders, playhead column highlight.
  */
 export function mountDrumPanel({
   $,

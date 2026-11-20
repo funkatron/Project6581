@@ -25,7 +25,7 @@ function appendSliderRow(parent, labelText, input, formatValue) {
   return {row, output};
 }
 
-export function mountDrumLfoPanel({$, drumLfoState, lfoTargetNames, syncedRates, onChange, bindHelp} = {}) {
+export function mountDrumLfoPanel({$, drumLfoState, lfoTargetNames, syncedRates, getLfoTargets, onChange, bindHelp} = {}) {
   if (!$ || !drumLfoState) throw new TypeError('mountDrumLfoPanel requires $ and drumLfoState');
 
   function renderDrumLfo() {
@@ -35,7 +35,7 @@ export function mountDrumLfoPanel({$, drumLfoState, lfoTargetNames, syncedRates,
     const group = document.createElement('fieldset');
     group.className = 'lfo-controls drum-lfo-block';
     const legend = document.createElement('legend');
-    legend.innerHTML = 'Drum LFO · SID 4 <button type="button" class="help-trigger" data-help="drum-lfo" aria-label="Help: drum LFO">?</button>';
+    legend.textContent = 'Drum LFO · SID 4';
     group.append(legend);
     const sliderGrid = document.createElement('div');
     sliderGrid.className = 'lfo-slider-grid';
@@ -58,9 +58,10 @@ export function mountDrumLfoPanel({$, drumLfoState, lfoTargetNames, syncedRates,
         input.type = 'checkbox';
         input.checked = Boolean(lfo[prop]);
       } else if (isSelect) {
+        const lfoTargets=getLfoTargets?.()??DRUM_LFO_TARGET_ORDER;
         const choices =
           prop === 'wave' ? LFO_WAVES :
-          prop === 'target' ? DRUM_LFO_TARGET_ORDER :
+          prop === 'target' ? lfoTargets :
           syncedRates;
         choices.forEach(value => {
           const option = document.createElement('option');
@@ -71,6 +72,7 @@ export function mountDrumLfoPanel({$, drumLfoState, lfoTargetNames, syncedRates,
             value;
           input.append(option);
         });
+        if(prop==='target'&&!lfoTargets.includes(lfo.target))lfo.target=lfoTargets[0];
         input.value = String(prop === 'rate' ? lfo.syncDivision : lfo[prop]);
       } else {
         input.type = 'range';
