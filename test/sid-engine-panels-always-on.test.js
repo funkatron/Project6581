@@ -13,6 +13,11 @@ test('engine panels render melodic cards on SYNTH and SID 4 on DRUM SEQ',()=>{
  assert.doesNotMatch(panels,/sidEngineAdd|engine\.enabled|sid-engine-remove/);
 });
 
+test('SID 4 drum card exposes shared bus filter controls',()=>{
+ assert.match(panels,/Bus filter/);
+ assert.doesNotMatch(panels,/if\(!isDrumChip\)card\.querySelectorAll\('input\[data-filter\]'\)/);
+});
+
 test('note routing labels distinguish shared pool and per-SID layer',()=>{
  assert.match(html,/All \(shared voices\)/);
  assert.match(html,/Layer \(per SID\)/);

@@ -85,29 +85,34 @@ export function mountSidEnginePanels({
   controlGrid.className='sid-engine-control-grid';
   const pan=appendParamRow(controlGrid,'Pan',{value:engine.pan,min:-100,max:100,step:1,prop:'pan',formatFn:formatPanBrief});
   const isDrumChip=index===DRUM_ENGINE_INDEX;
-  if(!isDrumChip){
-   const filterFields=[
-    ['volume','Volume',0,100,formatPercent],
-    ['cutoff','Cutoff',50,10000,formatHzBrief],
-    ['resonance','Resonance',0,100,formatPercent]
-   ];
-   for(const [key,label,min,max,formatFn] of filterFields){
-    appendParamRow(controlGrid,label,{value:engine.filter[key],min,max,step:1,filter:key,formatFn:value=>formatFn(value)});
-   }
-   const modeLabel=document.createElement('label');
-   modeLabel.className='control-span-full filter-mode';
-   modeLabel.textContent='Filter ';
-   const mode=document.createElement('select');
-   mode.dataset.filter='mode';
-   for(const value of FILTER_MODES){
-    const option=document.createElement('option');
-    option.value=value;option.textContent=value==='lowpass'?'Low-pass':value==='bandpass'?'Band-pass':'High-pass';
-    mode.append(option);
-   }
-   mode.value=engine.filter.mode;
-   modeLabel.append(mode);
-   controlGrid.append(modeLabel);
+  if(isDrumChip){
+   const busHeading=document.createElement('h4');
+   busHeading.className='control-span-full sid-engine-voice-heading';
+   busHeading.textContent='Bus filter';
+   controlGrid.append(busHeading);
   }
+  const filterFields=[
+   ['volume','Volume',0,100,formatPercent],
+   ['cutoff','Cutoff',50,10000,formatHzBrief],
+   ['resonance','Resonance',0,100,formatPercent]
+  ];
+  for(const [key,label,min,max,formatFn] of filterFields){
+   const rowLabel=isDrumChip&&key==='cutoff'?'Bus cutoff':label;
+   appendParamRow(controlGrid,rowLabel,{value:engine.filter[key],min,max,step:1,filter:key,formatFn:value=>formatFn(value)});
+  }
+  const modeLabel=document.createElement('label');
+  modeLabel.className='control-span-full filter-mode';
+  modeLabel.textContent=isDrumChip?'Bus filter mode ':'Filter ';
+  const mode=document.createElement('select');
+  mode.dataset.filter='mode';
+  for(const value of FILTER_MODES){
+   const option=document.createElement('option');
+   option.value=value;option.textContent=value==='lowpass'?'Low-pass':value==='bandpass'?'Band-pass':'High-pass';
+   mode.append(option);
+  }
+  mode.value=engine.filter.mode;
+  modeLabel.append(mode);
+  controlGrid.append(modeLabel);
   if(isDrumChip){
    const boostLabel=document.createElement('label');
    boostLabel.className='control-span-full';
@@ -145,7 +150,7 @@ export function mountSidEnginePanels({
    });
    const drumNote=document.createElement('p');
    drumNote.className='drum-chip-note control-span-full';
-   drumNote.textContent='One SID 4 filter (cutoff, mode) on this card for all drum voices. Per-bus voice and pitch settings are below the grid.';
+   drumNote.textContent='One analog filter for all drum lanes. Per-lane voice and pitch settings are below the grid.';
    controlGrid.append(drumNote);
   }else{
    const voiceHeading=document.createElement('h4');
@@ -212,7 +217,7 @@ export function mountSidEnginePanels({
    });
   }
   card.append(header,controlGrid);
-  if(!isDrumChip)card.querySelectorAll('input[data-filter]').forEach(inp=>inp.addEventListener('input',()=>{
+  card.querySelectorAll('input[data-filter]').forEach(inp=>inp.addEventListener('input',()=>{
    const key=inp.dataset.filter;
    engine.filter[key]=Number(inp.value);
    const out=inp.closest('.param-row')?.querySelector('.param-values output');
@@ -223,7 +228,7 @@ export function mountSidEnginePanels({
    }
    onEngineChange?.(index);
   }));
-  if(!isDrumChip)card.querySelectorAll('select[data-filter]').forEach(inp=>inp.addEventListener('change',()=>{
+  card.querySelectorAll('select[data-filter]').forEach(inp=>inp.addEventListener('change',()=>{
    engine.filter.mode=inp.value;
    onEngineChange?.(index);
   }));
