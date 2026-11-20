@@ -1,4 +1,4 @@
-import {openHelp} from './ui-help-dialog.js?v=0.18.12+20261120T183708550Z';
+import {openHelp} from './ui-help-dialog.js?v=0.18.12+20261120T183917605Z';
 
 export function bindHelpGesture(element,{helpId,onTap=null,longMs=550,moveTolerance=10,$=id=>document.getElementById(id)}={}){
  if(!element||!helpId)return;
