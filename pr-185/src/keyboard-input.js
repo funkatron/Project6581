@@ -1,6 +1,6 @@
-import {needsAudioResume} from './sid-note-gate.js?v=0.18.11+20261120T183211571Z';
-import {selectRoot} from './arp-composition.js?v=0.18.11+20261120T183211571Z';
-import {countHeldResolvingTo} from './western-scales.js?v=0.18.11+20261120T183211571Z';
+import {needsAudioResume} from './sid-note-gate.js?v=0.18.12+20261120T183708550Z';
+import {selectRoot} from './arp-composition.js?v=0.18.12+20261120T183708550Z';
+import {countHeldResolvingTo} from './western-scales.js?v=0.18.12+20261120T183708550Z';
 
 // Physical keys and the on-screen keyboard. The studio still owns play(), stop(),
 // and the arp clock; this module asks those to run.

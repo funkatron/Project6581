@@ -1,6 +1,6 @@
-import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=0.18.11+20261120T183211571Z';
-import {setLayoutInert} from './ui-layout.js?v=0.18.11+20261120T183211571Z';
-import {drumLaneTimbre} from './drum-lane-trigger.js?v=0.18.11+20261120T183211571Z';
+import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=0.18.12+20261120T183708550Z';
+import {setLayoutInert} from './ui-layout.js?v=0.18.12+20261120T183708550Z';
+import {drumLaneTimbre} from './drum-lane-trigger.js?v=0.18.12+20261120T183708550Z';
 import {
   DRUM_BUS_LANES,
   DRUM_VOICE_ADSR_FIELDS,
@@ -9,7 +9,7 @@ import {
   drumBusShowsPulse,
   drumBusWaveLabel,
   drumFactoryPresetOptions,
-} from './drum-voice-ui-policy.js?v=0.18.11+20261120T183211571Z';
+} from './drum-voice-ui-policy.js?v=0.18.12+20261120T183708550Z';
 
 const BUS_TAB_LABELS = Object.freeze(['Kick', 'Snare', 'Hat']);
 

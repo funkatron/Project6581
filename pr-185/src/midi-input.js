@@ -1,4 +1,4 @@
-import {parseMidiMessage} from './midi-message.js?v=0.18.11+20261120T183211571Z';
+import {parseMidiMessage} from './midi-message.js?v=0.18.12+20261120T183708550Z';
 
 function listInputs(access){
  const out=[];

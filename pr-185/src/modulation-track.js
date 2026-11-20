@@ -1,5 +1,5 @@
-import {formatPanBrief} from './control-format.js?v=0.18.11+20261120T183211571Z';
-import {LFO_TARGET_ORDER} from './lfo-modulation.js?v=0.18.11+20261120T183211571Z';
+import {formatPanBrief} from './control-format.js?v=0.18.12+20261120T183708550Z';
+import {LFO_TARGET_ORDER} from './lfo-modulation.js?v=0.18.12+20261120T183708550Z';
 
 // Presentation-only helpers for continuously modulated UI range controls.
 // MIDI/SID sound parameters must not be derived from a CSS position.

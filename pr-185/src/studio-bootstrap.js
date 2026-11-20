@@ -1,4 +1,4 @@
-import {startSidStudio} from './sid-studio.js?v=0.18.11+20261120T183211571Z';
+import {startSidStudio} from './sid-studio.js?v=0.18.12+20261120T183708550Z';
 
 export function bootSidStudio(){
  try{startSidStudio();}
