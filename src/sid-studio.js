@@ -202,6 +202,7 @@ enginePanelsUi=mountSidEnginePanels({
   syncLegacyFilterInputs();
   syncEnginePans();
   syncEngineChipGains();
+  enginePanelsUi?.updateMeters(chipPeakLevels);
   if(kind==='model'){
    if(_index===0){
     $('chip').value=String(engines[0].model);
