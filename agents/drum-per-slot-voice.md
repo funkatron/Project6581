@@ -4,13 +4,13 @@
 
 - **Physical slots:** SID 4 voices 0/1/2 = kick bus, snare bus, hat bus (`drum-voice-policy.js`).
 - **Voice registers:** Each `triggerDrumLane` still calls `noteOn` on the assigned slot with that lane’s factory voice (ADSR, wave, pulse, pitch envelope) via `drumLaneTimbre`.
-- **Filter (no chip-wide stomp):** Lane filter is applied with **routing scoped to one voice** (`drum-slot-filter.js`), not `routing: 7` on every hit. Kick lowpass no longer overwrites the hat path when snare triggers next on the same step.
+- **Filter (shared):** One SID 4 filter (`engines[3].filter`, routing **7**) for all drum voices—set on the SID 4 engine card, not per bus. Drum preview applies the engine filter once per step.
 - **Engine card LFO (UI clock):** `updateModulation` skips `updateSidFilter` for chip 3 so the SID 4 engine slider/LFO path does not stomp per-hit drum filters.
 - **Engine card LFO (audio clock):** `residfp-worklet.js` skips filter register writes for chip 3 so highpass on the drum engine card does not stomp kick lowpass every block.
 
 ## Limits (authentic SID)
 
-One filter block per chip: simultaneous voices cannot each use a different cutoff. **Preview** applies filter once per step (`drum-step-filter.js`): kick lane wins cutoff/mode; only that voice is routed through the filter and sn/hat on the same step play **direct**. Grid solo still sets the tapped lane’s filter. Full reconcile across overlapping steps (hat on step 2 while kick decays from step 1) is future work.
+One filter block per chip: all three drum voices share it (authentic SID). Per-bus filter UI was removed to avoid misleading per-lane cutoff edits; lane `filter` patches in presets are legacy and not applied at playback.
 
 ## Follow-ups
 

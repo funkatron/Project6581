@@ -27,7 +27,7 @@ import {defaultDrumKit,defaultDrumSequence,validateDrumKit,validateDrumSequence}
 import {DRUM_ENGINE_INDEX} from "./sid-engines.js?v=__BUILD_ID__";
 import {defaultDrumSlotForLane,isDrumSlotIndex,resolveDrumHitsOnStep} from "./drum-voice-policy.js?v=__BUILD_ID__";
 import {drumOwnerKey,drumLaneTimbre,drumReleaseMilliseconds,isDrumOwner} from "./drum-lane-trigger.js?v=__BUILD_ID__";
-import {chooseDrumFilterLane,drumStepFilterRoutingMask} from "./drum-step-filter.js?v=__BUILD_ID__";
+import {drumEngineFilterRegisters} from "./drum-engine-filter.js?v=__BUILD_ID__";
 import {projectedChipRenderMs} from "./sid-chip-render-diagnostic.js?v=__BUILD_ID__";
 import {mountGeneratorLeds} from "./generator-led-ui.js?v=__BUILD_ID__";
 import {createPerformanceArpState} from "./performance-arp-state.js?v=__BUILD_ID__";
@@ -300,34 +300,18 @@ function drumTimbreForLane(laneId){
  if(!factory)return null;
  return drumLaneTimbre(factory.settings,lane);
 }
-function applyDrumChipFilter(laneId,slotIndex){
- const timbre=drumTimbreForLane(laneId);
- if(!timbre||!sidController)return;
- const regs=filterRegistersFromUi(timbre.filter);
- regs.routing=drumStepFilterRoutingMask(slotIndex);
- sidController.setFilter(regs,DRUM_ENGINE_INDEX);
+function applyDrumEngineFilter(){
+ const engine=engines[DRUM_ENGINE_INDEX];
+ if(!engine||!sidController)return;
+ const regs=filterRegistersFromUi(engine.filter);
+ sidController.setFilter(drumEngineFilterRegisters(regs),DRUM_ENGINE_INDEX);
 }
-function triggerDrumStep(rawHits,{stepIndex=null}={}){
+function triggerDrumStep(rawHits){
  if(!sidController||!rawHits?.length)return;
  const hits=resolveDrumHitsOnStep(rawHits);
  if(!hits.length)return;
- const filterLane=chooseDrumFilterLane(hits);
- if(filterLane){
-  const primary=hits.find(hit=>hit.lane===filterLane);
-  if(primary){
-   applyDrumChipFilter(filterLane,primary.slot);
-   traceStudio('drum-step-filter',{
-    step:Number.isInteger(stepIndex)?stepIndex:null,
-    filterLane,
-    lanes:hits.map(hit=>hit.lane),
-    filterSlot:primary.slot,
-    routing:drumStepFilterRoutingMask(primary.slot),
-   });
-  }
- }
- for(const hit of hits){
-  triggerDrumLane(hit.lane,{drumSlot:hit.slot,skipFilter:true});
- }
+ applyDrumEngineFilter();
+ for(const hit of hits)triggerDrumLane(hit.lane,{drumSlot:hit.slot,skipFilter:true});
 }
 function triggerDrumLane(laneId,{drumSlot,skipFilter=false}={}){
  if(!sidController)return;
@@ -351,9 +335,7 @@ function triggerDrumLane(laneId,{drumSlot,skipFilter=false}={}){
  }
  stopDrumOwner(ownerKey);
  const slot=isDrumSlotIndex(drumSlot)?drumSlot:defaultDrumSlotForLane(laneId);
- if(!skipFilter){
-  applyDrumChipFilter(laneId,slot);
- }
+ if(!skipFilter)applyDrumEngineFilter();
  const settings={...voice,pitchEnvelope:voice.pitchEnvelope};
  const traceStart=sidAudio?.beginNoteTrace();
  const token=sidController.noteOn(note,()=>settings,{
@@ -661,10 +643,14 @@ function updateSidFilter(overrides={},engineIndex=0){
   const volumePct=Number(overrides.volume??filter.volume);
   const mode=overrides.mode??filter.mode;
   if(useAudioClockLfo)return;
-  sidController.setFilter({
+  const regs={
     cutoff,resonance:Math.round(resonancePct*15/100),
     mode,volume:Math.round(volumePct*15/100)
-  },engineIndex);
+  };
+  sidController.setFilter(
+    engineIndex===DRUM_ENGINE_INDEX?drumEngineFilterRegisters(regs):regs,
+    engineIndex,
+  );
 }
 function pushAudioModulationConfig(){
  if(!sidAudio?.setModulationConfig)return;
@@ -827,10 +813,7 @@ function updateModulation({uiOnly=false}={}){
  if(uiOnly)return;
  if(useAudioClockLfo)pushAudioModulationConfig();
  else{
-  for(let chip=0;chip<engines.length;chip++){
-   if(chip===DRUM_ENGINE_INDEX)continue;
-   updateSidFilter(engineModValues[chip],chip);
-  }
+  for(let chip=0;chip<engines.length;chip++)updateSidFilter(engineModValues[chip],chip);
  }
  sidController.setLiveDetune(globalDetune);
  for(let chip=0;chip<engines.length;chip++){

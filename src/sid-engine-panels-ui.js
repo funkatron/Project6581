@@ -145,7 +145,7 @@ export function mountSidEnginePanels({
    });
    const drumNote=document.createElement('p');
    drumNote.className='drum-chip-note control-span-full';
-   drumNote.textContent='Per-bus voice, filter, and pitch settings are below the pattern grid.';
+   drumNote.textContent='One SID 4 filter (cutoff, mode) on this card for all drum voices. Per-bus voice and pitch settings are below the grid.';
    controlGrid.append(drumNote);
   }else{
    const voiceHeading=document.createElement('h4');

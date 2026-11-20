@@ -1,5 +1,4 @@
 import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=__BUILD_ID__';
-import {formatHzBrief, formatPercent} from './control-format.js?v=__BUILD_ID__';
 import {setLayoutInert} from './ui-layout.js?v=__BUILD_ID__';
 import {drumLaneTimbre} from './drum-lane-trigger.js?v=__BUILD_ID__';
 import {
@@ -11,8 +10,6 @@ import {
   drumBusWaveLabel,
   drumFactoryPresetOptions,
 } from './drum-voice-ui-policy.js?v=__BUILD_ID__';
-
-const FILTER_MODES = ['lowpass', 'bandpass', 'highpass'];
 
 const BUS_TAB_LABELS = Object.freeze(['Kick', 'Snare', 'Hat']);
 
@@ -78,7 +75,7 @@ export function mountDrumSlotVoicePanels({
   function renderBus(bus) {
     const kit = getDrumKit();
     const lane = kit.lanes[bus.laneId];
-    const {voice, filter, presetId} = effectiveLaneTimbre(factoryPresets, lane);
+    const {voice, presetId} = effectiveLaneTimbre(factoryPresets, lane);
     const card = document.createElement('article');
     card.className = 'drum-bus-card panel';
     card.dataset.drumBus = String(bus.slot);
@@ -142,12 +139,6 @@ export function mountDrumSlotVoicePanels({
       commitLane(bus, laneRow);
     };
 
-    const commitFilter = (key, raw) => {
-      const laneRow = {...getDrumKit().lanes[bus.laneId]};
-      laneRow.filter = {...(laneRow.filter ?? {}), [key]: raw};
-      commitLane(bus, laneRow);
-    };
-
     for (const [prop, label, min, max, step] of DRUM_VOICE_ADSR_FIELDS) {
       const slider = appendSlider(
         grid,
@@ -183,41 +174,6 @@ export function mountDrumSlotVoicePanels({
         });
       }
     }
-
-    const filterHeading = document.createElement('h5');
-    filterHeading.className = 'drum-bus-filter-heading drum-bus-controls-full';
-    filterHeading.textContent = 'Filter';
-    grid.append(filterHeading);
-
-    const cutoff = appendSlider(grid, 'Cutoff', filter.cutoff, 50, 10000, 1, formatHzBrief);
-    cutoff.input.addEventListener('input', () => {
-      const value = Number(cutoff.input.value);
-      cutoff.output.textContent = formatHzBrief(value);
-      commitFilter('cutoff', value);
-    });
-
-    const resonance = appendSlider(grid, 'Resonance', filter.resonance, 0, 100, 1, formatPercent);
-    resonance.input.addEventListener('input', () => {
-      const value = Number(resonance.input.value);
-      resonance.output.textContent = formatPercent(value);
-      commitFilter('resonance', value);
-    });
-
-    const modeLabel = document.createElement('label');
-    modeLabel.className = 'drum-bus-filter-mode drum-bus-controls-full';
-    modeLabel.textContent = 'Mode ';
-    const mode = document.createElement('select');
-    for (const value of FILTER_MODES) {
-      const option = document.createElement('option');
-      option.value = value;
-      option.textContent =
-        value === 'lowpass' ? 'Low-pass' : value === 'bandpass' ? 'Band-pass' : 'High-pass';
-      mode.append(option);
-    }
-    mode.value = filter.mode ?? 'lowpass';
-    mode.addEventListener('change', () => commitFilter('mode', mode.value));
-    modeLabel.append(mode);
-    grid.append(modeLabel);
 
     const pitchHost = document.createElement('div');
     pitchHost.className = 'drum-bus-pitch drum-bus-controls-full';
