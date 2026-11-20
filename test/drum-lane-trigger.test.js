@@ -24,7 +24,7 @@ test('drumLaneTimbre merges optional lane voice and filter patches', () => {
   assert.equal(filter.cutoff, 400);
 });
 
-test('drumLaneTimbre applies lane level to filter volume', () => {
+test('drumLaneTimbre applies lane level to legacy filter volume and noise decay', () => {
   const kick = FACTORY_PRESETS.find((p) => p.id === 'low-thud-kick');
   const lane = defaultDrumKit().lanes.kick;
   const {voice, filter} = drumLaneTimbre(kick.settings, lane);
@@ -32,6 +32,10 @@ test('drumLaneTimbre applies lane level to filter volume', () => {
   assert.equal(filter.volume, 92);
   const half = drumLaneTimbre(kick.settings, {...lane, level: 50});
   assert.equal(half.filter.volume, 46);
+  const hat = FACTORY_PRESETS.find((p) => p.id === 'closed-noise-hat');
+  const hatLane = {...defaultDrumKit().lanes.ch, level: 50};
+  const {voice: hatVoice} = drumLaneTimbre(hat.settings, hatLane);
+  assert.ok(hatVoice.decay < 0.022);
 });
 
 test('drumBpm respects sync and local tempo', () => {

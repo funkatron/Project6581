@@ -9,7 +9,7 @@ export function isDrumOwner(ownerKey) {
   return typeof ownerKey === 'string' && ownerKey.startsWith('drum:');
 }
 
-/** Factory preset voice + filter with lane level applied to filter volume (0–100). */
+/** Factory preset voice (+ legacy filter snapshot). Lane level shapes loudness via sustain (shared bus filter). */
 export function drumLaneTimbre(factorySettings, lane) {
   if (!factorySettings?.sound?.engines?.[0]) {
     throw new TypeError('Factory preset missing engine voice');
@@ -27,7 +27,14 @@ export function drumLaneTimbre(factorySettings, lane) {
   if (lane.filter && typeof lane.filter === 'object') {
     Object.assign(filter, lane.filter);
   }
-  filter.volume = Math.round((Number(filter.volume) || 0) * level / 100);
+  const levelGain = level / 100;
+  if (levelGain < 1 && Number.isFinite(voice.sustain)) {
+    voice.sustain = Math.max(0, Math.min(1, voice.sustain * levelGain));
+  }
+  if (levelGain < 1 && voice.wave === 'noise' && Number.isFinite(voice.decay)) {
+    voice.decay = Math.max(0.005, voice.decay * (0.65 + 0.35 * levelGain));
+  }
+  filter.volume = Math.round((Number(filter.volume) || 0) * levelGain);
   return {voice, filter};
 }
 
