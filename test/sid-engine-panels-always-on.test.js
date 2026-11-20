@@ -8,6 +8,7 @@ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 test('engine panels render melodic cards on SYNTH and SID 4 on DRUM SEQ',()=>{
  assert.match(panels,/for\(let index=0;index<SID_ENGINE_COUNT;index\+\+\)/);
  assert.match(panels,/drumSidEngine/);
+ assert.match(panels,/isDrumChip/);
  assert.match(html,/id="drumSidEngine"/);
  assert.doesNotMatch(panels,/sidEngineAdd|engine\.enabled|sid-engine-remove/);
 });
