@@ -183,7 +183,9 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       const phase=this.lfoPhase[index]??0;
       this.lfoPhase[index]=phase+rate*blockSec;
     });
+    const DRUM_CHIP_INDEX=3;
     for(let chip=0;chip<4;chip++){
+      if(chip===DRUM_CHIP_INDEX)continue;
       const engine=config.engines[chip];
       if(!engine)continue;
       const base={
