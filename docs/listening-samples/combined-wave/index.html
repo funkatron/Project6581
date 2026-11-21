@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Combined 6581 drum wave — listening</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 28rem; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.25rem; }
+    section { margin: 1.5rem 0; }
+    audio { width: 100%; margin-top: 0.35rem; }
+    p { color: #444; font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+  <h1>Offline kick A/B (reSIDfp)</h1>
+  <p>Shared drum bus, kick pitch envelope. Compare triangle-only vs triangle+noise.</p>
+  <section>
+    <strong>Triangle only</strong>
+    <audio controls preload="metadata" src="kick-triangle-only.wav"></audio>
+  </section>
+  <section>
+    <strong>Triangle + noise (combined)</strong>
+    <audio controls preload="metadata" src="kick-triangle-plus-noise.wav"></audio>
+  </section>
+  <section>
+    <strong>Open hat — noise + triangle</strong>
+    <audio controls preload="metadata" src="hat-noise-plus-triangle.wav"></audio>
+  </section>
+</body>
+</html>
