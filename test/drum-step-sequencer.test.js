@@ -64,9 +64,9 @@ test('validateDrumEngineBoost defaults to +24 dB', () => {
   assert.throws(() => validateDrumEngineBoost(3), /one of/);
 });
 
-test('default drum kit hats use +24 semitone pitch offset', () => {
+test('default drum kit hats use +48 semitone pitch offset', () => {
   const kit = validateDrumKit(defaultDrumKit());
-  assert.equal(kit.lanes.ch.pitchOffsetSemitones, 24);
-  assert.equal(kit.lanes.oh.pitchOffsetSemitones, 24);
+  assert.equal(kit.lanes.ch.pitchOffsetSemitones, 48);
+  assert.equal(kit.lanes.oh.pitchOffsetSemitones, 48);
   assert.equal(kit.lanes.kick.pitchOffsetSemitones, 0);
 });

@@ -26,7 +26,7 @@ export function defaultDrumEngineSettings(model=6581){
  return {
   ...defaultEngineSettings(model),
   outputBoostDb:24,
-  // Shared drum bus: one low-pass for kick + sn + hat (see agents/drum-shared-filter-kit.md).
+  // Legacy single-filter field; playback uses sound.drumBuses[0–2]. Kept for LFO UI fallback.
   filter:{cutoff:2138,resonance:11,volume:90,mode:'lowpass'}
  };
 }

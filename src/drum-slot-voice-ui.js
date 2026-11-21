@@ -40,6 +40,7 @@ export function mountDrumSlotVoicePanels({
   factoryPresets,
   formatControlValue,
   onKitStructureChange,
+  onActiveBusChange,
   bindHelp,
 } = {}) {
   if (!$ || !getDrumKit || !factoryPresets?.length) {
@@ -248,6 +249,7 @@ export function mountDrumSlotVoicePanels({
   function selectBus(index) {
     if (!Number.isInteger(index) || index < 0 || index >= DRUM_BUS_LANES.length) return;
     activeBusIndex = index;
+    onActiveBusChange?.(index);
     render();
   }
 
@@ -280,5 +282,5 @@ export function mountDrumSlotVoicePanels({
   }
 
   render();
-  return {render, syncFromKit: render, selectBus};
+  return {render, syncFromKit: render, selectBus, getActiveBusIndex: () => activeBusIndex};
 }

@@ -3,6 +3,7 @@ import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from './pitch-envelope.js'
 import {pitchEnvelopeTemplates} from './pitch-envelope-editor.js';
 const FACTORY_PITCH=pitchEnvelopeTemplates();
 import {createDefaultEngines,DEFAULT_ROUTING,ROUTE_OPTIONS,defaultDrumEngineSettings,defaultEngineSettings} from './sid-engines.js';
+import {defaultDrumBusEngines,validateDrumBusEngines} from './drum-bus-engines.js';
 import {defaultDrumKit,defaultDrumSequence,validateDrumEngineBoost,validateDrumKit,validateDrumSequence} from './drum-step-sequencer.js';
 import {validateScaleSettings} from './western-scales.js';
 import {LFO_TARGET_ORDER,LFO_WAVES} from './lfo-modulation.js';
@@ -177,7 +178,8 @@ export function validatePresetSettings(value){
      engines:choice(lfo.engines??'all','LFO engines',['all','1','2','3'])
     };
    }),
-   drumLfo:validateDrumLfo(sound.drumLfo)
+   drumLfo:validateDrumLfo(sound.drumLfo),
+   drumBuses:validateDrumBusEngines(sound.drumBuses)
   },
   performance:{
    masterBpm:integer(perf.masterBpm,'master BPM',40,240),
