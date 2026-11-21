@@ -1,4 +1,4 @@
-import {bindHelpGesture} from './ui-help-gesture.js?v=0.20.1+20261120T202944466Z';
+import {bindHelpGesture} from './ui-help-gesture.js?v=0.21.5+20261121T182557147Z';
 import {
   DRUM_LANE_COUNT,
   DRUM_LANE_IDS,
@@ -25,8 +25,8 @@ const LANE_HELP = {
 const LANE_VOICE_RAIL = {
   kick: ['drum-lane-rail--v1'],
   sn: ['drum-lane-rail--v2'],
-  ch: ['drum-lane-rail--hat', 'drum-lane-rail--hat-first'],
-  oh: ['drum-lane-rail--hat', 'drum-lane-rail--hat-last'],
+  ch: ['drum-lane-rail--hat'],
+  oh: ['drum-lane-rail--hat'],
 };
 
 function syncLaneLevelReadout(head, levelInput, readout) {
@@ -34,6 +34,117 @@ function syncLaneLevelReadout(head, levelInput, readout) {
   if (readout) readout.textContent = String(level);
   head.classList.toggle('is-muted', level <= 0);
   levelInput.setAttribute('aria-valuenow', String(level));
+}
+
+function bindLaneLevelInput({
+  head,
+  laneId,
+  kit,
+  level,
+  readout,
+  getDrumKit,
+  setDrumKit,
+  onPatternChange,
+  help$,
+}) {
+  level.value = String(kit.lanes[laneId]?.level ?? 80);
+  level.setAttribute('aria-label', (LANE_LABEL[laneId] ?? laneId) + ' level');
+  level.addEventListener('input', () => {
+    const kitNow = getDrumKit();
+    const nextLevel = Number(level.value);
+    setDrumKit({
+      ...kitNow,
+      lanes: {...kitNow.lanes, [laneId]: {...kitNow.lanes[laneId], level: nextLevel}},
+    });
+    if (head.classList.contains('drum-lane-head--hat-stack')) {
+      const lanes = getDrumKit().lanes;
+      head.classList.toggle(
+        'is-muted',
+        (lanes.ch?.level ?? 0) <= 0 && (lanes.oh?.level ?? 0) <= 0,
+      );
+    } else {
+      syncLaneLevelReadout(head, level, readout);
+    }
+    readout.textContent = String(nextLevel);
+    level.setAttribute('aria-valuenow', String(nextLevel));
+    onPatternChange?.();
+  });
+  bindHelpGesture(level, {helpId: 'drum-lane-level', $: help$});
+  syncLaneLevelReadout(head, level, readout);
+}
+
+function buildLaneMixerRow(laneId, ctx) {
+  const {kit, getDrumKit, setDrumKit, onPatternChange, help$, headForMute} = ctx;
+  const row = document.createElement('div');
+  row.className = 'drum-lane-mixer-row';
+
+  const title = document.createElement('span');
+  title.className = 'drum-lane-label';
+  title.textContent = LANE_LABEL[laneId] ?? laneId;
+  title.tabIndex = 0;
+  title.setAttribute('role', 'button');
+  title.setAttribute(
+    'aria-label',
+    (LANE_LABEL[laneId] ?? laneId) + ' lane — long-press for voice help',
+  );
+  bindHelpGesture(title, {helpId: LANE_HELP[laneId] ?? 'drum-voice-allocation', $: help$});
+
+  const mixer = document.createElement('div');
+  mixer.className = 'drum-lane-mixer';
+  const levelStack = document.createElement('span');
+  levelStack.className = 'slider-stack drum-lane-level-stack';
+  const level = document.createElement('input');
+  level.type = 'range';
+  level.className = 'drum-lane-level';
+  level.min = '0';
+  level.max = '100';
+  level.step = '1';
+  const readout = document.createElement('output');
+  readout.className = 'drum-lane-level-readout';
+  readout.setAttribute('aria-hidden', 'true');
+
+  bindLaneLevelInput({
+    head: headForMute,
+    laneId,
+    kit,
+    level,
+    readout,
+    getDrumKit,
+    setDrumKit,
+    onPatternChange,
+    help$,
+  });
+
+  levelStack.append(level);
+  mixer.append(levelStack, readout);
+  row.append(title, mixer);
+  return row;
+}
+
+function buildMergedHatLaneHead(gridRowStart, ctx) {
+  const {kit, help$} = ctx;
+  const head = document.createElement('div');
+  head.className = 'drum-lane-head drum-lane-head--hat-stack';
+  head.style.gridRow = gridRowStart + ' / ' + (gridRowStart + 2);
+  head.setAttribute('role', 'rowheader');
+
+  const rail = document.createElement('span');
+  rail.className = 'drum-lane-rail drum-lane-rail--hat';
+  rail.setAttribute('aria-hidden', 'true');
+  rail.title = 'SID voice 3 (hat)';
+
+  const stack = document.createElement('div');
+  stack.className = 'drum-lane-hat-stack';
+  stack.append(
+    buildLaneMixerRow('ch', {...ctx, headForMute: head}),
+    buildLaneMixerRow('oh', {...ctx, headForMute: head}),
+  );
+  head.classList.toggle(
+    'is-muted',
+    (kit.lanes.ch?.level ?? 0) <= 0 && (kit.lanes.oh?.level ?? 0) <= 0,
+  );
+  head.append(rail, stack);
+  return head;
 }
 
 /**
@@ -137,83 +248,45 @@ export function mountDrumPanel({
     }
     table.append(header);
 
+    const laneCtx = {
+      kit,
+      getDrumKit,
+      setDrumKit,
+      onPatternChange,
+      help$,
+    };
+
     DRUM_LANE_IDS.forEach((laneId, rowIndex) => {
       const row = document.createElement('div');
       row.className = 'drum-grid-row';
       row.setAttribute('role', 'row');
+      const dataRow = rowIndex + 2;
 
-      const head = document.createElement('div');
-      head.className = 'drum-lane-head';
-      if (laneId === 'ch') head.classList.add('drum-lane-head--hat-first');
-      if (laneId === 'oh') head.classList.add('drum-lane-head--hat-last');
-      head.setAttribute('role', 'rowheader');
-
-      const rail = document.createElement('span');
-      rail.className = ['drum-lane-rail', ...(LANE_VOICE_RAIL[laneId] ?? [])].join(' ');
-      rail.setAttribute('aria-hidden', 'true');
-      let railTitle = 'SID voice 1';
-      if (laneId === 'sn') railTitle = 'SID voice 2';
-      if (laneId === 'ch' || laneId === 'oh') railTitle = 'SID voice 3 (hat)';
-      rail.title = railTitle;
-
-      const title = document.createElement('span');
-      title.className = 'drum-lane-label';
-      title.textContent = LANE_LABEL[laneId] ?? laneId;
-      title.tabIndex = 0;
-      title.setAttribute('role', 'button');
-      title.setAttribute(
-        'aria-label',
-        (LANE_LABEL[laneId] ?? laneId) + ' lane — long-press for voice help',
-      );
-      bindHelpGesture(title, {helpId: LANE_HELP[laneId] ?? 'drum-voice-allocation', $: help$});
-
-      const mixer = document.createElement('div');
-      mixer.className = 'drum-lane-mixer';
-
-      const levelStack = document.createElement('span');
-      levelStack.className = 'slider-stack drum-lane-level-stack';
-
-      const level = document.createElement('input');
-      level.type = 'range';
-      level.className = 'drum-lane-level';
-      level.min = '0';
-      level.max = '100';
-      level.step = '1';
-      level.value = String(kit.lanes[laneId]?.level ?? 80);
-      level.setAttribute('aria-label', (LANE_LABEL[laneId] ?? laneId) + ' level');
-
-      const readout = document.createElement('output');
-      readout.className = 'drum-lane-level-readout';
-      readout.setAttribute('for', level.id || '');
-      readout.setAttribute('aria-hidden', 'true');
-
-      level.addEventListener('input', () => {
-        const kitNow = getDrumKit();
-        const nextLevel = Number(level.value);
-        const next = {
-          ...kitNow,
-          lanes: {...kitNow.lanes, [laneId]: {...kitNow.lanes[laneId], level: nextLevel}},
-        };
-        setDrumKit(next);
-        syncLaneLevelReadout(head, level, readout);
-        onPatternChange?.();
-      });
-      bindHelpGesture(level, {helpId: 'drum-lane-level', $: help$});
-
-      levelStack.append(level);
-      mixer.append(levelStack, readout);
-      head.append(rail, title, mixer);
-      syncLaneLevelReadout(head, level, readout);
-      row.append(head);
+      if (laneId === 'ch') {
+        row.append(buildMergedHatLaneHead(dataRow, laneCtx));
+      } else if (laneId !== 'oh') {
+        const head = document.createElement('div');
+        head.className = 'drum-lane-head';
+        head.style.gridRow = String(dataRow);
+        head.setAttribute('role', 'rowheader');
+        const rail = document.createElement('span');
+        rail.className = ['drum-lane-rail', ...(LANE_VOICE_RAIL[laneId] ?? [])].join(' ');
+        rail.setAttribute('aria-hidden', 'true');
+        rail.title = laneId === 'sn' ? 'SID voice 2' : 'SID voice 1';
+        head.append(rail, buildLaneMixerRow(laneId, {...laneCtx, headForMute: head}));
+        row.append(head);
+      }
 
       for (let step = 0; step < DRUM_STEP_COUNT; step++) {
         const on = Boolean(seq.grid[rowIndex][step]);
         const cell = document.createElement('button');
         cell.type = 'button';
         cell.className = 'drum-cell';
+        cell.style.gridRow = String(dataRow);
         cell.dataset.lane = laneId;
         cell.dataset.step = String(step);
-        syncCell(cell, on);
+        const laneLevel = kit.lanes[laneId]?.level ?? 0;
+        syncCell(cell, on && laneLevel > 0);
         cell.setAttribute(
           'aria-label',
           (LANE_LABEL[laneId] ?? laneId) + ' step ' + (step + 1) + (on ? ', hit' : ', rest'),

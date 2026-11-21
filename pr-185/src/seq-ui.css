@@ -80,13 +80,15 @@ main>header #presetOpen{max-width:min(140px,28vw)}
 .drum-grid-header .drum-step-num{font-variant-numeric:tabular-nums;font-weight:800;font-size:12px;text-align:center;color:#3d3832;padding:4px 0}
 .drum-lane-head{display:flex;flex-direction:row;align-items:center;gap:4px;padding:0 6px 0 0;min-width:clamp(92px,15vw,128px);min-height:38px;border-right:1px solid #c9bdb3;box-sizing:border-box}
 .drum-lane-head.is-muted .drum-lane-label{opacity:.55}
-.drum-lane-head--hat-last{margin-top:-2px;padding-top:2px}
+.drum-lane-head--hat-stack{align-self:stretch;min-height:calc(38px * 2 + 2px);padding:0 6px 0 0;background:#f0ebe4;border-radius:4px 0 0 4px}
+.drum-lane-head--hat-stack .drum-lane-rail{border-radius:4px}
+.drum-lane-hat-stack{flex:1;display:flex;flex-direction:column;justify-content:center;gap:4px;min-width:0;padding:3px 0}
+.drum-lane-mixer-row{display:flex;flex:1;align-items:center;gap:4px;min-height:34px;min-width:0}
+.drum-lane-mixer-row.is-muted,.drum-lane-head--hat-stack.is-muted .drum-lane-mixer-row:only-child{opacity:1}
 .drum-lane-rail{align-self:stretch;width:10px;flex-shrink:0;border-radius:4px}
 .drum-lane-rail--v1{background:var(--drum-voice-kick)}
 .drum-lane-rail--v2{background:var(--drum-voice-sn)}
 .drum-lane-rail--hat{background:var(--drum-voice-hat)}
-.drum-lane-rail--hat-first{border-radius:4px 0 0 0}
-.drum-lane-rail--hat-last{border-radius:0 0 0 4px}
 .drum-lane-label{flex:0 0 auto;font-size:10px;font-weight:800;letter-spacing:.02em;color:#3d3832;line-height:1.1;white-space:nowrap}
 .drum-lane-mixer{display:flex;flex:1;align-items:center;gap:2px;min-width:0}
 .drum-lane-level-stack{flex:1;min-width:40px;max-width:none;height:26px}

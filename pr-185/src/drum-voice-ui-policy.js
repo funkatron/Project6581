@@ -1,21 +1,25 @@
+import {voiceWaveLabel} from './sid-waveform.js?v=0.21.5+20261121T182557147Z';
+
 /** Which drum-bus UI blocks apply for a factory/effective voice wave. */
 export function drumBusShowsPulse(wave) {
-  return wave === 'square';
+  const text = String(wave ?? '');
+  return text === 'square' || text.split('+').includes('square');
 }
 
 export function drumBusShowsPitchEnvelope(voice) {
   if (!voice?.pitchEnvelope) return false;
   if (voice.pitchEnvelope.enabled) return true;
-  const wave = voice.wave;
+  const wave = String(voice.wave ?? '');
+  if (wave.includes('triangle') || wave.includes('sawtooth') || wave.includes('square')) return true;
   return wave === 'triangle' || wave === 'sawtooth' || wave === 'square';
 }
 
 export function drumBusWaveLabel(wave) {
-  if (wave === 'square') return 'Pulse';
-  if (wave === 'triangle') return 'Triangle';
-  if (wave === 'sawtooth') return 'Sawtooth';
-  if (wave === 'noise') return 'Noise';
-  return String(wave ?? 'Voice');
+  try {
+    return voiceWaveLabel(wave);
+  } catch {
+    return String(wave ?? 'Voice');
+  }
 }
 
 export const DRUM_VOICE_ADSR_FIELDS = Object.freeze([

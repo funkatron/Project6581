@@ -1,5 +1,5 @@
-import {selectRoot,stepMilliseconds,resolveGameRoot,gamePhraseBoundary} from './arp-composition.js?v=0.20.1+20261120T202944466Z';
-import {defaultSequence,sequenceEvent,sequenceForStyle} from './game-step-sequencer.js?v=0.20.1+20261120T202944466Z';
+import {selectRoot,stepMilliseconds,resolveGameRoot,gamePhraseBoundary} from './arp-composition.js?v=0.21.5+20261121T182557147Z';
+import {defaultSequence,sequenceEvent,sequenceForStyle} from './game-step-sequencer.js?v=0.21.5+20261121T182557147Z';
 
 // Step grid plus the Game Arp and root-arp clocks. The studio still owns play(),
 // stop(), and the preset snapshot; this module asks those to run.

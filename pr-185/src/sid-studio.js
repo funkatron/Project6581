@@ -1,50 +1,51 @@
-import {createSidEventLog} from './sid-event-log.js?v=0.20.1+20261120T202944466Z';
-import {createStudioTraceLog} from './studio-trace-log.js?v=0.20.1+20261120T202944466Z';
-import {mountDiagnosticsPanel} from './diagnostics-panel.js?v=0.20.1+20261120T202944466Z';
-import {formatActiveSidStatus,formatPlaybackLatencyStatus,formatSidProgressMessage,shouldShowSidUnlock,sidLedAriaLabel,sidLedState} from './sid-engine-status-ui.js?v=0.20.1+20261120T202944466Z';
-import {canDispatchNote,needsAudioResume,shouldBlockMusicalInput} from './sid-note-gate.js?v=0.20.1+20261120T202944466Z';
-import {closeSidContext} from './sid-audio-lifecycle.js?v=0.20.1+20261120T202944466Z';
-import {createArpKeyVisual} from "./arp-key-visual.js?v=0.20.1+20261120T202944466Z";
-import {modulationTrack,formatControlValue,SLIDER_TARGETS} from "./modulation-track.js?v=0.20.1+20261120T202944466Z";
-import {lfosForEngine,LFO_TARGET_ORDER,LFO_TARGET_LABELS} from "./lfo-modulation.js?v=0.20.1+20261120T202944466Z";
-import {createSidRecorder,prepareRecordingDownload} from "./sid-recorder.js?v=0.20.1+20261120T202944466Z";
-import {defaultSequence,validateSequence} from "./game-step-sequencer.js?v=0.20.1+20261120T202944466Z";
-import {mountPerformance} from "./performance-play.js?v=0.20.1+20261120T202944466Z";
-import {FACTORY_PRESETS,presetLoadRequiresSilence,STARTUP_FACTORY_PRESET_ID,validateDrumLfo,validatePresetSettings} from "./preset-library.js?v=0.20.1+20261120T202944466Z";
-import {mountPresetLibrary} from "./preset-library-ui.js?v=0.20.1+20261120T202944466Z";
-import {mountKeyboard} from "./keyboard-input.js?v=0.20.1+20261120T202944466Z";
-import {readScaleStateFromDom,resolvePerformanceNote,isPitchInScale} from "./western-scales.js?v=0.20.1+20261120T202944466Z";
-import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from "./pitch-envelope.js?v=0.20.1+20261120T202944466Z";
-import {mountEditorTabs} from "./editor-tabs.js?v=0.20.1+20261120T202944466Z";
-import {mountDrumPanel} from "./drum-panel-ui.js?v=0.20.1+20261120T202944466Z";
-import {createPerformanceDrumState} from "./performance-drum-state.js?v=0.20.1+20261120T202944466Z";
-import {mountDrumPerformance,readDrumSequenceFromDom} from "./drum-performance.js?v=0.20.1+20261120T202944466Z";
-import {mountDrumGrooveIo} from "./drum-groove-ui.js?v=0.20.1+20261120T202944466Z";
-import {mountDrumLfoPanel} from "./drum-lfo-panel-ui.js?v=0.20.1+20261120T202944466Z";
-import {mountDrumSlotVoicePanels,effectiveLaneTimbre} from "./drum-slot-voice-ui.js?v=0.20.1+20261120T202944466Z";
-import {DRUM_BUS_LANES,drumLfoTargetsForKit} from "./drum-voice-ui-policy.js?v=0.20.1+20261120T202944466Z";
-import {defaultDrumKit,defaultDrumSequence,validateDrumKit,validateDrumSequence} from "./drum-step-sequencer.js?v=0.20.1+20261120T202944466Z";
-import {DRUM_ENGINE_INDEX} from "./sid-engines.js?v=0.20.1+20261120T202944466Z";
-import {defaultDrumSlotForLane,isDrumSlotIndex,resolveDrumHitsOnStep} from "./drum-voice-policy.js?v=0.20.1+20261120T202944466Z";
-import {drumBusVolumeForLane,drumLaneLevelGain,drumOwnerKey,drumLaneTimbre,drumReleaseMilliseconds,isDrumOwner} from "./drum-lane-trigger.js?v=0.20.1+20261120T202944466Z";
-import {drumEngineFilterRegisters} from "./drum-engine-filter.js?v=0.20.1+20261120T202944466Z";
-import {projectedChipRenderMs} from "./sid-chip-render-diagnostic.js?v=0.20.1+20261120T202944466Z";
-import {mountGeneratorLeds} from "./generator-led-ui.js?v=0.20.1+20261120T202944466Z";
-import {createPerformanceArpState} from "./performance-arp-state.js?v=0.20.1+20261120T202944466Z";
-import {createPerformanceRoutingState} from "./performance-routing-state.js?v=0.20.1+20261120T202944466Z";
-import {createPerformanceInstrumentState} from "./performance-instrument-state.js?v=0.20.1+20261120T202944466Z";
-import {setLayoutInert} from "./ui-layout.js?v=0.20.1+20261120T202944466Z";
-import {mountLfoPanel} from "./lfo-panel-ui.js?v=0.20.1+20261120T202944466Z";
-import {mountAudioTimingPanel} from "./audio-timing-panel.js?v=0.20.1+20261120T202944466Z";
-import {applyFirstEnergyTiming} from "./audio-timing-metrics.js?v=0.20.1+20261120T202944466Z";
-import {createDefaultEngines,clampVoiceCount,maxVoicesForEngines,DEFAULT_ROUTING,routeMask,routingKeyForSource} from "./sid-engines.js?v=0.20.1+20261120T202944466Z";
-import {mountSidEnginePanels,querySidEngineCard} from "./sid-engine-panels-ui.js?v=0.20.1+20261120T202944466Z";
-import {mountMasterLoudnessMeter} from "./master-loudness-meter-ui.js?v=0.20.1+20261120T202944466Z";
-import {mountHelpDialog,mountHelpTriggers} from "./ui-help-dialog.js?v=0.20.1+20261120T202944466Z";
-import {mountMidiInput} from "./midi-input.js?v=0.20.1+20261120T202944466Z";
-import {mountPreferencesDialog} from "./studio-preferences-ui.js?v=0.20.1+20261120T202944466Z";
-import {bindHelpGesture} from "./ui-help-gesture.js?v=0.20.1+20261120T202944466Z";
-import {testHooksEnabled,mountStudioTestHooks} from "./studio-test-hooks.js?v=0.20.1+20261120T202944466Z";
+import {createSidEventLog} from './sid-event-log.js?v=0.21.5+20261121T182557147Z';
+import {createStudioTraceLog} from './studio-trace-log.js?v=0.21.5+20261121T182557147Z';
+import {mountDiagnosticsPanel} from './diagnostics-panel.js?v=0.21.5+20261121T182557147Z';
+import {formatActiveSidStatus,formatPlaybackLatencyStatus,formatSidProgressMessage,shouldShowSidUnlock,sidLedAriaLabel,sidLedState} from './sid-engine-status-ui.js?v=0.21.5+20261121T182557147Z';
+import {canDispatchNote,needsAudioResume,shouldBlockMusicalInput} from './sid-note-gate.js?v=0.21.5+20261121T182557147Z';
+import {closeSidContext} from './sid-audio-lifecycle.js?v=0.21.5+20261121T182557147Z';
+import {createArpKeyVisual} from "./arp-key-visual.js?v=0.21.5+20261121T182557147Z";
+import {modulationTrack,formatControlValue,SLIDER_TARGETS} from "./modulation-track.js?v=0.21.5+20261121T182557147Z";
+import {lfosForEngine,LFO_TARGET_ORDER,LFO_TARGET_LABELS} from "./lfo-modulation.js?v=0.21.5+20261121T182557147Z";
+import {createSidRecorder,prepareRecordingDownload} from "./sid-recorder.js?v=0.21.5+20261121T182557147Z";
+import {defaultSequence,validateSequence} from "./game-step-sequencer.js?v=0.21.5+20261121T182557147Z";
+import {mountPerformance} from "./performance-play.js?v=0.21.5+20261121T182557147Z";
+import {FACTORY_PRESETS,presetLoadRequiresSilence,STARTUP_FACTORY_PRESET_ID,validateDrumLfo,validatePresetSettings} from "./preset-library.js?v=0.21.5+20261121T182557147Z";
+import {mountPresetLibrary} from "./preset-library-ui.js?v=0.21.5+20261121T182557147Z";
+import {mountKeyboard} from "./keyboard-input.js?v=0.21.5+20261121T182557147Z";
+import {readScaleStateFromDom,resolvePerformanceNote,isPitchInScale} from "./western-scales.js?v=0.21.5+20261121T182557147Z";
+import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from "./pitch-envelope.js?v=0.21.5+20261121T182557147Z";
+import {mountEditorTabs} from "./editor-tabs.js?v=0.21.5+20261121T182557147Z";
+import {mountDrumPanel} from "./drum-panel-ui.js?v=0.21.5+20261121T182557147Z";
+import {createPerformanceDrumState} from "./performance-drum-state.js?v=0.21.5+20261121T182557147Z";
+import {mountDrumPerformance,readDrumSequenceFromDom} from "./drum-performance.js?v=0.21.5+20261121T182557147Z";
+import {mountDrumGrooveIo} from "./drum-groove-ui.js?v=0.21.5+20261121T182557147Z";
+import {mountDrumLfoPanel} from "./drum-lfo-panel-ui.js?v=0.21.5+20261121T182557147Z";
+import {mountDrumSlotVoicePanels,effectiveLaneTimbre} from "./drum-slot-voice-ui.js?v=0.21.5+20261121T182557147Z";
+import {DRUM_BUS_LANES,drumLfoTargetsForKit} from "./drum-voice-ui-policy.js?v=0.21.5+20261121T182557147Z";
+import {defaultDrumKit,defaultDrumSequence,validateDrumKit,validateDrumSequence} from "./drum-step-sequencer.js?v=0.21.5+20261121T182557147Z";
+import {DRUM_ENGINE_INDEX} from "./sid-engines.js?v=0.21.5+20261121T182557147Z";
+import {defaultDrumSlotForLane,isDrumSlotIndex,resolveDrumHitsOnStep} from "./drum-voice-policy.js?v=0.21.5+20261121T182557147Z";
+import {drumBusVolumeForLane,drumLaneLevelGain,drumOwnerKey,drumLaneTimbre,drumReleaseMilliseconds,isDrumOwner} from "./drum-lane-trigger.js?v=0.21.5+20261121T182557147Z";
+import {drumEngineFilterRegisters} from "./drum-engine-filter.js?v=0.21.5+20261121T182557147Z";
+import {projectedChipRenderMs} from "./sid-chip-render-diagnostic.js?v=0.21.5+20261121T182557147Z";
+import {mountGeneratorLeds} from "./generator-led-ui.js?v=0.21.5+20261121T182557147Z";
+import {createPerformanceArpState} from "./performance-arp-state.js?v=0.21.5+20261121T182557147Z";
+import {createPerformanceRoutingState} from "./performance-routing-state.js?v=0.21.5+20261121T182557147Z";
+import {createPerformanceInstrumentState} from "./performance-instrument-state.js?v=0.21.5+20261121T182557147Z";
+import {setLayoutInert} from "./ui-layout.js?v=0.21.5+20261121T182557147Z";
+import {mountLfoPanel} from "./lfo-panel-ui.js?v=0.21.5+20261121T182557147Z";
+import {mountAudioTimingPanel} from "./audio-timing-panel.js?v=0.21.5+20261121T182557147Z";
+import {applyFirstEnergyTiming} from "./audio-timing-metrics.js?v=0.21.5+20261121T182557147Z";
+import {createDefaultEngines,clampVoiceCount,maxVoicesForEngines,DEFAULT_ROUTING,routeMask,routingKeyForSource} from "./sid-engines.js?v=0.21.5+20261121T182557147Z";
+import {mountSidEnginePanels,querySidEngineCard} from "./sid-engine-panels-ui.js?v=0.21.5+20261121T182557147Z";
+import {mountMasterLoudnessMeter} from "./master-loudness-meter-ui.js?v=0.21.5+20261121T182557147Z";
+import {mountHelpDialog,mountHelpTriggers} from "./ui-help-dialog.js?v=0.21.5+20261121T182557147Z";
+import {mountMidiInput} from "./midi-input.js?v=0.21.5+20261121T182557147Z";
+import {mountPreferencesDialog} from "./studio-preferences-ui.js?v=0.21.5+20261121T182557147Z";
+import {bindHelpGesture} from "./ui-help-gesture.js?v=0.21.5+20261121T182557147Z";
+import {filterRegistersFromUi} from "./sid-filter-ui.js?v=0.21.5+20261121T182557147Z";
+import {testHooksEnabled,mountStudioTestHooks} from "./studio-test-hooks.js?v=0.21.5+20261121T182557147Z";
 
 export function startSidStudio(){
 const $=id=>document.getElementById(id);
@@ -258,14 +259,6 @@ function routingSelectForSource(source){
  const key=routingKeyForSource(source);
  return performanceRouting.getState()[key];
 }
-function filterRegistersFromUi(filter){
- const hz=Number(filter.cutoff);
- const cutoff=Math.round(Math.max(0,Math.min(1,(hz-50)/9950))*2047);
- const resonancePct=Number(filter.resonance);
- const volumePct=Number(filter.volume);
- const mode=filter.mode??'lowpass';
- return {cutoff,resonance:Math.round(resonancePct*15/100),mode,volume:Math.round(volumePct*15/100)};
-}
 function clearDrumReleaseTimer(ownerKey){
  const pending=drumReleaseTimers.get(ownerKey);
  if(pending===undefined)return;
@@ -312,7 +305,7 @@ function applyDrumEngineFilterForLane(laneId){
  const engine=engines[DRUM_ENGINE_INDEX];
  const lane=validateDrumKit(drumKit).lanes[laneId];
  if(!engine||!lane)return;
- const volume=drumBusVolumeForLane(engine.filter,lane);
+ const volume=drumBusVolumeForLane(engine.filter,lane,laneId);
  applyDrumEngineFilter({volume});
 }
 function triggerDrumStep(rawHits){
@@ -905,7 +898,7 @@ async function startSid({gesture=false}={}){
     progress('Loading SID JavaScript modules…');
     let moduleTimeout;
     const modules=Promise.all([
-      import('./create-residfp-audio.js?v=0.20.1+20261120T202944466Z'),import('./unison-sid-controller.js?v=0.20.1+20261120T202944466Z'),import('./lfo-modulation.js?v=0.20.1+20261120T202944466Z')]);
+      import('./create-residfp-audio.js?v=0.21.5+20261121T182557147Z'),import('./unison-sid-controller.js?v=0.21.5+20261121T182557147Z'),import('./lfo-modulation.js?v=0.21.5+20261121T182557147Z')]);
     const [{createReSidFpAudio},{UnisonSidController},lfoModule]=await Promise.race([
       modules,
       new Promise((_,reject)=>{moduleTimeout=setTimeout(()=>reject(new Error('SID JavaScript module loading timed out after 15 seconds')),15000)})
