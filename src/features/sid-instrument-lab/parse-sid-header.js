@@ -33,14 +33,19 @@ export function parseSidHeader(input) {
   }
   const dataOffset = view.getUint16(6, false);
   const minimumOffset = version === 1 ? HEADER_LENGTH : V2_HEADER_LENGTH;
-  if (dataOffset < minimumOffset || dataOffset >= bytes.byteLength ||\n      (version >= 3 && dataOffset < 0x7b) || (version >= 4 && dataOffset < 0x7c)) {
+  if (dataOffset < minimumOffset || dataOffset >= bytes.byteLength ||
+      (version >= 3 && dataOffset < 0x7b) || (version >= 4 && dataOffset < 0x7c)) {
     throw new RangeError('Invalid SID data offset');
   }
   const declaredLoadAddress = view.getUint16(8, false);
   if (declaredLoadAddress === 0 && dataOffset + 2 > bytes.byteLength) {
     throw new RangeError('Missing embedded load address');
   }
-  const loadAddress = declaredLoadAddress || view.getUint16(dataOffset, true);\n  if (magic === 'RSID' && (declaredLoadAddress !== 0 || view.getUint16(12, false) !== 0 ||\n      view.getUint32(18, false) !== 0)) {\n    throw new RangeError('Invalid RSID reserved fields');\n  }
+  const loadAddress = declaredLoadAddress || view.getUint16(dataOffset, true);
+  if (magic === 'RSID' && (declaredLoadAddress !== 0 || view.getUint16(12, false) !== 0 ||
+      view.getUint32(18, false) !== 0)) {
+    throw new RangeError('Invalid RSID reserved fields');
+  }
   const songs = view.getUint16(14, false);
   const startSong = view.getUint16(16, false);
   if (songs < 1 || songs > MAX_SUBTUNES || startSong < 1 || startSong > songs) {
