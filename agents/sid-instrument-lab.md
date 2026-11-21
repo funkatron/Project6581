@@ -18,6 +18,10 @@ The new pure module `src/features/sid-instrument-lab/render-residfp-offline.js` 
 
 `node scripts/sid-lab.mjs wav trace.json --out voice.wav --chip 0 --voice 1` uses the existing `dist/residfp.wasm` and WAV encoder to render a captured register trace. `--wasm path` selects a different compiled bridge. Voice isolation is approximate and the renderer currently outputs mono PCM. To run the real-WASM smoke test, make sure `dist/residfp.wasm` exists before running `node --test test/sid-instrument-lab-real-wasm.test.js`. If the artifact is absent, the test is skipped, not passed.
 
+## libsidplayfp playback feasibility probe
+
+`scripts/sid-lab-playback-probe.mjs` exercises a separately installed `libsidplayfp-wasm` package using its documented `SidAudioEngine({ engine: 'residfp' })` API. After installing the package locally without committing dependency changes, run `node scripts/sid-lab-playback-probe.mjs /path/to/Commando.sid --subtune 1 --seconds 2`. The probe loads the tune, renders interleaved PCM, measures peak amplitude, reads final register snapshots, and disposes the engine. It does **not** produce the cycle-timestamped trace required by Instrument Lab. That requires instrumenting the native SID write path. A successful unit test with an injected fake engine is not proof of real SID playback; record actual probe results separately. RSID tunes may require legally obtained C64 ROMs. Do not commit ROMs or copyrighted tunes. The library is GPL-2.0-or-later.
+
 ## Goal
 
 Provide an independent, touch-first Project6581 workspace to inspect .sid music, isolate SID voices, capture timed register activity, and export audio and reusable instrument definitions. This is an internal feature, not a separate application.
