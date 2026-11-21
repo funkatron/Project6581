@@ -6,7 +6,9 @@ export function verifyListeningKickWav(wavBytes, {
   preRollMs = 200,
   minHits = 4,
   maxPreRollPeakInt16 = 400,
-  minHitPeakInt16 = 1200,
+  minHitPeakInt16 = 600,
+  minHitZeroCrossings = 8,
+  minHitBipolarSamples = 40,
 } = {}) {
   const view = new DataView(
     wavBytes.buffer ?? wavBytes,
@@ -26,33 +28,36 @@ export function verifyListeningKickWav(wavBytes, {
     prePeak = Math.max(prePeak, Math.abs(read(i)));
   }
 
-  const searchFrom = preEnd;
-  const minGap = Math.floor(0.18 * sr);
-  const hits = [];
-  let i = searchFrom;
-  while (i < frames) {
-    const a = Math.abs(read(i));
-    if (a >= minHitPeakInt16) {
-      let peak = a;
-      let peakAt = i;
-      let j = i;
-      const windowEnd = Math.min(frames, i + Math.floor(0.45 * sr));
-      while (j < windowEnd) {
-        const b = Math.abs(read(j));
-        if (b > peak) {
-          peak = b;
-          peakAt = j;
-        }
-        j++;
-      }
-      const lastAt = hits.length ? hits[hits.length - 1].at : -minGap;
-      if (peakAt - lastAt >= minGap) {
-        hits.push({at: peakAt, peak, atMs: (peakAt / sr) * 1000});
-      }
-      i = windowEnd;
-      continue;
+  const windowSamples = Math.floor(0.14 * sr);
+  const step = Math.floor(0.04 * sr);
+  const minGap = Math.floor(0.35 * sr);
+  const candidates = [];
+  for (let start = preEnd; start + windowSamples < frames; start += step) {
+    let peak = 0;
+    let pos = 0;
+    let neg = 0;
+    let zc = 0;
+    let prev = read(start);
+    for (let i = start; i < start + windowSamples; i++) {
+      const x = read(i);
+      const a = Math.abs(x);
+      if (a > peak) peak = a;
+      if (x > 0) pos++;
+      if (x < 0) neg++;
+      if (i > start && (prev >= 0) !== (x >= 0)) zc++;
+      prev = x;
     }
-    i++;
+    if (peak >= minHitPeakInt16 && zc >= minHitZeroCrossings && pos >= minHitBipolarSamples && neg >= minHitBipolarSamples) {
+      candidates.push({at: start + Math.floor(windowSamples / 2), peak, zc, atMs: ((start + windowSamples / 2) / sr) * 1000});
+    }
+  }
+  candidates.sort((a, b) => a.at - b.at);
+  const hits = [];
+  for (const cand of candidates) {
+    const lastAt = hits.length ? hits[hits.length - 1].at : -minGap;
+    if (cand.at - lastAt >= minGap) {
+      hits.push({at: cand.at, peak: cand.peak, atMs: cand.atMs});
+    }
   }
 
   const failures = [];
@@ -60,7 +65,7 @@ export function verifyListeningKickWav(wavBytes, {
     failures.push('pre-roll too loud (peak ' + prePeak + ', max ' + maxPreRollPeakInt16 + ')');
   }
   if (hits.length < minHits) {
-    failures.push('expected ' + minHits + ' kicks, found ' + hits.length);
+    failures.push('expected ' + minHits + ' tonal hits, found ' + hits.length);
   }
   if (failures.length) {
     throw new Error('WAV verify failed: ' + failures.join('; '));

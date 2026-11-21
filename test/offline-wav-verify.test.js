@@ -19,7 +19,7 @@ test('offline kick compare script writes verified listening WAVs', () => {
     result.stderr || result.stdout || 'offline render failed',
   );
   const combined = readFileSync(path.join(out, 'kick-triangle-plus-noise.wav'));
-  const report = verifyListeningKickWav(combined);
+  const report = verifyListeningKickWav(combined, {minHitPeakInt16: 2000});
   assert.ok(report.prePeak <= 400, 'pre-roll should be quiet');
   assert.ok(report.hits.length >= 4, 'four kicks');
   assert.ok(report.hits[0].atMs >= 180, 'first kick after padding');
