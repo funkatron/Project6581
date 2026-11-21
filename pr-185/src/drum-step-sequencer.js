@@ -25,8 +25,8 @@ export function defaultDrumKit() {
   const lanes = {
     kick: { presetId: 'low-thud-kick', midiNote: 36, level: DEFAULT_LEVELS.kick },
     sn: { presetId: 'noise-snare', midiNote: 38, level: DEFAULT_LEVELS.sn },
-    ch: { presetId: 'closed-noise-hat', midiNote: 42, level: DEFAULT_LEVELS.ch, pitchOffsetSemitones: 24 },
-    oh: { presetId: 'open-noise-hat', midiNote: 46, level: DEFAULT_LEVELS.oh, pitchOffsetSemitones: 24 },
+    ch: { presetId: 'closed-noise-hat', midiNote: 42, level: DEFAULT_LEVELS.ch, pitchOffsetSemitones: 48 },
+    oh: { presetId: 'open-noise-hat', midiNote: 46, level: DEFAULT_LEVELS.oh, pitchOffsetSemitones: 48 },
   };
   return { name: 'Factory 6581', lanes };
 }
@@ -59,7 +59,7 @@ function validateLane(lane, id) {
     throw new RangeError('Drum lane ' + id + ' level must be 0–100');
   }
   let pitchOffsetSemitones = 0;
-  if (id === 'ch' || id === 'oh') pitchOffsetSemitones = 24;
+  if (id === 'ch' || id === 'oh') pitchOffsetSemitones = 48;
   if (lane.pitchOffsetSemitones !== undefined) {
     pitchOffsetSemitones = validateLanePitchOffset(lane.pitchOffsetSemitones, id);
   }
@@ -210,7 +210,7 @@ export function hitsOnStep(sequence, stepIndex) {
 }
 
 export function validateDrumEngineBoost(db) {
-  const value = db === undefined ? 18 : Number(db);
+  const value = db === undefined ? 24 : Number(db);
   if (!DRUM_BOOST_DB.includes(value)) {
     throw new RangeError('Drum outputBoostDb must be one of ' + DRUM_BOOST_DB.join(', '));
   }

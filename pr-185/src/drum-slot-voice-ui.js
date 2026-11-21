@@ -1,8 +1,8 @@
-import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=0.21.7+20261121T183803220Z';
-import {setLayoutInert} from './ui-layout.js?v=0.21.7+20261121T183803220Z';
-import {drumLaneTimbre} from './drum-lane-trigger.js?v=0.21.7+20261121T183803220Z';
-import {applyDrumVoiceColorTokens} from './drum-voice-colors.js?v=0.21.7+20261121T183803220Z';
-import {DRUM_PITCH_OFFSET_SEMITONES} from './drum-step-sequencer.js?v=0.21.7+20261121T183803220Z';
+import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=0.21.9+20261121T185247320Z';
+import {setLayoutInert} from './ui-layout.js?v=0.21.9+20261121T185247320Z';
+import {drumLaneTimbre} from './drum-lane-trigger.js?v=0.21.9+20261121T185247320Z';
+import {applyDrumVoiceColorTokens} from './drum-voice-colors.js?v=0.21.9+20261121T185247320Z';
+import {DRUM_PITCH_OFFSET_SEMITONES} from './drum-step-sequencer.js?v=0.21.9+20261121T185247320Z';
 import {
   DRUM_BUS_LANES,
   DRUM_VOICE_ADSR_FIELDS,
@@ -11,7 +11,7 @@ import {
   drumBusShowsPulse,
   drumBusWaveLabel,
   drumFactoryPresetOptions,
-} from './drum-voice-ui-policy.js?v=0.21.7+20261121T183803220Z';
+} from './drum-voice-ui-policy.js?v=0.21.9+20261121T185247320Z';
 
 const BUS_TAB_BUS = Object.freeze(['kick', 'sn', 'hat']);
 
@@ -40,6 +40,7 @@ export function mountDrumSlotVoicePanels({
   factoryPresets,
   formatControlValue,
   onKitStructureChange,
+  onActiveBusChange,
   bindHelp,
 } = {}) {
   if (!$ || !getDrumKit || !factoryPresets?.length) {
@@ -248,6 +249,7 @@ export function mountDrumSlotVoicePanels({
   function selectBus(index) {
     if (!Number.isInteger(index) || index < 0 || index >= DRUM_BUS_LANES.length) return;
     activeBusIndex = index;
+    onActiveBusChange?.(index);
     render();
   }
 
@@ -280,5 +282,5 @@ export function mountDrumSlotVoicePanels({
   }
 
   render();
-  return {render, syncFromKit: render, selectBus};
+  return {render, syncFromKit: render, selectBus, getActiveBusIndex: () => activeBusIndex};
 }

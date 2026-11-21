@@ -3,6 +3,7 @@ import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from './pitch-envelope.js'
 import {pitchEnvelopeTemplates} from './pitch-envelope-editor.js';
 const FACTORY_PITCH=pitchEnvelopeTemplates();
 import {createDefaultEngines,DEFAULT_ROUTING,ROUTE_OPTIONS,defaultDrumEngineSettings,defaultEngineSettings} from './sid-engines.js';
+import {defaultDrumBusEngines,validateDrumBusEngines} from './drum-bus-engines.js';
 import {defaultDrumKit,defaultDrumSequence,validateDrumEngineBoost,validateDrumKit,validateDrumSequence} from './drum-step-sequencer.js';
 import {validateScaleSettings} from './western-scales.js';
 import {LFO_TARGET_ORDER,LFO_WAVES} from './lfo-modulation.js';
@@ -177,7 +178,8 @@ export function validatePresetSettings(value){
      engines:choice(lfo.engines??'all','LFO engines',['all','1','2','3'])
     };
    }),
-   drumLfo:validateDrumLfo(sound.drumLfo)
+   drumLfo:validateDrumLfo(sound.drumLfo),
+   drumBuses:validateDrumBusEngines(sound.drumBuses)
   },
   performance:{
    masterBpm:integer(perf.masterBpm,'master BPM',40,240),
@@ -993,7 +995,7 @@ export const FACTORY_PRESETS=Object.freeze([
  factory('octave-chase-lead','Octave Chase Lead','Leads',{voice:{wave:'square',attack:.002,decay:.07,sustain:.73,release:.08,pulse:22},filter:{cutoff:5850,resonance:14,volume:63},performance:{game:{enabled:true,style:'custom',rate:8,sequence:octaveSequence([0,12,7,12])}}}),
  factory('filtered-saw-lead','Filtered Saw Lead','Leads',{voice:{wave:'sawtooth',attack:.003,decay:.2,sustain:.72,release:.19},filter:{cutoff:2750,resonance:44,volume:59},lfos:[{enabled:true,wave:'sine',rate:.75,depth:.25,target:'cutoff'}],performance:{game:{enabled:false}}}),
  // Drums: kick/tom use pitch templates; hats/clap remain noise-focused.
- factory('low-thud-kick','Low Thud Kick','Drums',{voice:{wave:'triangle+noise',attack:0,decay:.24,sustain:0,release:.02,pitchEnvelope:FACTORY_PITCH.kick},filter:{cutoff:540,resonance:11,volume:92},performance:{game:{enabled:false}}}),
+ factory('low-thud-kick','Low Thud Kick','Drums',{voice:{wave:'triangle+noise',attack:0,decay:.21,sustain:.21,release:.02,pitchEnvelope:FACTORY_PITCH.kick},filter:{cutoff:540,resonance:11,volume:92},performance:{game:{enabled:false}}}),
  factory('closed-noise-hat','Closed Noise Hat','Drums',{voice:{wave:'noise',attack:0,decay:.022,sustain:0,release:.01},filter:{cutoff:7600,resonance:7,volume:60,mode:'lowpass'},performance:{game:{enabled:false}}}),
  factory('open-noise-hat','Open Noise Hat','Drums',{voice:{wave:'noise+triangle',attack:0,decay:.36,sustain:0,release:.1},filter:{cutoff:8000,resonance:9,volume:58,mode:'lowpass'},performance:{game:{enabled:false}}}),
  factory('noise-clap','Noise Clap','Drums',{voice:{wave:'noise',attack:0,decay:.14,sustain:0,release:.06,pitchEnvelope:FACTORY_PITCH.clap},filter:{cutoff:3000,resonance:30,volume:68,mode:'bandpass'},lfos:[{enabled:true,wave:'square',rate:18,depth:.52,target:'volume'}],performance:{game:{enabled:false}}}),
