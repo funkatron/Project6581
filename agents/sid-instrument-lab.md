@@ -4,7 +4,11 @@ Status: CLI-first foundation in progress; not connected to the UI or audio engin
 
 ## CLI-first workflow
 
-Run `node scripts/sid-lab.mjs inspect path/to/tune.sid` to inspect a SID header; add `--json` for machine-readable metadata. Run `node scripts/sid-lab.mjs analyze path/to/events.json` to summarize timestamped register writes, or add `--json` for structured output. The analyzer accepts an array of `{cycle, chip, register, value}` objects, with zero-based chip and register indices. **There is not yet a player that produces these traces.** The `notes` command also segments gate-on/off intervals. All commands reuse browser-independent modules, which the eventual GUI can import directly.
+Run `node scripts/sid-lab.mjs inspect path/to/tune.sid` to inspect a SID header; add `--json` for machine-readable metadata. Run `node scripts/sid-lab.mjs analyze path/to/events.json` to summarize timestamped register writes, or add `--json` for structured output. The analyzer accepts an array of `{cycle, chip, register, value}` objects, with zero-based chip and register indices. **There is not yet a bundled player that produces these traces.** The `notes` command also segments gate-on/off intervals. All commands reuse browser-independent modules, which the eventual GUI can import directly.
+
+## External playback protocol (Node CLI)
+
+`node scripts/sid-lab.mjs capture tune.sid --backend /absolute/path/to/trusted-player --json > trace.json` delegates to a separately installed executable. The CLI sends one JSON object on stdin with `schemaVersion`, `subtune`, `maxCycles`, `maxEvents`, and `sidBase64`. The executable must return `{ "events": [{ "cycle": 0, "chip": 0, "register": 4, "value": 33 }] }` on stdout. The CLI validates this trace; the `analyze` and `notes` commands accept the resulting envelope. The process adapter has a wall-clock timeout and output-size limit. This protocol is **not itself a SID emulator**, and no compatible third-party executable has been integrated or verified yet. Only point it at a trusted binary; subprocess isolation does not make arbitrary native executables safe.
 
 ## Goal
 
@@ -29,6 +33,7 @@ Provide an independent, touch-first Project6581 workspace to inspect .sid music,
 - [x] Add pure register-event voice analysis with tests
 - [x] Add note-candidate segmentation and CLI command
 - [x] Define a bounded, abort-aware backend capture contract (emulator not yet implemented)
+- [x] Add external process capture protocol and CLI wiring with tests
 - [ ] Validate against a real HVSC file (e.g. Commando.sid)
 - [ ] Add an Instrument Lab entry point and local .sid file picker
 - [ ] Display metadata, subtune list, and playback status
