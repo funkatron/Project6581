@@ -96,3 +96,23 @@ test('CLI analyze accepts captured trace envelopes', async () => {
 test('CLI capture requires an explicit backend executable', async () => {
   await assert.rejects(runSidLab(['capture', 'fixture.sid']), /Usage/);
 });
+
+test('CLI wav writes rendered audio with configurable chip and voice', async () => {
+  const saved = [];
+  const output = [];
+  await runSidLab(['wav', 'trace.json', '--out', 'tone.wav', '--wasm', 'sid.wasm', '--chip', '1', '--voice', '2'], {
+    read: async filename => filename === 'sid.wasm'
+      ? new Uint8Array([0, 97, 115, 109])
+      : new TextEncoder().encode(JSON.stringify({ events: [], maxCycles: 100 })),
+    save: async (filename, bytes) => saved.push([filename, bytes]),
+    write: line => output.push(line),
+    wavRenderer: async (_wasm, events, options) => {
+      assert.deepEqual(events, []);
+      assert.deepEqual(options, { chip: 1, voice: 2, endCycle: 100 });
+      return { wav: Uint8Array.from([82, 73, 70, 70]), frames: 0, sampleRate: 48000 };
+    },
+  });
+  assert.equal(saved[0][0], 'tone.wav');
+  assert.equal(saved[0][1].length, 4);
+  assert.match(output[0], /Wrote tone.wav/);
+});
