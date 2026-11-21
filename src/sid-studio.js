@@ -44,6 +44,7 @@ import {mountHelpDialog,mountHelpTriggers} from "./ui-help-dialog.js?v=__BUILD_I
 import {mountMidiInput} from "./midi-input.js?v=__BUILD_ID__";
 import {mountPreferencesDialog} from "./studio-preferences-ui.js?v=__BUILD_ID__";
 import {bindHelpGesture} from "./ui-help-gesture.js?v=__BUILD_ID__";
+import {filterRegistersFromUi} from "./sid-filter-ui.js?v=__BUILD_ID__";
 import {testHooksEnabled,mountStudioTestHooks} from "./studio-test-hooks.js?v=__BUILD_ID__";
 
 export function startSidStudio(){
@@ -257,14 +258,6 @@ function voiceSettingsForSlot(slot){
 function routingSelectForSource(source){
  const key=routingKeyForSource(source);
  return performanceRouting.getState()[key];
-}
-function filterRegistersFromUi(filter){
- const hz=Number(filter.cutoff);
- const cutoff=Math.round(Math.max(0,Math.min(1,(hz-50)/9950))*2047);
- const resonancePct=Number(filter.resonance);
- const volumePct=Number(filter.volume);
- const mode=filter.mode??'lowpass';
- return {cutoff,resonance:Math.round(resonancePct*15/100),mode,volume:Math.round(volumePct*15/100)};
 }
 function clearDrumReleaseTimer(ownerKey){
  const pending=drumReleaseTimers.get(ownerKey);
