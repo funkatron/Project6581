@@ -1,6 +1,10 @@
 # SID Instrument Lab: implementation notes
 
-Status: foundation in progress; not connected to the UI or audio engine.
+Status: CLI-first foundation in progress; not connected to the UI or audio engine.
+
+## CLI-first workflow
+
+Run `node scripts/sid-lab.mjs inspect path/to/tune.sid` to inspect a SID header; add `--json` for machine-readable metadata. Run `node scripts/sid-lab.mjs analyze path/to/events.json` to summarize timestamped register writes, or add `--json` for structured output. The analyzer accepts an array of `{cycle, chip, register, value}` objects, with zero-based chip and register indices. **There is not yet a player that produces these traces.** Both commands reuse browser-independent modules, which the eventual GUI can import directly.
 
 ## Goal
 
@@ -21,6 +25,8 @@ Provide an independent, touch-first Project6581 workspace to inspect .sid music,
 
 ### M1: File loading and voice isolation
 - [x] Add standalone PSID/RSID metadata reader with tests
+- [x] Add CLI for metadata inspection and supplied register traces
+- [x] Add pure register-event voice analysis with tests
 - [ ] Validate against a real HVSC file (e.g. Commando.sid)
 - [ ] Add an Instrument Lab entry point and local .sid file picker
 - [ ] Display metadata, subtune list, and playback status
@@ -41,4 +47,4 @@ SID files contain executable machine code. Treat all uploaded files as untrusted
 
 ## Release policy
 
-Do not merge, tag, deploy, or bump semantic version merely for individual commits. Verify CI, review Copilot feedback, and obtain explicit authorization before release.
+Do not merge, tag, deploy, or bump semantic version merely for individual commits. Verify CI and obtain explicit authorization before release. Copilot review is temporarily deferred at user request.
