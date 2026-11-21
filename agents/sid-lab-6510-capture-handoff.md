@@ -36,19 +36,16 @@ Integrate **libsidplayfp** as a **native** 6510 playback engine that emits **cyc
 
 ---
 
-## Git state (uncommitted — commit curated files)
+## Git state (in repo)
 
 | Path | Notes |
 |------|--------|
-| `native/sid-lab-capture/` | **Commit** overlay + main.cpp |
-| `scripts/build-sid-lab-capture.sh` | **Commit** |
-| `test/sid-instrument-lab-native-capture.test.js` | **Commit** (skips if no binary) |
-| `agents/sid-lab-tools.md`, `agents/sid-lab-upstream.md`, `agents/sid-lab-6510-capture-handoff.md` | **Commit** |
-| `agents/sid-instrument-lab.md` | Minor tooling links |
-| `vendor/libsidplayfp/` | **Do not commit** — local build tree; prefer clone-on-build or gitignore |
-| `dist/sid-lab-capture` | Already ignored |
-
-**Suggested commit split:** (1) native capture + build script + test, (2) agent docs. No version bump.
+| `native/sid-lab-capture/` | Overlay + `sid-lab-capture.cpp` |
+| `scripts/build-sid-lab-capture.sh` | Builds `dist/sid-lab-capture` |
+| `test/sid-instrument-lab-native-capture.test.js` | Skips if binary missing |
+| Agent docs | `sid-lab-handoff.md`, `sid-lab-tools.md`, `sid-lab-upstream.md`, `sid-instrument-lab.md` |
+| `vendor/libsidplayfp/` | **Gitignored** — clone via build script |
+| `dist/sid-lab-capture` | **Gitignored** — build locally or in CI |
 
 ---
 
@@ -71,13 +68,12 @@ Integrate **libsidplayfp** as a **native** 6510 playback engine that emits **cyc
 
 ## Follow-ups (priority)
 
-1. **Commit** curated files; **do not commit** `vendor/libsidplayfp` (add to `.gitignore` if needed).
-2. **CI:** Optional workflow installing `xa65`, autotools, `libgcrypt-dev`—or keep skip-only test.
-3. **CLI:** Optional `--backend auto` resolving `dist/sid-lab-capture` (`scripts/sid-lab.mjs`).
-4. **Commando / HVSC:** Manual `capture` + probe; document in PR; no checked-in tunes.
-5. **RSID / ROMs:** `sid-lab-capture.cpp` does not call `setRoms()` yet.
-6. **Trace limits:** `shouldStop` on sink not consulted in `Player::play` loop (limits in callback only).
-7. **Push + PR:** Refresh verification checklist on #186.
+1. **CI:** Optional workflow installing `xa65`, autotools, `libgcrypt-dev`—or keep skip-only test.
+2. **CLI:** Optional `--backend auto` resolving `dist/sid-lab-capture` (`scripts/sid-lab.mjs`).
+3. **Commando / HVSC:** Manual `capture` + probe; document in PR; no checked-in tunes.
+4. **RSID / ROMs:** `sid-lab-capture.cpp` does not call `setRoms()` yet.
+5. **Trace limits:** `shouldStop` on sink not consulted in `Player::play` loop (limits in callback only).
+6. **Push + PR:** Refresh verification checklist on #186.
 
 ---
 

@@ -1,0 +1,121 @@
+/*
+ * This file is part of libsidplayfp, a SID player engine.
+ *
+ * Copyright 2012-2024 Leandro Nini <drfiemost@users.sourceforge.net>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this file; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+#ifndef EXTRASIDBANK_H
+#define EXTRASIDBANK_H
+
+#include "Bank.h"
+#include <vector>
+#include <map>
+
+#include "c64/c64sid.h"
+#include "SidRegisterTrace.h"
+#include "EventScheduler.h"
+
+#include "sidcxx11.h"
+
+namespace libsidplayfp
+{
+
+/**
+ * Extra SID bank.
+ */
+class ExtraSidBank final : public Bank
+{
+private:
+    using sids_t = std::vector<c64sid*>;
+
+private:
+    /**
+     * Size of mapping table. Each 32 bytes another SID chip base address
+     * can be assigned to.
+     */
+    static constexpr int MAPPER_SIZE = 8;
+
+private:
+    /**
+     * SID mapping table.
+     * Maps a SID chip base address to a SID
+     * or to the underlying bank.
+     */
+    Bank *mapper[MAPPER_SIZE];
+
+    sids_t sids;
+
+    EventScheduler *traceScheduler = nullptr;
+    std::map<Bank *, unsigned> traceChips;
+
+private:
+    static unsigned int mapperIndex(int address) { return address >> 5 & (MAPPER_SIZE - 1); }
+
+public:
+    virtual ~ExtraSidBank() = default;
+
+    void setTraceContext(EventScheduler *scheduler) { traceScheduler = scheduler; }
+
+    void reset()
+    {
+        for (c64sid* sid: sids)
+            sid->reset();
+    }
+
+    void resetSIDMapper(Bank *bank)
+    {
+        for (int i = 0; i < MAPPER_SIZE; i++)
+            mapper[i] = bank;
+    }
+
+    uint8_t peek(uint_least16_t addr) override
+    {
+        return mapper[mapperIndex(addr)]->peek(addr);
+    }
+
+    void poke(uint_least16_t addr, uint8_t data) override
+    {
+        Bank *bank = mapper[mapperIndex(addr)];
+        if (traceScheduler != nullptr)
+        {
+            const auto it = traceChips.find(bank);
+            if (it != traceChips.end())
+                traceSidRegisterWrite(*traceScheduler, it->second, addr & 0x1f, data);
+        }
+        bank->poke(addr, data);
+    }
+
+    /**
+     * Set SID emulation.
+     *
+     * @param s the emulation
+     * @param address the address where to put the chip
+     */
+    void addSID(c64sid *s, int address, unsigned chip)
+    {
+        sids.push_back(s);
+        Bank *bank = s;
+        mapper[mapperIndex(address)] = bank;
+        traceChips[bank] = chip;
+    }
+
+    unsigned int installedSIDs() const { return sids.size(); }
+};
+
+}
+
+#endif
