@@ -4,23 +4,40 @@
  * Usage: node scripts/sid-lab.mjs inspect tune.sid [--json]
  *        node scripts/sid-lab.mjs analyze events.json [--json]
  *        node scripts/sid-lab.mjs notes events.json [--json]
+ *        node scripts/sid-lab.mjs capture tune.sid --backend /path/to/trace-producer [--subtune N] [--json]
  */
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { parseSidHeader } from '../src/features/sid-instrument-lab/parse-sid-header.js';
 import { analyzeSidRegisterEvents } from '../src/features/sid-instrument-lab/analyze-register-events.js';
 import { extractSidNoteCandidates } from '../src/features/sid-instrument-lab/extract-note-candidates.js';
+import { captureSidRegisters } from '../src/features/sid-instrument-lab/capture-sid-registers.js';
+import { createProcessSidBackend } from './sid-lab-process-backend.mjs';
 
-export async function runSidLab(args, { read = readFile, write = console.log } = {}) {
+export async function runSidLab(args, { read = readFile, write = console.log, backendFactory = createProcessSidBackend } = {}) {
   const [command, filename, ...options] = args;
-  if (!['inspect', 'analyze', 'notes'].includes(command) || !filename ||
-      options.some(option => option !== '--json')) {
-    throw new Error('Usage: sid-lab <inspect SID_FILE | analyze EVENTS_JSON | notes EVENTS_JSON> [--json]');
-  }
+  const usage = 'Usage: sid-lab <inspect SID_FILE | analyze EVENTS_JSON | notes EVENTS_JSON> [--json] | capture SID_FILE --backend EXECUTABLE [--subtune N] [--json]';
+  if (!['inspect', 'analyze', 'notes', 'capture'].includes(command) || !filename) throw new Error(usage);
+  let backendPath;
+  let subtune;
+  if (command === 'capture') {
+    for (let i = 0; i < options.length; i++) {
+      if (options[i] === '--json') continue;
+      if (options[i] === '--backend' && options[i + 1]) backendPath = options[++i];
+      else if (options[i] === '--subtune' && options[i + 1]) {
+        const value = options[++i];
+        if (!/^[0-9]+$/.test(value)) throw new Error(usage);
+        subtune = Number(value);
+      } else throw new Error(usage);
+    }
+    if (!backendPath) throw new Error(usage);
+  } else if (options.some(option => option !== '--json')) throw new Error(usage);
   const bytes = await read(filename);
   let result;
   if (command === 'inspect') {
     result = parseSidHeader(bytes);
+  } else if (command === 'capture') {
+    result = await captureSidRegisters(backendFactory(backendPath), bytes, { subtune });
   } else {
     const input = JSON.parse(new TextDecoder().decode(bytes));
     result = command === 'notes' ? extractSidNoteCandidates(input) : analyzeSidRegisterEvents(input);
@@ -38,6 +55,8 @@ export async function runSidLab(args, { read = readFile, write = console.log } =
       `Init: $${result.initAddress.toString(16).padStart(4, '0')}`,
       `Play: $${result.playAddress.toString(16).padStart(4, '0')}`,
     ].join('\n'));
+  } else if (command === 'capture') {
+    write(`Captured ${result.events.length} register events for subtune ${result.source.subtune}; use --json to export the trace`);
   } else if (command === 'notes') {
     write([
       `Candidate notes: ${result.notes.length}`,
