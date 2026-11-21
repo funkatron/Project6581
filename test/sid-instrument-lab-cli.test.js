@@ -48,3 +48,18 @@ test('CLI rejects unsupported arguments', async () => {
   await assert.rejects(runSidLab(['extract', 'tune.sid']), /Usage/);
   await assert.rejects(runSidLab(['inspect', 'tune.sid', '--unknown']), /Usage/);
 });
+
+test('CLI notes reports extracted note candidates', async () => {
+  const output = [];
+  const input = [
+    { cycle: 0, chip: 0, register: 4, value: 0x21 },
+    { cycle: 20, chip: 0, register: 4, value: 0x20 },
+  ];
+  await runSidLab(['notes', 'events.json', '--json'], {
+    read: async () => new TextEncoder().encode(JSON.stringify(input)),
+    write: line => output.push(line),
+  });
+  const result = JSON.parse(output[0]);
+  assert.equal(result.notes.length, 1);
+  assert.equal(result.notes[0].endCycle, 20);
+});
