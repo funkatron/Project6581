@@ -63,3 +63,36 @@ test('CLI notes reports extracted note candidates', async () => {
   assert.equal(result.notes.length, 1);
   assert.equal(result.notes[0].endCycle, 20);
 });
+
+test('CLI capture delegates to backend and emits reusable trace envelope', async () => {
+  const output = [];
+  let requested;
+  await runSidLab(['capture', 'fixture.sid', '--backend', '/trusted/player', '--subtune', '1', '--json'], {
+    read: async () => sidFixture(),
+    write: line => output.push(line),
+    backendFactory: executable => {
+      assert.equal(executable, '/trusted/player');
+      return { capture: async request => {
+        requested = request;
+        return { events: [{ cycle: 1, chip: 0, register: 4, value: 0x21 }] };
+      } };
+    },
+  });
+  assert.equal(requested.subtune, 1);
+  assert.equal(JSON.parse(output[0]).events.length, 1);
+});
+
+test('CLI analyze accepts captured trace envelopes', async () => {
+  const output = [];
+  await runSidLab(['analyze', 'capture.json', '--json'], {
+    read: async () => new TextEncoder().encode(JSON.stringify({
+      schemaVersion: 1, events: [{ cycle: 0, chip: 0, register: 4, value: 0x21 }],
+    })),
+    write: line => output.push(line),
+  });
+  assert.equal(JSON.parse(output[0]).voices[0].noteOns.length, 1);
+});
+
+test('CLI capture requires an explicit backend executable', async () => {
+  await assert.rejects(runSidLab(['capture', 'fixture.sid']), /Usage/);
+});
