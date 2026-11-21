@@ -7,7 +7,9 @@
  *        node scripts/sid-lab.mjs capture tune.sid --backend /path/to/trace-producer [--subtune N] [--json]
  */
 import { readFile, writeFile } from 'node:fs/promises';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
+import { resolve, dirname, join } from 'node:path';
+import { access } from 'node:fs/promises';
 import { parseSidHeader } from '../src/features/sid-instrument-lab/parse-sid-header.js';
 import { analyzeSidRegisterEvents } from '../src/features/sid-instrument-lab/analyze-register-events.js';
 import { extractSidNoteCandidates } from '../src/features/sid-instrument-lab/extract-note-candidates.js';
@@ -15,9 +17,11 @@ import { captureSidRegisters } from '../src/features/sid-instrument-lab/capture-
 import { createProcessSidBackend } from './sid-lab-process-backend.mjs';
 import { renderSidTraceWav } from '../src/features/sid-instrument-lab/render-trace-wav.js';
 
-export async function runSidLab(args, { read = readFile, write = console.log, save = writeFile, backendFactory = createProcessSidBackend, wavRenderer = renderSidTraceWav } = {}) {
+const DEFAULT_CAPTURE_BINARY = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist', 'sid-lab-capture');
+
+export async function runSidLab(args, { read = readFile, write = console.log, save = writeFile, checkExecutable = access, backendFactory = createProcessSidBackend, wavRenderer = renderSidTraceWav } = {}) {
   const [command, filename, ...options] = args;
-  const usage = 'Usage: sid-lab <inspect SID_FILE | analyze EVENTS_JSON | notes EVENTS_JSON> [--json] | capture SID_FILE --backend EXECUTABLE [--subtune N] [--json] | wav EVENTS_JSON --out FILE.wav [--wasm FILE.wasm] [--chip 0..2] [--voice 1..3]';
+  const usage = 'Usage: sid-lab <inspect SID_FILE | analyze EVENTS_JSON | notes EVENTS_JSON> [--json] | capture SID_FILE [--backend EXECUTABLE] [--subtune N] [--json] | wav EVENTS_JSON --out FILE.wav [--wasm FILE.wasm] [--chip 0..2] [--voice 1..3]';
   if (!['inspect', 'analyze', 'notes', 'capture', 'wav'].includes(command) || !filename) throw new Error(usage);
   let backendPath;
   let subtune;
@@ -32,7 +36,7 @@ export async function runSidLab(args, { read = readFile, write = console.log, sa
         subtune = Number(value);
       } else throw new Error(usage);
     }
-    if (!backendPath) throw new Error(usage);
+    if (!backendPath) backendPath = 'auto';
   } else if (command === 'wav') {
     wavOptions = { wasm: 'dist/residfp.wasm', chip: 0, voice: null };
     for (let i = 0; i < options.length; i++) {
@@ -54,6 +58,11 @@ export async function runSidLab(args, { read = readFile, write = console.log, sa
   if (command === 'inspect') {
     result = parseSidHeader(bytes);
   } else if (command === 'capture') {
+    if (backendPath === 'auto') {
+      try { await checkExecutable(DEFAULT_CAPTURE_BINARY); }
+      catch { throw new Error('Native SID capture backend not built. Run bash scripts/build-sid-lab-capture.sh or specify --backend PATH'); }
+      backendPath = DEFAULT_CAPTURE_BINARY;
+    }
     result = await captureSidRegisters(backendFactory(backendPath), bytes, { subtune });
   } else if (command === 'wav') {
     const trace = JSON.parse(new TextDecoder().decode(bytes));
