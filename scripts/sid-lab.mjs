@@ -5,6 +5,7 @@
  *        node scripts/sid-lab.mjs analyze events.json [--json]
  */
 import { readFile } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
 import { parseSidHeader } from '../src/features/sid-instrument-lab/parse-sid-header.js';
 import { analyzeSidRegisterEvents } from '../src/features/sid-instrument-lab/analyze-register-events.js';
 
@@ -47,7 +48,7 @@ export async function runSidLab(args, { read = readFile, write = console.log } =
   return result;
 }
 
-if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   runSidLab(process.argv.slice(2)).catch(error => {
     console.error(`SID Lab: ${error.message}`);
     process.exitCode = 1;
