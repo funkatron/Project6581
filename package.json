@@ -9,6 +9,7 @@
     "version:resolve": "node scripts/resolve-version.mjs",
     "version:sync": "node scripts/sync-package-version.mjs",
     "drum-audio:record": "node scripts/drum-sequence-audition-record.mjs",
-    "drum-audio:analyze": "node scripts/drum-sequence-audition-analyze.mjs"
+    "drum-audio:analyze": "node scripts/drum-sequence-audition-analyze.mjs",
+    "drum-audio:offline-kick": "node scripts/offline-kick-wave-compare.mjs"
   }
 }

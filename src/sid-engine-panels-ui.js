@@ -1,6 +1,6 @@
 import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=__BUILD_ID__';
 import {DRUM_ENGINE_INDEX,SID_ENGINE_COUNT} from './sid-engines.js';
-import {meterDisplayWidth} from './sid-meter-display.js?v=__BUILD_ID__';
+import {chipPanStereoPeaks,meterDisplayWidth} from './sid-meter-display.js?v=__BUILD_ID__';
 import {formatPanBrief,formatHzBrief,formatPercent} from './control-format.js?v=__BUILD_ID__';
 import {setLayoutInert} from './ui-layout.js?v=__BUILD_ID__';
 
@@ -10,8 +10,11 @@ export function querySidEngineCard(chip){
  return document.querySelector('.sid-engine-card[data-engine="'+chip+'"]');
 }
 
+const DRUM_BUS_SID_LABELS=['Kick bus','Snare bus','Hat bus'];
+
 export function mountSidEnginePanels({
- $,engines,getEngines,ranges,formatControlValue,onEngineChange,getMeterLevels
+ $,engines,getEngines,ranges,formatControlValue,onEngineChange,getMeterLevels,
+ getActiveDrumBusIndex,getDrumBusFilter,setDrumBusFilterField
 }={}){
  if(!$||!engines)throw new TypeError('mountSidEnginePanels requires $ and engines');
  function renderRainbowMeter(level=0){
@@ -29,17 +32,59 @@ export function mountSidEnginePanels({
   wrap.append(track,fill);
   return wrap;
  }
+ function renderStereoChipMeter(chipIndex,monoLevel,panPercent){
+  const {left,right}=chipPanStereoPeaks(monoLevel,panPercent);
+  const wrap=document.createElement('div');
+  wrap.className='sid-stereo-meter sid-stereo-meter--stacked';
+  wrap.dataset.chip=String(chipIndex);
+  wrap.setAttribute('role','img');
+  function channel(side,labelText,level){
+   const channelEl=document.createElement('div');
+   channelEl.className='sid-stereo-meter-channel';
+   channelEl.dataset.channel=side;
+   const label=document.createElement('span');
+   label.className='sid-stereo-meter-label';
+   label.textContent=labelText;
+   const meter=renderRainbowMeter(level);
+   meter.dataset.channel=side;
+   channelEl.append(label,meter);
+   return channelEl;
+  }
+  wrap.append(channel('left','L',left),channel('right','R',right));
+  const lWidth=meterDisplayWidth(left);
+  const rWidth=meterDisplayWidth(right);
+  wrap.setAttribute('aria-label','Drum bus level L '+lWidth+' R '+rWidth);
+  return wrap;
+ }
+ function applyMeterWidth(meterEl,level){
+  const fill=meterEl?.querySelector('.sid-rainbow-meter-fill');
+  if(!fill)return null;
+  const width=meterDisplayWidth(level);
+  fill.style.width=width;
+  return width;
+ }
+ function drumBusFilterForCard(engine){
+  const busIndex=getActiveDrumBusIndex?.()??0;
+  return getDrumBusFilter?.(busIndex)??engine.filter;
+ }
  function renderEngineCard(index){
   const engine=getEngines()[index];
+  const isDrumChip=index===DRUM_ENGINE_INDEX;
+  const drumBusFilter=isDrumChip?drumBusFilterForCard(engine):null;
   const card=document.createElement('article');
   card.className='sid-engine-card panel';
   card.dataset.engine=String(index);
   const header=document.createElement('header');
   header.className='sid-engine-header';
   const title=document.createElement('h3');
-  title.textContent=index===DRUM_ENGINE_INDEX?'SID 4 · Drums':'SID '+(index+1);
-  const meter=renderRainbowMeter(getMeterLevels?.()[index]??0);
-  meter.dataset.chip=String(index);
+  if(isDrumChip){
+   const busIndex=getActiveDrumBusIndex?.()??0;
+   title.textContent='SID 4 · '+(DRUM_BUS_SID_LABELS[busIndex]??'Drums');
+  }else title.textContent='SID '+(index+1);
+  const peakLevel=getMeterLevels?.()[index]??0;
+  const meter=isDrumChip
+   ?renderStereoChipMeter(index,peakLevel,engine.pan)
+   :(()=>{const mono=renderRainbowMeter(peakLevel);mono.dataset.chip=String(index);return mono;})();
   const modelLabel=document.createElement('label');
   modelLabel.textContent='Model ';
   const model=document.createElement('select');
@@ -84,43 +129,48 @@ export function mountSidEnginePanels({
   const controlGrid=document.createElement('div');
   controlGrid.className='sid-engine-control-grid';
   const pan=appendParamRow(controlGrid,'Pan',{value:engine.pan,min:-100,max:100,step:1,prop:'pan',formatFn:formatPanBrief});
-  const isDrumChip=index===DRUM_ENGINE_INDEX;
-  if(!isDrumChip){
-   const filterFields=[
-    ['volume','Volume',0,100,formatPercent],
-    ['cutoff','Cutoff',50,10000,formatHzBrief],
-    ['resonance','Resonance',0,100,formatPercent]
-   ];
-   for(const [key,label,min,max,formatFn] of filterFields){
-    appendParamRow(controlGrid,label,{value:engine.filter[key],min,max,step:1,filter:key,formatFn:value=>formatFn(value)});
-   }
-   const modeLabel=document.createElement('label');
-   modeLabel.className='control-span-full filter-mode';
-   modeLabel.textContent='Filter ';
-   const mode=document.createElement('select');
-   mode.dataset.filter='mode';
-   for(const value of FILTER_MODES){
-    const option=document.createElement('option');
-    option.value=value;option.textContent=value==='lowpass'?'Low-pass':value==='bandpass'?'Band-pass':'High-pass';
-    mode.append(option);
-   }
-   mode.value=engine.filter.mode;
-   modeLabel.append(mode);
-   controlGrid.append(modeLabel);
+  if(isDrumChip){
+   const busHeading=document.createElement('h4');
+   busHeading.className='control-span-full sid-engine-voice-heading';
+   busHeading.textContent='Bus filter';
+   controlGrid.append(busHeading);
   }
+  const filterFields=[
+   ['volume','Volume',0,100,formatPercent],
+   ['cutoff','Cutoff',50,10000,formatHzBrief],
+   ['resonance','Resonance',0,100,formatPercent]
+  ];
+  for(const [key,label,min,max,formatFn] of filterFields){
+   const rowLabel=isDrumChip&&key==='cutoff'?'Bus cutoff':label;
+   const filterRef=isDrumChip?drumBusFilter:engine.filter;
+   appendParamRow(controlGrid,rowLabel,{value:filterRef[key],min,max,step:1,filter:key,formatFn:value=>formatFn(value)});
+  }
+  const modeLabel=document.createElement('label');
+  modeLabel.className='control-span-full filter-mode';
+  modeLabel.textContent=isDrumChip?'Bus filter mode ':'Filter ';
+  const mode=document.createElement('select');
+  mode.dataset.filter='mode';
+  for(const value of FILTER_MODES){
+   const option=document.createElement('option');
+   option.value=value;option.textContent=value==='lowpass'?'Low-pass':value==='bandpass'?'Band-pass':'High-pass';
+   mode.append(option);
+  }
+  mode.value=(isDrumChip?drumBusFilter:engine.filter).mode;
+  modeLabel.append(mode);
+  controlGrid.append(modeLabel);
   if(isDrumChip){
    const boostLabel=document.createElement('label');
    boostLabel.className='control-span-full';
    boostLabel.textContent='Boost ';
    const boostSelect=document.createElement('select');
    boostSelect.dataset.prop='outputBoostDb';
-   for(const db of [0,6,12]){
+   for(const db of [0,6,12,18,24]){
     const option=document.createElement('option');
     option.value=String(db);
     option.textContent=db===0?'Off':('+'+db+' dB');
     boostSelect.append(option);
    }
-   boostSelect.value=String(engine.outputBoostDb??6);
+   boostSelect.value=String(engine.outputBoostDb??18);
    boostSelect.setAttribute('aria-label','SID 4 output boost');
    boostLabel.append(boostSelect);
    controlGrid.append(boostLabel);
@@ -145,7 +195,7 @@ export function mountSidEnginePanels({
    });
    const drumNote=document.createElement('p');
    drumNote.className='drum-chip-note control-span-full';
-   drumNote.textContent='Per-bus voice, filter, and pitch settings are below the pattern grid.';
+   drumNote.textContent='Three bus filters on one SID 4 chip—controls follow the Kick, Snare, or Hat tab.';
    controlGrid.append(drumNote);
   }else{
    const voiceHeading=document.createElement('h4');
@@ -212,19 +262,27 @@ export function mountSidEnginePanels({
    });
   }
   card.append(header,controlGrid);
-  if(!isDrumChip)card.querySelectorAll('input[data-filter]').forEach(inp=>inp.addEventListener('input',()=>{
+  card.querySelectorAll('input[data-filter]').forEach(inp=>inp.addEventListener('input',()=>{
    const key=inp.dataset.filter;
-   engine.filter[key]=Number(inp.value);
+   const value=Number(inp.value);
+   if(isDrumChip&&setDrumBusFilterField){
+    const busIndex=getActiveDrumBusIndex?.()??0;
+    setDrumBusFilterField(busIndex,key,value);
+   }else engine.filter[key]=value;
+   const filterRef=isDrumChip?drumBusFilterForCard(engine):engine.filter;
    const out=inp.closest('.param-row')?.querySelector('.param-values output');
    if(out){
-    if(key==='cutoff')out.textContent=formatHzBrief(engine.filter[key]);
-    else if(key==='volume'||key==='resonance')out.textContent=formatPercent(engine.filter[key]);
-    else out.textContent=formatControlValue(key,engine.filter[key]);
+    if(key==='cutoff')out.textContent=formatHzBrief(filterRef[key]);
+    else if(key==='volume'||key==='resonance')out.textContent=formatPercent(filterRef[key]);
+    else out.textContent=formatControlValue(key,filterRef[key]);
    }
    onEngineChange?.(index);
   }));
-  if(!isDrumChip)card.querySelectorAll('select[data-filter]').forEach(inp=>inp.addEventListener('change',()=>{
-   engine.filter.mode=inp.value;
+  card.querySelectorAll('select[data-filter]').forEach(inp=>inp.addEventListener('change',()=>{
+   if(isDrumChip&&setDrumBusFilterField){
+    const busIndex=getActiveDrumBusIndex?.()??0;
+    setDrumBusFilterField(busIndex,'mode',inp.value);
+   }else engine.filter.mode=inp.value;
    onEngineChange?.(index);
   }));
   pan.input.addEventListener('input',e=>{
@@ -256,13 +314,27 @@ export function mountSidEnginePanels({
   document.querySelectorAll('.sid-engine-card .sid-rainbow-meter[data-chip]').forEach(meter=>{
    const chip=Number(meter.dataset.chip);
    if(!Number.isInteger(chip)||chip<0||chip>=SID_ENGINE_COUNT)return;
-   const fill=meter.querySelector('.sid-rainbow-meter-fill');
-   if(!fill)return;
-   const width=meterDisplayWidth(levels?.[chip]);
-   fill.style.width=width;
-   meter.setAttribute('aria-label','SID output level '+width);
+   const width=applyMeterWidth(meter,levels?.[chip]);
+   if(width)meter.setAttribute('aria-label','SID output level '+width);
   });
+  const drumStereo=document.querySelector('.sid-stereo-meter[data-chip="'+DRUM_ENGINE_INDEX+'"]');
+  if(drumStereo){
+   const pan=getEngines()[DRUM_ENGINE_INDEX]?.pan??0;
+   const {left,right}=chipPanStereoPeaks(levels?.[DRUM_ENGINE_INDEX],pan);
+   const leftMeter=drumStereo.querySelector('[data-channel="left"] .sid-rainbow-meter');
+   const rightMeter=drumStereo.querySelector('[data-channel="right"] .sid-rainbow-meter');
+   const lWidth=applyMeterWidth(leftMeter,left);
+   const rWidth=applyMeterWidth(rightMeter,right);
+   if(lWidth&&rWidth){
+    drumStereo.setAttribute('aria-label','Drum bus level L '+lWidth+' R '+rWidth);
+   }
+  }
+ }
+ function renderDrumBus(){
+  const host=engineHostForIndex(DRUM_ENGINE_INDEX);
+  if(!host)return;
+  host.replaceChildren(renderEngineCard(DRUM_ENGINE_INDEX));
  }
  render();
- return {render,updateMeters};
+ return {render,renderDrumBus,updateMeters};
 }

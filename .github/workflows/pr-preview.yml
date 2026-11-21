@@ -57,9 +57,9 @@ jobs:
       - name: Build and test authentic SID
         if: inputs.operation == 'publish'
         run: |
-          npm test
           if [ '${{ steps.sid-cache.outputs.cache-hit }}' != 'true' ]; then bash scripts/build-residfp.sh; fi
           test -s dist/residfp.wasm
+          npm test
           node scripts/check-wasm-imports.mjs
           node scripts/smoke-test-sid.mjs
           node scripts/stamp-build.mjs
