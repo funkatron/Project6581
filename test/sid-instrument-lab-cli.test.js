@@ -111,7 +111,7 @@ test('CLI capture auto backend selects the repository-native binary', async () =
       return { capture: async () => ({ events: [] }) };
     },
   });
-  assert.match(selected, /dist\\/sid-lab-capture$/);
+  assert.ok(selected.endsWith('/dist/sid-lab-capture'));
 });
 
 test('CLI wav writes rendered audio with configurable chip and voice', async () => {
