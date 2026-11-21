@@ -93,8 +93,25 @@ test('CLI analyze accepts captured trace envelopes', async () => {
   assert.equal(JSON.parse(output[0]).voices[0].noteOns.length, 1);
 });
 
-test('CLI capture requires an explicit backend executable', async () => {
-  await assert.rejects(runSidLab(['capture', 'fixture.sid']), /Usage/);
+test('CLI capture auto backend reports actionable build instructions when absent', async () => {
+  await assert.rejects(runSidLab(['capture', 'fixture.sid'], {
+    read: async () => sidFixture(),
+    checkExecutable: async () => { throw new Error('ENOENT'); },
+  }), /build-sid-lab-capture/);
+});
+
+test('CLI capture auto backend selects the repository-native binary', async () => {
+  let selected;
+  await runSidLab(['capture', 'fixture.sid', '--json'], {
+    read: async () => sidFixture(),
+    write: () => {},
+    checkExecutable: async () => {},
+    backendFactory: executable => {
+      selected = executable;
+      return { capture: async () => ({ events: [] }) };
+    },
+  });
+  assert.match(selected, /dist\\/sid-lab-capture$/);
 });
 
 test('CLI wav writes rendered audio with configurable chip and voice', async () => {
