@@ -8,7 +8,7 @@
  */
 import { readFile, writeFile } from 'node:fs/promises';
 import { pathToFileURL, fileURLToPath } from 'node:url';
-import { resolve, dirname, join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { access } from 'node:fs/promises';
 import { parseSidHeader } from '../src/features/sid-instrument-lab/parse-sid-header.js';
 import { analyzeSidRegisterEvents } from '../src/features/sid-instrument-lab/analyze-register-events.js';
