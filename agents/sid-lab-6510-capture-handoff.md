@@ -69,7 +69,7 @@ Integrate **libsidplayfp** as a **native** 6510 playback engine that emits **cyc
 ## Follow-ups (priority)
 
 1. **CI:** Optional workflow installing `xa65`, autotools, `libgcrypt-dev`—or keep skip-only test.
-2. **CLI:** Optional `--backend auto` resolving `dist/sid-lab-capture` (`scripts/sid-lab.mjs`).
+2. **CLI:** Done: omitting `--backend` or using `--backend auto` resolves `dist/sid-lab-capture`, with a clear build error when missing.
 3. **Commando / HVSC:** Manual `capture` + probe; document in PR; no checked-in tunes.
 4. **RSID / ROMs:** `sid-lab-capture.cpp` does not call `setRoms()` yet.
 5. **Trace limits:** `shouldStop` on sink not consulted in `Player::play` loop (limits in callback only).
