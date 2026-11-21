@@ -29,9 +29,7 @@ std::pair<float, float> pan_gains(float pan) {
 }
 float gain_from_db(int db) {
   if (db <= 0) return 1.f;
-  if (db == 6) return std::pow(10.f, 6.f / 20.f);
-  if (db == 12) return std::pow(10.f, 12.f / 20.f);
-  return 1.f;
+  return std::pow(10.f, static_cast<float>(db) / 20.f);
 }
 }
 extern "C" {

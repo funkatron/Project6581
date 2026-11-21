@@ -30,7 +30,7 @@ test('drumLaneTimbre applies lane level to legacy filter volume and noise decay'
   const kick = FACTORY_PRESETS.find((p) => p.id === 'low-thud-kick');
   const lane = defaultDrumKit().lanes.kick;
   const {voice, filter} = drumLaneTimbre(kick.settings, lane);
-  assert.equal(voice.wave, 'triangle');
+  assert.equal(voice.wave, 'triangle+noise');
   assert.equal(filter.volume, 92);
   const half = drumLaneTimbre(kick.settings, {...lane, level: 50});
   assert.equal(half.filter.volume, 46);
