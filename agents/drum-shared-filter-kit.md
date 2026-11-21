@@ -11,11 +11,11 @@
 | Control | Starting value | Rationale |
 | --- | --- | --- |
 | Mode | Low-pass | Kick body + shared muffling of hats (authentic single-filter compromise). |
-| Cutoff | ~1.0 kHz | Kick-heavy low-mid body; hats stay short on the shared bus. |
-| Resonance | ~17% | Low-mid punch on kick/snare. |
+| Cutoff | ~860 Hz | Trims hat fizz; keeps kick/snare in low-mid pocket on the shared bus. |
+| Resonance | ~21% | Extra low-mid punch without reopening the top end. |
 | Volume | ~90% | Matches louder kick balance with +18 dB boost default. |
 
-**Brighter kits:** raise cutoff toward 3–4 kHz on SID 4. **Kick-heavy:** 900 Hz–1.2 kHz, accept duller hats.
+**Brighter kits:** raise cutoff toward 1–1.2 kHz (or higher for melodic buses). **Punchy low-mid default:** ~750–950 Hz, accept shorter/duller hats.
 
 ## Factory lane timbres (voice-only intent)
 
