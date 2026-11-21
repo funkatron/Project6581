@@ -1,4 +1,4 @@
-import {bindHelpGesture} from './ui-help-gesture.js?v=0.21.7+20261121T183501991Z';
+import {bindHelpGesture} from './ui-help-gesture.js?v=0.21.7+20261121T183803220Z';
 import {
   DRUM_LANE_COUNT,
   DRUM_LANE_IDS,
