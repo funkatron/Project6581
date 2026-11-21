@@ -1,5 +1,5 @@
-import {formatSidEventLogText} from './sid-event-log.js?v=0.21.5+20261121T182557147Z';
-import {formatStudioTraceText} from './studio-trace-log.js?v=0.21.5+20261121T182557147Z';
+import {formatSidEventLogText} from './sid-event-log.js?v=0.21.7+20261121T183501991Z';
+import {formatStudioTraceText} from './studio-trace-log.js?v=0.21.7+20261121T183501991Z';
 
 export function formatDiagnosticActivityText(studioSnapshot,eventSnapshot){
  const studio=formatStudioTraceText(studioSnapshot,{
