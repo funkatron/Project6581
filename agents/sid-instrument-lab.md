@@ -12,7 +12,11 @@ Run `node scripts/sid-lab.mjs inspect path/to/tune.sid` to inspect a SID header;
 
 ## Reusing the existing reSIDfp engine
 
-The new pure module `src/features/sid-instrument-lab/render-residfp-offline.js` instantiates the existing `dist/residfp.wasm` independently of the live AudioWorklet. It replays captured register events using `sid_write` and `sid_render`, reads interleaved stereo PCM via `sid_pcm_ptr`, and returns mono Int16 samples for the existing WAV encoder. This is a **headless renderer**, not a 6510 tune player. It currently supports PAL clock only, matching the bridge's hardcoded 985248 Hz clock. Write scheduling is quantized to audio frames, not cycle-exact. Voice filtering retains chip-wide filter writes but cannot guarantee a perfect isolated stem because SID voices share circuitry and may use sync/ring modulation. A real-WASM integration test and actual tune playback remain outstanding.
+The new pure module `src/features/sid-instrument-lab/render-residfp-offline.js` instantiates the existing `dist/residfp.wasm` independently of the live AudioWorklet. It replays captured register events using `sid_write` and `sid_render`, reads interleaved stereo PCM via `sid_pcm_ptr`, and returns mono Int16 samples for the existing WAV encoder. This is a **headless renderer**, not a 6510 tune player. It currently supports PAL clock only, matching the bridge's hardcoded 985248 Hz clock. Write scheduling is quantized to audio frames, not cycle-exact. Voice filtering retains chip-wide filter writes but cannot guarantee a perfect isolated stem because SID voices share circuitry and may use sync/ring modulation. A conditional real-WASM audio smoke test runs when `dist/residfp.wasm` is present; otherwise it skips. Actual tune playback remains outstanding.
+
+## CLI WAV export
+
+`node scripts/sid-lab.mjs wav trace.json --out voice.wav --chip 0 --voice 1` uses the existing `dist/residfp.wasm` and WAV encoder to render a captured register trace. `--wasm path` selects a different compiled bridge. Voice isolation is approximate and the renderer currently outputs mono PCM. To run the real-WASM smoke test, make sure `dist/residfp.wasm` exists before running `node --test test/sid-instrument-lab-real-wasm.test.js`. If the artifact is absent, the test is skipped, not passed.
 
 ## Goal
 
@@ -38,7 +42,8 @@ Provide an independent, touch-first Project6581 workspace to inspect .sid music,
 - [x] Add note-candidate segmentation and CLI command
 - [x] Define a bounded, abort-aware backend capture contract (emulator not yet implemented)
 - [x] Add external process capture protocol and CLI wiring with tests
-- [x] Add headless reSIDfp WASM trace renderer with mocked-WASM tests (real WASM smoke pending)
+- [x] Add headless reSIDfp WASM trace renderer with mocked-WASM tests
+- [x] Add CLI WAV export and conditional real-WASM smoke test (execution pending)
 - [ ] Validate against a real HVSC file (e.g. Commando.sid)
 - [ ] Add an Instrument Lab entry point and local .sid file picker
 - [ ] Display metadata, subtune list, and playback status
