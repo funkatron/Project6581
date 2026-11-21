@@ -2,6 +2,10 @@
 
 Status: CLI-first foundation in progress; not connected to the UI or audio engine.
 
+## Tooling
+
+Build and dependency checklist: [sid-lab-tools.md](sid-lab-tools.md). Upstream versions and patches: [sid-lab-upstream.md](sid-lab-upstream.md).
+
 ## CLI-first workflow
 
 Run `node scripts/sid-lab.mjs inspect path/to/tune.sid` to inspect a SID header; add `--json` for machine-readable metadata. Run `node scripts/sid-lab.mjs analyze path/to/events.json` to summarize timestamped register writes, or add `--json` for structured output. The analyzer accepts an array of `{cycle, chip, register, value}` objects, with zero-based chip and register indices. **There is not yet a bundled player that produces these traces.** The `notes` command also segments gate-on/off intervals. All commands reuse browser-independent modules, which the eventual GUI can import directly.
