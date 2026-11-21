@@ -9,7 +9,6 @@
 import { validateSidEvents } from './analyze-register-events.js';
 
 const PAL_CLOCK = 985248;
-const NTSC_CLOCK = 1022727;
 const MAX_SECONDS = 60;
 
 export async function createSidOfflineRenderer(wasmBytes, {
@@ -19,14 +18,14 @@ export async function createSidOfflineRenderer(wasmBytes, {
     throw new RangeError('Invalid sample rate');
   }
   if (![6581, 8580].includes(model)) throw new RangeError('Invalid SID model');
-  if (!['PAL', 'NTSC'].includes(clock)) throw new RangeError('Invalid SID clock');
+  if (clock !== 'PAL') throw new RangeError('Existing reSIDfp bridge currently supports PAL clock only');
   const instantiated = await instantiate(wasmBytes, {});
   const instance = instantiated.instance ?? instantiated;
   const e = instance.exports;
   if (!e.memory || !e.sid_init || !e.sid_write || !e.sid_render || !e.sid_pcm_ptr ||
       !e.sid_reset) throw new Error('Missing required reSIDfp WASM exports');
   if (e.sid_init(model, sampleRate) !== 1) throw new Error('reSIDfp initialization failed');
-  const cyclesPerSecond = clock === 'PAL' ? PAL_CLOCK : NTSC_CLOCK;
+  const cyclesPerSecond = PAL_CLOCK;
   return {
     render(events, { endCycle, chip = 0, voice = null } = {}) {
       const trace = validateSidEvents(events);
