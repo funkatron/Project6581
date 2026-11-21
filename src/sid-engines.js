@@ -25,9 +25,9 @@ export function defaultEngineSettings(model=6581){
 export function defaultDrumEngineSettings(model=6581){
  return {
   ...defaultEngineSettings(model),
-  outputBoostDb:18,
+  outputBoostDb:24,
   // Shared drum bus: one low-pass for kick + sn + hat (see agents/drum-shared-filter-kit.md).
-  filter:{cutoff:860,resonance:21,volume:90,mode:'lowpass'}
+  filter:{cutoff:2138,resonance:11,volume:90,mode:'lowpass'}
  };
 }
 

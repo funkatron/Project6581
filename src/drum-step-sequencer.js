@@ -210,7 +210,7 @@ export function hitsOnStep(sequence, stepIndex) {
 }
 
 export function validateDrumEngineBoost(db) {
-  const value = db === undefined ? 18 : Number(db);
+  const value = db === undefined ? 24 : Number(db);
   if (!DRUM_BOOST_DB.includes(value)) {
     throw new RangeError('Drum outputBoostDb must be one of ' + DRUM_BOOST_DB.join(', '));
   }

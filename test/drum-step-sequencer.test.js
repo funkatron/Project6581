@@ -58,8 +58,8 @@ test('validateDrumSequence coalesces legacy six-row grids', () => {
   assert.equal(seq.grid[0][0], true);
 });
 
-test('validateDrumEngineBoost defaults to +18 dB', () => {
-  assert.equal(validateDrumEngineBoost(), 18);
+test('validateDrumEngineBoost defaults to +24 dB', () => {
+  assert.equal(validateDrumEngineBoost(), 24);
   assert.equal(validateDrumEngineBoost(24), 24);
   assert.throws(() => validateDrumEngineBoost(3), /one of/);
 });

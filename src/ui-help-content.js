@@ -26,7 +26,7 @@ export const HELP_CONTENT={
  'drum-groove':{title:'Groove import and export',relatedTab:'drum',focusId:'drumGrooveExport',bullets:['6581drum files bundle pattern, kit, optional SID 4 engine block, and optional drum LFO.','Import does not change melodic engines or arp settings.']},
  'drum-transport':{title:'Drum transport',relatedTab:'drum',focusId:'drumSeqRun',bullets:['Preview starts the drum clock from step 1 without enabling Root or Game arps.','Stop halts the clock and releases active drum hits; the DRUM LED follows the same state.']},
  'drum-lfo':{title:'Drum LFO (SID 4)',relatedTab:'drum',focusId:'drumLfoControls',bullets:['One modulation source for the drum chip only—saved as sound.drumLfo, separate from the three global LFOs.','Targets filter, volume, pulse/ADSR, and chip pan on SID 4.']},
- 'sid4-boost':{title:'SID 4 output boost',relatedTab:'drum',focusId:'drumSidEngine',bullets:['Post-mix gain for SID 4: Off through +24 dB (select on SID 4 card). Default +18 dB.']},
+ 'sid4-boost':{title:'SID 4 output boost',relatedTab:'drum',focusId:'drumSidEngine',bullets:['Post-mix gain for SID 4: Off through +24 dB (select on SID 4 card). Default +24 dB.']},
  'generator-led-root':{title:'Root generator LED',relatedTab:'play',focusId:'rootArpTitle',bullets:['Lit when Root Arp is enabled; shows root rate when on.','Tap: enable or disable Root Arp. Long-press: help.']},
  'generator-led-game':{title:'Game generator LED',relatedTab:'play',focusId:'gameArpTitle',bullets:['Lit when Game Arp is enabled; shows pattern rate when on.','Tap: enable or disable Game Arp. Long-press: help.']},
  'generator-led-latch':{title:'Latch LED',relatedTab:'play',focusId:'arpLatch',bullets:['Lit when latch is on.','Tap: enable or disable latch. Long-press: help.']}

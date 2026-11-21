@@ -11,9 +11,10 @@
 | Control | Starting value | Rationale |
 | --- | --- | --- |
 | Mode | Low-pass | Kick body + shared muffling of hats (authentic single-filter compromise). |
-| Cutoff | ~860 Hz | Trims hat fizz; keeps kick/snare in low-mid pocket on the shared bus. |
-| Resonance | ~21% | Extra low-mid punch without reopening the top end. |
-| Volume | ~90% | Matches louder kick balance with +18 dB boost default. |
+| Cutoff | ~2140 Hz | Owner-tuned kick audition (PR #185); shared bus for all lanes. |
+| Resonance | ~11% | Light resonance; kick body without harsh ringing. |
+| Volume | ~90% | Bus level; kick lane default 100% in factory kit. |
+| Boost | +24 dB | SID 4 post-mix gain (factory default). |
 
 **Brighter kits:** raise cutoff toward 1–1.2 kHz (or higher for melodic buses). **Punchy low-mid default:** ~750–950 Hz, accept shorter/duller hats.
 
