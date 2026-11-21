@@ -197,6 +197,13 @@ async function syncEngineChipModels(){
  for(let chip=0;chip<engines.length;chip++)await sidAudio.setChipModel(chip,engines[chip].model);
 }
 const ranges=[['attack','Attack',0,2,.01],['decay','Decay',0,3,.01],['sustain','Sustain',0,1,.01],['release','Release',.01,4,.01],['pulse','Pulse width',5,95,1],['pwmDepth','PWM depth',0,45,1],['pwmRate','PWM rate (Hz)',.1,12,.1]];
+let drumKit=validateDrumKit(defaultDrumKit());
+let drumBuses=validateDrumBusEngines(defaultDrumBusEngines());
+let activeDrumBusIndex=0;
+function drumBusFilterForIndex(busIndex){
+ const bus=drumBuses[busIndex];
+ return bus?.filter??drumBuses[0].filter;
+}
 enginePanelsUi=mountSidEnginePanels({
  $,engines,getEngines:()=>engines,ranges,formatControlValue,
  getMeterLevels:()=>chipPeakLevels,
@@ -233,9 +240,6 @@ syncUnisonCountOptions();
 const lfoState=Array.from({length:3},(_,i)=>({enabled:false,sync:false,wave:'sine',rate:1,syncDivision:4,depth:0,target:'cutoff',engines:'all',phase:0,seed:i}));
 const syncedRates=[{value:0.25,label:'4/1'},{value:0.5,label:'2/1'},...([1,2,4,8,16,32].map(value=>({value,label:'1/'+value})))];
 const drumLfoState=validateDrumLfo(null);
-let drumKit=validateDrumKit(defaultDrumKit());
-let drumBuses=validateDrumBusEngines(defaultDrumBusEngines());
-let activeDrumBusIndex=0;
 function refreshDrumTuningUi(){
  renderDrumLfo?.();
  drumSlotVoiceUi?.render();
@@ -307,10 +311,6 @@ function drumTimbreForLane(laneId){
  const factory=FACTORY_PRESETS.find(preset=>preset.id===lane.presetId);
  if(!factory)return null;
  return drumLaneTimbre(factory.settings,lane);
-}
-function drumBusFilterForIndex(busIndex){
- const bus=drumBuses[busIndex];
- return bus?.filter??drumBuses[0].filter;
 }
 function applyDrumBusFilter(busIndex,overrides={}){
  if(!sidController)return;
@@ -572,7 +572,7 @@ function setDrumKitState(value){
  drumKit=validateDrumKit(value);
  refreshPresetDirty();
 }
-({render:drumSlotVoiceUi.render,selectBus:selectDrumVoiceBus}=mountDrumSlotVoicePanels({
+drumSlotVoiceUi=mountDrumSlotVoicePanels({
  $,
  getDrumKit:()=>drumKit,
  setDrumKit:setDrumKitState,
@@ -584,7 +584,7 @@ function setDrumKitState(value){
   enginePanelsUi?.renderDrumBus?.();
  },
  bindHelp:root=>mountHelpTriggers($,{openHelp:helpUi.openHelp,root}),
-}));
+});
 ({renderDrumLfo}=mountDrumLfoPanel({
  $,drumLfoState,lfoTargetNames:LFO_TARGET_LABELS,syncedRates,
  getLfoTargets:()=>drumLfoTargetsForKit(drumBusWaveforms()),
