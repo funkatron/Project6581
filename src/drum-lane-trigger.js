@@ -45,11 +45,13 @@ export function drumLaneLevelGain(lane) {
 }
 
 /** Shared SID filter volume for one lane hit (engine bus × lane level). */
-export function drumBusVolumeForLane(engineFilter, lane) {
+export function drumBusVolumeForLane(engineFilter, lane, laneId) {
   const gain = drumLaneLevelGain(lane);
   const busVol = Number(engineFilter?.volume);
   const base = Number.isFinite(busVol) ? busVol : 82;
-  return Math.round(Math.max(0, Math.min(100, base * gain)));
+  let scaled = base * gain;
+  if (laneId === 'kick' && gain > 0) scaled *= 1.1;
+  return Math.round(Math.max(0, Math.min(100, scaled)));
 }
 
 /** Approximate one-shot length in ms for scheduling noteOff (seconds-based ADSR). */

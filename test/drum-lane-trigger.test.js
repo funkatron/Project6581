@@ -49,9 +49,13 @@ test('drumBpm respects sync and local tempo', () => {
 test('drumBusVolumeForLane scales engine bus volume by lane level', () => {
   const lane = defaultDrumKit().lanes.kick;
   assert.equal(drumLaneLevelGain(lane), 1);
-  assert.equal(drumBusVolumeForLane({volume: 80}, lane), 80);
-  assert.equal(drumBusVolumeForLane({volume: 80}, {...lane, level: 50}), 40);
-  assert.equal(drumBusVolumeForLane({volume: 80}, {...lane, level: 0}), 0);
+  assert.equal(drumBusVolumeForLane({volume: 80}, lane, 'kick'), 88);
+  assert.equal(
+    drumBusVolumeForLane({volume: 80}, {...defaultDrumKit().lanes.sn, level: 100}, 'sn'),
+    80,
+  );
+  assert.equal(drumBusVolumeForLane({volume: 80}, {...lane, level: 50}, 'kick'), 44);
+  assert.equal(drumBusVolumeForLane({volume: 80}, {...lane, level: 0}, 'kick'), 0);
 });
 
 test('drumReleaseMilliseconds is positive for factory kick', () => {

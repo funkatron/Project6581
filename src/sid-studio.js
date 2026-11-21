@@ -312,7 +312,7 @@ function applyDrumEngineFilterForLane(laneId){
  const engine=engines[DRUM_ENGINE_INDEX];
  const lane=validateDrumKit(drumKit).lanes[laneId];
  if(!engine||!lane)return;
- const volume=drumBusVolumeForLane(engine.filter,lane);
+ const volume=drumBusVolumeForLane(engine.filter,lane,laneId);
  applyDrumEngineFilter({volume});
 }
 function triggerDrumStep(rawHits){

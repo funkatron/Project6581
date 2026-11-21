@@ -14,6 +14,7 @@ test('drum panel module builds grid cells and lane levels', () => {
   assert.match(src, /drum-cell/);
   assert.match(src, /drum-lane-level/);
   assert.match(src, /drum-lane-rail/);
+  assert.match(src, /drum-lane-head--hat-stack/);
   assert.match(readFileSync(new URL('../src/drum-slot-voice-ui.js', import.meta.url), 'utf8'), /Sequence sound/);
   assert.match(src, /drum-lane-mixer/);
   assert.match(src, /bindHelpGesture/);

@@ -21,7 +21,7 @@ export function pitchEnvelopeTemplates(){
   off:validatePitchEnvelope(DEFAULT_PITCH_ENVELOPE),
   kick:validatePitchEnvelope({
    enabled:true,interpolation:'curve',end:'hold',
-   points:[{ms:0,semitones:0},{ms:25,semitones:-18},{ms:140,semitones:-6}]
+   points:[{ms:0,semitones:0},{ms:28,semitones:-22},{ms:160,semitones:-8}]
   }),
   tom:validatePitchEnvelope({
    enabled:true,interpolation:'linear',end:'hold',
