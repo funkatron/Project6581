@@ -40,7 +40,8 @@ export async function runSidLab(args, { read = readFile, write = console.log, ba
     result = await captureSidRegisters(backendFactory(backendPath), bytes, { subtune });
   } else {
     const input = JSON.parse(new TextDecoder().decode(bytes));
-    result = command === 'notes' ? extractSidNoteCandidates(input) : analyzeSidRegisterEvents(input);
+    const events = Array.isArray(input) ? input : input?.events;
+    result = command === 'notes' ? extractSidNoteCandidates(events) : analyzeSidRegisterEvents(events);
   }
   if (options.includes('--json')) {
     write(JSON.stringify(result, null, 2));
