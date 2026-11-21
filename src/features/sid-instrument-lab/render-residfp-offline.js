@@ -10,17 +10,18 @@ import { validateSidEvents } from './analyze-register-events.js';
 
 const PAL_CLOCK = 985248;
 const NTSC_CLOCK = 1022727;
-const MAX_FRAMES = 48_000 * 60;
+const MAX_SECONDS = 60;
 
 export async function createSidOfflineRenderer(wasmBytes, {
-  sampleRate = 48000, model = 6581, clock = 'PAL',
+  sampleRate = 48000, model = 6581, clock = 'PAL', instantiate = WebAssembly.instantiate,
 } = {}) {
   if (!Number.isInteger(sampleRate) || sampleRate < 8000 || sampleRate > 96000) {
     throw new RangeError('Invalid sample rate');
   }
   if (![6581, 8580].includes(model)) throw new RangeError('Invalid SID model');
   if (!['PAL', 'NTSC'].includes(clock)) throw new RangeError('Invalid SID clock');
-  const { instance } = await WebAssembly.instantiate(wasmBytes, {});
+  const instantiated = await instantiate(wasmBytes, {});
+  const instance = instantiated.instance ?? instantiated;
   const e = instance.exports;
   if (!e.memory || !e.sid_init || !e.sid_write || !e.sid_render || !e.sid_pcm_ptr ||
       !e.sid_reset) throw new Error('Missing required reSIDfp WASM exports');
@@ -34,13 +35,13 @@ export async function createSidOfflineRenderer(wasmBytes, {
       if (!Number.isSafeInteger(durationCycles) || durationCycles < lastCycle) {
         throw new RangeError('Invalid end cycle');
       }
-      if (!Number.isInteger(chip) || chip < 0 || chip > 3 ||
+      if (!Number.isInteger(chip) || chip < 0 || chip > 2 ||
           (voice !== null && (![1, 2, 3].includes(voice)))) {
         throw new RangeError('Invalid chip or voice');
       }
       if (trace.some(event => event.chip > 2)) throw new RangeError('Unsupported SID chip index');
       const totalFrames = Math.ceil(durationCycles * sampleRate / cyclesPerSecond);
-      if (totalFrames > MAX_FRAMES) throw new RangeError('Offline render exceeds 60-second frame budget');
+      if (totalFrames > MAX_SECONDS * sampleRate) throw new RangeError('Offline render exceeds 60-second frame budget');
       e.sid_reset();
       // sid_reset() clears the default volume written during sid_init().
       // Restore maximum master volume for chips used in offline rendering.
