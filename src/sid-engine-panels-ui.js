@@ -1,5 +1,5 @@
 import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=__BUILD_ID__';
-import {DRUM_ENGINE_INDEX,SID_ENGINE_COUNT} from './sid-engines.js';
+import {DRUM_ENGINE_INDEX,SID_ENGINE_COUNT,drumChipForBus,isDrumChip as chipIsDrum} from './sid-engines.js';
 import {chipPanStereoPeaks,meterDisplayWidth} from './sid-meter-display.js?v=__BUILD_ID__';
 import {formatPanBrief,formatHzBrief,formatPercent} from './control-format.js?v=__BUILD_ID__';
 import {setLayoutInert} from './ui-layout.js?v=__BUILD_ID__';
@@ -10,7 +10,7 @@ export function querySidEngineCard(chip){
  return document.querySelector('.sid-engine-card[data-engine="'+chip+'"]');
 }
 
-const DRUM_BUS_SID_LABELS=['Kick bus','Snare bus','Hat bus'];
+const DRUM_BUS_SID_LABELS=['Kick','Snare','Cymbals'];
 
 export function mountSidEnginePanels({
  $,engines,getEngines,ranges,formatControlValue,onEngineChange,getMeterLevels,getDrumBusMeterLevels,
@@ -69,10 +69,10 @@ export function mountSidEnginePanels({
  }
  function renderEngineCard(index,{drumBusIndex}={}){
   const engine=getEngines()[index];
-  const isDrumChip=index===DRUM_ENGINE_INDEX;
-  const fixedBusIndex=isDrumChip&&Number.isInteger(drumBusIndex)?drumBusIndex:null;
-  const busIndexForCard=fixedBusIndex??(isDrumChip?getActiveDrumBusIndex?.()??0:0);
-  const drumBusFilter=isDrumChip?drumBusFilterForCard(engine,busIndexForCard):null;
+  const isDrumChip=chipIsDrum(index);
+  const fixedBusIndex=isDrumChip?index-DRUM_ENGINE_INDEX:null;
+  const busIndexForCard=isDrumChip?fixedBusIndex:0;
+  const drumBusFilter=isDrumChip?engine.filter:null;
    const card=document.createElement('article');
   card.className='sid-engine-card panel';
   card.dataset.engine=String(index);
@@ -81,7 +81,7 @@ export function mountSidEnginePanels({
   header.className='sid-engine-header';
   const title=document.createElement('h3');
   if(isDrumChip){
-   title.textContent='SID 4 · '+(DRUM_BUS_SID_LABELS[busIndexForCard]??'Drums');
+   title.textContent='SID '+(index+1)+' · '+(DRUM_BUS_SID_LABELS[busIndexForCard]??'Drums');
   }else title.textContent='SID '+(index+1);
   let peakLevel=getMeterLevels?.()[index]??0;
   if(isDrumChip&&fixedBusIndex!==null){
@@ -177,7 +177,7 @@ export function mountSidEnginePanels({
     boostSelect.append(option);
    }
    boostSelect.value=String(engine.outputBoostDb??18);
-   boostSelect.setAttribute('aria-label','SID 4 output boost');
+   boostSelect.setAttribute('aria-label','SID '+(index+1)+' output boost');
    boostLabel.append(boostSelect);
    controlGrid.append(boostLabel);
    boostSelect.addEventListener('change',()=>{
@@ -193,7 +193,7 @@ export function mountSidEnginePanels({
    enabledInput.type='checkbox';
    enabledInput.dataset.prop='enabled';
    enabledInput.checked=s.enabled;
-   enabledLabel.append('Drum output enabled ',enabledInput);
+   enabledLabel.append((DRUM_BUS_SID_LABELS[busIndexForCard]??'Drum')+' output enabled ',enabledInput);
    controlGrid.append(enabledLabel);
    enabledInput.addEventListener('change',()=>{
     engine.voice.enabled=enabledInput.checked;
@@ -201,7 +201,7 @@ export function mountSidEnginePanels({
    });
    const drumNote=document.createElement('p');
    drumNote.className='drum-chip-note control-span-full';
-   drumNote.textContent='This tab edits the '+ (DRUM_BUS_SID_LABELS[busIndexForCard]??'drum')+' filter on SID 4 (one chip, per-hit bus routing).';
+   drumNote.textContent='Pan, filter, model, and boost on this card control SID '+(index+1)+' only.';
    controlGrid.append(drumNote);
   }else{
    const voiceHeading=document.createElement('h4');
@@ -274,7 +274,7 @@ export function mountSidEnginePanels({
    if(isDrumChip&&setDrumBusFilterField){
     setDrumBusFilterField(busIndexForCard,key,value);
    }else engine.filter[key]=value;
-   const filterRef=isDrumChip?drumBusFilterForCard(engine):engine.filter;
+   const filterRef=isDrumChip?drumBusFilterForCard(engine,busIndexForCard):engine.filter;
    const out=inp.closest('.param-row')?.querySelector('.param-values output');
    if(out){
     if(key==='cutoff')out.textContent=formatHzBrief(filterRef[key]);
@@ -312,51 +312,46 @@ export function mountSidEnginePanels({
   for(let bus=0;bus<DRUM_BUS_SID_LABELS.length;bus++){
    const host=drumEngineHostForBus(bus);
    if(!host)continue;
-   host.replaceChildren(renderEngineCard(DRUM_ENGINE_INDEX,{drumBusIndex:bus}));
+   host.replaceChildren(renderEngineCard(drumChipForBus(bus)));
   }
  }
  function updateMeters(levels,busLevels){
   const busMeterLevels=busLevels??getDrumBusMeterLevels?.();
-  if(busMeterLevels){
-   document.querySelectorAll('.sid-engine-card[data-drum-bus]').forEach(card=>{
-    const bus=Number(card.dataset.drumBus);
-    if(!Number.isInteger(bus))return;
-    const peak=busMeterLevels[bus]??0;
-    const stereo=card.querySelector('.sid-stereo-meter');
-    if(!stereo)return;
-    const pan=getEngines()[DRUM_ENGINE_INDEX]?.pan??0;
-    const {left,right}=chipPanStereoPeaks(peak,pan);
-    applyMeterWidth(stereo.querySelector('[data-channel="left"] .sid-rainbow-meter'),left);
-    applyMeterWidth(stereo.querySelector('[data-channel="right"] .sid-rainbow-meter'),right);
-   });
-  }
+  document.querySelectorAll('.sid-engine-card[data-drum-bus]').forEach(card=>{
+   const chip=Number(card.dataset.engine);
+   const bus=Number(card.dataset.drumBus);
+   if(!Number.isInteger(chip)||!Number.isInteger(bus))return;
+   const stereo=card.querySelector('.sid-stereo-meter');
+   if(!stereo)return;
+   const chipPeak=Number(levels?.[chip]);
+   const busPeak=Number(busMeterLevels?.[bus]);
+   let peak=0;
+   if(Number.isFinite(chipPeak)&&chipPeak>0)peak=chipPeak;
+   else if(Number.isFinite(busPeak))peak=busPeak;
+   const pan=getEngines()[chip]?.pan??0;
+   const {left,right}=chipPanStereoPeaks(peak,pan);
+   applyMeterWidth(stereo.querySelector('[data-channel="left"] .sid-rainbow-meter'),left);
+   applyMeterWidth(stereo.querySelector('[data-channel="right"] .sid-rainbow-meter'),right);
+   const lWidth=meterDisplayWidth(left);
+   const rWidth=meterDisplayWidth(right);
+   stereo.setAttribute('aria-label','SID '+(chip+1)+' level L '+lWidth+' R '+rWidth);
+  });
   document.querySelectorAll('.sid-engine-card .sid-rainbow-meter[data-chip]').forEach(meter=>{
    const chip=Number(meter.dataset.chip);
-   if(!Number.isInteger(chip)||chip<0||chip>=SID_ENGINE_COUNT)return;
+   if(!Number.isInteger(chip)||chip<0||chip>=SID_ENGINE_COUNT||chipIsDrum(chip))return;
    const width=applyMeterWidth(meter,levels?.[chip]);
    if(width)meter.setAttribute('aria-label','SID output level '+width);
   });
-  const drumStereo=document.querySelector('.sid-stereo-meter[data-chip="'+DRUM_ENGINE_INDEX+'"]');
-  if(drumStereo){
-   const pan=getEngines()[DRUM_ENGINE_INDEX]?.pan??0;
-   const {left,right}=chipPanStereoPeaks(levels?.[DRUM_ENGINE_INDEX],pan);
-   const leftMeter=drumStereo.querySelector('[data-channel="left"] .sid-rainbow-meter');
-   const rightMeter=drumStereo.querySelector('[data-channel="right"] .sid-rainbow-meter');
-   const lWidth=applyMeterWidth(leftMeter,left);
-   const rWidth=applyMeterWidth(rightMeter,right);
-   if(lWidth&&rWidth){
-    drumStereo.setAttribute('aria-label','Drum bus level L '+lWidth+' R '+rWidth);
-   }
-  }
  }
  function renderDrumBus(){
   renderDrumBusPanels();
  }
  function refreshDrumBusControls(busIndex){
-  const card=document.querySelector('.sid-engine-card[data-engine="'+DRUM_ENGINE_INDEX+'"][data-drum-bus="'+busIndex+'"]');
+  const chip=drumChipForBus(busIndex);
+  const card=document.querySelector('.sid-engine-card[data-engine="'+chip+'"][data-drum-bus="'+busIndex+'"]');
   if(!card)return;
-  const engine=getEngines()[DRUM_ENGINE_INDEX];
-  const drumBusFilter=drumBusFilterForCard(engine,busIndex);
+  const engine=getEngines()[chip];
+  const drumBusFilter=engine.filter;
   for(const inp of card.querySelectorAll('input[data-filter]')){
    const key=inp.dataset.filter;
    if(!key)continue;

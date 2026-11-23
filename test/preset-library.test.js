@@ -38,8 +38,9 @@ test('factory bank contains useful original sounds and complete performance sett
   ids.add(p.id);names.add(p.name);
   const result=validatePresetSettings(p.settings);
   assert.deepEqual(result,p.settings);
-  assert.equal(result.sound.engines.length,4);
+  assert.equal(result.sound.engines.length,6);
   assert.equal(result.sound.engines[3].outputBoostDb,24);
+  assert.equal(result.sound.engines[5].outputBoostDb,24);
   assert.equal(result.sound.lfos.length,3);
   assert.equal(typeof result.performance.routing.keyboard,'string');
   assert.equal(typeof result.performance.masterBpm,'number');
@@ -344,8 +345,28 @@ test('local v4 bank migrates to v5 storage on read',()=>{
  }));
  const items=readUserPresets(storage);
  assert.equal(items.length,1);
- assert.equal(items[0].settings.sound.engines.length,4);
+ assert.equal(items[0].settings.sound.engines.length,6);
  assert.equal(storage.getItem(LEGACY_PRESET_STORAGE_KEY_V4),null);
+});
+
+test('four SID presets expand to kick, snare, and cymbal chips',()=>{
+ const settings=defaultPresetSettings();
+ settings.sound.engines=settings.sound.engines.slice(0,4);
+ settings.sound.engines[3].pan=-40;
+ settings.sound.drumBuses=[
+  {filter:{cutoff:1111,resonance:1,volume:10,mode:'lowpass'}},
+  {filter:{cutoff:2222,resonance:2,volume:20,mode:'bandpass'}},
+  {filter:{cutoff:3333,resonance:3,volume:30,mode:'highpass'}}
+ ];
+ const result=validatePresetSettings(settings);
+ assert.equal(result.sound.engines.length,6);
+ assert.equal(result.sound.engines[3].filter.cutoff,1111);
+ assert.equal(result.sound.engines[3].pan,-40);
+ assert.equal(result.sound.engines[4].filter.cutoff,2222);
+ assert.equal(result.sound.engines[4].pan,0);
+ assert.equal(result.sound.engines[5].filter.mode,'highpass');
+ assert.equal(result.sound.engines[4].outputBoostDb,24);
+ assert.equal(result.sound.engines[5].outputBoostDb,24);
 });
 
 test('enabled pitch envelope validates and round-trips',()=>{

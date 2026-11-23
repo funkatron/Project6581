@@ -34,8 +34,9 @@ function masterPeakWorkletHarness(){
    pcm[index*2+1]=right;
   }
  };
- const setChipPeaks=(a,b,c,d=0)=>{
-  new Float32Array(buffer,chipPeakOffset,4).set([a,b,c,d]);
+ const setChipPeaks=(...peaks)=>{
+  const values=Array.from({length:6},(_,index)=>peaks[index]??0);
+  new Float32Array(buffer,chipPeakOffset,6).set(values);
  };
  const render=()=>{
   processor.process([],[ [new Float32Array(128),new Float32Array(128)] ]);
@@ -95,7 +96,7 @@ test('worklet master peak follows mixed stereo PCM and resets every 16 blocks',(
  const first=h.meterLevels().at(-1);
  assert.ok(first);
  assert.ok(Math.abs(first.masterPeak-1)<0.001);
- assert.deepEqual(first.chipPeaks,[0,0,0,0]);
+ assert.deepEqual(first.chipPeaks,[0,0,0,0,0,0]);
  block(0,0,16);
  const second=h.meterLevels().at(-1);
  assert.equal(second.masterPeak,0);
@@ -105,14 +106,15 @@ test('worklet master peak follows mixed stereo PCM and resets every 16 blocks',(
  assert.ok(Math.abs(third.masterPeak-0.75)<0.001);
 });
 
-test('worklet holds fourth chip peak for drum SID meter',()=>{
+test('worklet holds peaks for melodic chips and SID 4–6 drums',()=>{
  const h=masterPeakWorkletHarness();
- h.setChipPeaks(0.01,0.02,0.03,0.2);
+ const expected=[0.01,0.02,0.03,0.2,0.4,0.5];
+ h.setChipPeaks(...expected);
  h.fillStereoBlock(0,0);
  for(let count=0;count<16;count++)h.render();
  const levels=h.meterLevels().at(-1);
- assert.equal(levels.chipPeaks.length,4);
- levels.chipPeaks.forEach((peak,index)=>assert.ok(Math.abs(peak-[0.01,0.02,0.03,0.2][index])<0.001));
+ assert.equal(levels.chipPeaks.length,6);
+ levels.chipPeaks.forEach((peak,index)=>assert.ok(Math.abs(peak-expected[index])<0.001));
 });
 
 test('worklet master peak is not replaced by low chip peak telemetry',()=>{

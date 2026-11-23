@@ -235,7 +235,8 @@ export function mountDrumSlotVoicePanels({
     const sidHost = document.createElement('div');
     sidHost.className = 'drum-bus-sid-engine';
     sidHost.dataset.drumBus = String(bus.slot);
-    sidHost.setAttribute('aria-label', bus.title + ' SID 4 filter');
+    const sidNumber = 4 + bus.slot;
+    sidHost.setAttribute('aria-label', bus.title + ' SID ' + sidNumber);
 
     card.append(grid, pitchHost, sidHost);
     bindHelp?.(card);

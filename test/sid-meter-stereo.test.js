@@ -15,7 +15,8 @@ test('chipPanStereoPeaks honors pan when splitting mono chip telemetry',()=>{
 
 test('worklet includes drum chip in meter hold arrays',()=>{
  const worklet=readFileSync(new URL('../src/residfp-worklet.js',import.meta.url),'utf8');
- assert.match(worklet,/chipPeakHold=\[0,0,0,0\]/);
+ assert.match(worklet,/SID_CHIP_COUNT=6/);
+ assert.match(worklet,/chipPeakHold=zeroChipPeaks\(\)/);
  assert.match(worklet,/for\(let i=0;i<chipCount;i\+\+\)/);
  assert.doesNotMatch(worklet,/for\(let i=0;i<3;i\+\+\)/);
 });

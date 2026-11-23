@@ -167,42 +167,44 @@ test('capacity respects full stacks and changes release active voices',()=>{
  assert.equal(sid.held.length,0);
 });
 
-test('SID 4 drum layer stays poly when global mode is mono',()=>{
+test('a drum chip is monophonic even when global mode is mono',()=>{
  const sid=new UnisonSidController(()=>{},{voiceCount:3,unisonCount:1,mode:'mono'});
  const a=sid.noteOn(36,sound,{chipMask:[3],layerChip:3});
  const b=sid.noteOn(38,sound,{chipMask:[3],layerChip:3});
  assert.ok(Number.isInteger(a));
  assert.ok(Number.isInteger(b));
- assert.equal(sid.layerPoly[3].size,2);
- sid.noteOff(36,a);
  assert.equal(sid.layerPoly[3].size,1);
+ assert.equal(sid.layerPoly[3].has(38),true);
+ sid.noteOff(38,b);
+ assert.equal(sid.layerPoly[3].size,0);
 });
 
-test('drum slots pin oscillators and hat slot evicts prior hat note',()=>{
+test('open hat on SID 6 evicts the closed hat on that chip',()=>{
  let evicted=[];
  const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{
   voiceCount:1,unisonCount:1,mode:'mono',onDrumNoteEvicted:note=>evicted.push(note)
  });
- sid.noteOn(36,sound,{chipMask:[3],layerChip:3,drumSlot:0});
- sid.noteOn(42,sound,{chipMask:[3],layerChip:3,drumSlot:2});
- const chGate=gateOns(writes).find(([r])=>r===114);
- assert.ok(chGate,'closed hat uses SID4 voice 3 (register 114)');
- assert.equal(sid.layerPoly[3].size,2);
+ sid.noteOn(36,sound,{chipMask:[3],layerChip:3});
+ sid.noteOn(42,sound,{chipMask:[5],layerChip:5});
+ const chGate=gateOns(writes).find(([r])=>r===164);
+ assert.ok(chGate,'closed hat uses SID 6 voice 1 (register 164)');
+ assert.equal(sid.layerPoly[3].size,1);
+ assert.equal(sid.layerPoly[5].size,1);
  evicted.length=0;
- sid.noteOn(46,sound,{chipMask:[3],layerChip:3,drumSlot:2});
- assert.deepEqual(evicted,[42],'open hat reuses hat slot and evicts closed hat');
- assert.deepEqual([...sid.layerPoly[3].keys()].sort((a,b)=>a-b),[36,46]);
+ sid.noteOn(46,sound,{chipMask:[5],layerChip:5});
+ assert.deepEqual(evicted,[42],'open hat reuses SID 6 and evicts closed hat');
+ assert.equal(sid.layerPoly[3].has(36),true);
+ assert.equal(sid.layerPoly[5].has(46),true);
 });
 
-test('SID 4 drum hits use three chip voices even when keyboard voice budget is 1',()=>{
+test('kick, snare, and cymbals gate SID 4, 5, and 6',()=>{
  const writes=[];
  const sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:1,unisonCount:1,mode:'mono'});
  sid.noteOn(36,sound,{chipMask:[3],layerChip:3});
- sid.noteOn(38,sound,{chipMask:[3],layerChip:3});
- sid.noteOn(42,sound,{chipMask:[3],layerChip:3});
- const drumGateOns=gateOns(writes).filter(([r])=>r>=96&&r<128);
- assert.equal(drumGateOns.length,3);
- assert.deepEqual([...new Set(drumGateOns.map(([r])=>r))].sort((a,b)=>a-b),[100,107,114]);
+ sid.noteOn(38,sound,{chipMask:[4],layerChip:4});
+ sid.noteOn(42,sound,{chipMask:[5],layerChip:5});
+ const drumGateOns=gateOns(writes).map(([r])=>r);
+ assert.deepEqual(drumGateOns,[100,132,164]);
  const offAt=writes.length;
  sid.panic();
  assert.equal(gateOffs(writes.slice(offAt)).length,3);
