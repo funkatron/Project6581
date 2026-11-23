@@ -70,3 +70,8 @@ test('closed hat gate ends before the next 1/16 at 120 BPM', () => {
   assert.ok(ms < 125);
   assert.ok(ms >= 40);
 });
+
+test('open hat stays pure noise so the cymbal chip cannot lock', () => {
+  const hat = FACTORY_PRESETS.find((p) => p.id === 'open-noise-hat');
+  assert.equal(hat.settings.sound.engines[0].voice.wave, 'noise');
+});
