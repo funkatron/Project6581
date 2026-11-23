@@ -1,8 +1,8 @@
-import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=0.20.2+20261123T193714181Z';
-import {setLayoutInert} from './ui-layout.js?v=0.20.2+20261123T193714181Z';
-import {drumLaneTimbre} from './drum-lane-trigger.js?v=0.20.2+20261123T193714181Z';
-import {applyDrumVoiceColorTokens} from './drum-voice-colors.js?v=0.20.2+20261123T193714181Z';
-import {DRUM_PITCH_OFFSET_SEMITONES} from './drum-step-sequencer.js?v=0.20.2+20261123T193714181Z';
+import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=0.20.3+20261123T193945993Z';
+import {setLayoutInert} from './ui-layout.js?v=0.20.3+20261123T193945993Z';
+import {drumLaneTimbre} from './drum-lane-trigger.js?v=0.20.3+20261123T193945993Z';
+import {applyDrumVoiceColorTokens} from './drum-voice-colors.js?v=0.20.3+20261123T193945993Z';
+import {DRUM_PITCH_OFFSET_SEMITONES} from './drum-step-sequencer.js?v=0.20.3+20261123T193945993Z';
 import {
   DRUM_BUS_LANES,
   DRUM_VOICE_ADSR_FIELDS,
@@ -11,7 +11,7 @@ import {
   drumBusShowsPulse,
   drumBusWaveLabel,
   drumFactoryPresetOptions,
-} from './drum-voice-ui-policy.js?v=0.20.2+20261123T193714181Z';
+} from './drum-voice-ui-policy.js?v=0.20.3+20261123T193945993Z';
 
 const BUS_TAB_BUS = Object.freeze(['kick', 'sn', 'hat']);
 

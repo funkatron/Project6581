@@ -1,4 +1,4 @@
-import {meterDisplayWidth} from './sid-meter-display.js?v=0.20.2+20261123T193714181Z';
+import {meterDisplayWidth} from './sid-meter-display.js?v=0.20.3+20261123T193945993Z';
 
 const METER_LABELS = Object.freeze(['Kick', 'Snare', 'OH/CH']);
 
