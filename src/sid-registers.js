@@ -1,6 +1,6 @@
 // SID register mapping, independent of the eventual WebAssembly renderer.
 // PAL C64 clock. All register writes are 8-bit.
-import {WAVE_BITS, waveControlByte} from './sid-waveform.js';
+import {WAVE_BITS, sidSafeWaveByte} from './sid-waveform.js';
 
 export const PAL_CLOCK = 985248;
 export const ADSR_MS = [2,8,16,24,38,56,68,80,100,250,500,800,1000,3000,5000,8000];
@@ -21,7 +21,11 @@ export class SidRegisters {
     const sustain=sustainNibble(settings.sustain??.65),release=closestRate(settings.release??.22);
     const ad=attack<<4|decay,sr=sustain<<4|release;
     this.reg(voice,5,ad);this.reg(voice,6,sr);this.envelopes[voice]=[ad,sr];
-    const wave=waveControlByte(settings.wave);
+    const wave=sidSafeWaveByte(settings.wave);
+    const previous=this.controls[voice]&~1;
+    const tonal=WAVE_BITS.triangle|WAVE_BITS.sawtooth|WAVE_BITS.square;
+    const previousLocked=(previous&WAVE_BITS.noise)&&(previous&tonal);
+    if(previousLocked&&(wave&0xf0)!==(previous&0xf0))this.reg(voice,4,0);
     this.controls[voice]=wave|1;this.reg(voice,4,wave);this.reg(voice,4,wave|1);
   }
   noteOff(voice){this.controls[voice]&=~1;this.reg(voice,4,this.controls[voice]);}

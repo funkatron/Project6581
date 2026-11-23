@@ -96,9 +96,11 @@ test('lfosForEngine keeps only matching or global LFO scopes',()=>{
  assert.deepEqual(lfosForEngine(lfos,2).map(lfo=>lfo.target),['cutoff']);
 });
 
-test('lfosForEngine routes drum LFO scope to chip index 3 only',()=>{
+test('lfosForEngine routes drum LFO scope to SID 4, 5, and 6',()=>{
  const drum={enabled:true,depth:.4,target:'volume',engines:'4'};
  assert.deepEqual(lfosForEngine([drum],3).map(lfo=>lfo.target),['volume']);
+ assert.deepEqual(lfosForEngine([drum],4).map(lfo=>lfo.target),['volume']);
+ assert.deepEqual(lfosForEngine([drum],5).map(lfo=>lfo.target),['volume']);
  assert.deepEqual(lfosForEngine([drum],0),[]);
  assert.deepEqual(lfosForEngine([drum],2),[]);
 });

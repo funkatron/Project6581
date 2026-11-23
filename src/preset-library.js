@@ -2,7 +2,7 @@ import {defaultSequence,validateSequence} from './game-step-sequencer.js';
 import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from './pitch-envelope.js';
 import {pitchEnvelopeTemplates} from './pitch-envelope-editor.js';
 const FACTORY_PITCH=pitchEnvelopeTemplates();
-import {createDefaultEngines,DEFAULT_ROUTING,ROUTE_OPTIONS,defaultDrumEngineSettings,defaultEngineSettings} from './sid-engines.js';
+import {createDefaultEngines,DEFAULT_ROUTING,ROUTE_OPTIONS,defaultDrumEngineSettings,defaultEngineSettings,DRUM_ENGINE_INDEX,SID_CHIP_COUNT,isDrumChip} from './sid-engines.js';
 import {defaultDrumBusEngines,validateDrumBusEngines} from './drum-bus-engines.js';
 import {defaultDrumKit,defaultDrumSequence,validateDrumEngineBoost,validateDrumKit,validateDrumSequence} from './drum-step-sequencer.js';
 import {validateScaleSettings} from './western-scales.js';
@@ -96,7 +96,7 @@ function validateEngine(engine,index){
  const e=object(engine,'SID '+(index+1));
  const voice=attachDefaultPitchEnvelope(e.voice??{});
  const filter=object(e.filter??defaultEngineSettings().filter,'filter');
- const boost=index===3?validateDrumEngineBoost(e.outputBoostDb):0;
+ const boost=isDrumChip(index)?validateDrumEngineBoost(e.outputBoostDb):0;
  return {
   model:choice(e.model,'chip model',[6581,8580]),
   pan:numeric(e.pan??0,'pan',-100,100),
@@ -116,13 +116,39 @@ function validateEngine(engine,index){
   }
  };
 }
-function migrateLegacySound(sound){
- if(Array.isArray(sound.engines)&&sound.engines.length===4){
-  return sound.engines.map((engine,i)=>validateEngine(engine,i));
+function busFiltersFromSound(sound){
+ if(!Array.isArray(sound.drumBuses))return null;
+ return validateDrumBusEngines(sound.drumBuses);
+}
+function expandToSixEngines(engines,buses){
+ const defaults=defaultDrumBusEngines();
+ while(engines.length<SID_CHIP_COUNT){
+  const index=engines.length;
+  const template=engines[DRUM_ENGINE_INDEX]??defaultDrumEngineSettings();
+  const busFilter=buses?buses[index-DRUM_ENGINE_INDEX].filter:defaults[index-DRUM_ENGINE_INDEX].filter;
+  engines.push(validateEngine({
+   model:template.model,
+   pan:0,
+   outputBoostDb:template.outputBoostDb,
+   voice:{...template.voice},
+   filter:{...busFilter}
+  },index));
  }
- if(Array.isArray(sound.engines)&&sound.engines.length===3){
-  const engines=sound.engines.map((engine,i)=>validateEngine(engine,i));
-  engines.push(validateEngine(defaultDrumEngineSettings(),3));
+ return engines;
+}
+function migrateLegacySound(sound){
+ const buses=busFiltersFromSound(sound);
+ const counted=Array.isArray(sound.engines)?sound.engines.length:0;
+ if(counted===6||counted===4||counted===3){
+  let engines=sound.engines.map((engine,i)=>validateEngine(engine,i));
+  if(counted===3)engines.push(validateEngine(defaultDrumEngineSettings(),DRUM_ENGINE_INDEX));
+  engines=expandToSixEngines(engines,buses);
+  if(buses&&counted!==6){
+   for(let bus=0;bus<3;bus++){
+    const index=DRUM_ENGINE_INDEX+bus;
+    engines[index]=validateEngine({...engines[index],filter:{...buses[bus].filter}},index);
+   }
+  }
   return engines;
  }
  const model=choice(sound.model??6581,'chip model',[6581,8580]);
@@ -218,7 +244,7 @@ export function presetLoadRequiresSilence(previous,next){
  if(pr.keyboard!==nr.keyboard||pr.arp!==nr.arp||pr.game!==nr.game)return true;
  const pi=a.sound.instrument, ni=b.sound.instrument;
  if(pi.voiceCount!==ni.voiceCount||pi.unisonCount!==ni.unisonCount||pi.mode!==ni.mode)return true;
- for(let i=0;i<3;i++){
+ for(let i=0;i<a.sound.engines.length;i++){
   const pe=a.sound.engines[i], ne=b.sound.engines[i];
   if(pe.model!==ne.model)return true;
   if(Boolean(pe.voice?.enabled)!==Boolean(ne.voice?.enabled))return true;
@@ -997,7 +1023,7 @@ export const FACTORY_PRESETS=Object.freeze([
  // Drums: kick/tom use pitch templates; hats/clap remain noise-focused.
  factory('low-thud-kick','Low Thud Kick','Drums',{voice:{wave:'triangle+noise',attack:0,decay:.21,sustain:.21,release:.02,pitchEnvelope:FACTORY_PITCH.kick},filter:{cutoff:540,resonance:11,volume:92},performance:{game:{enabled:false}}}),
  factory('closed-noise-hat','Closed Noise Hat','Drums',{voice:{wave:'noise',attack:0,decay:.022,sustain:0,release:.01},filter:{cutoff:7600,resonance:7,volume:60,mode:'lowpass'},performance:{game:{enabled:false}}}),
- factory('open-noise-hat','Open Noise Hat','Drums',{voice:{wave:'noise+triangle',attack:0,decay:.36,sustain:0,release:.1},filter:{cutoff:8000,resonance:9,volume:58,mode:'lowpass'},performance:{game:{enabled:false}}}),
+ factory('open-noise-hat','Open Noise Hat','Drums',{voice:{wave:'noise',attack:0,decay:.36,sustain:0,release:.1},filter:{cutoff:8000,resonance:9,volume:58,mode:'lowpass'},performance:{game:{enabled:false}}}),
  factory('noise-clap','Noise Clap','Drums',{voice:{wave:'noise',attack:0,decay:.14,sustain:0,release:.06,pitchEnvelope:FACTORY_PITCH.clap},filter:{cutoff:3000,resonance:30,volume:68,mode:'bandpass'},lfos:[{enabled:true,wave:'square',rate:18,depth:.52,target:'volume'}],performance:{game:{enabled:false}}}),
  factory('low-tom','Low Tom','Drums',{voice:{wave:'triangle',attack:0,decay:.26,sustain:0,release:.07,pitchEnvelope:FACTORY_PITCH.tom},filter:{cutoff:1180,resonance:21,volume:84},performance:{game:{enabled:false}}})
 ]);

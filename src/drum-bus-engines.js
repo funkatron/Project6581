@@ -1,6 +1,6 @@
 const MODES = ['lowpass', 'bandpass', 'highpass'];
 
-/** Three logical drum buses on SID 4 (voices 1–3). One physical filter; settings applied per hit. */
+/** Filter defaults for SID 4 kick, SID 5 snare, and SID 6 cymbals. Each bus is its own chip. */
 export const DRUM_BUS_COUNT = 3;
 
 export const DRUM_BUS_TITLES = Object.freeze(['Kick bus', 'Snare bus', 'Hat bus']);

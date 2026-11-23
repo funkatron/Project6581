@@ -1,5 +1,10 @@
 // AudioWorklet using native libresidfp compiled to standalone WebAssembly.
 // Receives the WASM bytes from the main thread; never fetches from the audio thread.
+const SID_CHIP_COUNT=6;
+const DRUM_CHIP_START=3;
+function zeroChipPeaks(){
+  return Array.from({length:SID_CHIP_COUNT},()=>0);
+}
 class ReSidFpProcessor extends AudioWorkletProcessor {
   constructor(){
     super();
@@ -8,7 +13,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     this.queue=[];
     this.pitchEnvelopes=new Map();
     this.blocks=0;this.lastPeak=0;this.writes=0;
-    this.chipPeakHold=[0,0,0,0];this.chipPeakInterval=[0,0,0,0];this.masterPeakHold=0;
+    this.chipPeakHold=zeroChipPeaks();this.chipPeakInterval=zeroChipPeaks();this.masterPeakHold=0;
     this.meterBlocks=0;
     this.mixedMeterGain=4;
     this.pendingNoteEvents=[];this.eventLogEnabled=false;
@@ -33,11 +38,11 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
         this.setChipModel(data.chip,data.model);
       }
       else if(data?.type==='set-pan'){
-        if(Number.isInteger(data.chip)&&data.chip>=0&&data.chip<=3&&Number.isFinite(data.pan))
+        if(Number.isInteger(data.chip)&&data.chip>=0&&data.chip<SID_CHIP_COUNT&&Number.isFinite(data.pan))
           this.exports?.sid_set_pan?.(data.chip,Math.round(data.pan));
       }
       else if(data?.type==='set-chip-gain'){
-        if(Number.isInteger(data.chip)&&data.chip>=0&&data.chip<=3&&Number.isFinite(data.gainDb))
+        if(Number.isInteger(data.chip)&&data.chip>=0&&data.chip<SID_CHIP_COUNT&&Number.isFinite(data.gainDb))
           this.exports?.sid_set_chip_gain?.(data.chip,Math.round(data.gainDb));
       }
       else if(data?.type==='modulation-config'){
@@ -72,7 +77,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       else if(data?.type==='pitch-envelope-start'){
         // Explicit opt-in protocol. Existing note messages are unchanged.
         const {register,baseFrequency,points,interpolation='linear',end='hold'}=data;
-        if(!Number.isInteger(register)||register<0||register>=0x60||register%0x20>0x14||register%0x20%7!==0||
+        if(!Number.isInteger(register)||register<0||register>=SID_CHIP_COUNT*0x20||register%0x20>0x14||register%0x20%7!==0||
           !Number.isInteger(baseFrequency)||baseFrequency<0||baseFrequency>65535||
           !Array.isArray(points)||points.length<1||points.length>16||
           !['linear','curve'].includes(interpolation)||!['hold','zero'].includes(end))return;
@@ -151,7 +156,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     const e=this.exports;
     try{
       if(!e?.sid_set_chip_model)throw Error('Per-chip model switch is unavailable');
-      if(!Number.isInteger(chip)||chip<0||chip>3)throw Error('Invalid chip index');
+      if(!Number.isInteger(chip)||chip<0||chip>=SID_CHIP_COUNT)throw Error('Invalid chip index');
       if(!e.sid_set_chip_model(chip,model))throw Error('SID chip model switch failed');
       this.port.postMessage({type:'chip-model-ready',chip,model});
     }catch(err){this.port.postMessage({type:'error',message:String(err)})}
@@ -183,9 +188,8 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       const phase=this.lfoPhase[index]??0;
       this.lfoPhase[index]=phase+rate*blockSec;
     });
-    const DRUM_CHIP_INDEX=3;
-    for(let chip=0;chip<4;chip++){
-      if(chip===DRUM_CHIP_INDEX)continue;
+    for(let chip=0;chip<SID_CHIP_COUNT;chip++){
+      if(chip>=DRUM_CHIP_START)continue;
       const engine=config.engines[chip];
       if(!engine)continue;
       const base={
@@ -316,8 +320,9 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     let peak=0;
     let chipPeaks=null;
     const peaksPtr=e.sid_chip_peaks_ptr?.();
-    if(Number.isInteger(peaksPtr)&&peaksPtr>=0&&peaksPtr+16<=e.memory.buffer.byteLength)
-      chipPeaks=Array.from(new Float32Array(e.memory.buffer,peaksPtr,4));
+    const peakBytes=SID_CHIP_COUNT*4;
+    if(Number.isInteger(peaksPtr)&&peaksPtr>=0&&peaksPtr+peakBytes<=e.memory.buffer.byteLength)
+      chipPeaks=Array.from(new Float32Array(e.memory.buffer,peaksPtr,SID_CHIP_COUNT));
     for(let i=0;i<frames;i++){
       const left=stereo?pcm[i*2]/32768:pcm[i]/32768;
       const right=stereo?pcm[i*2+1]/32768:left;
@@ -354,9 +359,9 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     if(Array.isArray(chipPeaks))blockPeaks=chipPeaks;
     else{
       const estimate=Math.min(1,peak*this.mixedMeterGain);
-      blockPeaks=[estimate,estimate,estimate,estimate];
+      blockPeaks=zeroChipPeaks().map(()=>estimate);
     }
-    const chipCount=Math.min(4,blockPeaks.length);
+    const chipCount=Math.min(SID_CHIP_COUNT,blockPeaks.length);
     for(let i=0;i<chipCount;i++){
       const sample=blockPeaks[i]||0;
       this.chipPeakHold[i]=Math.max(this.chipPeakHold[i],sample);
@@ -364,7 +369,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     }
     if(++this.meterBlocks%16===0){
       this.port.postMessage({type:'meter-levels',chipPeaks:[...this.chipPeakHold],masterPeak:this.masterPeakHold});
-      this.chipPeakHold=[0,0,0,0];this.masterPeakHold=0;
+      this.chipPeakHold=zeroChipPeaks();this.masterPeakHold=0;
     }
     if(++this.blocks%128===0){
       this.port.postMessage({
@@ -374,7 +379,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
         renderBudgetMs:frames*1000/sampleRate
       });
       this.lastPeak=0;this.writes=0;
-      this.chipPeakInterval=[0,0,0,0];
+      this.chipPeakInterval=zeroChipPeaks();
       this.renderMsTotal=0;this.renderMsMax=0;this.timedRenderBlocks=0;
     }
     return true;

@@ -1,7 +1,7 @@
-/** Chips compiled into residfp.wasm today (see native/sid_bridge.cpp kChipCount). */
-export const ACTIVE_SID_CHIP_COUNT = 4;
+/** Chips compiled into residfp.wasm (see native/sid_bridge.cpp kChipCount). */
+export const ACTIVE_SID_CHIP_COUNT = 6;
 
-/** Hypothetical drum expansion (+2 dedicated SID instances) for load planning. */
+/** Earlier four-chip build, kept so load projections can still scale 4 → 6. */
 export const DRUM_EXPANSION_CHIP_TARGET = 6;
 
 export function projectedChipRenderMs({
@@ -23,27 +23,34 @@ export function projectedChipRenderMs({
 }
 
 export function formatChipRenderDiagnosticLines({renderAvgMs, renderMaxMs, renderBudgetMs} = {}) {
-  const projection = projectedChipRenderMs({renderAvgMs, renderMaxMs});
-  if (!projection) return [];
+  if (!Number.isFinite(renderAvgMs) || !Number.isFinite(renderMaxMs)) return [];
   const show = (value) => (Number.isFinite(value) ? value.toFixed(1) + ' ms' : 'not reported');
   const lines = [
-    'Active reSIDfp chips: ' + projection.fromChips + ' (WASM render scales ~linearly with chip count).',
-    'Projected render at ' +
-      projection.toChips +
-      ' chips (+2 drum SIDs): ' +
-      show(projection.projectedAvgMs) +
-      ' avg / ' +
-      show(projection.projectedMaxMs) +
-      ' max (×' +
-      projection.scale.toFixed(2) +
-      ').',
+    'Active reSIDfp chips: ' +
+      ACTIVE_SID_CHIP_COUNT +
+      ' (SID 1–3 melodic, SID 4 kick, SID 5 snare, SID 6 cymbals).',
   ];
+  const projection = projectedChipRenderMs({renderAvgMs, renderMaxMs});
+  if (projection) {
+    lines.push(
+      'Projected render at ' +
+        projection.toChips +
+        ' chips: ' +
+        show(projection.projectedAvgMs) +
+        ' avg / ' +
+        show(projection.projectedMaxMs) +
+        ' max (×' +
+        projection.scale.toFixed(2) +
+        ').',
+    );
+  }
   if (Number.isFinite(renderBudgetMs) && renderBudgetMs > 0) {
-    const usedPct = (projection.projectedMaxMs / renderBudgetMs) * 100;
-    const headroomMs = renderBudgetMs - projection.projectedMaxMs;
+    const compared = projection ? projection.projectedMaxMs : renderMaxMs;
+    const usedPct = (compared / renderBudgetMs) * 100;
+    const headroomMs = renderBudgetMs - compared;
     let budgetLine =
-      'Projected max vs block budget: ' +
-      show(projection.projectedMaxMs) +
+      'Render max vs block budget: ' +
+      show(compared) +
       ' / ' +
       show(renderBudgetMs) +
       ' (' +
@@ -53,6 +60,5 @@ export function formatChipRenderDiagnosticLines({renderAvgMs, renderMaxMs, rende
     else budgetLine += '; ' + show(-headroomMs) + ' over budget at max).';
     lines.push(budgetLine);
   }
-  lines.push('Projection is linear scaling only—not measured on device. Use live avg/max above for today’s load.');
   return lines;
 }

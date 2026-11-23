@@ -4,10 +4,10 @@
 
 ## Model
 
-- **Hardware truth:** One MOS 6581 filter per chip. SID 4 remains the only drum chip.
-- **Logical engines:** `sound.drumBuses[0..2]` — kick, snare, hat (CH/OH).
-- **Playback:** `triggerDrumLane` calls `drumSlotFilterRegisters` with the lane’s bus filter and voice slot (`drum-voice-policy.js`).
-- **UI:** Kick / Snare / Hat tabs select which bus the **SID 4** card edits.
+- **Hardware truth:** One MOS 6581 filter and one stereo pan per chip.
+- **Drum chips:** SID 4 kick (`engines[3]`), SID 5 snare (`engines[4]`), SID 6 cymbals (`engines[5]`, CH/OH share that chip).
+- **Playback:** `triggerDrumLane` writes that chip’s filter and gates voice 0 on that chip only.
+- **UI:** Kick / Snare / Hat tabs each mount that chip’s engine card. Pan on one tab does not move the others.
 
 ## Defaults (owner audition)
 
@@ -17,9 +17,9 @@
 | Snare | 4200 Hz | 14% | BP | Starting point |
 | Hat | 1894 Hz | 0% | HP | CH pitch +48 st |
 
-Chip-level **boost** (+24 dB) and **pan** stay on `engines[3]`.
+Each drum chip has its own **boost** (default +24 dB) and **pan**.
 
 ## Not in scope
 
-- Three physical SID chips for drums (would consume melodic engines 1–3).
-- Simultaneous different filter states on overlapping voices (last note-on wins until next hit).
+- Using melodic SID 1–3 as drum chips.
+- Playing closed hat and open hat at the same time (they share SID 6).

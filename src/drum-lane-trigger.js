@@ -62,11 +62,13 @@ export function drumReleaseMilliseconds(voice) {
   const envelopeMs = (attack + decay + release) * 1000;
   const pe = voice?.pitchEnvelope;
   let peMs = 0;
-  if (pe?.enabled) {
-    peMs =
-      ((Number(pe.attack) || 0) + (Number(pe.decay) || 0) + (Number(pe.sustain) || 0)) * 1000;
+  if (pe?.enabled && Array.isArray(pe.points) && pe.points.length) {
+    const last = pe.points[pe.points.length - 1];
+    peMs = Number(last?.ms) || 0;
   }
-  return Math.max(80, Math.ceil(Math.max(envelopeMs, peMs, 120)));
+  // Short hats must gate off before the next 1/16 at typical tempos.
+  // A 120 ms floor held closed hats into the following open-hat step.
+  return Math.max(40, Math.ceil(Math.max(envelopeMs, peMs)));
 }
 
 export function drumBpm(sequence, masterBpm) {

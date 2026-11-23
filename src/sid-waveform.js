@@ -39,6 +39,21 @@ export function waveControlByte(waveSpec) {
   return mask;
 }
 
+/**
+ * A noise-first combination such as the open hat's noise+triangle locks the
+ * 6581 shift register into a steady noise. Those specs play as noise only.
+ * A tonal-first spec such as the kick's triangle+noise is left unchanged.
+ */
+export function sidSafeWaveByte(waveSpec) {
+  const mask = waveControlByte(waveSpec);
+  const noise = mask & WAVE_BITS.noise;
+  const tonal = mask & (WAVE_BITS.triangle | WAVE_BITS.sawtooth | WAVE_BITS.square);
+  if (!noise || !tonal) return mask;
+  const text = Array.isArray(waveSpec) ? waveSpec.join('+') : String(waveSpec);
+  if (text.trim().startsWith('noise')) return noise;
+  return mask;
+}
+
 export function validateVoiceWave(wave) {
   waveControlByte(wave);
   if (Array.isArray(wave)) return wave.join('+');

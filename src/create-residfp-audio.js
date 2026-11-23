@@ -1,3 +1,4 @@
+import {SID_CHIP_COUNT} from './sid-engines.js?v=__BUILD_ID__';
 import {closeSidContext} from './sid-audio-lifecycle.js?v=__BUILD_ID__';
 import {loadSidWasm} from './sid-wasm-cache.js?v=__BUILD_ID__';
 import {createSidWriteBatcher} from './sid-write-batcher.js?v=__BUILD_ID__';
@@ -160,7 +161,7 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
       setChipGain(chip,gainDb){if(!closed&&node)node.port.postMessage({type:'set-chip-gain',chip,gainDb:Math.round(gainDb)});},
       setModulationConfig(config){if(!closed&&node)node.port.postMessage({type:'modulation-config',...config});},
       startPitchEnvelope(slot,note,envelope){
-        if(!Number.isInteger(slot)||slot<0||slot>=8||!Number.isFinite(note))return;
+        if(!Number.isInteger(slot)||slot<0||slot>=SID_CHIP_COUNT*3||!Number.isFinite(note))return;
         const register=Math.floor(slot/3)*0x20+(slot%3)*7;
         // Flush the note-on frequency and gate before starting modulation.
         batcher.flush();
@@ -169,14 +170,14 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
           points:envelope.points,interpolation:envelope.interpolation,end:envelope.end});
       },
       retunePitchEnvelope(slot,note){
-        if(!Number.isInteger(slot)||slot<0||slot>=8||!Number.isFinite(note))return;
+        if(!Number.isInteger(slot)||slot<0||slot>=SID_CHIP_COUNT*3||!Number.isFinite(note))return;
         const register=Math.floor(slot/3)*0x20+(slot%3)*7;
         const baseFrequency=Math.max(0,Math.min(65535,Math.round(440*2**((note-69)/12)*16777216/985248)));
         batcher.flush();
         node.port.postMessage({type:'pitch-envelope-retune',register,baseFrequency});
       },
       stopPitchEnvelope(slot){
-        if(!Number.isInteger(slot)||slot<0||slot>=8)return;
+        if(!Number.isInteger(slot)||slot<0||slot>=SID_CHIP_COUNT*3)return;
         const register=Math.floor(slot/3)*0x20+(slot%3)*7;
         node.port.postMessage({type:'pitch-envelope-stop',register});
       },

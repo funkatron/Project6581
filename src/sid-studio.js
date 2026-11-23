@@ -25,8 +25,8 @@ import {mountDrumSlotVoicePanels,effectiveLaneTimbre} from "./drum-slot-voice-ui
 import {mountDrumBusMeters} from "./drum-bus-meters-ui.js?v=__BUILD_ID__";
 import {DRUM_BUS_LANES,drumLfoTargetsForKit} from "./drum-voice-ui-policy.js?v=__BUILD_ID__";
 import {defaultDrumKit,defaultDrumSequence,validateDrumKit,validateDrumSequence} from "./drum-step-sequencer.js?v=__BUILD_ID__";
-import {DRUM_ENGINE_INDEX} from "./sid-engines.js?v=__BUILD_ID__";
-import {defaultDrumSlotForLane,isDrumSlotIndex,resolveDrumHitsOnStep} from "./drum-voice-policy.js?v=__BUILD_ID__";
+import {drumChipForBus,isDrumChip} from "./sid-engines.js?v=__BUILD_ID__";
+import {resolveDrumHitsOnStep} from "./drum-voice-policy.js?v=__BUILD_ID__";
 import {drumBusVolumeForLane,drumLaneLevelGain,drumOwnerKey,drumLaneTimbre,drumReleaseMilliseconds,isDrumOwner} from "./drum-lane-trigger.js?v=__BUILD_ID__";
 import {drumBusIndexForLane,validateDrumBusEngines,defaultDrumBusEngines} from "./drum-bus-engines.js?v=__BUILD_ID__";
 import {drumSlotFilterRegisters} from "./drum-slot-filter.js?v=__BUILD_ID__";
@@ -128,7 +128,7 @@ let currentSidSettings={...settings[0]};
 const engineLiveSettings=[null,null,null,null];
 const useAudioClockLfo=true;
 let enginePanelsUi=null;
-let chipPeakLevels=[0,0,0,0];
+let chipPeakLevels=[0,0,0,0,0,0];
 let drumBusPeakLevels=[0,0,0];
 const DRUM_BUS_METER_DECAY=0.86;
 function bumpDrumBusMeter(laneId){
@@ -209,7 +209,7 @@ function syncEnginePans(){
 }
 function syncEngineChipGains(){
  for(let chip=0;chip<engines.length;chip++){
-  const db=chip===3?(engines[chip].outputBoostDb??18):0;
+  const db=isDrumChip(chip)?(engines[chip].outputBoostDb??24):0;
   sidAudio?.setChipGain?.(chip,db);
  }
 }
@@ -235,8 +235,9 @@ enginePanelsUi=mountSidEnginePanels({
  setDrumBusFilterField:(busIndex,key,value)=>{
   if(!drumBuses[busIndex]?.filter)return;
   drumBuses[busIndex].filter[key]=value;
-  if(busIndex===0)engines[3].filter[key]=value;
-  traceStudio('drum-bus-filter',{bus:busIndex,field:key,value});
+  const chip=drumChipForBus(busIndex);
+  if(engines[chip]?.filter)engines[chip].filter[key]=value;
+  traceStudio('drum-bus-filter',{bus:busIndex,chip,field:key,value});
   enginePanelsUi?.refreshDrumBusControls?.(busIndex);
   refreshPresetDirty();
  },
@@ -253,8 +254,8 @@ enginePanelsUi=mountSidEnginePanels({
     sidAudio.setChipModel(_index,engines[_index].model).catch(()=>{});
    }
   }
-  if(_index===DRUM_ENGINE_INDEX&&kind!=='model'&&kind!=='boost'){
-   applyDrumBusFilter(activeDrumBusIndex);
+  if(isDrumChip(_index)&&kind!=='model'&&kind!=='boost'){
+   applyDrumChipFilter(_index);
   }
   refreshPresetDirty();
   updateModulation();
@@ -338,12 +339,19 @@ function drumTimbreForLane(laneId){
  if(!factory)return null;
  return drumLaneTimbre(factory.settings,lane);
 }
-function applyDrumBusFilter(busIndex,overrides={}){
- if(!sidController)return;
- const slot=busIndex;
- const filter={...drumBusFilterForIndex(busIndex),...overrides};
+const drumChipFilterStamp=['','','','','',''];
+function applyDrumChipFilter(chip,overrides={}){
+ if(!sidController||!isDrumChip(chip))return false;
+ const filter={...engines[chip].filter,...overrides};
+ const stamp=[filter.cutoff,filter.resonance,filter.volume,filter.mode].join(':');
+ if(drumChipFilterStamp[chip]===stamp)return false;
+ drumChipFilterStamp[chip]=stamp;
  const regs=filterRegistersFromUi(filter);
- sidController.setFilter(drumSlotFilterRegisters(regs,slot),DRUM_ENGINE_INDEX);
+ sidController.setFilter(drumSlotFilterRegisters(regs,0),chip);
+ return true;
+}
+function applyDrumBusFilter(busIndex,overrides={}){
+ applyDrumChipFilter(drumChipForBus(busIndex),overrides);
 }
 function applyDrumEngineFilter(overrides={}){
  applyDrumBusFilter(activeDrumBusIndex,overrides);
@@ -352,13 +360,13 @@ function applyDrumEngineFilterForLane(laneId){
  const lane=validateDrumKit(drumKit).lanes[laneId];
  if(!lane)return;
  const busIndex=drumBusIndexForLane(laneId);
- const slot=defaultDrumSlotForLane(laneId);
- const volume=drumBusVolumeForLane(drumBusFilterForIndex(busIndex),lane,laneId);
- const filter={...drumBusFilterForIndex(busIndex),volume};
- const regs=filterRegistersFromUi(filter);
+ const chip=drumChipForBus(busIndex);
+ const volume=drumBusVolumeForLane(engines[chip].filter,lane,laneId);
+ const filter={...engines[chip].filter,volume};
  if(!sidController)return;
- sidController.setFilter(drumSlotFilterRegisters(regs,slot),DRUM_ENGINE_INDEX);
- traceStudio('drum-bus-apply',{lane:laneId,bus:busIndex,slot,volume:filter.volume,cutoff:filter.cutoff,mode:filter.mode});
+ const wrote=applyDrumChipFilter(chip,{volume});
+ if(!wrote)return;
+ traceStudio('drum-bus-apply',{lane:laneId,bus:busIndex,chip,volume:filter.volume,cutoff:filter.cutoff,mode:filter.mode});
 }
 function triggerDrumStep(rawHits){
  if(!sidController||!rawHits?.length)return;
@@ -380,7 +388,7 @@ function triggerDrumLane(laneId,{drumSlot,skipFilter=false}={}){
  const gate=canDispatchNote({
   blocked:sidMusicalInputBlocked(),
   hasController:Boolean(sidController),
-  voiceEnabled:Boolean(engines[DRUM_ENGINE_INDEX]?.voice?.enabled),
+  voiceEnabled:Boolean(engines[drumChipForBus(drumBusIndexForLane(laneId))]?.voice?.enabled),
   contextState:sidContext?.state??null
  });
  if(!gate.ok){
@@ -388,24 +396,31 @@ function triggerDrumLane(laneId,{drumSlot,skipFilter=false}={}){
   return;
  }
  stopDrumOwner(ownerKey);
- const slot=isDrumSlotIndex(drumSlot)?drumSlot:defaultDrumSlotForLane(laneId);
- applyDrumEngineFilterForLane(laneId);
  const busIndex=drumBusIndexForLane(laneId);
- const busFilter=drumBusFilterForIndex(busIndex);
+ const chip=drumChipForBus(busIndex);
+ // Gate off any other lane still held on this chip before touching its filter.
+ for(const key of [...activeOwners.keys()]){
+  if(!isDrumOwner(key))continue;
+  const owner=activeOwners.get(key);
+  if(owner?.chip!==chip)continue;
+  stopDrumOwner(key);
+ }
+ applyDrumEngineFilterForLane(laneId);
+ const busFilter=engines[chip].filter;
  const settings={...voice,pitchEnvelope:voice.pitchEnvelope};
  const traceStart=sidAudio?.beginNoteTrace();
  const token=sidController.noteOn(note,()=>settings,{
-  chipMask:[DRUM_ENGINE_INDEX],
-  layerChip:DRUM_ENGINE_INDEX,
-  drumSlot:slot,
+  chipMask:[chip],
+  layerChip:chip,
+  drumSlot:0,
  });
  sidAudio?.endNoteTrace(null,traceStart);
  sidAudio?.noteDispatched?.('drum');
- activeOwners.set(ownerKey,{note,token,drumSlot:slot});
+ activeOwners.set(ownerKey,{note,token,drumSlot:0,chip});
  bumpDrumBusMeter(laneId);
- traceStudio('note-on',{note,source:ownerKey,chipMask:[DRUM_ENGINE_INDEX],drumBus:busIndex,
+ traceStudio('note-on',{note,source:ownerKey,chipMask:[chip],drumBus:busIndex,
   drumFilter:{cutoff:busFilter.cutoff,resonance:busFilter.resonance,mode:busFilter.mode,volume:busFilter.volume},
-  drumSlot:slot,activeDrumOwners:activeOwners.size});
+  drumSlot:0,chip,activeDrumOwners:activeOwners.size});
  diagnosticsUi.afterNoteEvent?.();
  const releaseMs=drumReleaseMilliseconds(voice);
  clearDrumReleaseTimer(ownerKey);
@@ -523,6 +538,7 @@ function updateUnison(){
 }
 updateUnison();
 function panic(reason=''){
+ drumChipFilterStamp.fill('');
  traceStudio('panic',{reason});
  releaseMidiNotes();
  gameStop();drumStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.root=null;directOwned.clear();activeOwners.clear();arpKeyVisual.clear();sidController?.panic()}
@@ -698,16 +714,11 @@ mountPreferencesDialog($);
 
 function updateSidFilter(overrides={},engineIndex=0){
   if(!sidController)return;
-  const filter=engineIndex===DRUM_ENGINE_INDEX
-   ?{...drumBusFilterForIndex(activeDrumBusIndex),...overrides}
-   :{...engines[engineIndex].filter,...overrides};
+  const filter={...engines[engineIndex].filter,...overrides};
   if(useAudioClockLfo)return;
   const regs=filterRegistersFromUi(filter);
-  if(engineIndex===DRUM_ENGINE_INDEX){
-   sidController.setFilter(
-    drumSlotFilterRegisters(regs,activeDrumBusIndex),
-    engineIndex,
-   );
+  if(isDrumChip(engineIndex)){
+   sidController.setFilter(drumSlotFilterRegisters(regs,0),engineIndex);
    return;
   }
   sidController.setFilter(regs,engineIndex);
@@ -718,8 +729,8 @@ function pushAudioModulationConfig(){
  const drum=effectiveDrumLfoRow(bpm);
  sidAudio.setModulationConfig({
   bpm,
-  engines:engines.map((engine,index)=>({
-   filter:index===DRUM_ENGINE_INDEX?{...drumBusFilterForIndex(0)}:{...engine.filter},
+  engines:engines.map(engine=>({
+   filter:{...engine.filter},
    voice:{wave:engine.voice.wave}
   })),
   lfos:[
@@ -806,7 +817,7 @@ function effectiveDrumLfoRow(bpm){
 }
 function chipLfoScopes(chip,effectiveLfos){
  const scopes=lfosForEngine(effectiveLfos,chip);
- if(chip!==DRUM_ENGINE_INDEX)return scopes;
+ if(!isDrumChip(chip))return scopes;
  const drum=effectiveDrumLfoRow(Number($('masterBpm').value));
  if(!drum.enabled||!drum.depth)return scopes;
  return [...scopes,{...drum,engines:'4'}];
@@ -880,11 +891,15 @@ function updateModulation({uiOnly=false}={}){
  }
  sidController.setLiveDetune(globalDetune);
  for(let chip=0;chip<engines.length;chip++){
-  const live=engineLiveSettings[chip];
   const values=engineModValues[chip];
+  sidAudio?.setPan?.(chip,Math.round(values.pan));
+  // Drum ADSR and pulse belong to the lane hit. Rewriting them from the
+  // engine card voice (often a sustaining square) while the sequencer runs
+  // turns hats into a stuck hiss.
+  if(isDrumChip(chip))continue;
+  const live=engineLiveSettings[chip];
   sidController.setEnvelope(live,chip);
   if(engines[chip].voice.wave==='square')sidController.setPulse(0,live.pulse,chip);
-  sidAudio?.setPan?.(chip,Math.round(values.pan));
  }
 }
 $('masterBpm').addEventListener('input',()=>{const n=Number($('masterBpm').value);if(!Number.isFinite(n)||n<40||n>240)return;$('masterBpmValue').textContent=String(n);updateModulation();if($('arpSync').checked)restartGenerators();});
@@ -1295,6 +1310,7 @@ function resetPerformanceGenerators(){
  for(const key of keys.values())key.classList.remove('down');
 }
 function applyPresetControls(next,{silenceAudio=true}={}){
+ drumChipFilterStamp.fill('');
  // Full panic when routing/voices/models require silence; always reset arp/seq UI state.
  if(silenceAudio)panic();
  resetPerformanceGenerators();
@@ -1332,7 +1348,10 @@ function applyPresetControls(next,{silenceAudio=true}={}){
  loadBuiltInPhrase($('gameArpStyle').value);
  applyDrumFromPreset(next.performance);
  drumBuses=validateDrumBusEngines(next.sound.drumBuses);
- engines[3].filter={...drumBuses[0].filter};
+ for(let bus=0;bus<drumBuses.length;bus++){
+  const chip=drumChipForBus(bus);
+  if(engines[chip])engines[chip].filter={...drumBuses[bus].filter};
+ }
  renderKeyboard();
  enginePanelsUi?.render();renderLfos();renderDrumLfo();updateUnison();updateModulation();
  void syncEngineChipModels();

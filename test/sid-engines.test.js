@@ -22,8 +22,14 @@ test('default routing keeps keyboard and arp on SID 1',()=>{
  assert.deepEqual(DEFAULT_ROUTING,{keyboard:'sid1',arp:'sid1',game:'sid1'});
 });
 
-test('default engine bank includes three melodic chips plus SID 4 drums',()=>{
+test('default engine bank is SID 1–3 plus kick, snare, and cymbal chips',()=>{
  const engines=createDefaultEngines();
- assert.equal(engines.length,4);
+ assert.equal(engines.length,6);
  assert.equal(engines[3].outputBoostDb,24);
+ assert.equal(engines[4].outputBoostDb,24);
+ assert.equal(engines[5].outputBoostDb,24);
+ assert.equal(engines[3].filter.mode,'lowpass');
+ assert.equal(engines[4].filter.mode,'bandpass');
+ assert.equal(engines[5].filter.mode,'highpass');
+ assert.notEqual(engines[3].filter.cutoff,engines[4].filter.cutoff);
 });

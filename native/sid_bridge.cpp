@@ -8,7 +8,7 @@
 #include <cstring>
 #include <cmath>
 namespace {
-constexpr int kChipCount = 4;
+constexpr int kChipCount = 6;
 std::array<std::unique_ptr<reSIDfp::SID>, kChipCount> chips;
 int16_t scratch[4096];
 int16_t buffer[8192];
@@ -49,7 +49,7 @@ int sid_init(int model, int sample_rate) {
       chip->write(0x18,0x0f);
     }
     chip_gain.fill(1.f);
-    chip_gain[3] = gain_from_db(6);
+    for (int drum = 3; drum < kChipCount; ++drum) chip_gain[drum] = gain_from_db(6);
     init_stage = 6;
     return 1;
   } catch (const std::exception& err) { record_error(err.what()); for(auto& chip : chips)chip.reset(); return 0; }
