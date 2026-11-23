@@ -25,8 +25,8 @@ Displayed footer: `Project6581 vX.Y.Z · Built … (UTC)` from [stamp-build.mjs]
 ## How automatic semver works
 
 1. **`package.json`** holds the current **released** version (kept in sync via `sync-package-version.mjs`).
-2. **`BASELINE`** in [version-policy.mjs](../scripts/version-policy.mjs) is the **main** commit where `package.json` last synced.
-3. **`resolveVersion()`** walks **first-parent** commits after `BASELINE` and applies:
+2. The **baseline** is the newest first-parent commit that changed the `version` in `package.json` ([version-policy.mjs](../scripts/version-policy.mjs) `versionBaseline()`). It is derived from history, not stored, so squash and rebase merges cannot orphan it.
+3. **`resolveVersion()`** walks **first-parent** commits after the baseline and applies:
    - `feat:` (or PR squash title) → **minor**, patch reset to 0
    - Any other counted commit → **patch**
    - `feat!:` / `BREAKING CHANGE:` → minor while `0.x` (major at `1.0+`)
@@ -43,7 +43,7 @@ Sync after your changes:
 
 ```bash
 node scripts/sync-package-version.mjs
-# commit package.json + version-policy.mjs when updated
+# commit package.json when updated (amending it into your change is simplest)
 ```
 
 Cut a named milestone (optional label; still uses sync):

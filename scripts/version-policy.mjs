@@ -2,10 +2,26 @@ import {execFileSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';
 
 // package.json must match resolveVersion() — run scripts/sync-package-version.mjs after
-// shipping code on main. BASELINE is the commit where package.json last synced.
+// shipping code. The baseline is the newest first-parent commit that changed the
+// "version" line of package.json. It is derived from history rather than stored as a
+// SHA, so squash and rebase merges cannot orphan it (a stored branch SHA broke main
+// after #176 and #191).
 // Rules: feat/behavior → minor (reset patch); any other counted change → patch.
 // Floor v0.4.0: western scale lock + performance arp/latch state (#130, #134).
-export const BASELINE='6e80cf667531849d9caceac45862015e820ba4d7';
+function versionAt(rev){
+  try{
+    const text=execFileSync('git',['show',rev+':package.json'],{encoding:'utf8',stdio:['ignore','pipe','ignore']});
+    return JSON.parse(text).version??null;
+  }catch{return null}
+}
+export function versionBaseline(){
+  const candidates=execFileSync('git',['log','--first-parent','--format=%H','--','package.json'],{encoding:'utf8'})
+    .split('\n').filter(Boolean);
+  for(const sha of candidates){
+    if(versionAt(sha)!==versionAt(sha+'^'))return sha;
+  }
+  throw new Error('No commit changing the package.json version is in this checkout (shallow clone? fetch more history)');
+}
 
 const RELEASE_FLOOR=/^chore(?:\([^)]+\))?:\s*release\b/i;
 const RELEASE_TAG=/^release v\d+\.\d+\.\d+/i;
@@ -52,7 +68,7 @@ export function calculateVersion(base,commits){
   return [major,minor,patch].join('.');
 }
 
-export function gitCommitsSinceBaseline(baseline=BASELINE){
+export function gitCommitsSinceBaseline(baseline=versionBaseline()){
   // -z record separators; %B includes PR title line on merge commits (see commitTitle).
   const raw=execFileSync('git',['log','--first-parent','-z','--format=%B',baseline+'..HEAD'],{encoding:'utf8'});
   return raw.split('\0').filter(message=>message.trim());
@@ -62,7 +78,7 @@ export function packageBaseVersion(){
   return JSON.parse(readFileSync('package.json','utf8')).version;
 }
 
-export function resolveVersion({baseVersion=packageBaseVersion(),commits,baseline=BASELINE}={}){
-  const list=commits??gitCommitsSinceBaseline(baseline);
+export function resolveVersion({baseVersion=packageBaseVersion(),commits,baseline}={}){
+  const list=commits??gitCommitsSinceBaseline(baseline??versionBaseline());
   return calculateVersion(baseVersion,list);
 }
