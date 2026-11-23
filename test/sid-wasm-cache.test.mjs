@@ -75,3 +75,14 @@ test('each audio processor can transfer a distinct copy of cached bytes', async 
   assert.deepEqual([...new Uint8Array(second)],[1,2,3]);
   assert.equal(fetches,1);
 });
+
+test('WASM download allows HTTP caching of the per-build URL', async () => {
+  let options;
+  await loadSidWasm('test-http-cache.wasm?v=1.0.0+20260101', {
+    fetchImpl: async (_url, init) => { options = init; return {ok:true,arrayBuffer:async()=>new ArrayBuffer(8)}; },
+    compile: async () => ({}),
+    imports: () => []
+  });
+  assert.equal(options.cache, undefined);
+  assert.ok(options.signal, 'download stays abortable on timeout');
+});
