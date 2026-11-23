@@ -31,6 +31,20 @@ export function defaultDrumKit() {
   return { name: 'Factory 6581', lanes };
 }
 
+/** Classic four-on-the-floor house groove (all four lanes). */
+export function defaultHouseDrumGrid() {
+  return [
+    // kick: every quarter
+    [true, false, false, false, true, false, false, false, true, false, false, false, true, false, false, false],
+    // sn: backbeat
+    [false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false],
+    // closed hat: offbeat 8ths
+    [true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false],
+    // open hat: upbeats
+    [false, false, false, true, false, false, false, true, false, false, false, true, false, false, false, true],
+  ];
+}
+
 export function defaultDrumSequence() {
   return {
     enabled: false,
@@ -38,9 +52,7 @@ export function defaultDrumSequence() {
     sync: true,
     localBpm: 120,
     steps: DRUM_STEP_COUNT,
-    grid: DRUM_LANE_IDS.map(() =>
-      Array.from({ length: DRUM_STEP_COUNT }, () => false),
-    ),
+    grid: defaultHouseDrumGrid(),
   };
 }
 

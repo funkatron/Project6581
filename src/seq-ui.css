@@ -33,8 +33,14 @@ main>header #presetOpen{max-width:min(140px,28vw)}
 .drum-pattern-card{margin:6px 0 8px;padding:6px 8px 4px;border:1px solid #b8aaa0;border-radius:8px;background:#ebe3d8}
 .drum-pattern-card .drum-grid-scroller{margin:0 -2px}
 .drum-edit-row{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin-top:8px;align-items:start}
-.drum-sound-column,.drum-output-column{min-width:0}
-.drum-output-column .drum-sid-engine{margin:0}
+.drum-sound-column{min-width:0}
+.drum-bus-sid-engine{margin-top:8px;padding-top:8px;border-top:1px solid #c9bdb3}
+.drum-bus-sid-engine .sid-engine-card{margin:0}
+.drum-bus-meters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px;padding:6px 4px 2px;border-top:1px solid #c9bdb3}
+.drum-bus-meter-row{display:flex;flex-direction:column;gap:4px;min-width:0}
+.drum-bus-meter-label{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#3d3832}
+.drum-bus-meter-track{height:8px;border-radius:4px;background:#dcd3c8;overflow:hidden}
+.drum-bus-meter-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#4caf7a,#ffb347 55%,#e05c2a)}
 .drum-chip-note{font-size:12px;color:#4d524b;margin:4px 0 0}
 .drum-bus-voice-shell{display:flex;flex-direction:column;min-width:0}
 .drum-bus-tabs{display:flex;flex-wrap:nowrap;gap:0;margin:0;align-items:flex-end}
@@ -59,7 +65,6 @@ main>header #presetOpen{max-width:min(140px,28vw)}
 .drum-bus-filter-heading,.drum-bus-pitch h5{font-size:11px;margin:6px 0 2px;text-transform:uppercase;letter-spacing:.03em}
 .drum-bus-filter-mode{display:block;font-size:12px;margin-top:2px}
 @container (min-width:520px){.drum-bus-controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@container (min-width:640px){.drum-edit-row{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}}
 .drum-groove-details,.drum-lfo-details{margin:6px 0;font-size:12px;border:1px solid #c9bdb3;border-radius:8px;background:#f3ebe2}
 .drum-details-summary{cursor:pointer;padding:8px 10px;font-weight:700;list-style:none;display:flex;align-items:center;gap:6px}
 .drum-details-summary::-webkit-details-marker{display:none}

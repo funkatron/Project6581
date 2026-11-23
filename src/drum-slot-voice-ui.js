@@ -41,6 +41,7 @@ export function mountDrumSlotVoicePanels({
   formatControlValue,
   onKitStructureChange,
   onActiveBusChange,
+  onAfterRender,
   bindHelp,
 } = {}) {
   if (!$ || !getDrumKit || !factoryPresets?.length) {
@@ -231,7 +232,12 @@ export function mountDrumSlotVoicePanels({
       });
     }
 
-    card.append(grid, pitchHost);
+    const sidHost = document.createElement('div');
+    sidHost.className = 'drum-bus-sid-engine';
+    sidHost.dataset.drumBus = String(bus.slot);
+    sidHost.setAttribute('aria-label', bus.title + ' SID 4 filter');
+
+    card.append(grid, pitchHost, sidHost);
     bindHelp?.(card);
     return card;
   }
@@ -276,9 +282,15 @@ export function mountDrumSlotVoicePanels({
     syncTabSelection(tablist);
 
     host.replaceChildren();
-    const activeBus = DRUM_BUS_LANES[activeBusIndex] ?? DRUM_BUS_LANES[0];
+    DRUM_BUS_LANES.forEach((bus, index) => {
+      const panel = renderBus(bus);
+      const selected = index === activeBusIndex;
+      panel.hidden = !selected;
+      panel.classList.toggle('is-active-drum-bus', selected);
+      host.append(panel);
+    });
     host.dataset.activeBus = BUS_TAB_BUS[activeBusIndex] ?? 'kick';
-    host.append(renderBus(activeBus));
+    onAfterRender?.();
   }
 
   render();

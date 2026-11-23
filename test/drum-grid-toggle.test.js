@@ -1,7 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {defaultDrumSequence, DRUM_LANE_IDS, hitsOnStep} from '../src/drum-step-sequencer.js';
+import {defaultDrumSequence, DRUM_LANE_IDS, DRUM_STEP_COUNT, hitsOnStep} from '../src/drum-step-sequencer.js';
+
+function emptyDrumGrid() {
+  return DRUM_LANE_IDS.map(() => Array.from({length: DRUM_STEP_COUNT}, () => false));
+}
 
 function toggleCell(sequence, rowIndex, step) {
   const grid = sequence.grid.map((r, ri) =>
@@ -11,7 +15,7 @@ function toggleCell(sequence, rowIndex, step) {
 }
 
 test('double-toggle on same cell restores rest when using fresh sequence each tap', () => {
-  let seq = defaultDrumSequence();
+  let seq = {...defaultDrumSequence(), grid: emptyDrumGrid()};
   const row = DRUM_LANE_IDS.indexOf('kick');
   const step = 0;
   seq = toggleCell(seq, row, step);
@@ -21,7 +25,7 @@ test('double-toggle on same cell restores rest when using fresh sequence each ta
 });
 
 test('independent lanes on one step all appear in hitsOnStep', () => {
-  let seq = defaultDrumSequence();
+  let seq = {...defaultDrumSequence(), grid: emptyDrumGrid()};
   const step = 8;
   for (const laneId of DRUM_LANE_IDS) {
     const row = DRUM_LANE_IDS.indexOf(laneId);
