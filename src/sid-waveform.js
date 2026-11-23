@@ -40,9 +40,9 @@ export function waveControlByte(waveSpec) {
 }
 
 /**
- * Noise combined with another waveform locks the 6581 shift register and
- * the voice then outputs a steady noise until a non-noise waveform is written.
- * Hats named noise-first keep noise. Other combined specs keep the tonal bits.
+ * A noise-first combination such as the open hat's noise+triangle locks the
+ * 6581 shift register into a steady noise. Those specs play as noise only.
+ * A tonal-first spec such as the kick's triangle+noise is left unchanged.
  */
 export function sidSafeWaveByte(waveSpec) {
   const mask = waveControlByte(waveSpec);
@@ -51,7 +51,7 @@ export function sidSafeWaveByte(waveSpec) {
   if (!noise || !tonal) return mask;
   const text = Array.isArray(waveSpec) ? waveSpec.join('+') : String(waveSpec);
   if (text.trim().startsWith('noise')) return noise;
-  return tonal;
+  return mask;
 }
 
 export function validateVoiceWave(wave) {

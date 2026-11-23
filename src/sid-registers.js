@@ -23,14 +23,12 @@ export class SidRegisters {
     this.reg(voice,5,ad);this.reg(voice,6,sr);this.envelopes[voice]=[ad,sr];
     const wave=sidSafeWaveByte(settings.wave);
     const previous=this.controls[voice]&~1;
-    if(previous&WAVE_BITS.noise)this.reg(voice,4,0);
+    const tonal=WAVE_BITS.triangle|WAVE_BITS.sawtooth|WAVE_BITS.square;
+    const previousLocked=(previous&WAVE_BITS.noise)&&(previous&tonal);
+    if(previousLocked&&(wave&0xf0)!==(previous&0xf0))this.reg(voice,4,0);
     this.controls[voice]=wave|1;this.reg(voice,4,wave);this.reg(voice,4,wave|1);
   }
-  noteOff(voice){
-    let control=this.controls[voice]&~1;
-    if((control&WAVE_BITS.noise)&&(control&(WAVE_BITS.triangle|WAVE_BITS.sawtooth|WAVE_BITS.square)))control&=~0xf0;
-    this.controls[voice]=control;this.reg(voice,4,control);
-  }
+  noteOff(voice){this.controls[voice]&=~1;this.reg(voice,4,this.controls[voice]);}
   forceSilent(){
     for(let voice=0;voice<3;voice++){this.controls[voice]=0;this.reg(voice,4,0)}
     this.setFilter({cutoff:0,resonance:0,routing:0,mode:'lowpass',volume:0});
