@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   drumBpm,
+  drumBusVolumeForLane,
+  drumLaneLevelGain,
   drumLaneTimbre,
   drumOwnerKey,
   drumReleaseMilliseconds,
@@ -24,20 +26,36 @@ test('drumLaneTimbre merges optional lane voice and filter patches', () => {
   assert.equal(filter.cutoff, 400);
 });
 
-test('drumLaneTimbre applies lane level to filter volume', () => {
+test('drumLaneTimbre applies lane level to legacy filter volume and noise decay', () => {
   const kick = FACTORY_PRESETS.find((p) => p.id === 'low-thud-kick');
   const lane = defaultDrumKit().lanes.kick;
   const {voice, filter} = drumLaneTimbre(kick.settings, lane);
-  assert.equal(voice.wave, 'triangle');
+  assert.equal(voice.wave, 'triangle+noise');
   assert.equal(filter.volume, 92);
   const half = drumLaneTimbre(kick.settings, {...lane, level: 50});
   assert.equal(half.filter.volume, 46);
+  const hat = FACTORY_PRESETS.find((p) => p.id === 'closed-noise-hat');
+  const hatLane = {...defaultDrumKit().lanes.ch, level: 50};
+  const {voice: hatVoice} = drumLaneTimbre(hat.settings, hatLane);
+  assert.ok(hatVoice.decay < 0.022);
 });
 
 test('drumBpm respects sync and local tempo', () => {
   const seq = {sync: true, localBpm: 90};
   assert.equal(drumBpm(seq, 120), 120);
   assert.equal(drumBpm({...seq, sync: false}, 120), 90);
+});
+
+test('drumBusVolumeForLane scales engine bus volume by lane level', () => {
+  const lane = defaultDrumKit().lanes.kick;
+  assert.equal(drumLaneLevelGain(lane), 1);
+  assert.equal(drumBusVolumeForLane({volume: 80}, lane, 'kick'), 88);
+  assert.equal(
+    drumBusVolumeForLane({volume: 80}, {...defaultDrumKit().lanes.sn, level: 100}, 'sn'),
+    80,
+  );
+  assert.equal(drumBusVolumeForLane({volume: 80}, {...lane, level: 50}, 'kick'), 44);
+  assert.equal(drumBusVolumeForLane({volume: 80}, {...lane, level: 0}, 'kick'), 0);
 });
 
 test('drumReleaseMilliseconds is positive for factory kick', () => {

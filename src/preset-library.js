@@ -3,9 +3,11 @@ import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from './pitch-envelope.js'
 import {pitchEnvelopeTemplates} from './pitch-envelope-editor.js';
 const FACTORY_PITCH=pitchEnvelopeTemplates();
 import {createDefaultEngines,DEFAULT_ROUTING,ROUTE_OPTIONS,defaultDrumEngineSettings,defaultEngineSettings} from './sid-engines.js';
+import {defaultDrumBusEngines,validateDrumBusEngines} from './drum-bus-engines.js';
 import {defaultDrumKit,defaultDrumSequence,validateDrumEngineBoost,validateDrumKit,validateDrumSequence} from './drum-step-sequencer.js';
 import {validateScaleSettings} from './western-scales.js';
 import {LFO_TARGET_ORDER,LFO_WAVES} from './lfo-modulation.js';
+import {validateVoiceWave} from './sid-waveform.js';
 // Project6581 preset format v5: per-engine sound blocks and performance.routing (v4 imports upgrade).
 export const PRESET_VERSION=5;
 export const PRESET_STORAGE_KEY='project6581.user-presets.v5';
@@ -100,7 +102,7 @@ function validateEngine(engine,index){
   pan:numeric(e.pan??0,'pan',-100,100),
   outputBoostDb:boost,
   voice:{
-   enabled:boolean(voice.enabled,'enabled'),wave:choice(voice.wave,'waveform',WAVES),
+   enabled:boolean(voice.enabled,'enabled'),wave:validateVoiceWave(voice.wave),
    attack:numeric(voice.attack,'attack',0,2),decay:numeric(voice.decay,'decay',0,3),
    sustain:numeric(voice.sustain,'sustain',0,1),release:numeric(voice.release,'release',.01,4),
    pulse:numeric(voice.pulse,'pulse width',5,95),pwmDepth:numeric(voice.pwmDepth,'PWM depth',0,45),
@@ -129,7 +131,7 @@ function migrateLegacySound(sound){
  const v=attachDefaultPitchEnvelope(sound.voice);
  const filter=object(sound.filter??engines[0].filter,'filter');
  Object.assign(engines[0].voice,{
-  enabled:boolean(v.enabled,'enabled'),wave:choice(v.wave,'waveform',WAVES),
+  enabled:boolean(v.enabled,'enabled'),wave:validateVoiceWave(v.wave),
   attack:numeric(v.attack,'attack',0,2),decay:numeric(v.decay,'decay',0,3),
   sustain:numeric(v.sustain,'sustain',0,1),release:numeric(v.release,'release',.01,4),
   pulse:numeric(v.pulse,'pulse width',5,95),pwmDepth:numeric(v.pwmDepth,'PWM depth',0,45),
@@ -176,7 +178,8 @@ export function validatePresetSettings(value){
      engines:choice(lfo.engines??'all','LFO engines',['all','1','2','3'])
     };
    }),
-   drumLfo:validateDrumLfo(sound.drumLfo)
+   drumLfo:validateDrumLfo(sound.drumLfo),
+   drumBuses:validateDrumBusEngines(sound.drumBuses)
   },
   performance:{
    masterBpm:integer(perf.masterBpm,'master BPM',40,240),
@@ -971,7 +974,7 @@ export const FACTORY_PRESETS=Object.freeze([
  factory('tight-pulse-bass','Tight Pulse Bass','Bass',{voice:{wave:'square',attack:0,decay:.09,sustain:.28,release:.06,pulse:22},filter:{cutoff:1180,resonance:22,volume:74},performance:{game:{enabled:false}}}),
  factory('shimmer-pwm-keys','Shimmer PWM Keys','Keys',{voice:{wave:'square',attack:.05,decay:.42,sustain:.64,release:.68,pulse:43,pwmDepth:16,pwmRate:.48},filter:{cutoff:4600,resonance:14,volume:58},performance:{game:{enabled:false}}}),
  factory('bright-pulse-lead','Bright Pulse Lead','Leads',{voice:{wave:'square',attack:.002,decay:.12,sustain:.84,release:.11,pulse:17},filter:{cutoff:7350,resonance:10,volume:65},lfos:[{enabled:true,wave:'sine',rate:5.2,depth:.09,target:'pulse'}],performance:{game:{enabled:false}}}),
- factory('noise-snare','Noise Snare','Drums',{voice:{wave:'noise',attack:0,decay:.09,sustain:0,release:.01,pitchEnvelope:FACTORY_PITCH.snare},filter:{cutoff:6200,resonance:10,volume:70,mode:'highpass'},performance:{game:{enabled:false}}}),
+ factory('noise-snare','Noise Snare','Drums',{voice:{wave:'noise',attack:0,decay:.11,sustain:0,release:.015,pitchEnvelope:FACTORY_PITCH.snare},filter:{cutoff:6200,resonance:10,volume:70,mode:'lowpass'},performance:{game:{enabled:false}}}),
  // Five additional original sounds in each category; retains the four approved prototypes.
  // Bass: contrasting PWM, filter, tone and octave-arpeggio behaviors.
  factory('pwm-drive-bass','PWM Drive Bass','Bass',{voice:{wave:'square',attack:.002,decay:.18,sustain:.58,release:.09,pulse:32,pwmDepth:21,pwmRate:1.22},filter:{cutoff:1780,resonance:22,volume:71},performance:{game:{enabled:false}}}),
@@ -992,9 +995,9 @@ export const FACTORY_PRESETS=Object.freeze([
  factory('octave-chase-lead','Octave Chase Lead','Leads',{voice:{wave:'square',attack:.002,decay:.07,sustain:.73,release:.08,pulse:22},filter:{cutoff:5850,resonance:14,volume:63},performance:{game:{enabled:true,style:'custom',rate:8,sequence:octaveSequence([0,12,7,12])}}}),
  factory('filtered-saw-lead','Filtered Saw Lead','Leads',{voice:{wave:'sawtooth',attack:.003,decay:.2,sustain:.72,release:.19},filter:{cutoff:2750,resonance:44,volume:59},lfos:[{enabled:true,wave:'sine',rate:.75,depth:.25,target:'cutoff'}],performance:{game:{enabled:false}}}),
  // Drums: kick/tom use pitch templates; hats/clap remain noise-focused.
- factory('low-thud-kick','Low Thud Kick','Drums',{voice:{wave:'triangle',attack:0,decay:.18,sustain:0,release:.01,pitchEnvelope:FACTORY_PITCH.kick},filter:{cutoff:540,resonance:11,volume:92},performance:{game:{enabled:false}}}),
- factory('closed-noise-hat','Closed Noise Hat','Drums',{voice:{wave:'noise',attack:0,decay:.03,sustain:0,release:.01},filter:{cutoff:7600,resonance:7,volume:60,mode:'highpass'},performance:{game:{enabled:false}}}),
- factory('open-noise-hat','Open Noise Hat','Drums',{voice:{wave:'noise',attack:0,decay:.34,sustain:0,release:.1},filter:{cutoff:8000,resonance:9,volume:58,mode:'highpass'},performance:{game:{enabled:false}}}),
+ factory('low-thud-kick','Low Thud Kick','Drums',{voice:{wave:'triangle+noise',attack:0,decay:.21,sustain:.21,release:.02,pitchEnvelope:FACTORY_PITCH.kick},filter:{cutoff:540,resonance:11,volume:92},performance:{game:{enabled:false}}}),
+ factory('closed-noise-hat','Closed Noise Hat','Drums',{voice:{wave:'noise',attack:0,decay:.022,sustain:0,release:.01},filter:{cutoff:7600,resonance:7,volume:60,mode:'lowpass'},performance:{game:{enabled:false}}}),
+ factory('open-noise-hat','Open Noise Hat','Drums',{voice:{wave:'noise+triangle',attack:0,decay:.36,sustain:0,release:.1},filter:{cutoff:8000,resonance:9,volume:58,mode:'lowpass'},performance:{game:{enabled:false}}}),
  factory('noise-clap','Noise Clap','Drums',{voice:{wave:'noise',attack:0,decay:.14,sustain:0,release:.06,pitchEnvelope:FACTORY_PITCH.clap},filter:{cutoff:3000,resonance:30,volume:68,mode:'bandpass'},lfos:[{enabled:true,wave:'square',rate:18,depth:.52,target:'volume'}],performance:{game:{enabled:false}}}),
  factory('low-tom','Low Tom','Drums',{voice:{wave:'triangle',attack:0,decay:.26,sustain:0,release:.07,pitchEnvelope:FACTORY_PITCH.tom},filter:{cutoff:1180,resonance:21,volume:84},performance:{game:{enabled:false}}})
 ]);

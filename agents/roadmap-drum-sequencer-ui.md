@@ -66,7 +66,7 @@ Tab bar becomes: **SYNTH · ARP / SEQ · DRUM SEQ · LFOs** (Diagnostics unchang
 │  ┌────┬──┬──┬──┬──…─┬──┐  playhead on active column         │
 │  │Kick│■ │  │■ │    │  │                                   │
 │  │Sn  │  │■ │  │    │  │  4 lanes × 16 columns             │
-│  …     row header: label + **Level** (0–100) per lane       │
+│  …     row header: voice rail + compact **Level** (0–100) per lane │
 │  └────┴──┴──┴──┴──…─┴──┘                                    │
 │  No per-track pan on this tab — stereo via SID 4 card only  │
 │  Optional later: per-row factory preset dropdown            │
@@ -77,6 +77,7 @@ Tab bar becomes: **SYNTH · ARP / SEQ · DRUM SEQ · LFOs** (Diagnostics unchang
 - **ARP tab stays melodic only** — no drum block under Root/Game.
 - **Visual language:** neutral/warm gray chrome (`#6b5c4f` / `#e8e0d6` fills) so DRUM SEQ reads as **rhythm**, not teal/orange melody.
 - **Grid UX:** reuse `.seq-grid-scroller` pattern (horizontal scroll portrait, full grid landscape).
+- **Lane level:** compact horizontal mixer strip in the row head (voice rail + fader + readout); vertical or pop-up fader only if we need a taller touch target without growing the row — see [ui-slider-patterns.md](./ui-slider-patterns.md).
 
 ---
 

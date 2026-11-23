@@ -354,16 +354,17 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     if(Array.isArray(chipPeaks))blockPeaks=chipPeaks;
     else{
       const estimate=Math.min(1,peak*this.mixedMeterGain);
-      blockPeaks=[estimate,estimate,estimate];
+      blockPeaks=[estimate,estimate,estimate,estimate];
     }
-    for(let i=0;i<3;i++){
+    const chipCount=Math.min(4,blockPeaks.length);
+    for(let i=0;i<chipCount;i++){
       const sample=blockPeaks[i]||0;
       this.chipPeakHold[i]=Math.max(this.chipPeakHold[i],sample);
       this.chipPeakInterval[i]=Math.max(this.chipPeakInterval[i],sample);
     }
     if(++this.meterBlocks%16===0){
       this.port.postMessage({type:'meter-levels',chipPeaks:[...this.chipPeakHold],masterPeak:this.masterPeakHold});
-      this.chipPeakHold=[0,0,0];this.masterPeakHold=0;
+      this.chipPeakHold=[0,0,0,0];this.masterPeakHold=0;
     }
     if(++this.blocks%128===0){
       this.port.postMessage({
@@ -373,7 +374,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
         renderBudgetMs:frames*1000/sampleRate
       });
       this.lastPeak=0;this.writes=0;
-      this.chipPeakInterval=[0,0,0];
+      this.chipPeakInterval=[0,0,0,0];
       this.renderMsTotal=0;this.renderMsMax=0;this.timedRenderBlocks=0;
     }
     return true;

@@ -9,7 +9,7 @@ export function isDrumOwner(ownerKey) {
   return typeof ownerKey === 'string' && ownerKey.startsWith('drum:');
 }
 
-/** Factory preset voice + filter with lane level applied to filter volume (0–100). */
+/** Factory preset voice (+ legacy filter snapshot). Lane level shapes loudness via sustain (shared bus filter). */
 export function drumLaneTimbre(factorySettings, lane) {
   if (!factorySettings?.sound?.engines?.[0]) {
     throw new TypeError('Factory preset missing engine voice');
@@ -27,8 +27,31 @@ export function drumLaneTimbre(factorySettings, lane) {
   if (lane.filter && typeof lane.filter === 'object') {
     Object.assign(filter, lane.filter);
   }
-  filter.volume = Math.round((Number(filter.volume) || 0) * level / 100);
+  const levelGain = level / 100;
+  if (levelGain < 1 && Number.isFinite(voice.sustain) && voice.sustain > 0) {
+    voice.sustain = Math.max(0, Math.min(1, voice.sustain * levelGain));
+  }
+  if (levelGain < 1 && Number.isFinite(voice.decay)) {
+    voice.decay = Math.max(0.005, voice.decay * (0.5 + 0.5 * levelGain));
+  }
+  filter.volume = Math.round((Number(filter.volume) || 0) * levelGain);
   return {voice, filter};
+}
+
+/** 0–1 gain from lane level (0 = silent). */
+export function drumLaneLevelGain(lane) {
+  const level = Math.max(0, Math.min(100, Math.round(Number(lane?.level) || 0)));
+  return level / 100;
+}
+
+/** Shared SID filter volume for one lane hit (engine bus × lane level). */
+export function drumBusVolumeForLane(engineFilter, lane, laneId) {
+  const gain = drumLaneLevelGain(lane);
+  const busVol = Number(engineFilter?.volume);
+  const base = Number.isFinite(busVol) ? busVol : 82;
+  let scaled = base * gain;
+  if (laneId === 'kick' && gain > 0) scaled *= 1.1;
+  return Math.round(Math.max(0, Math.min(100, scaled)));
 }
 
 /** Approximate one-shot length in ms for scheduling noteOff (seconds-based ADSR). */

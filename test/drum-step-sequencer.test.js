@@ -58,8 +58,15 @@ test('validateDrumSequence coalesces legacy six-row grids', () => {
   assert.equal(seq.grid[0][0], true);
 });
 
-test('validateDrumEngineBoost defaults to +6 dB', () => {
-  assert.equal(validateDrumEngineBoost(), 6);
-  assert.equal(validateDrumEngineBoost(12), 12);
-  assert.throws(() => validateDrumEngineBoost(3), /0, 6, or 12/);
+test('validateDrumEngineBoost defaults to +24 dB', () => {
+  assert.equal(validateDrumEngineBoost(), 24);
+  assert.equal(validateDrumEngineBoost(24), 24);
+  assert.throws(() => validateDrumEngineBoost(3), /one of/);
+});
+
+test('default drum kit hats use +48 semitone pitch offset', () => {
+  const kit = validateDrumKit(defaultDrumKit());
+  assert.equal(kit.lanes.ch.pitchOffsetSemitones, 48);
+  assert.equal(kit.lanes.oh.pitchOffsetSemitones, 48);
+  assert.equal(kit.lanes.kick.pitchOffsetSemitones, 0);
 });

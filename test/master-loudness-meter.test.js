@@ -10,7 +10,8 @@ function masterPeakWorkletHarness(){
  const replies=[];
  const buffer=new ArrayBuffer(4096);
  const pcmOffset=0;
- const chipPeakOffset=256;
+ // Stereo PCM uses 128 frames × 2 × 2 bytes = 512 bytes from pcmOffset; peaks follow.
+ const chipPeakOffset=512;
  const scope=vm.createContext({
   AudioWorkletProcessor:class{port={postMessage:message=>replies.push(structuredClone(message))}},
   sampleRate:48000,
@@ -102,6 +103,16 @@ test('worklet master peak follows mixed stereo PCM and resets every 16 blocks',(
  block(0,24576,8);
  const third=h.meterLevels().at(-1);
  assert.ok(Math.abs(third.masterPeak-0.75)<0.001);
+});
+
+test('worklet holds fourth chip peak for drum SID meter',()=>{
+ const h=masterPeakWorkletHarness();
+ h.setChipPeaks(0.01,0.02,0.03,0.2);
+ h.fillStereoBlock(0,0);
+ for(let count=0;count<16;count++)h.render();
+ const levels=h.meterLevels().at(-1);
+ assert.equal(levels.chipPeaks.length,4);
+ levels.chipPeaks.forEach((peak,index)=>assert.ok(Math.abs(peak-[0.01,0.02,0.03,0.2][index])<0.001));
 });
 
 test('worklet master peak is not replaced by low chip peak telemetry',()=>{

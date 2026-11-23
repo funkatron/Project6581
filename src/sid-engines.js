@@ -25,8 +25,9 @@ export function defaultEngineSettings(model=6581){
 export function defaultDrumEngineSettings(model=6581){
  return {
   ...defaultEngineSettings(model),
-  outputBoostDb:6,
-  filter:{cutoff:6200,resonance:12,volume:70,mode:'highpass'}
+  outputBoostDb:24,
+  // Legacy single-filter field; playback uses sound.drumBuses[0–2]. Kept for LFO UI fallback.
+  filter:{cutoff:2138,resonance:11,volume:90,mode:'lowpass'}
  };
 }
 
