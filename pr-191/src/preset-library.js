@@ -1023,7 +1023,7 @@ export const FACTORY_PRESETS=Object.freeze([
  // Drums: kick/tom use pitch templates; hats/clap remain noise-focused.
  factory('low-thud-kick','Low Thud Kick','Drums',{voice:{wave:'triangle+noise',attack:0,decay:.21,sustain:.21,release:.02,pitchEnvelope:FACTORY_PITCH.kick},filter:{cutoff:540,resonance:11,volume:92},performance:{game:{enabled:false}}}),
  factory('closed-noise-hat','Closed Noise Hat','Drums',{voice:{wave:'noise',attack:0,decay:.022,sustain:0,release:.01},filter:{cutoff:7600,resonance:7,volume:60,mode:'lowpass'},performance:{game:{enabled:false}}}),
- factory('open-noise-hat','Open Noise Hat','Drums',{voice:{wave:'noise+triangle',attack:0,decay:.36,sustain:0,release:.1},filter:{cutoff:8000,resonance:9,volume:58,mode:'lowpass'},performance:{game:{enabled:false}}}),
+ factory('open-noise-hat','Open Noise Hat','Drums',{voice:{wave:'noise',attack:0,decay:.36,sustain:0,release:.1},filter:{cutoff:8000,resonance:9,volume:58,mode:'lowpass'},performance:{game:{enabled:false}}}),
  factory('noise-clap','Noise Clap','Drums',{voice:{wave:'noise',attack:0,decay:.14,sustain:0,release:.06,pitchEnvelope:FACTORY_PITCH.clap},filter:{cutoff:3000,resonance:30,volume:68,mode:'bandpass'},lfos:[{enabled:true,wave:'square',rate:18,depth:.52,target:'volume'}],performance:{game:{enabled:false}}}),
  factory('low-tom','Low Tom','Drums',{voice:{wave:'triangle',attack:0,decay:.26,sustain:0,release:.07,pitchEnvelope:FACTORY_PITCH.tom},filter:{cutoff:1180,resonance:21,volume:84},performance:{game:{enabled:false}}})
 ]);

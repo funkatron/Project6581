@@ -1,8 +1,8 @@
-import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=0.20.0+20261123T190617904Z';
+import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=0.20.2+20261123T193714181Z';
 import {DRUM_ENGINE_INDEX,SID_ENGINE_COUNT,drumChipForBus,isDrumChip as chipIsDrum} from './sid-engines.js';
-import {chipPanStereoPeaks,meterDisplayWidth} from './sid-meter-display.js?v=0.20.0+20261123T190617904Z';
-import {formatPanBrief,formatHzBrief,formatPercent} from './control-format.js?v=0.20.0+20261123T190617904Z';
-import {setLayoutInert} from './ui-layout.js?v=0.20.0+20261123T190617904Z';
+import {chipPanStereoPeaks,meterDisplayWidth} from './sid-meter-display.js?v=0.20.2+20261123T193714181Z';
+import {formatPanBrief,formatHzBrief,formatPercent} from './control-format.js?v=0.20.2+20261123T193714181Z';
+import {setLayoutInert} from './ui-layout.js?v=0.20.2+20261123T193714181Z';
 
 const FILTER_MODES=['lowpass','bandpass','highpass'];
 

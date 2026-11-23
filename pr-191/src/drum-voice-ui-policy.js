@@ -1,4 +1,4 @@
-import {voiceWaveLabel} from './sid-waveform.js?v=0.20.0+20261123T190617904Z';
+import {voiceWaveLabel} from './sid-waveform.js?v=0.20.2+20261123T193714181Z';
 
 /** Which drum-bus UI blocks apply for a factory/effective voice wave. */
 export function drumBusShowsPulse(wave) {

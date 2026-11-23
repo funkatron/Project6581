@@ -1,5 +1,5 @@
-import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=0.20.0+20261123T190617904Z';
-import {setLayoutInert} from './ui-layout.js?v=0.20.0+20261123T190617904Z';
+import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=0.20.2+20261123T193714181Z';
+import {setLayoutInert} from './ui-layout.js?v=0.20.2+20261123T193714181Z';
 
 export function mountVoiceSoundPanel({
  $,settings,ranges,formatControlValue,applyPitchEnvelope,onVoiceChange

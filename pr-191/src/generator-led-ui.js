@@ -1,4 +1,4 @@
-import {bindHelpGesture} from './ui-help-gesture.js?v=0.20.0+20261123T190617904Z';
+import {bindHelpGesture} from './ui-help-gesture.js?v=0.20.2+20261123T193714181Z';
 
 const RATE_LABEL={0.25:'1/1',0.5:'1/2',1:'1/4',2:'1/8',4:'1/16',8:'1/32',16:'1/64',32:'1/128'};
 const HELP_BY_GEN={drum:'generator-led-drum',root:'generator-led-root',game:'generator-led-game',latch:'generator-led-latch'};

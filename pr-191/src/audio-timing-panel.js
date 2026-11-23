@@ -1,6 +1,6 @@
-import {formatSidDiagnosticReport} from './sid-event-log.js?v=0.20.0+20261123T190617904Z';
-import {formatPlaybackLatencyStatus} from './sid-engine-status-ui.js?v=0.20.0+20261123T190617904Z';
-import {formatChipRenderDiagnosticLines, projectedChipRenderMs} from './sid-chip-render-diagnostic.js?v=0.20.0+20261123T190617904Z';
+import {formatSidDiagnosticReport} from './sid-event-log.js?v=0.20.2+20261123T193714181Z';
+import {formatPlaybackLatencyStatus} from './sid-engine-status-ui.js?v=0.20.2+20261123T193714181Z';
+import {formatChipRenderDiagnosticLines, projectedChipRenderMs} from './sid-chip-render-diagnostic.js?v=0.20.2+20261123T193714181Z';
 
 export function mountAudioTimingPanel({
  $,sidEventLog,audioTiming,sidStartupLog,getSidAudio,getSidContext,getReportContext
