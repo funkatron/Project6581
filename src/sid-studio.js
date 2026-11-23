@@ -22,6 +22,7 @@ import {mountDrumPerformance,readDrumSequenceFromDom} from "./drum-performance.j
 import {mountDrumGrooveIo} from "./drum-groove-ui.js?v=__BUILD_ID__";
 import {mountDrumLfoPanel} from "./drum-lfo-panel-ui.js?v=__BUILD_ID__";
 import {mountDrumSlotVoicePanels,effectiveLaneTimbre} from "./drum-slot-voice-ui.js?v=__BUILD_ID__";
+import {mountDrumBusMeters} from "./drum-bus-meters-ui.js?v=__BUILD_ID__";
 import {DRUM_BUS_LANES,drumLfoTargetsForKit} from "./drum-voice-ui-policy.js?v=__BUILD_ID__";
 import {defaultDrumKit,defaultDrumSequence,validateDrumKit,validateDrumSequence} from "./drum-step-sequencer.js?v=__BUILD_ID__";
 import {DRUM_ENGINE_INDEX} from "./sid-engines.js?v=__BUILD_ID__";
@@ -128,6 +129,27 @@ const engineLiveSettings=[null,null,null,null];
 const useAudioClockLfo=true;
 let enginePanelsUi=null;
 let chipPeakLevels=[0,0,0,0];
+let drumBusPeakLevels=[0,0,0];
+const DRUM_BUS_METER_DECAY=0.86;
+function bumpDrumBusMeter(laneId){
+ const busIndex=drumBusIndexForLane(laneId);
+ const lane=drumKit.lanes?.[laneId];
+ if(!lane)return;
+ const level=Math.min(1,drumLaneLevelGain(lane)*0.42);
+ if(level<=0)return;
+ drumBusPeakLevels[busIndex]=Math.max(drumBusPeakLevels[busIndex],level);
+}
+function decayDrumBusPeakLevels(){
+ for(let i=0;i<drumBusPeakLevels.length;i++){
+  drumBusPeakLevels[i]*=DRUM_BUS_METER_DECAY;
+  if(drumBusPeakLevels[i]<0.002)drumBusPeakLevels[i]=0;
+ }
+}
+function publishDrumBusMeters(){
+ decayDrumBusPeakLevels();
+ drumBusMetersUi?.update(drumBusPeakLevels);
+ enginePanelsUi?.updateMeters(chipPeakLevels,drumBusPeakLevels);
+}
 const masterLoudnessMeter=mountMasterLoudnessMeter($);
 function updateMasterLoudnessFromLevels(masterPeak,chipPeaks){
  if(Number.isFinite(masterPeak))masterLoudnessMeter.update(masterPeak);
@@ -207,12 +229,15 @@ function drumBusFilterForIndex(busIndex){
 enginePanelsUi=mountSidEnginePanels({
  $,engines,getEngines:()=>engines,ranges,formatControlValue,
  getMeterLevels:()=>chipPeakLevels,
+ getDrumBusMeterLevels:()=>drumBusPeakLevels,
  getActiveDrumBusIndex:()=>activeDrumBusIndex,
  getDrumBusFilter:busIndex=>drumBusFilterForIndex(busIndex),
  setDrumBusFilterField:(busIndex,key,value)=>{
   if(!drumBuses[busIndex]?.filter)return;
   drumBuses[busIndex].filter[key]=value;
   if(busIndex===0)engines[3].filter[key]=value;
+  traceStudio('drum-bus-filter',{bus:busIndex,field:key,value});
+  enginePanelsUi?.refreshDrumBusControls?.(busIndex);
   refreshPresetDirty();
  },
  onEngineChange:(_index,kind)=>{
@@ -243,6 +268,7 @@ const drumLfoState=validateDrumLfo(null);
 function refreshDrumTuningUi(){
  renderDrumLfo?.();
  drumSlotVoiceUi?.render();
+ enginePanelsUi?.renderDrumBusPanels?.();
 }
 function drumBusWaveforms(){
  return DRUM_BUS_LANES.map(bus=>effectiveLaneTimbre(FACTORY_PRESETS,drumKit.lanes[bus.laneId]).voice.wave);
@@ -332,6 +358,7 @@ function applyDrumEngineFilterForLane(laneId){
  const regs=filterRegistersFromUi(filter);
  if(!sidController)return;
  sidController.setFilter(drumSlotFilterRegisters(regs,slot),DRUM_ENGINE_INDEX);
+ traceStudio('drum-bus-apply',{lane:laneId,bus:busIndex,slot,volume:filter.volume,cutoff:filter.cutoff,mode:filter.mode});
 }
 function triggerDrumStep(rawHits){
  if(!sidController||!rawHits?.length)return;
@@ -363,6 +390,8 @@ function triggerDrumLane(laneId,{drumSlot,skipFilter=false}={}){
  stopDrumOwner(ownerKey);
  const slot=isDrumSlotIndex(drumSlot)?drumSlot:defaultDrumSlotForLane(laneId);
  applyDrumEngineFilterForLane(laneId);
+ const busIndex=drumBusIndexForLane(laneId);
+ const busFilter=drumBusFilterForIndex(busIndex);
  const settings={...voice,pitchEnvelope:voice.pitchEnvelope};
  const traceStart=sidAudio?.beginNoteTrace();
  const token=sidController.noteOn(note,()=>settings,{
@@ -373,7 +402,10 @@ function triggerDrumLane(laneId,{drumSlot,skipFilter=false}={}){
  sidAudio?.endNoteTrace(null,traceStart);
  sidAudio?.noteDispatched?.('drum');
  activeOwners.set(ownerKey,{note,token,drumSlot:slot});
- traceStudio('note-on',{note,source:ownerKey,chipMask:[DRUM_ENGINE_INDEX]});
+ bumpDrumBusMeter(laneId);
+ traceStudio('note-on',{note,source:ownerKey,chipMask:[DRUM_ENGINE_INDEX],drumBus:busIndex,
+  drumFilter:{cutoff:busFilter.cutoff,resonance:busFilter.resonance,mode:busFilter.mode,volume:busFilter.volume},
+  drumSlot:slot,activeDrumOwners:activeOwners.size});
  diagnosticsUi.afterNoteEvent?.();
  const releaseMs=drumReleaseMilliseconds(voice);
  clearDrumReleaseTimer(ownerKey);
@@ -579,10 +611,8 @@ drumSlotVoiceUi=mountDrumSlotVoicePanels({
  factoryPresets:FACTORY_PRESETS,
  formatControlValue,
  onKitStructureChange:refreshDrumTuningUi,
- onActiveBusChange:busIndex=>{
-  activeDrumBusIndex=busIndex;
-  enginePanelsUi?.renderDrumBus?.();
- },
+ onActiveBusChange:busIndex=>{activeDrumBusIndex=busIndex;},
+ onAfterRender:()=>enginePanelsUi?.renderDrumBusPanels?.(),
  bindHelp:root=>mountHelpTriggers($,{openHelp:helpUi.openHelp,root}),
 });
 ({renderDrumLfo}=mountDrumLfoPanel({
@@ -601,6 +631,7 @@ drumPanelUi=mountDrumPanel({
  triggerDrumLane,
  onPatternChange:()=>refreshPresetDirty()
 });
+const drumBusMetersUi=mountDrumBusMeters({$,getLevels:()=>drumBusPeakLevels});
 ({drumStart,drumStop}=mountDrumPerformance({
  $,drum,
  getDrumSequence:()=>drumSequence,
@@ -983,7 +1014,7 @@ async function startSid({gesture=false}={}){
       }
       if(event.type==='meter-levels'){
         if(Array.isArray(event.chipPeaks))chipPeakLevels=event.chipPeaks;
-        enginePanelsUi?.updateMeters(chipPeakLevels);
+        publishDrumBusMeters();
         updateMasterLoudnessFromLevels(event.masterPeak,chipPeakLevels);
         return;
       }
@@ -994,7 +1025,7 @@ async function startSid({gesture=false}={}){
         if($('audioTimingDetails').open)updateAudioTimingReport();
         const peak=(event.peak*100).toFixed(2);
         if(Array.isArray(event.chipPeaks))chipPeakLevels=event.chipPeaks;
-        enginePanelsUi?.updateMeters(chipPeakLevels);
+        publishDrumBusMeters();
         if(Number.isFinite(event.peak))updateMasterLoudnessFromLevels(event.peak,chipPeakLevels);
         $('sidPlaybackStatus').textContent='SID key presses: '+sidKeys+' · register writes (recent): '+event.writes+' · audio peak: '+peak+'%';
       }

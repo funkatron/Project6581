@@ -56,9 +56,9 @@ test('mountStudioTestHooks loads validated drum sequence',()=>{
 
 test('setDrumGridCell updates one step without mutating input',()=>{
  const seq=defaultDrumSequence();
- const next=setDrumGridCell(seq,'kick',0,true);
- assert.equal(next.grid[0][0],true);
- assert.equal(seq.grid[0][0],false);
+ const next=setDrumGridCell(seq,'kick',1,true);
+ assert.equal(next.grid[0][1],true);
+ assert.equal(seq.grid[0][1],false);
 });
 
 test('mountStudioTestHooks setDrumCell can audition lane',()=>{

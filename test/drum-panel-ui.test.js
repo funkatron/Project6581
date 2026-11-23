@@ -30,7 +30,7 @@ test('drum panel module builds grid cells and lane levels', () => {
   assert.match(html, /drum-bus-voice-shell/);
   assert.match(html, /id="drumBusTablist"/);
   assert.match(html, /id="drumSlotVoices"/);
-  assert.match(html, /id="drumSidEngine"/);
+  assert.match(html, /id="drumBusMeters"/);
   assert.match(html, /data-help="drum-groove"/);
   const drumStart = html.indexOf('id="drumPanel"');
   const scrollerAt = html.indexOf('id="drumGridScroller"', drumStart);

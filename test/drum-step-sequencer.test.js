@@ -6,6 +6,7 @@ import {
   coalesceDrumGrid,
   defaultDrumKit,
   defaultDrumSequence,
+  defaultHouseDrumGrid,
   hitsOnStep,
   validateDrumEngineBoost,
   validateDrumKit,
@@ -19,6 +20,14 @@ test('default drum kit and sequence validate', () => {
   const seq = validateDrumSequence(defaultDrumSequence());
   assert.equal(seq.grid.length, DRUM_LANE_COUNT);
   assert.equal(seq.grid[0].length, DRUM_STEP_COUNT);
+});
+
+test('default house groove hits all four lanes', () => {
+  const grid = defaultHouseDrumGrid();
+  assert.equal(grid[0].filter(Boolean).length, 4);
+  assert.equal(grid[1].filter(Boolean).length, 2);
+  assert.ok(grid[2].some(Boolean));
+  assert.ok(grid[3].some(Boolean));
 });
 
 test('hitsOnStep lists active lanes', () => {
