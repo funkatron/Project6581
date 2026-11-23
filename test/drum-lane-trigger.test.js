@@ -63,3 +63,10 @@ test('drumReleaseMilliseconds is positive for factory kick', () => {
   const ms = drumReleaseMilliseconds(kick.settings.sound.engines[0].voice);
   assert.ok(ms >= 80);
 });
+
+test('closed hat gate ends before the next 1/16 at 120 BPM', () => {
+  const hat = FACTORY_PRESETS.find((p) => p.id === 'closed-noise-hat');
+  const ms = drumReleaseMilliseconds(hat.settings.sound.engines[0].voice);
+  assert.ok(ms < 125);
+  assert.ok(ms >= 40);
+});
