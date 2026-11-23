@@ -36,7 +36,17 @@ test('release floor commits do not auto-increment',()=>{
   assert.equal(countsTowardVersion('chore: release v0.4.0\n'),false);
   assert.equal(calculateVersion('0.3.0',['chore: release v0.4.0','feat: new panel']),'0.4.0');
 });
-test('resolveVersion matches stamped build on this checkout',()=>{
+// These two tests read this repository's real history. A shallow clone may lack
+// it, so skip with a clear reason instead of failing (CI uses fetch-depth: 0).
+const SHALLOW_HINT='; run git fetch --unshallow to include history tests';
+function historySkipReason(commit){
+  try{
+    if(commit)execFileSync('git',['cat-file','-e',commit+'^{commit}'],{stdio:'ignore'});
+    else resolveVersion();
+    return false;
+  }catch{return (commit?'commit '+commit+' is not in this checkout':'version history is not in this checkout')+SHALLOW_HINT}
+}
+test('resolveVersion matches stamped build on this checkout',{skip:historySkipReason()},()=>{
   assert.match(resolveVersion(),/^\d+\.\d+\.\d+$/);
 });
 test('untyped merge PR title increments patch',()=>{
@@ -52,7 +62,7 @@ test('fix merge commits increment patch',()=>{
   const merge='Merge pull request #146 from funkatron/cursor/sync-chip-models-serial-fa36\n\nfix: serialize per-chip SID model sync on startup';
   assert.equal(calculateVersion('0.5.1',[merge]),'0.5.2');
 });
-test('git log since baseline returns merge bodies with PR titles',()=>{
+test('git log since baseline returns merge bodies with PR titles',{skip:historySkipReason('4ee5fba')},()=>{
   const commits=gitCommitsSinceBaseline('4ee5fba');
   assert.ok(commits.length>=1);
   const merge=commits.find(message=>message.startsWith('Merge pull request'));
