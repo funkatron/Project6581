@@ -1,5 +1,5 @@
-import {DEFAULT_ROUTING,ROUTE_OPTIONS} from './sid-engines.js';
-import {setControlValue} from './ui-control.js';
+import {DEFAULT_ROUTING,ROUTE_OPTIONS} from './sid-engines.js?v=__BUILD_ID__';
+import {setControlValue} from './ui-control.js?v=__BUILD_ID__';
 
 const FIELDS=['keyboard','arp','game'];
 const FIELD_TO_ID={keyboard:'keyboardRoute',arp:'arpRoute',game:'gameRoute'};

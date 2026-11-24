@@ -1,5 +1,5 @@
 // One editable, sixteen-step Game Arp phrase. No browser or SID dependencies.
-import {GAME_PATTERNS} from './arp-composition.js';
+import {GAME_PATTERNS} from './arp-composition.js?v=__BUILD_ID__';
 export const STEP_LENGTHS=Object.freeze([4,8,16]);
 // A reset must be neutral: sixteen root notes, every gate on, no melody
 // or hidden rests. Only an explicitly edited or saved phrase has variations.

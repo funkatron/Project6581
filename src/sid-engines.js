@@ -1,5 +1,5 @@
-import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from './pitch-envelope.js';
-import {defaultDrumBusEngines} from './drum-bus-engines.js';
+import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from './pitch-envelope.js?v=__BUILD_ID__';
+import {defaultDrumBusEngines} from './drum-bus-engines.js?v=__BUILD_ID__';
 
 export const SID_CHIP_COUNT=6;
 export const MELODIC_CHIP_COUNT=3;

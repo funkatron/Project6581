@@ -1,4 +1,4 @@
-import {setControlChecked} from './ui-control.js';
+import {setControlChecked} from './ui-control.js?v=__BUILD_ID__';
 
 const FIELDS=['rootOn','gameOn','latchOn'];
 const FIELD_TO_ID={rootOn:'arpOn',gameOn:'gameArpOn',latchOn:'arpLatch'};

@@ -1,5 +1,5 @@
-import {clampVoiceCount} from './sid-engines.js';
-import {setControlValue} from './ui-control.js';
+import {clampVoiceCount} from './sid-engines.js?v=__BUILD_ID__';
+import {setControlValue} from './ui-control.js?v=__BUILD_ID__';
 
 const ASSIGNMENTS=['mono','legato','duo','poly'];
 const FIELDS=['voiceCount','unisonCount','mode','detune'];

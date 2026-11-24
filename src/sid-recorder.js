@@ -1,4 +1,4 @@
-import {encodeWav} from './wav-encoder.js';
+import {encodeWav} from './wav-encoder.js?v=__BUILD_ID__';
 
 // Safari typically records AAC in audio/mp4. MediaRecorder does not reliably
 // produce MP3, so never label a different codec as .mp3.

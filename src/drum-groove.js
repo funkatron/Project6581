@@ -1,11 +1,11 @@
-import {cleanPresetName, validateDrumEngineSlice, validateDrumLfo} from './preset-library.js';
+import {cleanPresetName, validateDrumEngineSlice, validateDrumLfo} from './preset-library.js?v=__BUILD_ID__';
 import {
   defaultDrumKit,
   defaultDrumSequence,
   validateDrumEngineBoost,
   validateDrumKit,
   validateDrumSequence,
-} from './drum-step-sequencer.js';
+} from './drum-step-sequencer.js?v=__BUILD_ID__';
 
 export const DRUM_GROOVE_FORMAT = '6581drum';
 export const DRUM_GROOVE_VERSION = 1;

@@ -1,4 +1,4 @@
-import {buildDrumGroove, parseDrumGrooveText, serializeDrumGroove} from './drum-groove.js';
+import {buildDrumGroove, parseDrumGrooveText, serializeDrumGroove} from './drum-groove.js?v=__BUILD_ID__';
 
 export function mountDrumGrooveIo({$, collectGroove, applyGroove, onStatus}) {
   if (!$) throw new TypeError('mountDrumGrooveIo requires $');

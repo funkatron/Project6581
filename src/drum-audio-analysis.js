@@ -1,4 +1,4 @@
-import {stepMilliseconds} from './arp-composition.js';
+import {stepMilliseconds} from './arp-composition.js?v=__BUILD_ID__';
 
 /** Decode 16-bit PCM mono WAV produced by encodeWav (44-byte header). */
 export function decodeWavMonoPcm(wavBytes){

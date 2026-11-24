@@ -1,4 +1,4 @@
-import {defaultDrumSequence, validateDrumSequence} from './drum-step-sequencer.js';
+import {defaultDrumSequence, validateDrumSequence} from './drum-step-sequencer.js?v=__BUILD_ID__';
 
 /** Merge a drum-audio JSON fixture into a validated sequence object. */
 export function drumSequenceFromFixture(fixture){

@@ -5,7 +5,7 @@ import {
   DRUM_STEP_COUNT,
   defaultDrumSequence,
   validateDrumSequence,
-} from './drum-step-sequencer.js';
+} from './drum-step-sequencer.js?v=__BUILD_ID__';
 
 const LANE_LABEL = {
   kick: 'Kick',

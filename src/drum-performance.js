@@ -1,6 +1,6 @@
-import {DRUM_STEP_COUNT, hitsOnStep} from './drum-step-sequencer.js';
-import {stepMilliseconds} from './arp-composition.js';
-import {drumBpm} from './drum-lane-trigger.js';
+import {DRUM_STEP_COUNT, hitsOnStep} from './drum-step-sequencer.js?v=__BUILD_ID__';
+import {stepMilliseconds} from './arp-composition.js?v=__BUILD_ID__';
+import {drumBpm} from './drum-lane-trigger.js?v=__BUILD_ID__';
 
 const RATE_LABEL = {0.25: '1/1', 0.5: '1/2', 1: '1/4', 2: '1/8', 4: '1/16', 8: '1/32', 16: '1/64', 32: '1/128'};
 

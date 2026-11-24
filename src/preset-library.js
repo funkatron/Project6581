@@ -1,13 +1,13 @@
-import {defaultSequence,validateSequence} from './game-step-sequencer.js';
-import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from './pitch-envelope.js';
-import {pitchEnvelopeTemplates} from './pitch-envelope-editor.js';
+import {defaultSequence,validateSequence} from './game-step-sequencer.js?v=__BUILD_ID__';
+import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from './pitch-envelope.js?v=__BUILD_ID__';
+import {pitchEnvelopeTemplates} from './pitch-envelope-editor.js?v=__BUILD_ID__';
 const FACTORY_PITCH=pitchEnvelopeTemplates();
-import {createDefaultEngines,DEFAULT_ROUTING,ROUTE_OPTIONS,defaultDrumEngineSettings,defaultEngineSettings,DRUM_ENGINE_INDEX,SID_CHIP_COUNT,isDrumChip} from './sid-engines.js';
-import {defaultDrumBusEngines,validateDrumBusEngines} from './drum-bus-engines.js';
-import {defaultDrumKit,defaultDrumSequence,validateDrumEngineBoost,validateDrumKit,validateDrumSequence} from './drum-step-sequencer.js';
-import {validateScaleSettings} from './western-scales.js';
-import {LFO_TARGET_ORDER,LFO_WAVES} from './lfo-modulation.js';
-import {validateVoiceWave} from './sid-waveform.js';
+import {createDefaultEngines,DEFAULT_ROUTING,ROUTE_OPTIONS,defaultDrumEngineSettings,defaultEngineSettings,DRUM_ENGINE_INDEX,SID_CHIP_COUNT,isDrumChip} from './sid-engines.js?v=__BUILD_ID__';
+import {defaultDrumBusEngines,validateDrumBusEngines} from './drum-bus-engines.js?v=__BUILD_ID__';
+import {defaultDrumKit,defaultDrumSequence,validateDrumEngineBoost,validateDrumKit,validateDrumSequence} from './drum-step-sequencer.js?v=__BUILD_ID__';
+import {validateScaleSettings} from './western-scales.js?v=__BUILD_ID__';
+import {LFO_TARGET_ORDER,LFO_WAVES} from './lfo-modulation.js?v=__BUILD_ID__';
+import {validateVoiceWave} from './sid-waveform.js?v=__BUILD_ID__';
 // Project6581 preset format v5: per-engine sound blocks and performance.routing (v4 imports upgrade).
 export const PRESET_VERSION=5;
 export const PRESET_STORAGE_KEY='project6581.user-presets.v5';
