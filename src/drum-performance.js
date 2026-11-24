@@ -1,4 +1,5 @@
-import {DRUM_STEP_COUNT, hitsOnStep} from './drum-step-sequencer.js?v=__BUILD_ID__';
+import {DRUM_STEP_COUNT} from './drum-step-sequencer.js?v=__BUILD_ID__';
+import {drumStep} from './sequencer-steps.js?v=__BUILD_ID__';
 import {stepMilliseconds} from './arp-composition.js?v=__BUILD_ID__';
 import {drumBpm} from './drum-lane-trigger.js?v=__BUILD_ID__';
 import {drumSequence} from './transport-state.js?v=__BUILD_ID__';
@@ -52,10 +53,8 @@ export function mountDrumPerformance({
   }
 
   function drumTick() {
-    const seq = liveSequence();
-    const index = drum.step % DRUM_STEP_COUNT;
-    const hits = hitsOnStep(seq, index);
-    drum.step = (index + 1) % DRUM_STEP_COUNT;
+    const {clock, index, hits} = drumStep({step: drum.step}, {sequence: liveSequence()});
+    drum.step = clock.step;
     triggerDrumStep(hits);
     onStep?.(index);
     updateStatus(true, index);

@@ -1,6 +1,7 @@
-import {selectRoot,resolveGameRoot,gamePhraseBoundary} from './arp-composition.js?v=__BUILD_ID__';
+import {resolveGameRoot} from './arp-composition.js?v=__BUILD_ID__';
+import {arpStep,gameStep} from './sequencer-steps.js?v=__BUILD_ID__';
 import {arpStepMs,gameStepMs} from './transport-state.js?v=__BUILD_ID__';
-import {defaultSequence,sequenceEvent,sequenceForStyle} from './game-step-sequencer.js?v=__BUILD_ID__';
+import {defaultSequence,sequenceForStyle} from './game-step-sequencer.js?v=__BUILD_ID__';
 
 // Step grid plus the Game Arp and root-arp clocks. The studio still owns play(),
 // stop(), and the preset snapshot; this module asks those to run.
@@ -118,50 +119,48 @@ export function mountPerformance({
   $('seqStatus').textContent=phraseLabel()+' · '+phrase.length+'-step phrase. Edit a step to make it Custom.';
   return true;
  }
+ // Step decisions live in sequencer-steps.js; these adapters apply them.
+ const noteName=note=>names[note%12]+(Math.floor(note/12)-1);
+ function applyStep(result){
+  for(const event of result.events){
+   if(event.type==='off')stop(event.note,event.source);
+   else play(event.note,event.source);
+  }
+  for(const [kind,note] of Object.entries(result.highlight)){
+   if(note===null)getArpKeyVisual().clear(kind);
+   else getArpKeyVisual().show(note,kind);
+  }
+ }
  function gameTick(){
-  const seqState=transport.sequence;
   const root=gameRoot();
   if(root===null){gameStop();$('arpStatus').textContent='No notes held';return}
   if(game.gateTimer!==null){clearTimeout(game.gateTimer);game.gateTimer=null}
-  if(game.last!==null)stop(game.last,'game');
-  const event=sequenceEvent(root,seqState,game.step++);
-  highlightStep(event.index);
-  game.last=null;
-  if(!event.gate){
-   getArpKeyVisual().clear('game');
-   $('arpStatus').textContent=phraseLabel()+' step '+(event.index+1)+' · rest';
-   return;
-  }
-  game.last=performanceNote(event.note);
-  play(game.last,'game');getArpKeyVisual().show(game.last,'game');
-  $('arpStatus').textContent=phraseLabel()+' step '+(event.index+1)+' · '+names[root%12]+(Math.floor(root/12)-1);
-  if(event.duration<100){
-   const sounding=event.note,clock=game.step;
+  const result=gameStep({step:game.step,last:game.last},
+   {root,sequence:transport.sequence,resolve:performanceNote});
+  game.step=result.clock.step;game.last=result.clock.last;
+  highlightStep(result.stepIndex);
+  applyStep(result);
+  const {status}=result;
+  $('arpStatus').textContent=phraseLabel()+' step '+(status.index+1)+' · '+
+   (status.type==='rest'?'rest':noteName(status.root));
+  if(result.gate){
+   const sounding=result.gate.note,clock=game.step;
    game.gateTimer=setTimeout(()=>{
     if(game.step!==clock||game.last!==sounding)return;
     stop(sounding,'game');game.last=null;getArpKeyVisual().clear('game');game.gateTimer=null;
-   },gameStepMs(transport.getState())*event.duration/100);
+   },gameStepMs(transport.getState())*result.gate.fraction);
   }
  }
  function arpTick(){
   const notes=arpNotes();
-  if(!notes.length){
-   arp.root=null;
-   if(!gameEnabled())arpStopVoice();
-   $('arpStatus').textContent='No notes held';return;
-  }
-  const note=performanceNote(selectRoot(notes,transport.arp.pattern,arp.step++));
-  getArpKeyVisual().show(note,'root');
-  if(gameEnabled()){
-   if(arp.root===null||gamePhraseBoundary(game.step,transport.sequence.length))arp.root=note;
-   $('arpStatus').textContent='Root Arp · '+names[note%12]+(Math.floor(note/12)-1)+' · '+notes.length+' notes';
-   return;
-  }
-  arp.root=note;
-  if(arp.last!==null)stop(arp.last,'arp');
-  arp.last=note;play(note,'arp');
-  $('arpStatus').textContent='Root Arp · '+names[note%12]+(Math.floor(note/12)-1)+
-   ' · '+notes.length+' notes';
+  const result=arpStep({step:arp.step,root:arp.root,last:arp.last},{
+   notes,pattern:transport.arp.pattern,gameOn:gameEnabled(),
+   gameStep:game.step,phraseLength:transport.sequence.length,resolve:performanceNote
+  });
+  Object.assign(arp,result.clock);
+  applyStep(result);
+  $('arpStatus').textContent=result.status.type==='idle'?'No notes held':
+   'Root Arp · '+noteName(result.status.note)+' · '+result.status.count+' notes';
  }
  function stopGenerators(){
   gameStop();
