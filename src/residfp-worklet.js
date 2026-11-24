@@ -204,7 +204,6 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
         if(engineTarget!=='all'&&Number(engineTarget)!==chip+1)continue;
         const [min,max]=targets[lfo.target];
         const depth=Math.max(0,Math.min(1,Number(lfo.depth)||0));
-        const rate=lfo.sync?this.syncedLfoHz(config.bpm,lfo.syncDivision):(Number(lfo.rate)||0);
         const offset=this.lfoWaveValue(lfo.wave,(this.lfoPhase[lfoIndex]??0)+(lfo.phase??0),lfo.seed??0)*depth*(max-min)/2;
         offsets[lfo.target]=(offsets[lfo.target]??0)+offset;
       }

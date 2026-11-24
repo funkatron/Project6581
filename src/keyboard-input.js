@@ -83,7 +83,7 @@ export function createKeyGesture({
 
 export function mountKeyboard(deps){
  const {$,keys,names,keyboardState,traceInput,panic,restartGenerators,gameEnabled,latchOn,isSeqPreview,arp,
-  pitchInScale=()=>true,refreshPresetDirty,getArpKeyVisual}=deps;
+  pitchInScale=()=>true,getArpKeyVisual}=deps;
  const {keyDown,keyUp,flushQueuedKeys}=createKeyGesture(deps);
  const MIN_OCTAVE=0,MAX_OCTAVE=7;
  const compactKeyboard=()=>matchMedia('(max-width:900px), (max-height:620px)').matches;

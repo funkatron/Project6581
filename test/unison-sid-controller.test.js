@@ -17,7 +17,7 @@ test('eight unison layers sound across all three SID chips in Mono',()=>{
 test('nine voices with eight unison layers in Poly allow one sounding pitch',()=>{
  const writes=[],sid=new UnisonSidController((r,v)=>writes.push([r,v]),{voiceCount:9,unisonCount:8,mode:'poly'});
  assert.equal(sid.capacity,1);
- const token=sid.noteOn(60,sound);
+ sid.noteOn(60,sound);
  assert.equal(sid.polyNotes.size,1);
  assert.equal(gateOns(writes).length,8);
  sid.configure({unisonCount:4,voiceCount:9,mode:'poly'});

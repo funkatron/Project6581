@@ -11,3 +11,4 @@
 - **Stable tool layout:** toggling visibility must not reflow sibling controls — see [agents/ui-stable-layout.md](agents/ui-stable-layout.md) and `setLayoutInert()` in `src/ui-layout.js`.
 - **Slider UX:** horizontal vs vertical vs pop-up faders — see [agents/ui-slider-patterns.md](agents/ui-slider-patterns.md) (drum grid uses compact horizontal lane strips; vertical/pop-over where row height is insufficient).
 - **Versioning:** `package.json` must match `node scripts/resolve-version.mjs`. Run `node scripts/sync-package-version.mjs` when code changes bump semver; **feat/behavior → minor**, other changes → **patch**. See [agents/versioning-policy.md](agents/versioning-policy.md).
+- **Lint:** `npm run lint` must pass (CI enforces it). `eslint.config.mjs` has bug-finding rules only, no style rules; do not add Prettier or reformat files while tests still match exact source text.

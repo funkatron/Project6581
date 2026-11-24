@@ -1,6 +1,6 @@
 import {formatSidDiagnosticReport} from './sid-event-log.js?v=__BUILD_ID__';
 import {formatPlaybackLatencyStatus} from './sid-engine-status-ui.js?v=__BUILD_ID__';
-import {formatChipRenderDiagnosticLines, projectedChipRenderMs} from './sid-chip-render-diagnostic.js?v=__BUILD_ID__';
+import {formatChipRenderDiagnosticLines} from './sid-chip-render-diagnostic.js?v=__BUILD_ID__';
 
 export function mountAudioTimingPanel({
  $,sidEventLog,audioTiming,sidStartupLog,getSidAudio,getSidContext,getReportContext

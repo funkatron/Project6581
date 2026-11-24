@@ -122,7 +122,7 @@ function buildLaneMixerRow(laneId, ctx) {
 }
 
 function buildMergedHatLaneHead(gridRowStart, ctx) {
-  const {kit, help$} = ctx;
+  const {kit} = ctx;
   const head = document.createElement('div');
   head.className = 'drum-lane-head drum-lane-head--hat-stack';
   head.style.gridRow = gridRowStart + ' / ' + (gridRowStart + 2);

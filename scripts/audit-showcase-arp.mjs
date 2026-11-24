@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /** Load factory showcases in headless Chrome; confirm Game Arp off and report arp rate. */
 import {createServer} from 'node:http';
-import {existsSync,createReadStream,readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+import {existsSync,createReadStream,writeFileSync,mkdirSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import puppeteer from 'puppeteer-core';

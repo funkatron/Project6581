@@ -42,7 +42,7 @@ function app({closeHangs=false,closeRejects=false,moduleHang=false,engineError=f
   sidAudio:null,sidContext:null,sidController:null,sidRecorder:null,activeSidModel:null,sidStarting:false,
   sidEventLog:{enabled:false,add(){}},sidKeys:0,lfoTimer:1,modulation:null,sidStartupLog:[],audioTiming:{},
   panic(){},updateModulation(){},updateAudioTimingReport(){},createSidRecorder:()=>({supportsM4a:false}),
-  flushQueuedKeys(){},refreshEngineStatus(){},needsAudioResume,
+  flushQueuedKeys(){},refreshEngineStatus(){},
   stopAndSaveRecording(){},
   loadModule:async path=>moduleHang?new Promise(()=>{}):path.includes('create-residfp')?{createReSidFpAudio:async options=>{
    if(engineError)throw Error('SID engine download failed');

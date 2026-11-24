@@ -15,7 +15,6 @@ export const LEGACY_PRESET_STORAGE_KEY_V4='project6581.user-presets.v4';
 export const LEGACY_PRESET_STORAGE_KEY_V3='project6581.user-presets.v3';
 export const IMPORTABLE_PRESET_VERSIONS=Object.freeze([3,4,5]);
 export const MAX_USER_PRESETS=100;
-const WAVES=['triangle','sawtooth','square','noise'];
 const MODES=['lowpass','bandpass','highpass'];
 const ASSIGNMENTS=['mono','legato','duo','poly'];
 const TARGETS=LFO_TARGET_ORDER;

@@ -26,3 +26,5 @@ jobs:
             exit 1
           fi
       - run: npm test
+      - name: Lint (bug-finding rules only)
+        run: npx --yes eslint@10.1.0 .
