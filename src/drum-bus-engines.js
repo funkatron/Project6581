@@ -14,9 +14,9 @@ const defaultFilter = (cutoff, resonance, volume, mode) => ({
 
 export function defaultDrumBusEngines() {
   return [
-    {filter: defaultFilter(2138, 11, 90, 'lowpass')},
-    {filter: defaultFilter(4200, 14, 85, 'bandpass')},
-    {filter: defaultFilter(1894, 0, 100, 'highpass')},
+    {filter: defaultFilter(2583, 100, 100, 'lowpass')},
+    {filter: defaultFilter(1273, 93, 73, 'bandpass')},
+    {filter: defaultFilter(5958, 23, 100, 'highpass')},
   ];
 }
 

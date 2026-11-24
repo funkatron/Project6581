@@ -37,12 +37,15 @@ export function defaultEngineSettings(model=6581){
  };
 }
 
-export function defaultDrumEngineSettings(model=6581){
+/** SID 4–6 (kick, snare, cymbals) default to the 8580, whatever the melodic chips use. */
+export const DRUM_CHIP_MODEL=8580;
+
+export function defaultDrumEngineSettings(model=DRUM_CHIP_MODEL){
  return {
   ...defaultEngineSettings(model),
   outputBoostDb:24,
   // Legacy single-filter field; playback uses sound.drumBuses[0–2]. Kept for LFO UI fallback.
-  filter:{cutoff:2138,resonance:11,volume:90,mode:'lowpass'}
+  filter:{cutoff:2583,resonance:100,volume:100,mode:'lowpass'}
  };
 }
 
@@ -53,7 +56,7 @@ export function createDefaultEngines(chipModel=6581){
   defaultEngineSettings(chipModel)
  ];
  const drums=defaultDrumBusEngines().map(bus=>({
-  ...defaultDrumEngineSettings(chipModel),
+  ...defaultDrumEngineSettings(),
   filter:{...bus.filter}
  }));
  return [...melodic,...drums];

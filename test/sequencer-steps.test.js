@@ -132,7 +132,7 @@ test('drumStep returns the hits for the step and wraps after sixteen',()=>{
  assert.deepEqual(first.clock,{step:1});
  const last=drumStep({step:15},{sequence});
  assert.equal(last.index,15);
- assert.deepEqual(last.hits.map(hit=>hit.lane),['oh']);
+ assert.deepEqual(last.hits.map(hit=>hit.lane),['kick','ch']);
  assert.deepEqual(last.clock,{step:0});
  assert.equal(drumStep({step:33},{sequence}).index,1);
 });

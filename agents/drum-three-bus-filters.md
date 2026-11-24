@@ -9,15 +9,15 @@
 - **Playback:** `triggerDrumLane` writes that chip’s filter and gates voice 0 on that chip only.
 - **UI:** Kick / Snare / Hat tabs each mount that chip’s engine card. Pan on one tab does not move the others.
 
-## Defaults (owner audition)
+## Defaults (owner audition, 2026-11-24)
 
-| Bus | Cutoff | Res | Mode | Notes |
-| --- | --- | --- | --- | --- |
-| Kick | 2138 Hz | 11% | LP | Low Thud Kick ADSR |
-| Snare | 4200 Hz | 14% | BP | Starting point |
-| Hat | 1894 Hz | 0% | HP | CH pitch +48 st |
+| Bus | Chip | Volume | Cutoff | Res | Mode | Lanes (level · pitch · voice) |
+| --- | --- | --- | --- | --- | --- | --- |
+| Kick | SID 4 | 100% | 2583 Hz | 100% | LP | Kick 100 · +48 st · decay 0, sustain 0, pitch env off |
+| Snare | SID 5 | 73% | 1273 Hz | 93% | BP | Sn 70 · +48 st · decay 0.16 s, sustain 0, pitch env off |
+| Hat | SID 6 | 100% | 5958 Hz | 23% | HP | CH 20 · +36 st · decay 0.07 s; OH 20 · +36 st |
 
-Each drum chip has its own **boost** (default +24 dB) and **pan**.
+All three drum chips default to the **8580** (`DRUM_CHIP_MODEL`), whatever model the melodic chips use. Each has its own **boost** (default +24 dB) and **pan** (default centre). Saved kits without hat pitch offsets still load at +48 st.
 
 ## Not in scope
 

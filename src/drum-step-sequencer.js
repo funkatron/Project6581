@@ -16,32 +16,38 @@ export const DRUM_PITCH_OFFSET_SEMITONES = Object.freeze([-48, -36, -24, -12, 0,
 
 const DEFAULT_LEVELS = Object.freeze({
   kick: 100,
-  sn: 92,
-  ch: 70,
-  oh: 72,
+  sn: 70,
+  ch: 20,
+  oh: 20,
 });
 
+const noPitchEnvelope = () => ({ enabled: false, interpolation: 'linear', end: 'zero', points: [{ ms: 0, semitones: 0 }] });
+
+/** Factory kit: owner's audition settings (2026-11-24 export and screenshots). */
 export function defaultDrumKit() {
   const lanes = {
-    kick: { presetId: 'low-thud-kick', midiNote: 36, level: DEFAULT_LEVELS.kick },
-    sn: { presetId: 'noise-snare', midiNote: 38, level: DEFAULT_LEVELS.sn },
-    ch: { presetId: 'closed-noise-hat', midiNote: 42, level: DEFAULT_LEVELS.ch, pitchOffsetSemitones: 48 },
-    oh: { presetId: 'open-noise-hat', midiNote: 46, level: DEFAULT_LEVELS.oh, pitchOffsetSemitones: 48 },
+    kick: {
+      presetId: 'low-thud-kick', midiNote: 36, level: DEFAULT_LEVELS.kick, pitchOffsetSemitones: 48,
+      voice: { decay: 0, sustain: 0, pitchEnvelope: noPitchEnvelope() },
+    },
+    sn: {
+      presetId: 'noise-snare', midiNote: 38, level: DEFAULT_LEVELS.sn, pitchOffsetSemitones: 48,
+      voice: { decay: 0.16, sustain: 0, pitchEnvelope: noPitchEnvelope() },
+    },
+    ch: { presetId: 'closed-noise-hat', midiNote: 42, level: DEFAULT_LEVELS.ch, pitchOffsetSemitones: 36, voice: { decay: 0.07 } },
+    oh: { presetId: 'open-noise-hat', midiNote: 46, level: DEFAULT_LEVELS.oh, pitchOffsetSemitones: 36 },
   };
   return { name: 'Factory 6581', lanes };
 }
 
-/** Classic four-on-the-floor house groove (all four lanes). */
-export function defaultHouseDrumGrid() {
+/** Factory groove (all four lanes); steps are 1-based in the comments. */
+export function defaultFactoryDrumGrid() {
+  const row = (...steps) => Array.from({ length: DRUM_STEP_COUNT }, (_, i) => steps.includes(i + 1));
   return [
-    // kick: every quarter
-    [true, false, false, false, true, false, false, false, true, false, false, false, true, false, false, false],
-    // sn: backbeat
-    [false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false],
-    // closed hat: offbeat 8ths
-    [true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false],
-    // open hat: upbeats
-    [false, false, false, true, false, false, false, true, false, false, false, true, false, false, false, true],
+    row(1, 2, 3, 9, 13, 16), // kick
+    row(5, 12), // sn
+    row(1, 2, 4, 5, 6, 8, 9, 10, 13, 14, 16), // closed hat
+    row(3, 7, 11, 15), // open hat
   ];
 }
 
@@ -52,7 +58,7 @@ export function defaultDrumSequence() {
     sync: true,
     localBpm: 120,
     steps: DRUM_STEP_COUNT,
-    grid: defaultHouseDrumGrid(),
+    grid: defaultFactoryDrumGrid(),
   };
 }
 
