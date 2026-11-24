@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createTransportState,applyTransportPatch,defaultTransport,arpTempo,arpStepMs,gameStepMs,drumSequence,activeNotes} from '../src/transport-state.js';
+import {createTransportState,applyTransportPatch,defaultTransport,arpTempo,arpStepMs,gameStepMs,drumSequence,activeNotes,resolveNote,arpNotes} from '../src/transport-state.js';
 import {defaultSequence,sequenceForStyle} from '../src/game-step-sequencer.js';
 import {defaultDrumSequence,validateDrumSequence} from '../src/drum-step-sequencer.js';
 import {bindTransportDom,readTransportPatchFromDom,TRANSPORT_CONTROL_IDS} from '../src/transport-dom.js';
@@ -123,7 +123,7 @@ test('transport listener runs before later listeners on the same control',()=>{
 test('missing controls are skipped, not read as defaults',()=>{
  const patch=readTransportPatchFromDom(id=>id==='masterBpm'?{value:'99'}:null);
  assert.deepEqual(patch,{masterBpm:'99'});
- assert.equal(TRANSPORT_CONTROL_IDS.length,9);
+ assert.equal(TRANSPORT_CONTROL_IDS.length,12);
 });
 
 test('the Game Arp phrase is validated, cloned on read and edited per step',()=>{
@@ -177,4 +177,45 @@ test('active notes come from the latched set only while Latch holds notes',()=>{
 test('note lists drop duplicates and out-of-range values',()=>{
  const state=applyTransportPatch(defaultTransport(),{notes:{held:[60,60,128,-1,61.5,'62',64]}});
  assert.deepEqual(state.notes.held,[60,64]);
+});
+
+test('scale state defaults to chromatic and keeps valid fields from a patch',()=>{
+ const transport=createTransportState();
+ assert.deepEqual(transport.scale,{tonic:0,id:'chromatic',lock:false});
+ transport.set({scale:{tonic:'7',id:'major',lock:true}});
+ assert.deepEqual(transport.scale,{tonic:7,id:'major',lock:true});
+ transport.set({scale:{tonic:'12',lock:'yes'}});
+ assert.deepEqual(transport.scale,{tonic:7,id:'major',lock:true},'invalid tonic and lock keep the previous value');
+ transport.set({scale:{id:'not-a-scale'}});
+ assert.equal(transport.scale.id,'chromatic','unknown scale ids fall back like normalizeScaleState');
+});
+
+test('resolveNote snaps only while scale lock is on',()=>{
+ const off=applyTransportPatch(defaultTransport(),{scale:{tonic:0,id:'major',lock:false}});
+ assert.equal(resolveNote(off,61),61);
+ const on=applyTransportPatch(off,{scale:{lock:true}});
+ assert.notEqual(resolveNote(on,61),61);
+ assert.equal(resolveNote(on,60),60);
+ assert.equal(createTransportState(on).resolveNote(61),resolveNote(on,61));
+});
+
+test('arpNotes sorts active notes and, under scale lock, resolves and de-duplicates them',()=>{
+ const base=applyTransportPatch(defaultTransport(),{notes:{held:[64,61,60]}});
+ assert.deepEqual(arpNotes(base),[60,61,64]);
+ const locked=applyTransportPatch(base,{scale:{tonic:0,id:'major',lock:true}});
+ const expected=[...new Set([60,61,64].map(note=>resolveNote(locked,note)))].sort((a,b)=>a-b);
+ assert.deepEqual(arpNotes(locked),expected);
+ assert.ok(arpNotes(locked).length<3,'C# folds onto a neighbour already held');
+});
+
+test('scale controls feed the transport',()=>{
+ const {$}=fakeDom({scaleKey:{value:'2'},scaleId:{value:'dorian'},scaleLock:{checked:true}});
+ const transport=createTransportState();
+ const binding=bindTransportDom($,transport);
+ assert.deepEqual(transport.scale,{tonic:2,id:'dorian',lock:true});
+ $('scaleLock').checked=false;$('scaleLock').dispatch('change');
+ assert.equal(transport.scale.lock,false);
+ $('scaleId').value='blues';
+ binding.readDom();
+ assert.equal(transport.scale.id,'blues');
 });

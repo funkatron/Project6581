@@ -1,12 +1,13 @@
 import {stepMilliseconds} from './arp-composition.js?v=__BUILD_ID__';
 import {defaultSequence,validateSequence} from './game-step-sequencer.js?v=__BUILD_ID__';
 import {defaultDrumSequence,validateDrumSequence,DRUM_STEP_COUNT} from './drum-step-sequencer.js?v=__BUILD_ID__';
+import {normalizeScaleState,resolvePerformanceNote} from './western-scales.js?v=__BUILD_ID__';
 
 // What the Root Arp, Game Arp and drum clocks play from, held as plain data:
 // tempo and step rates, Root Arp order and latch, the Game Arp phrase, the drum
-// grid, and the physically held and latched notes. No DOM access: the playback path reads this,
+// grid, scale lock, and the physically held and latched notes. No DOM access: the playback path reads this,
 // so the same state can later be posted to the AudioWorklet unchanged.
-// transport-dom.js keeps tempo and rates in step with the controls.
+// transport-dom.js keeps tempo, rates and scale in step with the controls.
 // Clock runtime (timers, step counters, sounding notes) is not transport state.
 
 export const TRANSPORT_RATES=Object.freeze([0.25,0.5,1,2,4,8,16,32]);
@@ -19,6 +20,7 @@ export function defaultTransport(){
   arp:{pattern:'up',rate:1,sync:true,localBpm:120,latch:false},
   game:{rate:4,sequence:defaultSequence()},
   drum:{rate:4,sync:true,localBpm:120,grid:defaultDrumSequence().grid},
+  scale:normalizeScaleState({}),
   // Insertion order: held notes replay in the order they were pressed.
   notes:{held:[],latched:[]}
  };
@@ -55,6 +57,7 @@ function drumGridOf(grid){
  */
 export function applyTransportPatch(state,patch={}){
  const arp=patch.arp??{},game=patch.game??{},drum=patch.drum??{},notes=patch.notes??{};
+ const scale=patch.scale??{};
  return {
   masterBpm:bpmOr(patch.masterBpm,state.masterBpm),
   arp:{
@@ -75,11 +78,33 @@ export function applyTransportPatch(state,patch={}){
    localBpm:bpmOr(drum.localBpm,state.drum.localBpm),
    grid:drum.grid===undefined?state.drum.grid.map(row=>[...row]):drumGridOf(drum.grid)
   },
+  scale:scalePatch(state.scale,scale),
   notes:{
    held:noteListOr(notes.held,[...state.notes.held]),
    latched:noteListOr(notes.latched,[...state.notes.latched])
   }
  };
+}
+
+function scalePatch(current,patch){
+ const tonic=Number(patch.tonic);
+ return normalizeScaleState({
+  tonic:patch.tonic!==undefined&&Number.isInteger(tonic)&&tonic>=0&&tonic<=11?tonic:current.tonic,
+  id:patch.id===undefined?current.id:patch.id,
+  lock:boolOr(patch.lock,current.lock)
+ });
+}
+
+/** Sounding pitch for a key or step pitch under the current scale lock. */
+export function resolveNote(state,note){
+ return resolvePerformanceNote(note,state.scale);
+}
+
+/** Active notes, sorted; with scale lock on, resolved and de-duplicated. */
+export function arpNotes(state){
+ const raw=activeNotes(state).sort((a,b)=>a-b);
+ if(!state.scale.lock||state.scale.id==='chromatic')return raw;
+ return [...new Set(raw.map(note=>resolveNote(state,note)))].sort((a,b)=>a-b);
 }
 
 /** Notes the arps play from: the latched set while Latch holds any, else held keys. */
@@ -111,6 +136,7 @@ function cloneTransport(state){
   masterBpm:state.masterBpm,arp:{...state.arp},
   game:{rate:state.game.rate,sequence:cloneSequence(state.game.sequence)},
   drum:{...state.drum,grid:state.drum.grid.map(row=>[...row])},
+  scale:{...state.scale},
   notes:{held:[...state.notes.held],latched:[...state.notes.latched]}
  };
 }
@@ -133,6 +159,9 @@ export function createTransportState(initial=defaultTransport()){
   get game(){return {rate:state.game.rate,sequence:cloneSequence(state.game.sequence)}},
   get drum(){return {...state.drum,grid:state.drum.grid.map(row=>[...row])}},
   get drumSequence(){return drumSequence(state)},
+  get scale(){return {...state.scale}},
+  resolveNote:note=>resolveNote(state,note),
+  arpNotes:()=>arpNotes(state),
   get sequence(){return cloneSequence(state.game.sequence)},
   get held(){return [...state.notes.held]},
   get latched(){return [...state.notes.latched]},

@@ -132,8 +132,7 @@ test('actual app note commands retain their physical input parent and tag on/off
   engines,currentSidSettings:{enabled:true},$:id=>({value:'all'}),
   routingKeyForSource,routeMask,DEFAULT_ROUTING,
   performanceRouting:{getState:()=>({keyboard:'sid1',arp:'sid1',game:'sid1'})},
-  readScaleStateFromDom:()=>({tonic:0,id:'chromatic',lock:false}),
-  resolvePerformanceNote:(note)=>note,
+  transport:{resolveNote:note=>note},
   traceStudio(){},diagnosticsUi:{afterNoteEvent(){}}});
  const trace=html.slice(html.indexOf('function traceInput('),html.indexOf('// Let the browser release'));
  const notes=html.slice(html.indexOf('const activeOwners=new Map();'),html.indexOf('function updateUnison(){'));

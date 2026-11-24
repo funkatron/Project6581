@@ -13,7 +13,7 @@ import {mountPerformance} from "./performance-play.js?v=__BUILD_ID__";
 import {FACTORY_PRESETS,presetLoadRequiresSilence,STARTUP_FACTORY_PRESET_ID,validateDrumLfo,validatePresetSettings} from "./preset-library.js?v=__BUILD_ID__";
 import {mountPresetLibrary} from "./preset-library-ui.js?v=__BUILD_ID__";
 import {mountKeyboard} from "./keyboard-input.js?v=__BUILD_ID__";
-import {readScaleStateFromDom,resolvePerformanceNote,isPitchInScale} from "./western-scales.js?v=__BUILD_ID__";
+import {isPitchInScale} from "./western-scales.js?v=__BUILD_ID__";
 import {mountEditorTabs} from "./editor-tabs.js?v=__BUILD_ID__";
 import {mountDrumPanel} from "./drum-panel-ui.js?v=__BUILD_ID__";
 import {createPerformanceDrumState} from "./performance-drum-state.js?v=__BUILD_ID__";
@@ -463,7 +463,7 @@ function dispatchUsesLayer(route,source,chips){
  return root==='arp'||root==='game';
 }
 function play(note,source='key:'+note){
- note=resolvePerformanceNote(note,readScaleStateFromDom($));
+ note=transport.resolveNote(note);
  restoreSidOutput();
  const route=routingSelectForSource(source);
  const chips=routeMask(route);
@@ -475,7 +475,7 @@ function play(note,source='key:'+note){
  playOne(note,source,chips);
 }
 function stop(note,source='key:'+note){
- note=resolvePerformanceNote(note,readScaleStateFromDom($));
+ note=transport.resolveNote(note);
  const eventId=sidEventLog.enabled?sidEventLog.begin('note-command',{note,source,action:'off',inputEventId:sidInputEvent}):null;
  const route=routingSelectForSource(source);
  const chips=routeMask(route);
@@ -580,21 +580,11 @@ const gameEnabled=()=>performanceArp.gameOn;
 const arpEnabled=()=>performanceArp.rootOn;
 const latchOn=()=>performanceArp.latchOn;
 const activeNotes=()=>transportActiveNotes(transport.getState());
-const arpNotes=()=>{
- const state=readScaleStateFromDom($);
- const raw=activeNotes().sort((a,b)=>a-b);
- if(!state.lock||state.id==='chromatic')return raw;
- const seen=new Set(),out=[];
- for(const note of raw){
-  const mapped=resolvePerformanceNote(note,state);
-  if(!seen.has(mapped)){seen.add(mapped);out.push(mapped)}
- }
- return out.sort((a,b)=>a-b);
-};
+const arpNotes=()=>transport.arpNotes();
 const keyboardState={octave:3};
 const keys=new Map();
 const arpKeyVisual=createArpKeyVisual({getKey:note=>keys.get(note)});
-const performanceNote=note=>resolvePerformanceNote(note,readScaleStateFromDom($));
+const performanceNote=note=>transport.resolveNote(note);
 ({gameStop,arpStopVoice,restartGenerators,stopGenerators,gameRestart,setSeqTransportLabel,renderSequenceSteps,loadBuiltInPhrase}=mountPerformance({
  $,names,keyboardState,arp,game,directOwned,play,stop,silenceSidOutput,refreshPresetDirty,
  getArpKeyVisual:()=>arpKeyVisual,performanceNote,
@@ -695,8 +685,8 @@ let renderKeyboard=()=>{};
  gameRestart,arpStopVoice,arpNotes,performanceNote,
  transport,
  isSeqPreview:()=>seqPreview,
- getScaleState:()=>readScaleStateFromDom($),
- pitchInScale:note=>isPitchInScale(note,readScaleStateFromDom($)),
+ getScaleState:()=>transport.scale,
+ pitchInScale:note=>isPitchInScale(note,transport.scale),
  traceInput,panic,refreshPresetDirty,getArpKeyVisual:()=>arpKeyVisual
 }));
 for(const id of ['scaleKey','scaleId','scaleLock']){
@@ -1258,7 +1248,7 @@ function snapshotPresetSettings(){
     rate:Number($('gameRate').value),sequence:transport.sequence},
    drumSequence:validateDrumSequence(transport.drumSequence),
    drumKit:validateDrumKit(drumKit),
-   scale:readScaleStateFromDom($)
+   scale:transport.scale
   }
  });
 }
@@ -1344,10 +1334,10 @@ function applyPresetControls(next,{silenceAudio=true}={}){
  setLayoutInert(document.querySelector('.arp-local-bpm'),next.performance.arp.sync);
  $('gameArpStyle').value=next.performance.game.style;
  $('gameRate').value=String(next.performance.game.rate);
- transportDom.readDom();
  $('scaleKey').value=String(next.performance.scale.tonic);
  $('scaleId').value=next.performance.scale.id;
  $('scaleLock').checked=next.performance.scale.lock;
+ transportDom.readDom();
  transport.setSequence(validateSequence(next.performance.game.sequence));
  renderSequenceSteps();
  loadBuiltInPhrase($('gameArpStyle').value);

@@ -1,4 +1,4 @@
-// Keeps transport-state.js in step with the tempo and rate controls.
+// Keeps transport-state.js in step with the tempo, rate and scale controls.
 // Mount this before any module that restarts clocks from these controls' events:
 // listeners on one element run in registration order, so the state is current
 // by the time a restart reads it.
@@ -12,7 +12,10 @@ const CONTROLS=[
  ['gameRate','value',(patch,v)=>{(patch.game??={}).rate=v}],
  ['drumRate','value',(patch,v)=>{(patch.drum??={}).rate=v}],
  ['drumSync','checked',(patch,v)=>{(patch.drum??={}).sync=v}],
- ['drumBpm','value',(patch,v)=>{(patch.drum??={}).localBpm=v}]
+ ['drumBpm','value',(patch,v)=>{(patch.drum??={}).localBpm=v}],
+ ['scaleKey','value',(patch,v)=>{(patch.scale??={}).tonic=v}],
+ ['scaleId','value',(patch,v)=>{(patch.scale??={}).id=v}],
+ ['scaleLock','checked',(patch,v)=>{(patch.scale??={}).lock=v}]
 ];
 export const TRANSPORT_CONTROL_IDS=Object.freeze(CONTROLS.map(([id])=>id));
 
