@@ -304,7 +304,9 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
         while(consumed<allowed){
           const copy=Math.min(allowed-consumed,this.recordSamples.length-this.recordLength);
           for(let i=0;i<copy;i++){
-            const mono=stereo?(pcm[i*2]+pcm[i*2+1])/2:pcm[i];
+            // Offset by `consumed`: a block can straddle a buffer flush.
+            const frame=consumed+i;
+            const mono=stereo?(pcm[frame*2]+pcm[frame*2+1])/2:pcm[frame];
             this.recordSamples[this.recordLength+i]=mono;
           }
           this.recordLength+=copy;consumed+=copy;
