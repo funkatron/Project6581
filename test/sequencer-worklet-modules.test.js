@@ -9,7 +9,7 @@ test('the worklet module graph evaluates without a DOM and publishes the sequenc
  const {default:api,sequencerSelfTest}=await import('../src/sequencer-worklet-modules.js');
  assert.equal(globalThis.project6581Sequencer,api);
  assert.ok(Object.isFrozen(api));
- for(const name of ['arpStep','gameStep','drumStep','createTransportState','arpNotes','resolveNote','drumSequence','selfTest'])
+ for(const name of ['arpStep','gameStep','drumStep','createTransportState','arpNotes','resolveNote','drumSequence','createNoteWriter','selfTest'])
   assert.equal(typeof api[name],'function',name);
  assert.deepEqual(sequencerSelfTest(),{ok:true});
 });
@@ -25,6 +25,7 @@ test('every module the worklet probe imports avoids DOM and timer globals at loa
   assert.doesNotMatch(source,/\bdocument\.|\bwindow\.|\blocalStorage\b|\bsetInterval\(|\bsetTimeout\(/,file);
  }
  assert.ok(seen.has('sequencer-steps.js')&&seen.has('transport-state.js')&&seen.has('western-scales.js'));
+ assert.ok(seen.has('note-writes.js')&&seen.has('unison-sid-controller.js')&&seen.has('sid-registers.js'));
 });
 
 test('the diagnostics line describes each probe outcome',()=>{

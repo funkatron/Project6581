@@ -3,6 +3,7 @@ import {
  createTransportState,applyTransportPatch,defaultTransport,
  activeNotes,arpNotes,resolveNote,drumSequence,arpStepMs,gameStepMs
 } from './transport-state.js?v=__BUILD_ID__';
+import {createNoteWriter} from './note-writes.js?v=__BUILD_ID__';
 
 // Loaded into the AudioWorklet with its own addModule() call, separate from
 // residfp-worklet.js, so a browser that rejects ES-module imports in worklets
@@ -30,6 +31,14 @@ export function sequencerSelfTest(){
   const drum=drumStep({step:0},{sequence:drumSequence(state)});
   expect('drumStep',drum.hits.map(hit=>hit.lane),['kick','ch']);
   expect('arpStepMs',arpStepMs(state),500);
+  // Note → register writes: middle C on SID 1 voice 1, then release.
+  const voice={wave:'square',attack:0.002,decay:0.12,sustain:0.8,release:0.12,pulse:50};
+  const writer=createNoteWriter({settings:[voice]});
+  const on=writer.noteOn(60);
+  const writes=on.commands.filter(command=>command.type==='write');
+  expect('noteOn frequency',writes.slice(0,2).map(w=>[w.register,w.value]),[[0,0x67],[1,0x11]]);
+  expect('noteOn gate',writes.at(-1),{type:'write',register:4,value:0x41});
+  expect('noteOff gate',writer.noteOff(60,on.token),[{type:'pitch-envelope-stop',register:0},{type:'write',register:4,value:0x40}]);
   return {ok:true};
  }catch(error){
   return {ok:false,error:String(error?.message??error)};
@@ -37,10 +46,11 @@ export function sequencerSelfTest(){
 }
 
 const api=Object.freeze({
- version:1,
+ version:2,
  arpStep,gameStep,drumStep,
  createTransportState,applyTransportPatch,defaultTransport,
  activeNotes,arpNotes,resolveNote,drumSequence,arpStepMs,gameStepMs,
+ createNoteWriter,
  selfTest:sequencerSelfTest
 });
 globalThis.project6581Sequencer=api;
