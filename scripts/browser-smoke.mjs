@@ -66,6 +66,12 @@ for (const engine of engines) {
       .split('\n').find(line => line.startsWith('Worklet sequencer modules:'));
     console.log(engine + ' ' + sequencerLine);
     assert.equal(sequencerLine, 'Worklet sequencer modules: ready (self-test passed)');
+    await page.waitForFunction(() => /Worklet sequencer mirror: revision \d+, in sync/
+      .test(document.querySelector('#audioTimingSummary')?.textContent || ''), null, { timeout: 10000 });
+    const mirrorLine = (await page.locator('#audioTimingSummary').textContent())
+      .split('\n').find(line => line.startsWith('Worklet sequencer mirror:'));
+    console.log(engine + ' ' + mirrorLine);
+    assert.match(mirrorLine, /voices 3\/3 · drum lanes 4\/4 · allocation ✓/);
     const initialWasmFetches = await page.evaluate(() => performance.getEntriesByType('resource')
       .filter(entry => entry.name.includes('/dist/residfp.wasm')).length);
     assert.equal(initialWasmFetches, 1, 'initial SID startup must fetch WASM once');

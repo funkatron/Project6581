@@ -1019,7 +1019,7 @@ async function startSid({gesture=false}={}){
       }
       if(event.type==='sequencer-mirror-status'){
         audioTiming.sequencerMirror=compareMirrorStatus(event,workletMirror);
-        if($('audioTimingDetails').open)updateAudioTimingReport();
+        updateAudioTimingReport();
         return;
       }
       if(event.type==='latency-probe-skipped'){
