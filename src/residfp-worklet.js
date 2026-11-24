@@ -2,6 +2,15 @@
 // Receives the WASM bytes from the main thread; never fetches from the audio thread.
 const SID_CHIP_COUNT=6;
 const DRUM_CHIP_START=3;
+// Optional pure sequencing modules (sequencer-worklet-modules.js), added with a
+// separate addModule() so this processor still starts if they fail to load.
+function sequencerSupport(){
+  const sequencer=globalThis.project6581Sequencer;
+  if(!sequencer)return {type:'sequencer-support',available:false,selfTest:null};
+  let selfTest;
+  try{selfTest=sequencer.selfTest()}catch(err){selfTest={ok:false,error:String(err)}}
+  return {type:'sequencer-support',available:true,version:sequencer.version,selfTest};
+}
 function zeroChipPeaks(){
   return Array.from({length:SID_CHIP_COUNT},()=>0);
 }
@@ -137,6 +146,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       this.exports=e;
       progress('SID chip initialized.');
       this.port.postMessage({type:'ready',renderer:true});
+      this.port.postMessage(sequencerSupport());
     }catch(err){this.port.postMessage({type:'error',message:String(err)})}
   }
   switchModel(model){

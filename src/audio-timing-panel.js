@@ -2,6 +2,15 @@ import {formatSidDiagnosticReport} from './sid-event-log.js?v=__BUILD_ID__';
 import {formatPlaybackLatencyStatus} from './sid-engine-status-ui.js?v=__BUILD_ID__';
 import {formatChipRenderDiagnosticLines} from './sid-chip-render-diagnostic.js?v=__BUILD_ID__';
 
+/** One diagnostics line for the worklet sequencer probe (step 3). */
+export function formatSequencerSupport(support){
+ if(!support)return 'Worklet sequencer modules: not reported yet';
+ if(support.loadError)return 'Worklet sequencer modules: failed to load ('+support.loadError+')';
+ if(!support.available)return 'Worklet sequencer modules: not available in the audio worklet';
+ if(support.selfTest?.ok)return 'Worklet sequencer modules: ready (self-test passed)';
+ return 'Worklet sequencer modules: self-test failed ('+(support.selfTest?.error??'no result')+')';
+}
+
 export function mountAudioTimingPanel({
  $,sidEventLog,audioTiming,sidStartupLog,getSidAudio,getSidContext,getReportContext
 }={}){
@@ -31,6 +40,7 @@ export function mountAudioTimingPanel({
     renderBudgetMs:audioTiming.renderBudgetMs,
    }),
    'Browser base/output latency: '+show(audioTiming.baseMs)+' / '+show(audioTiming.outputMs),
+   formatSequencerSupport(audioTiming.sequencerModules),
    'Device output line is an estimate from loud PCM + AudioContext.outputLatency; not a DAC measurement. Screen recording A/V sync can differ.',
    ...sidStartupLog
   );
