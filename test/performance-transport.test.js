@@ -17,7 +17,7 @@ const MISLEADING_DOM={
  gameArpStyle:{value:'custom',selectedOptions:[{text:'Custom'}]}
 };
 
-function mountPlay({transportPatch={},held=[60,64,67],game=false,root=false,seq=defaultSequence(),latch=false,directOwned=new Set(),restart=true,dom={},keepMountedPhrase=false}={}){
+function mountPlay({transportPatch={},held=[60,64,67],game=false,root=false,seq=defaultSequence(),latch=false,directOwned=new Set(),restart=true,dom={},keepMountedPhrase=false,performanceNote=note=>note}={}){
  const restoreDocument=installFakeDocument();
  const timers=recordTimers();
  const {$}=fakeDom({...MISLEADING_DOM,...dom});
@@ -31,7 +31,7 @@ function mountPlay({transportPatch={},held=[60,64,67],game=false,root=false,seq=
  try{
   api=mountPerformance({
    $,names:['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'],keyboardState:{octave:3},
-   arp:arpState,game:gameState,directOwned,
+   arp:arpState,game:gameState,directOwned,performanceNote,
    play:(note,source)=>plays.push([note,source]),stop:(note,source)=>stops.push([note,source]),
    silenceSidOutput:()=>{},refreshPresetDirty:()=>{},
    getArpKeyVisual:()=>({show:(note,kind)=>visual.push(['show',note,kind]),clear:kind=>visual.push(['clear',kind])}),
@@ -356,4 +356,17 @@ test('drum clock triggers the hits in the transport grid',()=>{
   timers.intervals[0].fn();
  }finally{timers.restore()}
  assert.deepEqual(hits,[['kick','ch'],['sn']]);
+});
+
+test('with scale lock remapping a short Game Arp step, the gate still releases it',()=>{
+ const seq=defaultSequence();
+ seq.steps[0]={offset:1,gate:true,duration:50}; // C# snaps to C
+ const {timers,stops,gameState,visual}=mountPlay({game:true,held:[60],seq,performanceNote:note=>note===61?60:note});
+ assert.equal(gameState.last,60);
+ const [gate]=timers.timeouts;
+ stops.length=0;visual.length=0;
+ gate.fn();
+ assert.deepEqual(stops,[[60,'game']]);
+ assert.equal(gameState.last,null);
+ assert.deepEqual(visual,[['clear','game']]);
 });

@@ -108,12 +108,12 @@ test('short steps ask for a gate at the step fraction',()=>{
  assert.deepEqual(gameStep({step:0,last:null},{root:60,sequence}).gate,{note:60,fraction:0.25});
 });
 
-test('scale lock resolves the sounding note; the gate keeps the step pitch (current behaviour)',()=>{
+test('scale lock resolves the sounding note, and the gate releases that same note',()=>{
  const sequence=phrase([{offset:1,gate:true,duration:50}]);
  const result=gameStep({step:0,last:null},{root:60,sequence,resolve:note=>note===61?60:note});
  assert.deepEqual(result.events,[{type:'on',note:60,source:'game'}]);
  assert.equal(result.clock.last,60);
- assert.deepEqual(result.gate,{note:61,fraction:0.5});
+ assert.deepEqual(result.gate,{note:60,fraction:0.5});
 });
 
 test('no Game Arp root: stop, with the clock unchanged',()=>{
