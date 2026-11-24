@@ -1,0 +1,39 @@
+--- a/src/c64/c64.cpp
++++ b/src/c64/c64.cpp
+@@ -148,6 +148,7 @@ void c64::setCiaModel(cia_model_t model)
+ void c64::setBaseSid(c64sid *s)
+ {
+     sidBank.setSID(s);
++    sidBank.setTraceContext(&eventScheduler, 0);
+ }
+ 
+ bool c64::addExtraSid(c64sid *s, int address)
+@@ -169,13 +170,14 @@ bool c64::addExtraSid(c64sid *s, int address)
+     if (it != extraSidBanks.end())
+     {
+          ExtraSidBank *extraSidBank = it->second;
+-         extraSidBank->addSID(s, address);
++         extraSidBank->addSID(s, address, installedSIDs());
+     }
+     else
+     {
+         ExtraSidBank *extraSidBank = extraSidBanks.insert(it, sidBankMap_t::value_type(idx, new ExtraSidBank()))->second;
+         extraSidBank->resetSIDMapper(ioBank.getBank(idx));
+         ioBank.setBank(idx, extraSidBank);
+-        extraSidBank->addSID(s, address);
++        extraSidBank->setTraceContext(&eventScheduler);
++        extraSidBank->addSID(s, address, installedSIDs());
+     }
+ 
+     return true;
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -98,6 +98,8 @@ src_libsidplayfp_la_SOURCES = \
+ src/EventCallback.h \
+ src/EventScheduler.cpp \
+ src/EventScheduler.h \
++src/SidRegisterTrace.cpp \
++src/SidRegisterTrace.h \
+ src/player.cpp \
+ src/player.h \
+ src/psiddrv.cpp \
