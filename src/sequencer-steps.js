@@ -63,9 +63,8 @@ export function gameStep(clock,{root,sequence,resolve=identity}){
  return {
   clock:{step,last:note},events,stepIndex:event.index,highlight:{game:note},
   status:{type:'note',index:event.index,root},
-  // Matches existing behaviour: the gate names the unresolved step pitch, so a
-  // scale-lock remap leaves the note sounding until the next step. Fixed separately.
-  gate:event.duration<100?{note:event.note,fraction:event.duration/100}:null
+  // The gate names the sounding (resolved) note, so scale lock cannot strand it.
+  gate:event.duration<100?{note,fraction:event.duration/100}:null
  };
 }
 
