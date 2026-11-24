@@ -23,7 +23,7 @@ test('Game Arp voices its pattern, while regular Arp owns the selected root',()=
  assert.match(performance,/loadBuiltInPhrase\(\$\('gameArpStyle'\)\.value\)/);
  assert.match(performance,/play\(game\.last,'game'\);getArpKeyVisual\(\)\.show\(game\.last,'game'\)/);
  assert.match(performance,/getArpKeyVisual\(\)\.show\(note,'root'\)/);
- assert.match(performance,/if\(gameEnabled\(\)\)\{[\s\S]*?gamePhraseBoundary\(game\.step,seqState\.length\)\)arp\.root=note/);
+// Root changes only on a Game Arp phrase boundary: test/performance-transport.test.js
  assert.match(performance,/if\(gameEnabled\(\)\)\{[\s\S]*?return;\s*\}/);
 });
 // Timer behavior: test/performance-transport.test.js
@@ -63,15 +63,7 @@ test('direct polyphonic notes are released before an arpeggiator takes ownership
  assert.match(script,/directOwned\.clear\(\);activeOwners\.clear\(\);arpKeyVisual\.clear\(\);sidController\?\.panic\(\)/);
 });
 
-test('clear latch preserves physical owners and direct notes',()=>{
- const clearHandler=performance.slice(performance.indexOf("$('arpClear').addEventListener"),
-  performance.indexOf('return {gameStop'));
- assert.ok(clearHandler.length>0);
- assert.match(clearHandler,/arp\.latched\.clear\(\)/);
- assert.doesNotMatch(clearHandler,/arp\.held\.clear\(\)/);
- assert.doesNotMatch(clearHandler,/directOwned\.clear\(\)/);
- assert.match(script,/const activeNotes=\(\)=>\[\.\.\.\(latchOn\(\)&&arp\.latched\.size\?arp\.latched:arp\.held\)\]/);
-});
+// 'clear latch preserves physical owners and direct notes': test/performance-transport.test.js
 
 // 'released roots do not produce extra out-of-tempo arp ticks' is now behavioral:
 // test/performance-transport.test.js

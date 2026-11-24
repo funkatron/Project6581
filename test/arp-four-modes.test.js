@@ -1,19 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createKeyGesture} from '../src/keyboard-input.js';
+import {createTransportState} from '../src/transport-state.js';
 
 function makeHarness({gameOn=false,arpOn=false,latch=false,seqPreview=false}={}){
- const arp={held:new Set(),latched:new Set(),step:0,root:null,timer:null,last:null};
+ const arp={step:0,root:null,timer:null,last:null};
+ const transport=createTransportState();
+ transport.set({arp:{latch}});
  const game={step:0,timer:null,last:null,gateTimer:null};
  const directOwned=new Set();
  const calls={play:[],stop:[],restart:0,stopGen:0,gameRestart:0,arpStop:0};
- const dom={arpLatch:{checked:latch},arpPattern:{value:'up'}};
+ const dom={};
  const $=id=>dom[id]??{checked:false,value:'4'};
  const gesture=createKeyGesture({
   audioTiming:{},sidEventLog:{enabled:false,add:()=>{}},
   getSidContext:()=>({state:'running'}),sidMusicalInputBlocked:()=>false,
   armSidResume:()=>{},hasController:()=>true,countKeyPress:()=>{},
-  activeNotes:()=>(latch&&arp.latched.size?[...arp.latched]:[...arp.held]),
+  activeNotes:()=>transport.activeNotes(),
   arp,game,
   gameEnabled:()=>gameOn,arpEnabled:()=>arpOn,directOwned,
   play:(n,src)=>calls.play.push([n,src??'keyboard']),stop:n=>calls.stop.push(n),
@@ -21,12 +24,12 @@ function makeHarness({gameOn=false,arpOn=false,latch=false,seqPreview=false}={})
   stopGenerators:()=>{calls.stopGen++},
   gameRestart:()=>{calls.gameRestart++},
   arpStopVoice:()=>{calls.arpStop++},
-  arpNotes:()=>[...arp.held],
+  arpNotes:()=>transport.held,
   isSeqPreview:()=>seqPreview,
   performanceNote:note=>note,
-  $
+  $,transport
  });
- return {gesture,arp,game,calls};
+ return {gesture,arp,game,calls,transport};
 }
 
 test('mode: both off plays and releases directly',()=>{
