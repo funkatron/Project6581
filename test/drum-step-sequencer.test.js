@@ -6,7 +6,7 @@ import {
   coalesceDrumGrid,
   defaultDrumKit,
   defaultDrumSequence,
-  defaultHouseDrumGrid,
+  defaultFactoryDrumGrid,
   hitsOnStep,
   validateDrumEngineBoost,
   validateDrumKit,
@@ -22,12 +22,16 @@ test('default drum kit and sequence validate', () => {
   assert.equal(seq.grid[0].length, DRUM_STEP_COUNT);
 });
 
-test('default house groove hits all four lanes', () => {
-  const grid = defaultHouseDrumGrid();
-  assert.equal(grid[0].filter(Boolean).length, 4);
-  assert.equal(grid[1].filter(Boolean).length, 2);
-  assert.ok(grid[2].some(Boolean));
-  assert.ok(grid[3].some(Boolean));
+test('factory groove matches the owner export (2026-11-24)', () => {
+  const steps = (row) => row.flatMap((on, i) => (on ? [i + 1] : []));
+  assert.deepEqual(defaultFactoryDrumGrid().map(steps), [
+    [1, 2, 3, 9, 13, 16],
+    [5, 12],
+    [1, 2, 4, 5, 6, 8, 9, 10, 13, 14, 16],
+    [3, 7, 11, 15],
+  ]);
+  assert.deepEqual(defaultDrumSequence().rate, 4);
+  assert.equal(defaultDrumSequence().sync, true);
 });
 
 test('hitsOnStep lists active lanes', () => {
@@ -73,9 +77,26 @@ test('validateDrumEngineBoost defaults to +24 dB', () => {
   assert.throws(() => validateDrumEngineBoost(3), /one of/);
 });
 
-test('default drum kit hats use +48 semitone pitch offset', () => {
+test('factory drum kit matches the owner audition (2026-11-24)', () => {
   const kit = validateDrumKit(defaultDrumKit());
-  assert.equal(kit.lanes.ch.pitchOffsetSemitones, 48);
-  assert.equal(kit.lanes.oh.pitchOffsetSemitones, 48);
-  assert.equal(kit.lanes.kick.pitchOffsetSemitones, 0);
+  const off = {enabled: false, interpolation: 'linear', end: 'zero', points: [{ms: 0, semitones: 0}]};
+  assert.equal(kit.name, 'Factory 6581');
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(kit.lanes).map(([id, lane]) => [id, [lane.level, lane.pitchOffsetSemitones]])),
+    {kick: [100, 48], sn: [70, 48], ch: [20, 36], oh: [20, 36]},
+  );
+  assert.deepEqual(kit.lanes.kick.voice, {decay: 0, sustain: 0, pitchEnvelope: off});
+  assert.deepEqual(kit.lanes.sn.voice, {decay: 0.16, sustain: 0, pitchEnvelope: off});
+  assert.deepEqual(kit.lanes.ch.voice, {decay: 0.07});
+  assert.equal(kit.lanes.oh.voice, undefined);
+  assert.notEqual(defaultDrumKit().lanes.kick.voice.pitchEnvelope, defaultDrumKit().lanes.kick.voice.pitchEnvelope);
+});
+
+test('a saved kit without hat pitch offsets still loads them at +48', () => {
+  const kit = defaultDrumKit();
+  delete kit.lanes.ch.pitchOffsetSemitones;
+  delete kit.lanes.oh.pitchOffsetSemitones;
+  const loaded = validateDrumKit(kit);
+  assert.equal(loaded.lanes.ch.pitchOffsetSemitones, 48);
+  assert.equal(loaded.lanes.oh.pitchOffsetSemitones, 48);
 });

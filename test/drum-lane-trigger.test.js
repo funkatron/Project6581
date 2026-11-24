@@ -37,7 +37,9 @@ test('drumLaneTimbre applies lane level to legacy filter volume and noise decay'
   const hat = FACTORY_PRESETS.find((p) => p.id === 'closed-noise-hat');
   const hatLane = {...defaultDrumKit().lanes.ch, level: 50};
   const {voice: hatVoice} = drumLaneTimbre(hat.settings, hatLane);
-  assert.ok(hatVoice.decay < 0.022);
+  // Factory hat lane decay is 0.07 s; a lower level shortens it.
+  assert.equal(drumLaneTimbre(hat.settings, {...hatLane, level: 100}).voice.decay, 0.07);
+  assert.ok(hatVoice.decay < 0.07);
 });
 
 test('drumBpm respects sync and local tempo', () => {
