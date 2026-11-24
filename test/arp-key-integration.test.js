@@ -22,16 +22,14 @@ test('Game Arp voices its pattern, while regular Arp owns the selected root',()=
  assert.doesNotMatch(performance,/patternPitch\(/);
  assert.match(performance,/loadBuiltInPhrase\(\$\('gameArpStyle'\)\.value\)/);
  assert.match(performance,/play\(game\.last,'game'\);getArpKeyVisual\(\)\.show\(game\.last,'game'\)/);
- assert.match(performance,/function arpTick\(\)[\s\S]*?selectRoot\(notes,\$\('arpPattern'\)\.value,arp\.step\+\+\)/);
  assert.match(performance,/getArpKeyVisual\(\)\.show\(note,'root'\)/);
  assert.match(performance,/if\(gameEnabled\(\)\)\{[\s\S]*?gamePhraseBoundary\(game\.step,seqState\.length\)\)arp\.root=note/);
  assert.match(performance,/if\(gameEnabled\(\)\)\{[\s\S]*?return;\s*\}/);
 });
-test('both arpeggiators have independent rate selectors and timers',()=>{
+// Timer behavior: test/performance-transport.test.js
+test('both arpeggiators have independent rate selectors',()=>{
  assert.match(html,/id="gameRate"/);
  assert.match(html,/id="arpRate"/);
- assert.match(performance,/arp\.timer=setInterval\(arpTick,stepMilliseconds\(bpm,\$\('arpRate'\)\.value\)\)/);
- assert.match(performance,/game\.timer=setInterval\(gameTick,stepMilliseconds\(bpm,\$\('gameRate'\)\.value\)\)/);
 });
 
 test('all arpeggiator release paths remove the visual highlight',()=>{
@@ -75,9 +73,5 @@ test('clear latch preserves physical owners and direct notes',()=>{
  assert.match(script,/const activeNotes=\(\)=>\[\.\.\.\(latchOn\(\)&&arp\.latched\.size\?arp\.latched:arp\.held\)\]/);
 });
 
-test('released roots do not produce extra out-of-tempo arp ticks',()=>{
- const release=keyboard.slice(keyboard.indexOf('function keyUp(note){'),
-  keyboard.indexOf('return {flushQueuedKeys'));
- assert.match(release,/arp\.root=notes\.length\?selectRoot\(notes,\$\('arpPattern'\)\.value,arp\.step\):null/);
- assert.doesNotMatch(release,/arpTick\(\)/);
-});
+// 'released roots do not produce extra out-of-tempo arp ticks' is now behavioral:
+// test/performance-transport.test.js

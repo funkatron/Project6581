@@ -1,4 +1,5 @@
-import {selectRoot,stepMilliseconds,resolveGameRoot,gamePhraseBoundary} from './arp-composition.js?v=__BUILD_ID__';
+import {selectRoot,resolveGameRoot,gamePhraseBoundary} from './arp-composition.js?v=__BUILD_ID__';
+import {arpStepMs,gameStepMs} from './transport-state.js?v=__BUILD_ID__';
 import {defaultSequence,sequenceEvent,sequenceForStyle} from './game-step-sequencer.js?v=__BUILD_ID__';
 
 // Step grid plus the Game Arp and root-arp clocks. The studio still owns play(),
@@ -8,7 +9,7 @@ export function mountPerformance({
  performanceNote=note=>note,
  gameEnabled,arpEnabled,activeNotes,arpNotes,
  getSeqState,setSeqState,isSeqPreview,setSeqPreview,getActiveSeqStep,setActiveSeqStep,performanceArp,
- alignDrumTransport
+ alignDrumTransport,transport
 }){
  function clearStepHighlight(){
   const activeSeqStep=getActiveSeqStep();
@@ -137,11 +138,10 @@ export function mountPerformance({
   $('arpStatus').textContent=phraseLabel()+' step '+(event.index+1)+' · '+names[root%12]+(Math.floor(root/12)-1);
   if(event.duration<100){
    const sounding=event.note,clock=game.step;
-   const bpm=Number($('arpSync').checked?$('masterBpm').value:$('arpBpm').value);
    game.gateTimer=setTimeout(()=>{
     if(game.step!==clock||game.last!==sounding)return;
     stop(sounding,'game');game.last=null;getArpKeyVisual().clear('game');game.gateTimer=null;
-   },stepMilliseconds(bpm,$('gameRate').value)*event.duration/100);
+   },gameStepMs(transport.getState())*event.duration/100);
   }
  }
  function arpTick(){
@@ -151,7 +151,7 @@ export function mountPerformance({
    if(!gameEnabled())arpStopVoice();
    $('arpStatus').textContent='No notes held';return;
   }
-  const note=performanceNote(selectRoot(notes,$('arpPattern').value,arp.step++));
+  const note=performanceNote(selectRoot(notes,transport.arp.pattern,arp.step++));
   getArpKeyVisual().show(note,'root');
   if(gameEnabled()){
    const seqState=getSeqState();
@@ -199,14 +199,14 @@ export function mountPerformance({
   // Transitioning from direct polyphony must release EVERY physical owner first.
   releaseDirectNotes();
   if(!activeNotes().length&&!seqPreview){$('arpStatus').textContent='No notes held';return}
-  const bpm=Number($('arpSync').checked?$('masterBpm').value:$('arpBpm').value);
+  const timing=transport.getState();
   if(arpEnabled()){
    arpTick();
-   arp.timer=setInterval(arpTick,stepMilliseconds(bpm,$('arpRate').value));
+   arp.timer=setInterval(arpTick,arpStepMs(timing));
   }
   if(gameEnabled()){
    gameTick();
-   game.timer=setInterval(gameTick,stepMilliseconds(bpm,$('gameRate').value));
+   game.timer=setInterval(gameTick,gameStepMs(timing));
   }
  }
  function gameRestart(){restartGenerators()}
