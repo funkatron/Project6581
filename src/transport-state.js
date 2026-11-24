@@ -1,9 +1,10 @@
 import {stepMilliseconds} from './arp-composition.js?v=__BUILD_ID__';
 import {defaultSequence,validateSequence} from './game-step-sequencer.js?v=__BUILD_ID__';
+import {defaultDrumSequence,validateDrumSequence,DRUM_STEP_COUNT} from './drum-step-sequencer.js?v=__BUILD_ID__';
 
 // What the Root Arp, Game Arp and drum clocks play from, held as plain data:
-// tempo and step rates, Root Arp order and latch, the Game Arp phrase, and the
-// physically held and latched notes. No DOM access: the playback path reads this,
+// tempo and step rates, Root Arp order and latch, the Game Arp phrase, the drum
+// grid, and the physically held and latched notes. No DOM access: the playback path reads this,
 // so the same state can later be posted to the AudioWorklet unchanged.
 // transport-dom.js keeps tempo and rates in step with the controls.
 // Clock runtime (timers, step counters, sounding notes) is not transport state.
@@ -17,7 +18,7 @@ export function defaultTransport(){
   masterBpm:120,
   arp:{pattern:'up',rate:1,sync:true,localBpm:120,latch:false},
   game:{rate:4,sequence:defaultSequence()},
-  drum:{rate:4,sync:true,localBpm:120},
+  drum:{rate:4,sync:true,localBpm:120,grid:defaultDrumSequence().grid},
   // Insertion order: held notes replay in the order they were pressed.
   notes:{held:[],latched:[]}
  };
@@ -42,9 +43,15 @@ function noteListOr(value,fallback){
  return out;
 }
 
+function drumGridOf(grid){
+ // validateDrumSequence() also upgrades legacy six-row grids to the four lanes.
+ return validateDrumSequence({...defaultDrumSequence(),grid}).grid;
+}
+
 /**
  * Returns a new transport with `patch` applied. Invalid fields keep the previous value,
- * except `game.sequence`, which throws like validateSequence() (presets validate first).
+ * except `game.sequence` and `drum.grid`, which throw like their validators
+ * (presets validate first).
  */
 export function applyTransportPatch(state,patch={}){
  const arp=patch.arp??{},game=patch.game??{},drum=patch.drum??{},notes=patch.notes??{};
@@ -65,7 +72,8 @@ export function applyTransportPatch(state,patch={}){
   drum:{
    rate:rateOr(drum.rate,state.drum.rate),
    sync:boolOr(drum.sync,state.drum.sync),
-   localBpm:bpmOr(drum.localBpm,state.drum.localBpm)
+   localBpm:bpmOr(drum.localBpm,state.drum.localBpm),
+   grid:drum.grid===undefined?state.drum.grid.map(row=>[...row]):drumGridOf(drum.grid)
   },
   notes:{
    held:noteListOr(notes.held,[...state.notes.held]),
@@ -89,9 +97,10 @@ export function arpStepMs(state){
 export function gameStepMs(state){
  return stepMilliseconds(arpTempo(state),state.game.rate);
 }
-/** Drum sequence with the live transport fields (rate, sync, local BPM) applied. */
-export function withDrumTransport(sequence,state){
- return {...sequence,rate:state.drum.rate,sync:state.drum.sync,localBpm:state.drum.localBpm};
+/** The live drum sequence, in the drum-step-sequencer.js / preset shape. */
+export function drumSequence(state){
+ const {rate,sync,localBpm,grid}=state.drum;
+ return {enabled:false,rate,sync,localBpm,steps:DRUM_STEP_COUNT,grid:grid.map(row=>[...row])};
 }
 
 function cloneSequence(sequence){
@@ -101,7 +110,7 @@ function cloneTransport(state){
  return {
   masterBpm:state.masterBpm,arp:{...state.arp},
   game:{rate:state.game.rate,sequence:cloneSequence(state.game.sequence)},
-  drum:{...state.drum},
+  drum:{...state.drum,grid:state.drum.grid.map(row=>[...row])},
   notes:{held:[...state.notes.held],latched:[...state.notes.latched]}
  };
 }
@@ -122,7 +131,8 @@ export function createTransportState(initial=defaultTransport()){
   get masterBpm(){return state.masterBpm},
   get arp(){return {...state.arp}},
   get game(){return {rate:state.game.rate,sequence:cloneSequence(state.game.sequence)}},
-  get drum(){return {...state.drum}},
+  get drum(){return {...state.drum,grid:state.drum.grid.map(row=>[...row])}},
+  get drumSequence(){return drumSequence(state)},
   get sequence(){return cloneSequence(state.game.sequence)},
   get held(){return [...state.notes.held]},
   get latched(){return [...state.notes.latched]},
@@ -140,6 +150,12 @@ export function createTransportState(initial=defaultTransport()){
    Object.assign(sequence.steps[index],patch);
    return set({game:{sequence}});
   },
+
+  /**
+   * Drum pattern edits replace the grid only. Rate, Sync and local BPM come from
+   * their controls (transport-dom.js), so a sequence's own values are ignored here.
+   */
+  setDrumGrid:grid=>set({drum:{grid}}),
 
   /**
    * A physical key goes down. With `capture` (an arp running and Latch on), the

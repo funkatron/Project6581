@@ -17,13 +17,13 @@ import {readScaleStateFromDom,resolvePerformanceNote,isPitchInScale} from "./wes
 import {mountEditorTabs} from "./editor-tabs.js?v=__BUILD_ID__";
 import {mountDrumPanel} from "./drum-panel-ui.js?v=__BUILD_ID__";
 import {createPerformanceDrumState} from "./performance-drum-state.js?v=__BUILD_ID__";
-import {mountDrumPerformance,readDrumSequenceFromDom} from "./drum-performance.js?v=__BUILD_ID__";
+import {mountDrumPerformance} from "./drum-performance.js?v=__BUILD_ID__";
 import {mountDrumGrooveIo} from "./drum-groove-ui.js?v=__BUILD_ID__";
 import {mountDrumLfoPanel} from "./drum-lfo-panel-ui.js?v=__BUILD_ID__";
 import {mountDrumSlotVoicePanels,effectiveLaneTimbre} from "./drum-slot-voice-ui.js?v=__BUILD_ID__";
 import {mountDrumBusMeters} from "./drum-bus-meters-ui.js?v=__BUILD_ID__";
 import {DRUM_BUS_LANES,drumLfoTargetsForKit} from "./drum-voice-ui-policy.js?v=__BUILD_ID__";
-import {defaultDrumKit,defaultDrumSequence,validateDrumKit,validateDrumSequence} from "./drum-step-sequencer.js?v=__BUILD_ID__";
+import {defaultDrumKit,validateDrumKit,validateDrumSequence} from "./drum-step-sequencer.js?v=__BUILD_ID__";
 import {drumChipForBus,isDrumChip} from "./sid-engines.js?v=__BUILD_ID__";
 import {resolveDrumHitsOnStep} from "./drum-voice-policy.js?v=__BUILD_ID__";
 import {drumBusVolumeForLane,drumLaneLevelGain,drumOwnerKey,drumLaneTimbre,drumReleaseMilliseconds,isDrumOwner} from "./drum-lane-trigger.js?v=__BUILD_ID__";
@@ -559,7 +559,6 @@ const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 const arp={timer:null,step:0,root:null,last:null};
 const directOwned=new Set(); // Physical notes sounding independently of either generator.
 const game={timer:null,last:null,step:0,gateTimer:null};
-let drumSequence=validateDrumSequence(defaultDrumSequence());
 const drum={timer:null,step:0,running:false};
 const drumReleaseTimers=new Map();
 let drumStop=()=>{};
@@ -641,8 +640,8 @@ drumSlotVoiceUi=mountDrumSlotVoicePanels({
 drumPanelUi=mountDrumPanel({
  $,
  help$: $,
- getDrumSequence:()=>drumSequence,
- setDrumSequence:value=>{drumSequence=validateDrumSequence(value);},
+ getDrumSequence:()=>transport.drumSequence,
+ setDrumSequence:value=>{transport.setDrumGrid(validateDrumSequence(value).grid)},
  getDrumKit:()=>drumKit,
  setDrumKit:setDrumKitState,
  triggerDrumLane,
@@ -651,7 +650,6 @@ drumPanelUi=mountDrumPanel({
 const drumBusMetersUi=mountDrumBusMeters({$,getLevels:()=>drumBusPeakLevels});
 ({drumStart,drumStop}=mountDrumPerformance({
  $,drum,
- getDrumSequence:()=>drumSequence,
  transport,
  triggerDrumStep,
   stopDrumVoices,
@@ -675,7 +673,7 @@ mountDrumGrooveIo({
  $,
  collectGroove:()=>({
   name:drumKit.name,
-  drumSequence:validateDrumSequence({...drumSequence,...readDrumSequenceFromDom($,drumSequence),enabled:false}),
+  drumSequence:validateDrumSequence(transport.drumSequence),
   drumKit:validateDrumKit(drumKit),
   drumEngine:engines[3],
   drumLfo:validateDrumLfo(drumLfoState)
@@ -1258,7 +1256,7 @@ function snapshotPresetSettings(){
     rate:Number($('arpRate').value),sync:$('arpSync').checked,localBpm:Number($('arpBpm').value)},
    game:{enabled:performanceArp.gameOn,style:$('gameArpStyle').value||'action',
     rate:Number($('gameRate').value),sequence:transport.sequence},
-   drumSequence:validateDrumSequence({...drumSequence,...readDrumSequenceFromDom($,drumSequence),enabled:false}),
+   drumSequence:validateDrumSequence(transport.drumSequence),
    drumKit:validateDrumKit(drumKit),
    scale:readScaleStateFromDom($)
   }
@@ -1267,7 +1265,8 @@ function snapshotPresetSettings(){
 function applyDrumFromPreset(perf){
  drumStop();
  performanceDrum.setRunning(false);
- drumSequence=validateDrumSequence(perf.drumSequence);
+ const drumSequence=validateDrumSequence(perf.drumSequence);
+ transport.setDrumGrid(drumSequence.grid);
  applyDrumKit(perf.drumKit);
  $('drumRate').value=String(drumSequence.rate);
  $('drumSync').checked=drumSequence.sync;
@@ -1280,7 +1279,8 @@ function applyDrumFromPreset(perf){
 function applyDrumGroove(groove){
  drumStop();
  performanceDrum.setRunning(false);
- drumSequence=validateDrumSequence(groove.drumSequence);
+ const drumSequence=validateDrumSequence(groove.drumSequence);
+ transport.setDrumGrid(drumSequence.grid);
  applyDrumKit(groove.drumKit);
  $('drumRate').value=String(drumSequence.rate);
  $('drumSync').checked=drumSequence.sync;
@@ -1468,8 +1468,8 @@ if(testHooksEnabled()){
   studioTrace,
   getSidReady:()=>Boolean(sidController)&&sidContext?.state==='running',
   validateDrumSequence,
-  getDrumSequence:()=>drumSequence,
-  setDrumSequence:value=>{drumSequence=validateDrumSequence(value);},
+  getDrumSequence:()=>transport.drumSequence,
+  setDrumSequence:value=>{transport.setDrumGrid(validateDrumSequence(value).grid)},
   renderDrumPanel:()=>drumPanelUi.render(),
   triggerDrumLane,
   drumStart,
