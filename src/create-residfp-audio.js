@@ -16,13 +16,22 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
     // Do not resume here. A resume started outside a user gesture can stay
     // pending on iPad and swallow later presses that wait on that promise.
     const version='__BUILD_ID__';
-    const deadline=async(promise,label)=>{
+    const deadline=async(promise,label,seconds=15)=>{
       let timer;
-      try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label+' timed out after 15 seconds')),15000)})])}
+      try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label+' timed out after '+seconds+' seconds')),seconds*1000)})])}
       finally{clearTimeout(timer)}
     };
     onProgress('Loading SID audio worklet…');
     await deadline(context.audioWorklet.addModule('./src/residfp-worklet.js?v='+version),'Audio worklet loading');
+    // Optional: pure sequencing modules for worklet sequencing. A failure here is
+    // reported in diagnostics and never blocks the SID engine.
+    let sequencerLoadError=null;
+    try{
+      await deadline(context.audioWorklet.addModule('./src/sequencer-worklet-modules.js?v='+version),'Sequencer module loading',5);
+    }catch(error){
+      sequencerLoadError=String(error?.message??error);
+      eventLog?.add('sequencer-modules-failed',{contextId,error:sequencerLoadError});
+    }
     onProgress('Preparing SID engine…');
     const bytes=await deadline(loadSidWasm('./dist/residfp.wasm?v='+version),'SID engine preparation');
     if(closed)throw Error('SID engine closed before initialization');
@@ -50,6 +59,13 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
         return;
       }
       if(data?.type==='init-progress'){onProgress(data.message);return;}
+      if(data?.type==='sequencer-support'){
+        const support={...data,loadError:sequencerLoadError};
+        eventLog?.add('sequencer-support',{contextId,available:support.available,ok:support.selfTest?.ok===true,
+          error:support.loadError??support.selfTest?.error??null});
+        onStatus(support);
+        return;
+      }
       if(data?.type==='latency-probe-result'){
         const pending=pendingProbes.get(data.id);
         pendingProbes.delete(data.id);

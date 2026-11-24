@@ -57,7 +57,8 @@ const sidEventLog=createSidEventLog();
 const studioTrace=createStudioTraceLog();
 let sidInputEvent=null;
 const audioTiming={source:null,roundTripMs:null,renderAvgMs:null,renderMaxMs:null,renderBudgetMs:null,baseMs:null,outputMs:null,
- keyAt:null,keyEnergyMs:null,keyBufferRemainderMs:null,keyToOutputEstimateMs:null,keyEnergyMissed:false,probeSkipped:false};
+ keyAt:null,keyEnergyMs:null,keyBufferRemainderMs:null,keyToOutputEstimateMs:null,keyEnergyMissed:false,probeSkipped:false,
+ sequencerModules:null};
 function diagnosticTimingSnapshot(){
  return {
   ...audioTiming,
@@ -988,6 +989,12 @@ async function startSid({gesture=false}={}){
         audioTiming.source=event.source;
         audioTiming.roundTripMs=event.dispatchToWorkletRoundTripMs;
         audioTiming.probeSkipped=false;
+        updateAudioTimingReport();
+        return;
+      }
+      if(event.type==='sequencer-support'){
+        const {type:_type,...support}=event;
+        audioTiming.sequencerModules=support;
         updateAudioTimingReport();
         return;
       }

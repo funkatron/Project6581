@@ -59,6 +59,13 @@ for (const engine of engines) {
       assert.ok(['on', 'ready'].includes(state), 'SID failed to initialize: ' + status);
     };
     await waitReady(6581);
+    // Step 3 probe: pure sequencing modules load as ES modules in the AudioWorklet.
+    await page.waitForFunction(() => /Worklet sequencer modules: (?!not reported)/
+      .test(document.querySelector('#audioTimingSummary')?.textContent || ''), null, { timeout: 10000 });
+    const sequencerLine = (await page.locator('#audioTimingSummary').textContent())
+      .split('\n').find(line => line.startsWith('Worklet sequencer modules:'));
+    console.log(engine + ' ' + sequencerLine);
+    assert.equal(sequencerLine, 'Worklet sequencer modules: ready (self-test passed)');
     const initialWasmFetches = await page.evaluate(() => performance.getEntriesByType('resource')
       .filter(entry => entry.name.includes('/dist/residfp.wasm')).length);
     assert.equal(initialWasmFetches, 1, 'initial SID startup must fetch WASM once');

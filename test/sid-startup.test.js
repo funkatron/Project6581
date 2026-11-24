@@ -172,7 +172,8 @@ test('worklet acknowledges each initialization stage and reports WASM rejection'
   WebAssembly:{instantiate:async()=>{if(reject)throw Error('bad WASM');return {instance:{exports:{memory:{},sid_init:()=>1,sid_write(){},sid_render(){},sid_pcm_ptr(){}}}}}},
   registerProcessor(_name,type){Processor=type}});
  vm.runInContext(source,scope);const processor=new Processor();await processor.load(new ArrayBuffer(0),6581);
- assert.deepEqual(messages.map(m=>m.type),[...Array(6).fill('init-progress'),'ready']);
+ assert.deepEqual(messages.map(m=>m.type),[...Array(6).fill('init-progress'),'ready','sequencer-support']);
+ assert.deepEqual(JSON.parse(JSON.stringify(messages.at(-1))),{type:'sequencer-support',available:false,selfTest:null},'probe module not added in this scope');
  assert.match(messages[1].message,/Instantiating/);assert.match(messages[4].message,/chip/);
  reject=true;await processor.load(new ArrayBuffer(0),6581);assert.equal(messages.at(-1).type,'error');assert.match(messages.at(-1).message,/bad WASM/);
  messages.length=0;reject=false;
@@ -181,6 +182,24 @@ test('worklet acknowledges each initialization stage and reports WASM rejection'
  live.switchModel(8580);
  assert.equal(live.model,8580);assert.equal(live.reset,true);
  assert.equal(messages.at(-1).type,'model-ready');
+});
+
+test('worklet reports the sequencer modules when the probe module shares its scope',async()=>{
+ const source=readFileSync(new URL('../src/residfp-worklet.js',import.meta.url),'utf8');
+ const {default:sequencer}=await import('../src/sequencer-worklet-modules.js');
+ const messages=[];let Processor;
+ const scope=vm.createContext({AudioWorkletProcessor:class{port={postMessage:m=>messages.push(m)}},sampleRate:48000,
+  WebAssembly:{instantiate:async()=>({instance:{exports:{memory:{},sid_init:()=>1,sid_write(){},sid_render(){},sid_pcm_ptr(){}}}})},
+  registerProcessor(_name,type){Processor=type}});
+ scope.project6581Sequencer=sequencer;
+ vm.runInContext(source,scope);
+ await new Processor().load(new ArrayBuffer(0),6581);
+ assert.deepEqual(JSON.parse(JSON.stringify(messages.at(-1))),{type:'sequencer-support',available:true,version:1,selfTest:{ok:true}});
+ messages.length=0;
+ scope.project6581Sequencer={version:1,selfTest(){throw new Error('boom')}};
+ await new Processor().load(new ArrayBuffer(0),6581);
+ assert.equal(messages.at(-1).selfTest.ok,false);
+ assert.match(messages.at(-1).selfTest.error,/boom/);
 });
 
 test('gestures cannot resume a retired context during or after stalled cleanup',async()=>{
