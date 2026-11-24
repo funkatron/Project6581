@@ -1,6 +1,7 @@
 import {DRUM_STEP_COUNT, hitsOnStep} from './drum-step-sequencer.js?v=__BUILD_ID__';
 import {stepMilliseconds} from './arp-composition.js?v=__BUILD_ID__';
 import {drumBpm} from './drum-lane-trigger.js?v=__BUILD_ID__';
+import {withDrumTransport} from './transport-state.js?v=__BUILD_ID__';
 
 const RATE_LABEL = {0.25: '1/1', 0.5: '1/2', 1: '1/4', 2: '1/8', 4: '1/16', 8: '1/32', 16: '1/64', 32: '1/128'};
 
@@ -22,7 +23,7 @@ export function mountDrumPerformance({
   $,
   drum,
   getDrumSequence,
-  getMasterBpm,
+  transport,
   triggerDrumStep,
   stopDrumVoices,
   refreshPresetDirty,
@@ -31,6 +32,10 @@ export function mountDrumPerformance({
   onDrumStart,
 }) {
   if (!$) throw new TypeError('mountDrumPerformance requires $');
+  if (!transport) throw new TypeError('mountDrumPerformance requires transport');
+
+  // Live sequence: pattern from the studio, rate / sync / local BPM from the transport.
+  const liveSequence = () => withDrumTransport(getDrumSequence(), transport.getState());
 
   function setTransportLabel(running) {
     const run = $('drumSeqRun');
@@ -47,17 +52,16 @@ export function mountDrumPerformance({
   function updateStatus(running, stepIndex) {
     const status = $('drumStatus');
     if (!status) return;
-    const seq = getDrumSequence();
-    const rate = Number($('drumRate')?.value ?? seq.rate);
-    const rateLabel = RATE_LABEL[rate] ?? '1/16';
-    const bpm = drumBpm(readDrumSequenceFromDom($, seq), getMasterBpm());
+    const seq = liveSequence();
+    const rateLabel = RATE_LABEL[seq.rate] ?? '1/16';
+    const bpm = drumBpm(seq, transport.masterBpm);
     const step = running ? ' step ' + ((stepIndex % DRUM_STEP_COUNT) + 1) : '';
     status.textContent =
       (running ? 'Drum preview · ' + bpm + ' BPM · ' + rateLabel + step : '16 steps · 4 lanes · stopped');
   }
 
   function drumTick() {
-    const seq = readDrumSequenceFromDom($, getDrumSequence());
+    const seq = liveSequence();
     const index = drum.step % DRUM_STEP_COUNT;
     const hits = hitsOnStep(seq, index);
     drum.step = (index + 1) % DRUM_STEP_COUNT;
@@ -83,9 +87,8 @@ export function mountDrumPerformance({
     drumStop({resetStep: true});
     drum.running = true;
     setTransportLabel(true);
-    const seq = readDrumSequenceFromDom($, getDrumSequence());
     drumTick();
-    const ms = drumStepIntervalMs(seq, getMasterBpm());
+    const ms = drumStepIntervalMs(liveSequence(), transport.masterBpm);
     drum.timer = setInterval(drumTick, ms);
     onDrumStart?.();
     refreshPresetDirty?.();
@@ -96,8 +99,7 @@ export function mountDrumPerformance({
     drumStop({resetStep: false});
     drum.running = true;
     setTransportLabel(true);
-    const seq = readDrumSequenceFromDom($, getDrumSequence());
-    const ms = drumStepIntervalMs(seq, getMasterBpm());
+    const ms = drumStepIntervalMs(liveSequence(), transport.masterBpm);
     drum.timer = setInterval(drumTick, ms);
     updateStatus(true, drum.step);
   }

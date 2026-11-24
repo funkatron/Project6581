@@ -7,7 +7,8 @@ import {countHeldResolvingTo} from './western-scales.js?v=__BUILD_ID__';
 export function createKeyGesture({
   audioTiming,sidEventLog,getSidContext,sidMusicalInputBlocked,armSidResume,hasController,countKeyPress,
   activeNotes,arp,game,gameEnabled,arpEnabled,latchOn,directOwned,play,stop,restartGenerators,stopGenerators,
-  gameRestart,arpStopVoice,arpNotes,isSeqPreview,performanceNote,$
+  gameRestart,arpStopVoice,arpNotes,isSeqPreview,performanceNote,$,
+  getArpPattern=()=>$('arpPattern').value
 }){
  if(!latchOn)latchOn=()=>Boolean($('arpLatch')?.checked);
  let queuedKeyNotes=[];
@@ -74,7 +75,7 @@ export function createKeyGesture({
   if(arpEnabled()&&!latchOn()&&arp.root===note){
    // Keep the root valid, without firing an extra off-grid arpeggio note.
    const notes=arpNotes();
-   arp.root=notes.length?selectRoot(notes,$('arpPattern').value,arp.step):null;
+   arp.root=notes.length?selectRoot(notes,getArpPattern(),arp.step):null;
    if(!gameEnabled())arpStopVoice();
   }
  }

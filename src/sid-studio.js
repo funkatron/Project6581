@@ -33,6 +33,8 @@ import {filterRegistersFromUi} from "./sid-filter-ui.js?v=__BUILD_ID__";
 import {projectedChipRenderMs} from "./sid-chip-render-diagnostic.js?v=__BUILD_ID__";
 import {mountGeneratorLeds} from "./generator-led-ui.js?v=__BUILD_ID__";
 import {createPerformanceArpState} from "./performance-arp-state.js?v=__BUILD_ID__";
+import {createTransportState} from "./transport-state.js?v=__BUILD_ID__";
+import {bindTransportDom} from "./transport-dom.js?v=__BUILD_ID__";
 import {createPerformanceRoutingState} from "./performance-routing-state.js?v=__BUILD_ID__";
 import {createPerformanceInstrumentState} from "./performance-instrument-state.js?v=__BUILD_ID__";
 import {setLayoutInert} from "./ui-layout.js?v=__BUILD_ID__";
@@ -280,6 +282,9 @@ mountHelpTriggers($,{openHelp:helpUi.openHelp});
 let renderDrumLfo=()=>{};
 let drumSlotVoiceUi={render:()=>{}};
 const performanceArp=createPerformanceArpState($);
+// Bound before any clock-restarting listener on the same controls (see transport-dom.js).
+const transport=createTransportState();
+const transportDom=bindTransportDom($,transport);
 const performanceDrum=createPerformanceDrumState();
 const performanceRouting=createPerformanceRoutingState($,{onChange:()=>refreshPresetDirty()});
 const performanceInstrument=createPerformanceInstrumentState($,{
@@ -592,6 +597,7 @@ const performanceNote=note=>resolvePerformanceNote(note,readScaleStateFromDom($)
  $,names,keyboardState,arp,game,directOwned,play,stop,silenceSidOutput,refreshPresetDirty,
  getArpKeyVisual:()=>arpKeyVisual,performanceNote,
  gameEnabled,arpEnabled,activeNotes,arpNotes,
+ transport,
  getSeqState:()=>seqState,
  setSeqState:value=>{seqState=value},
  isSeqPreview:()=>seqPreview,
@@ -644,7 +650,7 @@ const drumBusMetersUi=mountDrumBusMeters({$,getLevels:()=>drumBusPeakLevels});
 ({drumStart,drumStop}=mountDrumPerformance({
  $,drum,
  getDrumSequence:()=>drumSequence,
- getMasterBpm:()=>Number($('masterBpm').value),
+ transport,
  triggerDrumStep,
   stopDrumVoices,
  refreshPresetDirty,
@@ -687,6 +693,7 @@ let renderKeyboard=()=>{};
  },
  activeNotes,arp,game,gameEnabled,arpEnabled,latchOn,directOwned,play,stop,restartGenerators,stopGenerators,
  gameRestart,arpStopVoice,arpNotes,performanceNote,
+ getArpPattern:()=>transport.arp.pattern,
  isSeqPreview:()=>seqPreview,
  getScaleState:()=>readScaleStateFromDom($),
  pitchInScale:note=>isPitchInScale(note,readScaleStateFromDom($)),
@@ -1265,6 +1272,7 @@ function applyDrumFromPreset(perf){
  $('drumBpm').value=String(drumSequence.localBpm);
  $('drumBpmValue').textContent=String(drumSequence.localBpm);
  setLayoutInert(document.querySelector('.drum-local-bpm'),drumSequence.sync);
+ transportDom.readDom();
  drumPanelUi.render();
 }
 function applyDrumGroove(groove){
@@ -1277,6 +1285,7 @@ function applyDrumGroove(groove){
  $('drumBpm').value=String(drumSequence.localBpm);
  $('drumBpmValue').textContent=String(drumSequence.localBpm);
  setLayoutInert(document.querySelector('.drum-local-bpm'),drumSequence.sync);
+ transportDom.readDom();
  if(groove.drumEngine){
   const engine=groove.drumEngine;
   engines[3].model=engine.model;
@@ -1333,6 +1342,7 @@ function applyPresetControls(next,{silenceAudio=true}={}){
  setLayoutInert(document.querySelector('.arp-local-bpm'),next.performance.arp.sync);
  $('gameArpStyle').value=next.performance.game.style;
  $('gameRate').value=String(next.performance.game.rate);
+ transportDom.readDom();
  $('scaleKey').value=String(next.performance.scale.tonic);
  $('scaleId').value=next.performance.scale.id;
  $('scaleLock').checked=next.performance.scale.lock;
@@ -1468,6 +1478,7 @@ if(testHooksEnabled()){
    if(!Number.isFinite(n)||n<40||n>240)return;
    $('masterBpm').value=String(n);
    $('masterBpmValue').textContent=String(n);
+   transportDom.readDom();
    updateModulation();
    if($('arpSync').checked)restartGenerators();
   },
