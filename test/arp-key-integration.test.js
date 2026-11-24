@@ -8,7 +8,6 @@ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const studioCss=readStudioCss();
 const script=readFileSync(new URL('../src/sid-studio.js',import.meta.url),'utf8');
 const keyboard=readFileSync(new URL('../src/keyboard-input.js',import.meta.url),'utf8');
-const performance=readFileSync(new URL('../src/performance-play.js',import.meta.url),'utf8');
 
 test('inline keyboard application remains valid JavaScript after adding the visual module',()=>{
  assert.ok(script,'module script must exist');
@@ -17,26 +16,15 @@ test('inline keyboard application remains valid JavaScript after adding the visu
  assert.match(script,/let flushQueuedKeys=\(\)=>\{\}/);
 });
 
-test('Game Arp voices its pattern, while regular Arp owns the selected root',()=>{
- assert.match(performance,/function gameTick\(\)[\s\S]*?sequenceEvent\(root,seqState,game\.step\+\+\)/);
- assert.doesNotMatch(performance,/patternPitch\(/);
- assert.match(performance,/loadBuiltInPhrase\(\$\('gameArpStyle'\)\.value\)/);
- assert.match(performance,/play\(game\.last,'game'\);getArpKeyVisual\(\)\.show\(game\.last,'game'\)/);
- assert.match(performance,/getArpKeyVisual\(\)\.show\(note,'root'\)/);
-// Root changes only on a Game Arp phrase boundary: test/performance-transport.test.js
- assert.match(performance,/if\(gameEnabled\(\)\)\{[\s\S]*?return;\s*\}/);
-});
-// Timer behavior: test/performance-transport.test.js
+// Arp / Game Arp playback, timers, phrase-boundary roots, highlight clearing and
+// direct-note hand-off are behavioral tests in test/performance-transport.test.js.
 test('both arpeggiators have independent rate selectors',()=>{
  assert.match(html,/id="gameRate"/);
  assert.match(html,/id="arpRate"/);
 });
 
-test('all arpeggiator release paths remove the visual highlight',()=>{
- assert.match(performance,/function gameStop\(\)[\s\S]*?getArpKeyVisual\(\)\.clear\('game'\)/);
- assert.match(performance,/function arpStopVoice\(\)[\s\S]*?getArpKeyVisual\(\)\.clear\('root'\)/);
+test('panic clears every arpeggiator key highlight',()=>{
  assert.match(script,/function panic\(reason=[\s\S]*?arpKeyVisual\.clear\(\)/);
- assert.match(performance,/\$\('arpClear'\)\.addEventListener\('click'/);
 });
 
 test('visual style remains independent from pressed keys and contains no animation',()=>{
@@ -55,15 +43,9 @@ test('changing note text cannot move the keyboard octave controls',()=>{
  assert.doesNotMatch(html,/\.arp-visual-note\s*\{/);
 });
 
-test('direct polyphonic notes are released before an arpeggiator takes ownership',()=>{
+test('studio and keyboard keep direct-note ownership for arp hand-off',()=>{
  assert.match(script,/const directOwned=new Set\(\)/);
- assert.match(performance,/function releaseDirectNotes\(\)\{[\s\S]*?const seen=new Set\(\)/);
- assert.match(performance,/releaseDirectNotes\(\);\s*if\(!activeNotes\(\)\.length&&!seqPreview\)/);
  assert.match(keyboard,/if\(directOwned\.delete\(note\)\)stop\(note\)/);
  assert.match(script,/directOwned\.clear\(\);activeOwners\.clear\(\);arpKeyVisual\.clear\(\);sidController\?\.panic\(\)/);
 });
 
-// 'clear latch preserves physical owners and direct notes': test/performance-transport.test.js
-
-// 'released roots do not produce extra out-of-tempo arp ticks' is now behavioral:
-// test/performance-transport.test.js

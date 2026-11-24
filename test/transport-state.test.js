@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createTransportState,applyTransportPatch,defaultTransport,arpTempo,arpStepMs,gameStepMs,withDrumTransport,activeNotes} from '../src/transport-state.js';
+import {createTransportState,applyTransportPatch,defaultTransport,arpTempo,arpStepMs,gameStepMs,drumSequence,activeNotes} from '../src/transport-state.js';
 import {defaultSequence,sequenceForStyle} from '../src/game-step-sequencer.js';
+import {defaultDrumSequence,validateDrumSequence} from '../src/drum-step-sequencer.js';
 import {bindTransportDom,readTransportPatchFromDom,TRANSPORT_CONTROL_IDS} from '../src/transport-dom.js';
 import {fakeDom} from './fixtures/fake-dom.mjs';
 
@@ -43,10 +44,35 @@ test('Root and Game Arp share the arp tempo but keep independent rates',()=>{
  assert.equal(gameStepMs(transport.getState()),125);
 });
 
-test('withDrumTransport overlays live rate, sync and local BPM on the pattern',()=>{
- const state=applyTransportPatch(defaultTransport(),{drum:{rate:8,sync:false,localBpm:140}});
- const seq=withDrumTransport({grid:['x'],rate:4,sync:true,localBpm:120},state);
- assert.deepEqual(seq,{grid:['x'],rate:8,sync:false,localBpm:140});
+test('drumSequence() returns the live pattern in the preset shape',()=>{
+ const grid=defaultDrumSequence().grid.map(row=>row.map(()=>false));
+ grid[0][3]=true;
+ const state=applyTransportPatch(defaultTransport(),{drum:{rate:8,sync:false,localBpm:140,grid}});
+ const seq=drumSequence(state);
+ assert.deepEqual(seq,{enabled:false,rate:8,sync:false,localBpm:140,steps:16,grid});
+ assert.deepEqual(validateDrumSequence(seq),seq);
+ seq.grid[0][3]=false;
+ assert.equal(state.drum.grid[0][3],true,'detached copy');
+});
+
+test('the default transport drum grid is the factory house groove',()=>{
+ assert.deepEqual(createTransportState().drumSequence,validateDrumSequence(defaultDrumSequence()));
+});
+
+test('setDrumGrid replaces only the grid and coerces it like validateDrumSequence',()=>{
+ const transport=createTransportState();
+ transport.set({drum:{rate:8}});
+ const legacy=Array.from({length:6},(_,row)=>Array.from({length:16},(_,col)=>row===1&&col===4));
+ transport.setDrumGrid(legacy);
+ const seq=transport.drumSequence;
+ assert.equal(seq.grid.length,4);
+ assert.equal(seq.grid[1][4],true);
+ assert.equal(seq.rate,8,'rate comes from its control, not the pattern');
+ transport.setDrumGrid([[1]]);
+ const coerced=transport.drumSequence.grid;
+ assert.equal(coerced.length,4);
+ assert.ok(coerced.every(row=>row.length===16&&row.every(cell=>typeof cell==='boolean')));
+ assert.equal(coerced[0][0],true);
 });
 
 test('set notifies subscribers only on change, with a detached snapshot',()=>{
@@ -68,7 +94,8 @@ test('bindTransportDom reads every control on mount and on input/change',()=>{
  const transport=createTransportState();
  const binding=bindTransportDom($,transport);
  const state=transport.getState();
- assert.deepEqual({masterBpm:state.masterBpm,arp:state.arp,gameRate:state.game.rate,drum:state.drum},{
+ const {grid:_grid,...drum}=state.drum;
+ assert.deepEqual({masterBpm:state.masterBpm,arp:state.arp,gameRate:state.game.rate,drum},{
   masterBpm:130,arp:{pattern:'updown',rate:2,sync:false,localBpm:90,latch:false},
   gameRate:8,drum:{rate:16,sync:false,localBpm:180}
  });
