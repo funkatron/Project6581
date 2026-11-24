@@ -98,7 +98,7 @@ test('chip selection switches the live engine and restores the previous model on
   $:id=>id==='chip'?chip:status,
   activeSidModel:6581,presetLoading:false,sidRecorder:null,recordBusy:false,
   setPresetLoading:busy=>loading.push(busy),
-  panic(){},arp:{held:new Set(),latched:new Set()},keys:new Map(),
+  panic(){},transport:{clearNotes(){}},keys:new Map(),
   seqPreview:false,setSeqTransportLabel(){},refreshPresetDirty(){},
   async ensureSidModel(model){calls.push(model);app.activeSidModel=model}
  };
@@ -139,7 +139,7 @@ test('empty live Arp selections snapshot as Up and Action so presets can still l
   validateDrumSequence:value=>value,
   validateDrumKit:value=>value,
   readDrumSequenceFromDom:(_,seq)=>seq,
-  engines,lfoState:[],drumLfoState:{enabled:false,depth:0},validateDrumLfo:v=>v,seqState:{},drumSequence,drumKit,
+  engines,lfoState:[],drumLfoState:{enabled:false,depth:0},validateDrumLfo:v=>v,transport:{sequence:{}},drumSequence,drumKit,
   drumBuses:[{filter:{}},{filter:{}},{filter:{}}],
   readRoutingFromDom:()=>({keyboard:'all',arp:'all',game:'sid1'}),
   performanceArp:{rootOn:false,latchOn:false,gameOn:false},

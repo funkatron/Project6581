@@ -7,10 +7,10 @@ import {countHeldResolvingTo} from './western-scales.js?v=__BUILD_ID__';
 export function createKeyGesture({
   audioTiming,sidEventLog,getSidContext,sidMusicalInputBlocked,armSidResume,hasController,countKeyPress,
   activeNotes,arp,game,gameEnabled,arpEnabled,latchOn,directOwned,play,stop,restartGenerators,stopGenerators,
-  gameRestart,arpStopVoice,arpNotes,isSeqPreview,performanceNote,$,
-  getArpPattern=()=>$('arpPattern').value
+  gameRestart,arpStopVoice,arpNotes,isSeqPreview,performanceNote,$,transport
 }){
- if(!latchOn)latchOn=()=>Boolean($('arpLatch')?.checked);
+ if(!transport)throw new TypeError('createKeyGesture requires transport');
+ if(!latchOn)latchOn=()=>transport.arp.latch;
  let queuedKeyNotes=[];
  function flushQueuedKeys(){
   const sidContext=getSidContext();
@@ -40,17 +40,10 @@ export function createKeyGesture({
   }
   if(hasController())countKeyPress();
   const hadNotes=activeNotes().length;
-  if(!arp.held.has(note)){
-   const firstPhysical=arp.held.size===0;
-   arp.held.add(note);
-   if((gameEnabled()||arpEnabled())&&latchOn()){
-    if(firstPhysical)arp.latched.clear();
-    arp.latched.add(note);
-   }
-  }
+  transport.pressNote(note,{capture:(gameEnabled()||arpEnabled())&&latchOn()});
   if(!gameEnabled()&&!arpEnabled()){
    const resolved=performanceNote(note);
-   const playNow=countHeldResolvingTo(arp.held,performanceNote,resolved)===1;
+   const playNow=countHeldResolvingTo(transport.held,performanceNote,resolved)===1;
    if(playNow)play(note);
    directOwned.add(note);
    return;
@@ -60,22 +53,22 @@ export function createKeyGesture({
  }
  function keyDown(note){beginKey(note)}
  function keyUp(note){
-  arp.held.delete(note);
+  transport.releaseNote(note);
   if(!gameEnabled()&&!arpEnabled()){
    const resolved=performanceNote(note);
    directOwned.delete(note);
-   if(countHeldResolvingTo(arp.held,performanceNote,resolved)===0)stop(note);
+   if(countHeldResolvingTo(transport.held,performanceNote,resolved)===0)stop(note);
    return;
   }
   if(directOwned.delete(note))stop(note);
-  if(arp.held.size===0&&(!latchOn()||arp.latched.size===0)&&!isSeqPreview()){
+  if(!transport.held.length&&(!latchOn()||!transport.latched.length)&&!isSeqPreview()){
    stopGenerators();$('arpStatus').textContent='No notes held';return;
   }
   // Game Arp keeps its clock while the held set changes; gameTick() picks up the new root.
   if(arpEnabled()&&!latchOn()&&arp.root===note){
    // Keep the root valid, without firing an extra off-grid arpeggio note.
    const notes=arpNotes();
-   arp.root=notes.length?selectRoot(notes,getArpPattern(),arp.step):null;
+   arp.root=notes.length?selectRoot(notes,transport.arp.pattern,arp.step):null;
    if(!gameEnabled())arpStopVoice();
   }
  }
@@ -83,16 +76,16 @@ export function createKeyGesture({
 }
 
 export function mountKeyboard(deps){
- const {$,keys,names,keyboardState,traceInput,panic,restartGenerators,gameEnabled,latchOn,isSeqPreview,arp,
-  pitchInScale=()=>true,getArpKeyVisual}=deps;
+ const {$,keys,names,keyboardState,traceInput,panic,restartGenerators,gameEnabled,latchOn,isSeqPreview,
+  pitchInScale=()=>true,getArpKeyVisual,transport}=deps;
  const {keyDown,keyUp,flushQueuedKeys}=createKeyGesture(deps);
  const MIN_OCTAVE=0,MAX_OCTAVE=7;
  const compactKeyboard=()=>matchMedia('(max-width:900px), (max-height:620px)').matches;
  function renderKeyboard(){
   const resumePreview=isSeqPreview()&&gameEnabled();
   panic();
-  arp.held.clear(); // Pointer capture cannot survive keyboard reconstruction.
-  if(!latchOn())arp.latched.clear();
+  transport.clearHeld(); // Pointer capture cannot survive keyboard reconstruction.
+  if(!latchOn())transport.clearLatched();
   keys.clear();
   $('keyboard').replaceChildren();
   const start=(keyboardState.octave+1)*12;
@@ -129,7 +122,7 @@ export function mountKeyboard(deps){
  function setKeyboardVisible(visible){
   if(!visible){
    // Release held physical keys but leave a latched or previewed sequence playing.
-   for(const note of [...arp.held])keyUp(note);
+   for(const note of transport.held)keyUp(note);
    for(const key of keys.values())key.classList.remove('down');
   }
   $('keyboard').hidden=!visible;
@@ -145,6 +138,6 @@ export function mountKeyboard(deps){
  try{if(window.localStorage.getItem('project6581.keyboard-visible')==='no')setKeyboardVisible(false)}catch{}
  const layout='awsedftgyhujkolp;';
  window.addEventListener('keydown',e=>{if(e.repeat||e.target.matches('input,select,button,textarea,[contenteditable="true"]'))return;const idx=layout.indexOf(e.key.toLowerCase());if(idx>=0){const note=(keyboardState.octave+1)*12+idx;const key=keys.get(note);if(key){e.preventDefault();key.classList.add('down');traceInput(note,'keyboard','down',()=>keyDown(note))}}});
- window.addEventListener('keyup',e=>{const idx=layout.indexOf(e.key.toLowerCase());if(idx>=0){const note=(keyboardState.octave+1)*12+idx;keys.get(note)?.classList.remove('down');if(arp.held.has(note))traceInput(note,'keyboard','up',()=>keyUp(note));else keyUp(note)}});
+ window.addEventListener('keyup',e=>{const idx=layout.indexOf(e.key.toLowerCase());if(idx>=0){const note=(keyboardState.octave+1)*12+idx;keys.get(note)?.classList.remove('down');if(transport.isHeld(note))traceInput(note,'keyboard','up',()=>keyUp(note));else keyUp(note)}});
  return {flushQueuedKeys,keyDown,keyUp,renderKeyboard};
 }

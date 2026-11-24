@@ -7,8 +7,8 @@ import {defaultSequence,sequenceEvent,sequenceForStyle} from './game-step-sequen
 export function mountPerformance({
  $,names,keyboardState,arp,game,directOwned,play,stop,silenceSidOutput,refreshPresetDirty,getArpKeyVisual,
  performanceNote=note=>note,
- gameEnabled,arpEnabled,activeNotes,arpNotes,
- getSeqState,setSeqState,isSeqPreview,setSeqPreview,getActiveSeqStep,setActiveSeqStep,performanceArp,
+ gameEnabled,arpEnabled,activeNotes,arpNotes,latchOn,
+ isSeqPreview,setSeqPreview,getActiveSeqStep,setActiveSeqStep,performanceArp,
  alignDrumTransport,transport
 }){
  function clearStepHighlight(){
@@ -32,7 +32,7 @@ export function mountPerformance({
   $('seqRun').setAttribute('aria-pressed',String(seqPreview));
  }
  function renderSequenceSteps(){
-  const seqState=getSeqState();
+  const seqState=transport.sequence;
   const fragment=document.createDocumentFragment();
   seqState.steps.forEach((step,index)=>{
    const cell=document.createElement('div');cell.className='seq-step';cell.dataset.step=String(index);
@@ -45,21 +45,21 @@ export function mountPerformance({
    const value=document.createElement('output');value.className='seq-note-value';
    value.textContent=(step.offset>0?'+':'')+step.offset;
    pitch.addEventListener('input',()=>{
-    seqState.steps[index].offset=Number(pitch.value);
+    transport.updateStep(index,{offset:Number(pitch.value)});
     value.textContent=(Number(pitch.value)>0?'+':'')+pitch.value;
     modifiedStepPhrase();
    });
    pitchWrap.append(pitch,value);
    const gate=document.createElement('button');gate.type='button';gate.className='seq-gate';
    function displayGate(){
-    const enabled=seqState.steps[index].gate;
+    const enabled=transport.sequence.steps[index].gate;
     gate.textContent=enabled?'ON':'REST';
     gate.setAttribute('aria-pressed',String(enabled));
     gate.setAttribute('aria-label','Step '+(index+1)+' gate '+(enabled?'on':'rest'));
    }
    displayGate();
    gate.addEventListener('click',()=>{
-    seqState.steps[index].gate=!seqState.steps[index].gate;
+    transport.updateStep(index,{gate:!transport.sequence.steps[index].gate});
     displayGate();modifiedStepPhrase();
    });
    const lengthWrap=document.createElement('div');lengthWrap.className='seq-length-group';
@@ -69,7 +69,7 @@ export function mountPerformance({
    const lengthValue=document.createElement('output');lengthValue.className='seq-duration-value';
    lengthValue.textContent=step.duration+'%';
    length.addEventListener('input',()=>{
-    seqState.steps[index].duration=Number(length.value);
+    transport.updateStep(index,{duration:Number(length.value)});
     lengthValue.textContent=length.value+'%';
     modifiedStepPhrase();
    });
@@ -82,9 +82,8 @@ export function mountPerformance({
   setActiveSeqStep(-1);
  }
  function modifiedStepPhrase(){
-  const seqState=getSeqState();
   $('gameArpStyle').value='custom';
-  $('seqStatus').textContent='Custom '+seqState.length+'-step phrase · changes take effect on the next step.';
+  $('seqStatus').textContent='Custom '+transport.sequence.length+'-step phrase · changes take effect on the next step.';
   refreshPresetDirty();
  }
  function gameStop(){
@@ -114,13 +113,13 @@ export function mountPerformance({
  function loadBuiltInPhrase(style){
   const phrase=sequenceForStyle(style);
   if(!phrase)return false;
-  setSeqState(phrase);
+  transport.setSequence(phrase);
   renderSequenceSteps();
   $('seqStatus').textContent=phraseLabel()+' · '+phrase.length+'-step phrase. Edit a step to make it Custom.';
   return true;
  }
  function gameTick(){
-  const seqState=getSeqState();
+  const seqState=transport.sequence;
   const root=gameRoot();
   if(root===null){gameStop();$('arpStatus').textContent='No notes held';return}
   if(game.gateTimer!==null){clearTimeout(game.gateTimer);game.gateTimer=null}
@@ -154,8 +153,7 @@ export function mountPerformance({
   const note=performanceNote(selectRoot(notes,transport.arp.pattern,arp.step++));
   getArpKeyVisual().show(note,'root');
   if(gameEnabled()){
-   const seqState=getSeqState();
-   if(arp.root===null||gamePhraseBoundary(game.step,seqState.length))arp.root=note;
+   if(arp.root===null||gamePhraseBoundary(game.step,transport.sequence.length))arp.root=note;
    $('arpStatus').textContent='Root Arp · '+names[note%12]+(Math.floor(note/12)-1)+' · '+notes.length+' notes';
    return;
   }
@@ -185,9 +183,9 @@ export function mountPerformance({
   stopGenerators();arp.step=0;game.step=0;
   if(!gameEnabled()&&!arpEnabled()){
    // Return physically held keys to direct sound; never retain stale latches.
-   arp.latched.clear();
+   transport.clearLatched();
    const heard=new Set();
-   for(const note of arp.held){
+   for(const note of transport.held){
     const resolved=performanceNote(note);
     directOwned.add(note);
     if(heard.has(resolved))continue;
@@ -214,13 +212,12 @@ export function mountPerformance({
  renderSequenceSteps();
  loadBuiltInPhrase($('gameArpStyle').value);
  $('seqLength').addEventListener('change',()=>{
-  const seqState=getSeqState();
-  seqState.length=Number($('seqLength').value);
+  transport.setSequenceLength(Number($('seqLength').value));
   renderSequenceSteps();modifiedStepPhrase();gameRestart();
  });
  $('seqReset').addEventListener('click',()=>{
   if(!window.confirm('Reset all 16 custom steps?'))return;
-  setSeqState(defaultSequence());renderSequenceSteps();modifiedStepPhrase();gameRestart();
+  transport.setSequence(defaultSequence());renderSequenceSteps();modifiedStepPhrase();gameRestart();
  });
  $('seqRun').addEventListener('click',()=>{
   setSeqPreview(true);$('gameArpStyle').value='custom';
@@ -231,7 +228,7 @@ export function mountPerformance({
   setSeqPreview(false);
   performanceArp.set({gameOn:false});
   setSeqTransportLabel();
-  stopGenerators();arp.held.clear();arp.latched.clear();
+  stopGenerators();transport.clearNotes();
   silenceSidOutput();
   refreshPresetDirty();
  });
@@ -248,8 +245,10 @@ export function mountPerformance({
  $('gameRate').addEventListener('change',gameRestart);
  $('arpOn').addEventListener('change',()=>{restartGenerators();refreshPresetDirty()});
  $('arpLatch').addEventListener('change',()=>{
-  if($('arpLatch').checked)arp.held.forEach(note=>arp.latched.add(note));
-  else arp.latched.clear();
+  // The arp-state slice updates before this change event; mirror it first.
+  transport.set({arp:{latch:latchOn()}});
+  if(transport.arp.latch)transport.latchHeld();
+  else transport.clearLatched();
   restartGenerators();refreshPresetDirty();
  });
  ['arpPattern','arpRate'].forEach(id=>$(id).addEventListener('change',arpRestart));
@@ -258,7 +257,7 @@ export function mountPerformance({
  });
  $('arpClear').addEventListener('click',()=>{
   // Clear stored notes only. Physical held keys and direct voice owners remain.
-  arp.latched.clear();arp.root=null;arp.step=0;game.step=0;
+  transport.clearLatched();arp.root=null;arp.step=0;game.step=0;
   if(gameEnabled()||arpEnabled())restartGenerators();
   $('arpStatus').textContent='Latch cleared';
  });

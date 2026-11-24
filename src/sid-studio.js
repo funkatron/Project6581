@@ -8,7 +8,7 @@ import {createArpKeyVisual} from "./arp-key-visual.js?v=__BUILD_ID__";
 import {modulationTrack,formatControlValue,SLIDER_TARGETS} from "./modulation-track.js?v=__BUILD_ID__";
 import {lfosForEngine,LFO_TARGET_ORDER,LFO_TARGET_LABELS} from "./lfo-modulation.js?v=__BUILD_ID__";
 import {createSidRecorder,prepareRecordingDownload} from "./sid-recorder.js?v=__BUILD_ID__";
-import {defaultSequence,validateSequence} from "./game-step-sequencer.js?v=__BUILD_ID__";
+import {validateSequence} from "./game-step-sequencer.js?v=__BUILD_ID__";
 import {mountPerformance} from "./performance-play.js?v=__BUILD_ID__";
 import {FACTORY_PRESETS,presetLoadRequiresSilence,STARTUP_FACTORY_PRESET_ID,validateDrumLfo,validatePresetSettings} from "./preset-library.js?v=__BUILD_ID__";
 import {mountPresetLibrary} from "./preset-library-ui.js?v=__BUILD_ID__";
@@ -33,7 +33,7 @@ import {filterRegistersFromUi} from "./sid-filter-ui.js?v=__BUILD_ID__";
 import {projectedChipRenderMs} from "./sid-chip-render-diagnostic.js?v=__BUILD_ID__";
 import {mountGeneratorLeds} from "./generator-led-ui.js?v=__BUILD_ID__";
 import {createPerformanceArpState} from "./performance-arp-state.js?v=__BUILD_ID__";
-import {createTransportState} from "./transport-state.js?v=__BUILD_ID__";
+import {createTransportState,activeNotes as transportActiveNotes} from "./transport-state.js?v=__BUILD_ID__";
 import {bindTransportDom} from "./transport-dom.js?v=__BUILD_ID__";
 import {createPerformanceRoutingState} from "./performance-routing-state.js?v=__BUILD_ID__";
 import {createPerformanceInstrumentState} from "./performance-instrument-state.js?v=__BUILD_ID__";
@@ -285,6 +285,8 @@ const performanceArp=createPerformanceArpState($);
 // Bound before any clock-restarting listener on the same controls (see transport-dom.js).
 const transport=createTransportState();
 const transportDom=bindTransportDom($,transport);
+// Latch lives in the arp-state slice (bound to its checkbox); the transport mirrors it.
+performanceArp.subscribe(state=>transport.set({arp:{latch:state.latchOn}}));
 const performanceDrum=createPerformanceDrumState();
 const performanceRouting=createPerformanceRoutingState($,{onChange:()=>refreshPresetDirty()});
 const performanceInstrument=createPerformanceInstrumentState($,{
@@ -520,7 +522,7 @@ function updateUnison(){
  if(sidController&&(sidController.voiceCount!==voices||sidController.unisonCount!==layers||sidController.mode!==mode)){
   // Assignments change only after releasing owned notes and running generators.
   traceStudio('unison-change',{voices,layers,mode,route:performanceRouting.keyboard});
-  panic('unison-config');arp.held.clear();arp.latched.clear();
+  panic('unison-config');transport.clearNotes();
  }else traceStudio('unison-update',{voices,layers,mode,detune});
  sidController?.configure({voiceCount:voices,unisonCount:layers,mode,detune});
  $('detune').disabled=layers===1;
@@ -544,16 +546,17 @@ $('panic').addEventListener('click',()=>{
  sidEventLog.add('stop-all',{contextId:sidAudio?sidAttempt:null,model:activeSidModel});
  performanceArp.set({rootOn:false,gameOn:false});
  lfoState.forEach(lfo=>{lfo.enabled=false});renderLfos();updateModulation();stopModulationUiLoop();
- panic();arp.held.clear();arp.latched.clear();arp.step=0;game.step=0;seqPreview=false;setSeqTransportLabel();
+ panic();transport.clearNotes();arp.step=0;game.step=0;seqPreview=false;setSeqTransportLabel();
  sidController?.panic();
  $('arpStatus').textContent='Arps and LFOs off';
 });window.addEventListener('blur',()=>{
  // Native pickers can blur the window without meaning navigation away.
  if(document.activeElement?.tagName==='SELECT')return;
- panic('window-blur');arp.held.clear();seqPreview=false;setSeqTransportLabel();
+ panic('window-blur');transport.clearHeld();seqPreview=false;setSeqTransportLabel();
 });
 const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
-const arp={held:new Set(),latched:new Set(),timer:null,step:0,root:null,last:null};
+// Clock runtime only. Held and latched notes live in the transport.
+const arp={timer:null,step:0,root:null,last:null};
 const directOwned=new Set(); // Physical notes sounding independently of either generator.
 const game={timer:null,last:null,step:0,gateTimer:null};
 let drumSequence=validateDrumSequence(defaultDrumSequence());
@@ -562,7 +565,7 @@ const drumReleaseTimers=new Map();
 let drumStop=()=>{};
 let drumStart=()=>{};
 let drumPanelUi={setActiveStep:()=>{},render:()=>{}};
-let seqState=defaultSequence(),seqPreview=false,activeSeqStep=-1;
+let seqPreview=false,activeSeqStep=-1;
 let gameStop=()=>{};
 let arpStopVoice=()=>{};
 let restartGenerators=()=>{};
@@ -577,7 +580,7 @@ let releaseMidiNotes=()=>{};
 const gameEnabled=()=>performanceArp.gameOn;
 const arpEnabled=()=>performanceArp.rootOn;
 const latchOn=()=>performanceArp.latchOn;
-const activeNotes=()=>[...(latchOn()&&arp.latched.size?arp.latched:arp.held)];
+const activeNotes=()=>transportActiveNotes(transport.getState());
 const arpNotes=()=>{
  const state=readScaleStateFromDom($);
  const raw=activeNotes().sort((a,b)=>a-b);
@@ -598,8 +601,7 @@ const performanceNote=note=>resolvePerformanceNote(note,readScaleStateFromDom($)
  getArpKeyVisual:()=>arpKeyVisual,performanceNote,
  gameEnabled,arpEnabled,activeNotes,arpNotes,
  transport,
- getSeqState:()=>seqState,
- setSeqState:value=>{seqState=value},
+ latchOn,
  isSeqPreview:()=>seqPreview,
  setSeqPreview:value=>{seqPreview=value},
  getActiveSeqStep:()=>activeSeqStep,
@@ -693,7 +695,7 @@ let renderKeyboard=()=>{};
  },
  activeNotes,arp,game,gameEnabled,arpEnabled,latchOn,directOwned,play,stop,restartGenerators,stopGenerators,
  gameRestart,arpStopVoice,arpNotes,performanceNote,
- getArpPattern:()=>transport.arp.pattern,
+ transport,
  isSeqPreview:()=>seqPreview,
  getScaleState:()=>readScaleStateFromDom($),
  pitchInScale:note=>isPitchInScale(note,readScaleStateFromDom($)),
@@ -709,7 +711,7 @@ for(const id of ['scaleKey','scaleId','scaleLock']){
 mountPreferencesDialog($);
 ({releaseAll:releaseMidiNotes}=mountMidiInput({
  $,traceInput,keyDown,keyUp,isBlocked:sidMusicalInputBlocked,
- pitchPhysicallyHeld:note=>arp.held.has(note)||directOwned.has(note)
+ pitchPhysicallyHeld:note=>transport.isHeld(note)||directOwned.has(note)
 }));
 
 function updateSidFilter(overrides={},engineIndex=0){
@@ -1255,7 +1257,7 @@ function snapshotPresetSettings(){
    arp:{enabled:performanceArp.rootOn,latch:performanceArp.latchOn,pattern:arpPattern,
     rate:Number($('arpRate').value),sync:$('arpSync').checked,localBpm:Number($('arpBpm').value)},
    game:{enabled:performanceArp.gameOn,style:$('gameArpStyle').value||'action',
-    rate:Number($('gameRate').value),sequence:seqState},
+    rate:Number($('gameRate').value),sequence:transport.sequence},
    drumSequence:validateDrumSequence({...drumSequence,...readDrumSequenceFromDom($,drumSequence),enabled:false}),
    drumKit:validateDrumKit(drumKit),
    scale:readScaleStateFromDom($)
@@ -1307,7 +1309,7 @@ function resetPerformanceGenerators(){
  gameStop();
  if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}
  arpStopVoice();
- arp.held.clear();arp.latched.clear();arp.step=0;
+ transport.clearNotes();arp.step=0;
  game.step=0;arp.root=null;seqPreview=false;setSeqTransportLabel();
  for(const key of keys.values())key.classList.remove('down');
 }
@@ -1346,7 +1348,7 @@ function applyPresetControls(next,{silenceAudio=true}={}){
  $('scaleKey').value=String(next.performance.scale.tonic);
  $('scaleId').value=next.performance.scale.id;
  $('scaleLock').checked=next.performance.scale.lock;
- seqState=validateSequence(next.performance.game.sequence);
+ transport.setSequence(validateSequence(next.performance.game.sequence));
  renderSequenceSteps();
  loadBuiltInPhrase($('gameArpStyle').value);
  applyDrumFromPreset(next.performance);
@@ -1432,7 +1434,7 @@ $('chip').addEventListener('change',async event=>{
   return;
  }
  setPresetLoading(true);
- panic();arp.held.clear();arp.latched.clear();
+ panic();transport.clearNotes();
  seqPreview=false;setSeqTransportLabel();
  for(const key of keys.values())key.classList.remove('down');
  try{

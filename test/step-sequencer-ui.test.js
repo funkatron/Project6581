@@ -44,8 +44,7 @@ test('the step editor provides exactly one dynamic control per step and per lane
  assert.match(performance,/gate\.setAttribute\('aria-pressed',String\(enabled\)\)/);
  assert.match(performance,/gate\.textContent=enabled\?'ON':'REST'/);
  assert.match(performance,/length\.addEventListener\('input'/);
- assert.match(performance,/seqState\.steps\[index\]\.offset=Number\(pitch\.value\)/);
- assert.match(performance,/seqState\.steps\[index\]\.duration=Number\(length\.value\)/);
+// Step edits reaching the transport: test/performance-transport.test.js
  assert.match(css,/grid-template-columns:repeat\(16,minmax\(52px,1fr\)\)/);
  assert.match(css,/overflow-x:auto/);
 });
@@ -65,14 +64,14 @@ test('keyboard remains full width and can collapse without stopping preview',()=
  assert.match(css,/#keyboard\[hidden\]\{display:none!important\}/);
  assert.match(html,/id="keyboardToggle" aria-expanded="true"/);
  assert.match(keyboard,/function setKeyboardVisible\(visible\)\{/);
- assert.match(keyboard,/for\(const note of \[\.\.\.arp\.held\]\)keyUp\(note\)/);
+ assert.match(keyboard,/for\(const note of transport\.held\)keyUp\(note\)/);
  assert.match(keyboard,/setItem\('project6581\.keyboard-visible'/);
  assert.match(keyboard,/\$\('keyboard'\)\.hidden=!visible/);
 });
 
 test('preset settings include the editable phrase and restore its controls',()=>{
- assert.match(script,/rate:Number\(\$\('gameRate'\)\.value\),sequence:seqState/);
- assert.match(script,/seqState=validateSequence\(next\.performance\.game\.sequence\)/);
+ assert.match(script,/rate:Number\(\$\('gameRate'\)\.value\),sequence:transport\.sequence/);
+ assert.match(script,/transport\.setSequence\(validateSequence\(next\.performance\.game\.sequence\)\)/);
  assert.match(script,/renderSequenceSteps\(\)/);
 });
 

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createTransportState,applyTransportPatch,defaultTransport,arpTempo,arpStepMs,gameStepMs,withDrumTransport} from '../src/transport-state.js';
+import {createTransportState,applyTransportPatch,defaultTransport,arpTempo,arpStepMs,gameStepMs,withDrumTransport,activeNotes} from '../src/transport-state.js';
+import {defaultSequence,sequenceForStyle} from '../src/game-step-sequencer.js';
 import {bindTransportDom,readTransportPatchFromDom,TRANSPORT_CONTROL_IDS} from '../src/transport-dom.js';
 import {fakeDom} from './fixtures/fake-dom.mjs';
 
@@ -66,9 +67,10 @@ test('bindTransportDom reads every control on mount and on input/change',()=>{
  });
  const transport=createTransportState();
  const binding=bindTransportDom($,transport);
- assert.deepEqual(transport.getState(),{
-  masterBpm:130,arp:{pattern:'updown',rate:2,sync:false,localBpm:90},
-  game:{rate:8},drum:{rate:16,sync:false,localBpm:180}
+ const state=transport.getState();
+ assert.deepEqual({masterBpm:state.masterBpm,arp:state.arp,gameRate:state.game.rate,drum:state.drum},{
+  masterBpm:130,arp:{pattern:'updown',rate:2,sync:false,localBpm:90,latch:false},
+  gameRate:8,drum:{rate:16,sync:false,localBpm:180}
  });
  $('gameRate').value='32';$('gameRate').dispatch('change');
  assert.equal(transport.game.rate,32);
@@ -95,4 +97,57 @@ test('missing controls are skipped, not read as defaults',()=>{
  const patch=readTransportPatchFromDom(id=>id==='masterBpm'?{value:'99'}:null);
  assert.deepEqual(patch,{masterBpm:'99'});
  assert.equal(TRANSPORT_CONTROL_IDS.length,9);
+});
+
+test('the Game Arp phrase is validated, cloned on read and edited per step',()=>{
+ const transport=createTransportState();
+ assert.deepEqual(transport.sequence,defaultSequence());
+ transport.sequence.steps[0].offset=5;
+ assert.equal(transport.sequence.steps[0].offset,0,'reads are detached copies');
+ transport.setSequence(sequenceForStyle('action'));
+ assert.deepEqual(transport.sequence,sequenceForStyle('action'));
+ transport.updateStep(1,{gate:false});
+ assert.equal(transport.sequence.steps[1].gate,false);
+ transport.setSequenceLength(4);
+ assert.equal(transport.sequence.length,4);
+ assert.throws(()=>transport.updateStep(0,{offset:99}),/pitch/);
+ assert.throws(()=>transport.setSequenceLength(5),/length/);
+ assert.equal(transport.sequence.steps[0].offset===99,false);
+});
+
+test('held and latched notes: press, release, latch capture and clears',()=>{
+ const transport=createTransportState();
+ assert.equal(transport.pressNote(60),true);
+ assert.equal(transport.pressNote(60),false);
+ transport.pressNote(64,{capture:true});
+ assert.deepEqual(transport.held,[60,64]);
+ assert.deepEqual(transport.latched,[64]);
+ assert.equal(transport.isHeld(64),true);
+ assert.equal(transport.releaseNote(60),true);
+ assert.equal(transport.releaseNote(60),false);
+ transport.releaseNote(64);
+ transport.pressNote(67,{capture:true});
+ assert.deepEqual(transport.latched,[67],'first key of a new chord replaces the latch');
+ transport.pressNote(72);
+ transport.latchHeld();
+ assert.deepEqual(transport.latched,[67,72]);
+ transport.clearHeld();
+ assert.deepEqual(transport.getState().notes,{held:[],latched:[67,72]});
+ transport.clearLatched();
+ transport.pressNote(60);transport.set({notes:{latched:[61]}});
+ transport.clearNotes();
+ assert.deepEqual(transport.getState().notes,{held:[],latched:[]});
+});
+
+test('active notes come from the latched set only while Latch holds notes',()=>{
+ const state=applyTransportPatch(defaultTransport(),{notes:{held:[60],latched:[64,67]}});
+ assert.deepEqual(activeNotes(state),[60]);
+ const latched=applyTransportPatch(state,{arp:{latch:true}});
+ assert.deepEqual(activeNotes(latched),[64,67]);
+ assert.deepEqual(activeNotes(applyTransportPatch(latched,{notes:{latched:[]}})),[60]);
+});
+
+test('note lists drop duplicates and out-of-range values',()=>{
+ const state=applyTransportPatch(defaultTransport(),{notes:{held:[60,60,128,-1,61.5,'62',64]}});
+ assert.deepEqual(state.notes.held,[60,64]);
 });

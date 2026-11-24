@@ -1,12 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
-import vm from 'node:vm';
-import {needsAudioResume} from '../src/sid-note-gate.js';
-
-const source=readFileSync(new URL('../src/keyboard-input.js',import.meta.url),'utf8')
- .replace(/^import .*\n/gm,'')
- .replace(/^export /gm,'');
+import {createKeyGesture} from '../src/keyboard-input.js';
+import {createTransportState} from '../src/transport-state.js';
 
 function harness({state}){
  const played=[];
@@ -18,14 +13,7 @@ function harness({state}){
  };
  const context={state};
  const audioTiming={keyAt:null,keyEnergyMs:null,keyEnergyMissed:false};
- const scope=vm.createContext({
-  needsAudioResume,
-  countHeldResolvingTo:(held,resolve,resolved)=>{let c=0;for(const p of held)if(resolve(p)===resolved)c++;return c},
-  performance:{now:()=>0},
-  matchMedia:()=>({matches:false})
- });
- vm.runInContext(source,scope);
- const gesture=scope.createKeyGesture({
+ const gesture=createKeyGesture({
   audioTiming,
   sidEventLog:{enabled:false,add(){}},
   getSidContext:()=>context,
@@ -34,7 +22,8 @@ function harness({state}){
   hasController:()=>true,
   countKeyPress(){},
   activeNotes:()=>[],
-  arp:{held:new Set(),latched:new Set()},
+  arp:{},
+  transport:createTransportState(),
   game:{timer:null},
   gameEnabled:()=>false,
   arpEnabled:()=>false,
