@@ -1,6 +1,6 @@
 // SID register mapping, independent of the eventual WebAssembly renderer.
 // PAL C64 clock. All register writes are 8-bit.
-import {WAVE_BITS, sidSafeWaveByte} from './sid-waveform.js';
+import {WAVE_BITS, sidSafeWaveByte} from './sid-waveform.js?v=__BUILD_ID__';
 
 export const PAL_CLOCK = 985248;
 export const ADSR_MS = [2,8,16,24,38,56,68,80,100,250,500,800,1000,3000,5000,8000];

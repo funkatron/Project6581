@@ -1,4 +1,4 @@
-import {validatePitchEnvelope} from './pitch-envelope.js';
+import {validatePitchEnvelope} from './pitch-envelope.js?v=__BUILD_ID__';
 
 /** Four-lane × sixteen-step drum grid. No DOM or WASM dependencies. */
 

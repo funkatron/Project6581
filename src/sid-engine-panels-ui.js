@@ -1,5 +1,5 @@
 import {mountPitchEnvelopeEditor} from './pitch-envelope-editor.js?v=__BUILD_ID__';
-import {DRUM_ENGINE_INDEX,SID_ENGINE_COUNT,drumChipForBus,isDrumChip as chipIsDrum} from './sid-engines.js';
+import {DRUM_ENGINE_INDEX,SID_ENGINE_COUNT,drumChipForBus,isDrumChip as chipIsDrum} from './sid-engines.js?v=__BUILD_ID__';
 import {chipPanStereoPeaks,meterDisplayWidth} from './sid-meter-display.js?v=__BUILD_ID__';
 import {formatPanBrief,formatHzBrief,formatPercent} from './control-format.js?v=__BUILD_ID__';
 import {setLayoutInert} from './ui-layout.js?v=__BUILD_ID__';

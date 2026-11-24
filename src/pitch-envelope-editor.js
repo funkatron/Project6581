@@ -3,14 +3,14 @@ import {
  MAX_PITCH_POINTS,
  pitchOffsetAt,
  validatePitchEnvelope
-} from './pitch-envelope.js';
+} from './pitch-envelope.js?v=__BUILD_ID__';
 import {
  pitchGraphAxes,
  pointToGraph,
  graphToPoint,
  clampDraggedPoint,
  proposePitchPoint
-} from './pitch-envelope-graph.js';
+} from './pitch-envelope-graph.js?v=__BUILD_ID__';
 
 export const PITCH_EDITOR_MAX_POINTS=4;
 const GRAPH_SAMPLES=64;

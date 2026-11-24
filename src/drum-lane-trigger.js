@@ -1,4 +1,4 @@
-import {DRUM_LANE_IDS} from './drum-step-sequencer.js';
+import {DRUM_LANE_IDS} from './drum-step-sequencer.js?v=__BUILD_ID__';
 
 export function drumOwnerKey(laneId) {
   if (!DRUM_LANE_IDS.includes(laneId)) throw new RangeError('Unknown drum lane: ' + laneId);

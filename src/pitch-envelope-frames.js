@@ -1,4 +1,4 @@
-import {pitchOffsetAt,validatePitchEnvelope} from './pitch-envelope.js';
+import {pitchOffsetAt,validatePitchEnvelope} from './pitch-envelope.js?v=__BUILD_ID__';
 
 // Worklet-side scheduling geometry. The caller supplies the audio frame clock;
 // no main-thread timers or performance.now() are involved.

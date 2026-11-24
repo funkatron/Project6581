@@ -1,5 +1,5 @@
-import {SidRegisters} from './sid-registers.js';
-import {VoiceAllocator} from './voice-allocator.js';
+import {SidRegisters} from './sid-registers.js?v=__BUILD_ID__';
+import {VoiceAllocator} from './voice-allocator.js?v=__BUILD_ID__';
 
 // Event-driven front end. The sink may be a worklet port or a test recorder.
 // No audio approximation is silently substituted for a missing SID engine.

@@ -1,5 +1,5 @@
-import {SidRegisters} from './sid-registers.js';
-import {SID_CHIP_COUNT,isDrumChip} from './sid-engines.js';
+import {SidRegisters} from './sid-registers.js?v=__BUILD_ID__';
+import {SID_CHIP_COUNT,isDrumChip} from './sid-engines.js?v=__BUILD_ID__';
 
 // Up to nine melodic oscillators on SID 1–3.
 // SID 4–6 are monophonic drum chips (kick, snare, cymbals), each using voice 0.
