@@ -22,7 +22,7 @@ jobs:
           pkg=$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).version")
           if [ "$pkg" != "$resolved" ]; then
             echo "package.json is $pkg but resolved version is $resolved."
-            echo "Run: node scripts/sync-package-version.mjs and commit package.json + scripts/version-policy.mjs"
+            echo "Run: node scripts/sync-package-version.mjs and commit package.json"
             exit 1
           fi
       - run: npm test

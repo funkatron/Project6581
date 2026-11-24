@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {calculateVersion,countsTowardVersion,gitCommitsSinceBaseline,resolveVersion} from '../scripts/version-policy.mjs';
+import {execFileSync} from 'node:child_process';
+import {mkdtempSync,rmSync,writeFileSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {calculateVersion,countsTowardVersion,gitCommitsSinceBaseline,resolveVersion,versionBaseline} from '../scripts/version-policy.mjs';
 
 test('patch for fixes and documentation',()=>{
   assert.equal(calculateVersion('0.1.0',['fix: resolve audio startup']),'0.1.1');
@@ -63,4 +67,48 @@ test('git log since baseline returns merge bodies with PR titles',()=>{
 test('mechanical package sync commits do not increment',()=>{
   assert.equal(countsTowardVersion('chore: sync package.json to 0.3.2\n'),false);
   assert.equal(calculateVersion('0.3.1',['chore: sync package.json to 0.3.2','feat: panel']),'0.4.0');
+});
+
+function inTempRepo(run){
+  const dir=mkdtempSync(join(tmpdir(),'p6581-version-'));
+  const previous=process.cwd();
+  const git=(...args)=>execFileSync('git',['-c','user.name=t','-c','user.email=t@example.com','-c','commit.gpgsign=false',...args],{cwd:dir,encoding:'utf8'});
+  const version=v=>writeFileSync(join(dir,'package.json'),JSON.stringify({name:'t',version:v},null,2)+'\n');
+  const touch=name=>writeFileSync(join(dir,name),String(Math.random()));
+  try{
+    git('init','-q','-b','main');
+    process.chdir(dir);
+    return run({git,version,touch});
+  }finally{
+    process.chdir(previous);
+    rmSync(dir,{recursive:true,force:true});
+  }
+}
+test('baseline is the last commit that changed the package.json version',()=>{
+  inTempRepo(({git,version,touch})=>{
+    version('0.1.0');git('add','.');git('commit','-qm','chore: release v0.1.0');
+    const release=git('rev-parse','HEAD').trim();
+    touch('a.js');git('add','.');git('commit','-qm','fix: a');
+    assert.equal(versionBaseline(),release);
+    assert.equal(resolveVersion(),'0.1.1');
+  });
+});
+test('squash-merged code and version bump in one commit resolve to that version',()=>{
+  inTempRepo(({git,version,touch})=>{
+    version('0.1.0');git('add','.');git('commit','-qm','chore: release v0.1.0');
+    // A squash merge lands the fix and its package.json sync as one commit on main.
+    touch('a.js');version('0.1.1');git('add','.');git('commit','-qm','fix: a (#2)');
+    assert.equal(resolveVersion(),'0.1.1');
+    touch('b.js');git('add','.');git('commit','-qm','feat: b');
+    assert.equal(resolveVersion(),'0.2.0');
+  });
+});
+test('package.json edits that leave the version alone do not move the baseline',()=>{
+  inTempRepo(({git,version,touch})=>{
+    version('0.1.0');git('add','.');git('commit','-qm','chore: release v0.1.0');
+    touch('a.js');git('add','.');git('commit','-qm','fix: a');
+    writeFileSync('package.json',JSON.stringify({name:'t',version:'0.1.0',scripts:{test:'node --test'}},null,2)+'\n');
+    git('add','.');git('commit','-qm','chore: add test script');
+    assert.equal(resolveVersion(),'0.1.2');
+  });
 });
