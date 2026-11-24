@@ -4,6 +4,7 @@ import {
  activeNotes,arpNotes,resolveNote,drumSequence,arpStepMs,gameStepMs
 } from './transport-state.js?v=__BUILD_ID__';
 import {createNoteWriter} from './note-writes.js?v=__BUILD_ID__';
+import {emptyMirror,applyMirrorMessage,mirrorDigest,mirrorSummary,createMirrorSender} from './sequencer-mirror.js?v=__BUILD_ID__';
 
 // Loaded into the AudioWorklet with its own addModule() call, separate from
 // residfp-worklet.js, so a browser that rejects ES-module imports in worklets
@@ -38,6 +39,13 @@ export function sequencerSelfTest(){
   const writes=on.commands.filter(command=>command.type==='write');
   expect('noteOn frequency',writes.slice(0,2).map(w=>[w.register,w.value]),[[0,0x67],[1,0x11]]);
   expect('noteOn gate',writes.at(-1),{type:'write',register:4,value:0x41});
+  // Mirror: what the page sends must rebuild the same state here.
+  const sent=[];
+  const sender=createMirrorSender(message=>sent.push(message));
+  sender.reset();sender.syncTransport(state);sender.syncVoice(0,voice);
+  const mirror=sent.reduce(applyMirrorMessage,emptyMirror());
+  expect('mirror digest',mirrorDigest(mirror),sender.digestAt(sender.revision));
+  expect('mirror summary',mirrorSummary(mirror),{transport:true,voices:1,drumLanes:0,instrument:false});
   expect('noteOff gate',writer.noteOff(60,on.token),[{type:'pitch-envelope-stop',register:0},{type:'write',register:4,value:0x40}]);
   return {ok:true};
  }catch(error){
@@ -46,11 +54,12 @@ export function sequencerSelfTest(){
 }
 
 const api=Object.freeze({
- version:2,
+ version:3,
  arpStep,gameStep,drumStep,
  createTransportState,applyTransportPatch,defaultTransport,
  activeNotes,arpNotes,resolveNote,drumSequence,arpStepMs,gameStepMs,
  createNoteWriter,
+ emptyMirror,applyMirrorMessage,mirrorDigest,mirrorSummary,
  selfTest:sequencerSelfTest
 });
 globalThis.project6581Sequencer=api;

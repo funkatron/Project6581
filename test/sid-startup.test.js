@@ -36,6 +36,7 @@ function app({closeHangs=false,closeRejects=false,moduleHang=false,engineError=f
   ],
   syncEngineChipModels:async()=>{},
   syncEnginePans(){},
+  workletMirror:{reset(){},revision:0,digestAt:()=>null},
   syncEngineChipGains(){},
   performanceInstrument:{getState:()=>({voiceCount:1,unisonCount:1,mode:'mono',detune:12}),detune:12,unisonCount:1,syncDetuneDisplay(){}},
   setTimeout(fn,ms){const id=++timerId;timers.set(id,{fn,ms});return id},clearTimeout:id=>timers.delete(id),
@@ -194,7 +195,7 @@ test('worklet reports the sequencer modules when the probe module shares its sco
  scope.project6581Sequencer=sequencer;
  vm.runInContext(source,scope);
  await new Processor().load(new ArrayBuffer(0),6581);
- assert.deepEqual(JSON.parse(JSON.stringify(messages.at(-1))),{type:'sequencer-support',available:true,version:2,selfTest:{ok:true}});
+ assert.deepEqual(JSON.parse(JSON.stringify(messages.at(-1))),{type:'sequencer-support',available:true,version:3,selfTest:{ok:true}});
  messages.length=0;
  scope.project6581Sequencer={version:1,selfTest(){throw new Error('boom')}};
  await new Processor().load(new ArrayBuffer(0),6581);
