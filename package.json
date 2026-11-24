@@ -1,7 +1,7 @@
 {
   "name": "project6581",
   "private": true,
-  "version": "0.20.7",
+  "version": "0.20.8",
   "type": "module",
   "scripts": {
     "test": "node --test",
@@ -10,6 +10,7 @@
     "version:sync": "node scripts/sync-package-version.mjs",
     "drum-audio:record": "node scripts/drum-sequence-audition-record.mjs",
     "drum-audio:analyze": "node scripts/drum-sequence-audition-analyze.mjs",
-    "drum-audio:offline-kick": "node scripts/offline-kick-wave-compare.mjs"
+    "drum-audio:offline-kick": "node scripts/offline-kick-wave-compare.mjs",
+    "lint": "npx --yes eslint@10.1.0 ."
   }
 }

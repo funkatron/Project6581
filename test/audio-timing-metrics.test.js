@@ -15,7 +15,7 @@ test('first-energy estimate adds quantum remainder and browser output latency',(
 });
 
 test('missed energy clears synthesis and output estimates',()=>{
- const audioTiming={keyAt:50,keyEnergyMs:1,keyToOutputEstimateMs:99,keyAt:null,keyEnergyMissed:false};
+ const audioTiming={keyAt:50,keyEnergyMs:1,keyToOutputEstimateMs:99,keyEnergyMissed:false};
  audioTiming.keyAt=50;
  applyFirstEnergyTiming(audioTiming,{hit:false},null,200);
  assert.equal(audioTiming.keyEnergyMs,null);

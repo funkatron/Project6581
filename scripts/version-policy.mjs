@@ -53,7 +53,6 @@ export function calculateVersion(base,commits){
   let [major,minor,patch]=base.split('.').map(Number);
   for(const message of commits.slice().reverse()){
     if(!countsTowardVersion(message))continue;
-    const subject=message.split('\n')[0].trim();
     const title=commitTitle(message);
     const breaking=/^[a-z]+(?:\([^)]+\))?!:/i.test(title)||/BREAKING CHANGE:/i.test(message);
     if(breaking){

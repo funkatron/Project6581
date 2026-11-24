@@ -6,7 +6,7 @@
  *   node scripts/factory-audition-record.mjs --format m4a --out /opt/cursor/artifacts/factory-audition
  */
 import {createServer} from 'node:http';
-import {mkdir,writeFile,readFile} from 'node:fs/promises';
+import {mkdir,writeFile} from 'node:fs/promises';
 import {createReadStream,existsSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';

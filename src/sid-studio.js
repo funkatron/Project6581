@@ -14,7 +14,6 @@ import {FACTORY_PRESETS,presetLoadRequiresSilence,STARTUP_FACTORY_PRESET_ID,vali
 import {mountPresetLibrary} from "./preset-library-ui.js?v=__BUILD_ID__";
 import {mountKeyboard} from "./keyboard-input.js?v=__BUILD_ID__";
 import {readScaleStateFromDom,resolvePerformanceNote,isPitchInScale} from "./western-scales.js?v=__BUILD_ID__";
-import {DEFAULT_PITCH_ENVELOPE,validatePitchEnvelope} from "./pitch-envelope.js?v=__BUILD_ID__";
 import {mountEditorTabs} from "./editor-tabs.js?v=__BUILD_ID__";
 import {mountDrumPanel} from "./drum-panel-ui.js?v=__BUILD_ID__";
 import {createPerformanceDrumState} from "./performance-drum-state.js?v=__BUILD_ID__";
@@ -40,7 +39,7 @@ import {setLayoutInert} from "./ui-layout.js?v=__BUILD_ID__";
 import {mountLfoPanel} from "./lfo-panel-ui.js?v=__BUILD_ID__";
 import {mountAudioTimingPanel} from "./audio-timing-panel.js?v=__BUILD_ID__";
 import {applyFirstEnergyTiming} from "./audio-timing-metrics.js?v=__BUILD_ID__";
-import {createDefaultEngines,clampVoiceCount,maxVoicesForEngines,DEFAULT_ROUTING,routeMask,routingKeyForSource} from "./sid-engines.js?v=__BUILD_ID__";
+import {createDefaultEngines,clampVoiceCount,maxVoicesForEngines,routeMask,routingKeyForSource} from "./sid-engines.js?v=__BUILD_ID__";
 import {mountSidEnginePanels,querySidEngineCard} from "./sid-engine-panels-ui.js?v=__BUILD_ID__";
 import {mountMasterLoudnessMeter} from "./master-loudness-meter-ui.js?v=__BUILD_ID__";
 import {mountHelpDialog,mountHelpTriggers} from "./ui-help-dialog.js?v=__BUILD_ID__";
@@ -66,7 +65,7 @@ function diagnosticTimingSnapshot(){
   }),
  };
 }
-let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoTimer=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null,activeSidModel=null;
+let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null,activeSidModel=null;
 const {updateAudioTimingReport}=mountAudioTimingPanel({
  $,sidEventLog,audioTiming,sidStartupLog,
  getSidAudio:()=>sidAudio,getSidContext:()=>sidContext,
@@ -275,7 +274,7 @@ function drumBusWaveforms(){
  return DRUM_BUS_LANES.map(bus=>effectiveLaneTimbre(FACTORY_PRESETS,drumKit.lanes[bus.laneId]).voice.wave);
 }
 const {renderLfos}=mountLfoPanel({$,lfoState,lfoTargets:LFO_TARGET_ORDER,lfoTargetNames:LFO_TARGET_LABELS,syncedRates,onChange:()=>{updateModulation();syncModulationUiLoop()}});
-const editorTabs=mountEditorTabs({$});
+mountEditorTabs({$});
 const helpUi=mountHelpDialog($);
 mountHelpTriggers($,{openHelp:helpUi.openHelp});
 let renderDrumLfo=()=>{};
@@ -349,12 +348,6 @@ function applyDrumChipFilter(chip,overrides={}){
  const regs=filterRegistersFromUi(filter);
  sidController.setFilter(drumSlotFilterRegisters(regs,0),chip);
  return true;
-}
-function applyDrumBusFilter(busIndex,overrides={}){
- applyDrumChipFilter(drumChipForBus(busIndex),overrides);
-}
-function applyDrumEngineFilter(overrides={}){
- applyDrumBusFilter(activeDrumBusIndex,overrides);
 }
 function applyDrumEngineFilterForLane(laneId){
  const lane=validateDrumKit(drumKit).lanes[laneId];

@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import {
   defaultDrumBusEngines,
   drumBusIndexForLane,
-  validateDrumBusEngines,
 } from '../src/drum-bus-engines.js';
 import {FACTORY_PRESETS} from '../src/preset-library.js';
 

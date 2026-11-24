@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {sidSafeWaveByte, waveControlByte, validateVoiceWave, voiceWaveLabel} from '../src/sid-waveform.js';
+import {sidSafeWaveByte, waveControlByte, validateVoiceWave} from '../src/sid-waveform.js';
 import {SidRegisters} from '../src/sid-registers.js';
 
 test('triangle+noise combines 6581 waveform bits', () => {

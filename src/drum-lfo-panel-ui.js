@@ -1,4 +1,4 @@
-import {LFO_TARGET_LABELS,LFO_WAVES} from './lfo-modulation.js';
+import {LFO_WAVES} from './lfo-modulation.js';
 
 /** SID 4 drum LFO targets (no global detune / PWM rate controls on this tab). */
 export const DRUM_LFO_TARGET_ORDER = [

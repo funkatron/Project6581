@@ -21,7 +21,6 @@ function synthBar({sampleRate,bpm,rate,steps,stepTone}){
   const tone=stepTone(step);
   let phase=0;
   for(let i=0;i<stepSamples;i++){
-   const t=i/sampleRate;
    let sample=0;
    if(tone==='noise')sample=(Math.random()*2-1)*0.6;
    else if(tone==='sine')sample=Math.sin(phase)*0.7;
