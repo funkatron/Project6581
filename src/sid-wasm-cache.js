@@ -10,7 +10,10 @@ export function loadSidWasm(url, {
   const controller=createController();
   let timer;
   const work=(async()=>{
-    const response=await fetchImpl(url,{cache:'no-store',signal:controller.signal});
+    // Callers pass a per-build URL (?v=<build id>), so normal HTTP caching cannot
+    // serve a stale or incompatible binary. 'no-store' (added when the URL was
+    // unversioned, 390bd62) forced a full download on every page load.
+    const response=await fetchImpl(url,{signal:controller.signal});
     if(!response.ok)throw Error('reSIDfp WASM unavailable (build artifact not deployed)');
     const bytes=await response.arrayBuffer();
     const module=await compile(bytes);
