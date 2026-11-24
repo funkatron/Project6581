@@ -91,15 +91,6 @@ export function countHeldResolvingTo(heldNotes,resolveNote,resolvedMidi){
  return count;
 }
 
-export function readScaleStateFromDom($){
- if(!$('scaleKey'))return normalizeScaleState({});
- return normalizeScaleState({
-  tonic:Number($('scaleKey').value),
-  id:$('scaleId').value,
-  lock:Boolean($('scaleLock')?.checked)
- });
-}
-
 export function validateScaleSettings(scale){
  const s=scale??{};
  return normalizeScaleState({

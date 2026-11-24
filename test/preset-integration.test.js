@@ -139,13 +139,12 @@ test('empty live Arp selections snapshot as Up and Action so presets can still l
   validateDrumSequence:value=>value,
   validateDrumKit:value=>value,
   readDrumSequenceFromDom:(_,seq)=>seq,
-  engines,lfoState:[],drumLfoState:{enabled:false,depth:0},validateDrumLfo:v=>v,transport:{sequence:{}},drumSequence,drumKit,
+  engines,lfoState:[],drumLfoState:{enabled:false,depth:0},validateDrumLfo:v=>v,transport:{sequence:{},scale:{tonic:0,id:'chromatic',lock:false},drumSequence},drumKit,
   drumBuses:[{filter:{}},{filter:{}},{filter:{}}],
   readRoutingFromDom:()=>({keyboard:'all',arp:'all',game:'sid1'}),
   performanceArp:{rootOn:false,latchOn:false,gameOn:false},
   performanceRouting:{getState:()=>({keyboard:'all',arp:'all',game:'sid1'})},
-  performanceInstrument:{getState:()=>({voiceCount:1,unisonCount:1,mode:'mono',detune:12})},
-  readScaleStateFromDom:()=>({tonic:0,id:'chromatic',lock:false})
+  performanceInstrument:{getState:()=>({voiceCount:1,unisonCount:1,mode:'mono',detune:12})}
  };
  const {arp,game}=runInNewContext(source+'snapshotPresetSettings()',app).performance;
  assert.equal(arp.pattern,'up');
