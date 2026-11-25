@@ -94,7 +94,7 @@ test('bindTransportDom reads every control on mount and on input/change',()=>{
  const transport=createTransportState();
  const binding=bindTransportDom($,transport);
  const state=transport.getState();
- const {grid:_grid,...drum}=state.drum;
+ const {grid:_grid,mute:_mute,solo:_solo,...drum}=state.drum;
  assert.deepEqual({masterBpm:state.masterBpm,arp:state.arp,gameRate:state.game.rate,drum},{
   masterBpm:130,arp:{pattern:'updown',rate:2,sync:false,localBpm:90,latch:false},
   gameRate:8,drum:{rate:16,sync:false,localBpm:180}
