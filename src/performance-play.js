@@ -2,6 +2,7 @@ import {resolveGameRoot} from './arp-composition.js?v=__BUILD_ID__';
 import {arpStep,gameStep} from './sequencer-steps.js?v=__BUILD_ID__';
 import {arpStepMs,gameStepMs} from './transport-state.js?v=__BUILD_ID__';
 import {defaultSequence,sequenceForStyle} from './game-step-sequencer.js?v=__BUILD_ID__';
+import {createGridTimer} from './grid-timer.js?v=__BUILD_ID__';
 
 // Step grid plus the Game Arp and root-arp clocks. The studio still owns play(),
 // stop(), and the preset snapshot; this module asks those to run.
@@ -10,8 +11,15 @@ export function mountPerformance({
  performanceNote=note=>note,
  gameEnabled,arpEnabled,activeNotes,arpNotes,latchOn,
  isSeqPreview,setSeqPreview,getActiveSeqStep,setActiveSeqStep,performanceArp,
- alignDrumTransport,transport
+ alignDrumTransport,transport,
+ // Step clocks (grid-timer.js); injectable for tests. now() is in milliseconds.
+ now=()=>performance.now(),setTimer=(fn,ms)=>setTimeout(fn,ms),clearTimer=id=>clearTimeout(id)
 }){
+ // Root Arp and Game Arp step on the grid like the drums: a busy page delays a step
+ // at most until it is free; passed steps are skipped and the step counters move
+ // past them, so the arp pattern and the Game Arp phrase stay in phase with the bar.
+ const arpTimer=createGridTimer({now,setTimer,clearTimer});
+ const gameTimer=createGridTimer({now,setTimer,clearTimer});
  function clearStepHighlight(){
   const activeSeqStep=getActiveSeqStep();
   if(activeSeqStep<0)return;
@@ -88,7 +96,7 @@ export function mountPerformance({
   refreshPresetDirty();
  }
  function gameStop(){
-  if(game.timer!==null){clearInterval(game.timer);game.timer=null}
+  gameTimer.stop();game.timer=null;
   if(game.gateTimer!==null){clearTimeout(game.gateTimer);game.gateTimer=null}
   if(game.last!==null){stop(game.last,'game');game.last=null}
   clearStepHighlight();
@@ -162,9 +170,10 @@ export function mountPerformance({
   $('arpStatus').textContent=result.status.type==='idle'?'No notes held':
    'Root Arp · '+noteName(result.status.note)+' · '+result.status.count+' notes';
  }
+ function stopArpClock(){arpTimer.stop();arp.timer=null}
  function stopGenerators(){
   gameStop();
-  if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}
+  stopArpClock();
   arpStopVoice();arp.root=null;
  }
  function releaseDirectNotes(){
@@ -198,12 +207,12 @@ export function mountPerformance({
   if(!activeNotes().length&&!seqPreview){$('arpStatus').textContent='No notes held';return}
   const timing=transport.getState();
   if(arpEnabled()){
-   arpTick();
-   arp.timer=setInterval(arpTick,arpStepMs(timing));
+   arp.timer=arpTimer;
+   arpTimer.start({ms:arpStepMs(timing),onStep:({skipped})=>{arp.step+=skipped;arpTick()}});
   }
   if(gameEnabled()){
-   gameTick();
-   game.timer=setInterval(gameTick,gameStepMs(timing));
+   game.timer=gameTimer;
+   gameTimer.start({ms:gameStepMs(timing),onStep:({skipped})=>{game.step+=skipped;gameTick()}});
   }
  }
  function gameRestart(){restartGenerators()}
@@ -260,5 +269,5 @@ export function mountPerformance({
   if(gameEnabled()||arpEnabled())restartGenerators();
   $('arpStatus').textContent='Latch cleared';
  });
- return {gameStop,arpStopVoice,restartGenerators,stopGenerators,gameRestart,setSeqTransportLabel,renderSequenceSteps,loadBuiltInPhrase};
+ return {gameStop,arpStopVoice,stopArpClock,restartGenerators,stopGenerators,gameRestart,setSeqTransportLabel,renderSequenceSteps,loadBuiltInPhrase};
 }

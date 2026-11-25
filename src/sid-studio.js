@@ -564,7 +564,7 @@ function panic(reason=''){
  drumChipFilterStamp.fill('');
  traceStudio('panic',{reason});
  releaseMidiNotes();
- gameStop();drumStop();if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}arpStopVoice();arp.root=null;directOwned.clear();activeOwners.clear();arpKeyVisual.clear();sidController?.panic()}
+ gameStop();drumStop();stopArpClock();arpStopVoice();arp.root=null;directOwned.clear();activeOwners.clear();arpKeyVisual.clear();sidController?.panic()}
 $('panic').addEventListener('click',()=>{
  sidEventLog.add('stop-all',{contextId:sidAudio?sidAttempt:null,model:activeSidModel});
  performanceArp.set({rootOn:false,gameOn:false});
@@ -592,6 +592,7 @@ let gameStop=()=>{};
 let arpStopVoice=()=>{};
 let restartGenerators=()=>{};
 let stopGenerators=()=>{};
+let stopArpClock=()=>{};
 let gameRestart=()=>{};
 let setSeqTransportLabel=()=>{};
 let renderSequenceSteps=()=>{};
@@ -608,7 +609,7 @@ const keyboardState={octave:3};
 const keys=new Map();
 const arpKeyVisual=createArpKeyVisual({getKey:note=>keys.get(note)});
 const performanceNote=note=>transport.resolveNote(note);
-({gameStop,arpStopVoice,restartGenerators,stopGenerators,gameRestart,setSeqTransportLabel,renderSequenceSteps,loadBuiltInPhrase}=mountPerformance({
+({gameStop,arpStopVoice,stopArpClock,restartGenerators,stopGenerators,gameRestart,setSeqTransportLabel,renderSequenceSteps,loadBuiltInPhrase}=mountPerformance({
  $,names,keyboardState,arp,game,directOwned,play,stop,silenceSidOutput,refreshPresetDirty,
  getArpKeyVisual:()=>arpKeyVisual,performanceNote,
  gameEnabled,arpEnabled,activeNotes,arpNotes,
@@ -1344,7 +1345,7 @@ function resetPerformanceGenerators(){
  drumStop();
  performanceDrum.setRunning(false);
  gameStop();
- if(arp.timer!==null){clearInterval(arp.timer);arp.timer=null}
+ stopArpClock();
  arpStopVoice();
  transport.clearNotes();arp.step=0;
  game.step=0;arp.root=null;seqPreview=false;setSeqTransportLabel();

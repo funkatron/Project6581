@@ -68,7 +68,18 @@ export function fakeClock(start=0){
  const clock={
   now:()=>time,
   lateBy:0,
-  setTimer:(fn,ms)=>{delays.push(ms);pending.set(++id,{fn,at:time+ms+clock.lateBy});return id},
+  setTimer:(fn,ms)=>{delays.push(ms);pending.set(++id,{fn,ms,at:time+ms+clock.lateBy});return id},
+  /** Pending timer callbacks, oldest first (a grid timer reuses one callback). */
+  timerFns:()=>[...pending.values()].map(timer=>timer.fn),
+  /**
+   * Runs the oldest pending timer whose delay is `target` (a number) or whose
+   * callback is `target` (a function), without moving time.
+   */
+  run(target){
+   const matches=timer=>typeof target==='function'?timer.fn===target:timer.ms===target;
+   for(const [key,timer] of pending)if(matches(timer)){pending.delete(key);timer.fn();return true}
+   throw new Error('no pending timer for '+(typeof target==='function'?'that callback':'delay '+target));
+  },
   clearTimer:timer=>{pending.delete(timer)},
   delays,
   get pending(){return pending.size},
