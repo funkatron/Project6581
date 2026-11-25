@@ -50,6 +50,7 @@ import {mountPreferencesDialog} from "./studio-preferences-ui.js?v=__BUILD_ID__"
 import {bindHelpGesture} from "./ui-help-gesture.js?v=__BUILD_ID__";
 import {testHooksEnabled,mountStudioTestHooks} from "./studio-test-hooks.js?v=__BUILD_ID__";
 import {createMirrorSender,compareMirrorStatus,MIRROR_DRUM_LANES,MIRROR_MELODIC_CHIPS} from "./sequencer-mirror.js?v=__BUILD_ID__";
+import {createShadowComparator} from "./sequencer-shadow.js?v=__BUILD_ID__";
 
 export function startSidStudio(){
 const $=id=>document.getElementById(id);
@@ -71,6 +72,8 @@ function diagnosticTimingSnapshot(){
 }
 // Step 3a: the worklet keeps a copy of the sequencing state (no playback change).
 const workletMirror=createMirrorSender(message=>sidAudio?.sendSequencerMirror?.(message));
+// Step 3b: the worklet counts drum steps alongside the page timer (no playback change).
+const drumShadow=createShadowComparator({now:()=>sidAudio?.context.currentTime??0,post:message=>sidAudio?.sendSequencerMirror?.(message)});
 let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null,activeSidModel=null;
 const {updateAudioTimingReport}=mountAudioTimingPanel({
  $,sidEventLog,audioTiming,sidStartupLog,
@@ -665,6 +668,7 @@ const drumBusMetersUi=mountDrumBusMeters({$,getLevels:()=>drumBusPeakLevels});
  refreshPresetDirty,
  onTransportChange:running=>performanceDrum.setRunning(running),
  onStep:index=>drumPanelUi.setActiveStep(index),
+ shadow:drumShadow,
  onDrumStart:()=>{
   if(performanceArp.gameOn&&seqPreview){
    game.step=0;
@@ -1014,6 +1018,12 @@ async function startSid({gesture=false}={}){
       if(event.type==='sequencer-support'){
         const {type:_type,...support}=event;
         audioTiming.sequencerModules=support;
+        updateAudioTimingReport();
+        return;
+      }
+      if(event.type==='sequencer-shadow-status'){
+        drumShadow.receive(event);
+        audioTiming.drumShadow=drumShadow.summary();
         updateAudioTimingReport();
         return;
       }

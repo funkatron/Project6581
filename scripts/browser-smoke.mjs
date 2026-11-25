@@ -73,6 +73,18 @@ for (const engine of engines) {
       .split('\n').find(line => line.startsWith('Worklet sequencer mirror:'));
     console.log(engine + ' ' + mirrorLine);
     assert.match(mirrorLine, /voices 3\/3 · drum lanes 4\/4 · allocation ✓/);
+    // Step 3b: run the drum preview and let the worklet shadow clock compare at least 16 steps.
+    await page.evaluate(() => document.getElementById('drumSeqRun').click());
+    await page.waitForFunction(() => {
+      const match = /Drum shadow clock: (\d+) steps/.exec(document.querySelector('#audioTimingSummary')?.textContent || '');
+      return match && Number(match[1]) >= 16;
+    }, null, { timeout: 15000 });
+    await page.evaluate(() => document.getElementById('drumSeqStop').click());
+    const shadowLine = (await page.locator('#audioTimingSummary').textContent())
+      .split('\n').find(line => line.startsWith('Drum shadow clock:'));
+    console.log(engine + ' ' + shadowLine);
+    const [, compared, matched] = /(\d+) steps · hits match (\d+)\//.exec(shadowLine);
+    assert.equal(matched, compared, 'worklet shadow hits differ from the page');
     const initialWasmFetches = await page.evaluate(() => performance.getEntriesByType('resource')
       .filter(entry => entry.name.includes('/dist/residfp.wasm')).length);
     assert.equal(initialWasmFetches, 1, 'initial SID startup must fetch WASM once');

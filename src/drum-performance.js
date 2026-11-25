@@ -23,6 +23,7 @@ export function mountDrumPerformance({
   onTransportChange,
   onStep,
   onDrumStart,
+  shadow,
 }) {
   if (!$) throw new TypeError('mountDrumPerformance requires $');
   if (!transport) throw new TypeError('mountDrumPerformance requires transport');
@@ -55,6 +56,7 @@ export function mountDrumPerformance({
   function drumTick() {
     const {clock, index, hits} = drumStep({step: drum.step}, {sequence: liveSequence()});
     drum.step = clock.step;
+    shadow?.tick({index, hits});
     triggerDrumStep(hits);
     onStep?.(index);
     updateStatus(true, index);
@@ -66,6 +68,7 @@ export function mountDrumPerformance({
       drum.timer = null;
     }
     drum.running = false;
+    shadow?.stop();
     if (resetStep) drum.step = 0;
     stopDrumVoices();
     onStep?.(-1);
@@ -77,6 +80,7 @@ export function mountDrumPerformance({
     drumStop({resetStep: true});
     drum.running = true;
     setTransportLabel(true);
+    shadow?.run({step: drum.step, delayMs: 0});
     drumTick();
     const ms = drumStepIntervalMs(liveSequence(), transport.masterBpm);
     drum.timer = setInterval(drumTick, ms);
@@ -90,6 +94,7 @@ export function mountDrumPerformance({
     drum.running = true;
     setTransportLabel(true);
     const ms = drumStepIntervalMs(liveSequence(), transport.masterBpm);
+    shadow?.run({step: drum.step, delayMs: ms});
     drum.timer = setInterval(drumTick, ms);
     updateStatus(true, drum.step);
   }

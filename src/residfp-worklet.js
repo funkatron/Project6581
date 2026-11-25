@@ -37,6 +37,8 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     this.lfoPhase=[];
     // Step 3a: copy of the page's sequencing state (sequencer-mirror.js).
     this.mirror=null;this.mirrorError=null;this.mirrorStatusPending=false;this.mirrorStatusFrame=-Infinity;
+    // Step 3b: drum shadow clock (sequencer-shadow.js). Counts steps; plays nothing.
+    this.drumShadow=null;this.shadowStatusFrame=-Infinity;
     this.port.onmessage=({data})=>{
       if(data?.type==='load'){
         this.traceFirstRender=data.traceFirstRender===true;
@@ -57,6 +59,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
           this.exports?.sid_set_chip_gain?.(data.chip,Math.round(data.gainDb));
       }
       else if(data?.type==='sequencer-mirror')this.applySequencerMirror(data);
+      else if(data?.type==='sequencer-shadow')this.applySequencerShadow(data);
       else if(data?.type==='modulation-config'){
         this.modulationConfig=data;
         this.lfoPhase=Array.isArray(data.lfos)?data.lfos.map(()=>data.phaseOffset??0):[];
@@ -162,6 +165,20 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     }catch(err){this.mirrorError=String(err?.message??err)}
     this.mirrorStatusPending=true;
     this.flushMirrorStatus();
+  }
+  applySequencerShadow(message){
+    const api=globalThis.project6581Sequencer;
+    if(!api?.createDrumShadow||message.source!=='drum')return;
+    this.drumShadow??=api.createDrumShadow(sampleRate);
+    try{this.drumShadow.control(message,this.mirror?.transport,currentFrame)}
+    catch(err){this.port.postMessage({type:'sequencer-shadow-status',sampleRate,steps:[],dropped:0,lead:null,error:String(err?.message??err)})}
+  }
+  // At most four shadow reports per second of audio.
+  flushShadowStatus(){
+    const shadow=this.drumShadow;
+    if(!shadow?.hasReport()||currentFrame-this.shadowStatusFrame<sampleRate/4)return;
+    this.shadowStatusFrame=currentFrame;
+    this.port.postMessage({type:'sequencer-shadow-status',...shadow.takeReport()});
   }
   // At most four status reports per second of audio.
   flushMirrorStatus(){
@@ -272,6 +289,10 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     const channels=outputs[0];
     for(const channel of channels)channel.fill(0);
     if(this.mirrorStatusPending)this.flushMirrorStatus();
+    if(this.drumShadow){
+      if(this.drumShadow.running)this.drumShadow.advance(currentFrame+(channels[0]?.length??128),this.mirror?.transport);
+      this.flushShadowStatus();
+    }
     const e=this.exports;if(!e)return true;
     this.applyAudioClockModulation();
     const queuedWrites=this.queue.length;
