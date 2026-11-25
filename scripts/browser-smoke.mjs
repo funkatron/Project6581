@@ -66,6 +66,8 @@ for (const engine of engines) {
       .split('\n').find(line => line.startsWith('Worklet sequencer modules:'));
     console.log(engine + ' ' + sequencerLine);
     assert.equal(sequencerLine, 'Worklet sequencer modules: ready (self-test passed)');
+    // Mirror and shadow lines redraw only while Audio timing is open.
+    await page.evaluate(() => { document.getElementById('audioTimingDetails').open = true; });
     // The first report (the reset) is immediate; the full state follows within ~250 ms.
     await page.waitForFunction(() => /Worklet sequencer mirror: revision \d+, in sync · transport ✓ · voices 3\/3 · drum lanes 4\/4 · allocation ✓/
       .test(document.querySelector('#audioTimingSummary')?.textContent || ''), null, { timeout: 10000 });

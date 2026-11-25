@@ -1024,12 +1024,13 @@ async function startSid({gesture=false}={}){
       if(event.type==='sequencer-shadow-status'){
         drumShadow.receive(event);
         audioTiming.drumShadow=drumShadow.summary();
-        updateAudioTimingReport();
+        // Redraw only while the panel is open: a layout 4×/s can delay the drum timer.
+        if($('audioTimingDetails').open)updateAudioTimingReport();
         return;
       }
       if(event.type==='sequencer-mirror-status'){
         audioTiming.sequencerMirror=compareMirrorStatus(event,workletMirror);
-        updateAudioTimingReport();
+        if($('audioTimingDetails').open)updateAudioTimingReport();
         return;
       }
       if(event.type==='latency-probe-skipped'){
