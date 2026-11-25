@@ -41,6 +41,14 @@ jobs:
       - run: node scripts/check-wasm-imports.mjs
       - run: node scripts/smoke-test-sid.mjs
       - run: node scripts/stamp-build.mjs
+      # Publish only what the page loads (index.html, src/, dist/residfp.wasm)
+      # plus assets/, not the whole checkout (tests, scripts, docs, native…).
+      - name: Stage site
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          mkdir _site
+          cp -R index.html src dist assets _site/
       - name: Include published PR previews
         run: |
           set -euo pipefail
@@ -50,7 +58,7 @@ jobs:
             git archive FETCH_HEAD | tar -x -C "$RUNNER_TEMP/preview-assets"
             for preview in "$RUNNER_TEMP"/preview-assets/pr-*; do
               [ -d "$preview" ] || continue
-              cp -R "$preview" "./$(basename "$preview")"
+              cp -R "$preview" "_site/$(basename "$preview")"
             done
           fi
       - uses: actions/configure-pages@v5
@@ -63,7 +71,7 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           name: ${{ steps.artifact.outputs.name }}
-          path: .
+          path: _site
 
   deploy:
     needs: build

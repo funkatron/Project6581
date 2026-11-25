@@ -37,3 +37,23 @@ test('a failed deploy is retried once after a pause',()=>{
  assert.match(deploy,/id: deployment-retry\n\s+if: steps\.deployment\.outcome == 'failure'/);
  assert.match(deploy,/url: \$\{\{ steps\.deployment\.outputs\.page_url \|\| steps\.deployment-retry\.outputs\.page_url \}\}/);
 });
+
+test('only the site is published: the files the page loads, assets and PR previews',()=>{
+ const build=job('build');
+ assert.match(build,/cp -R index\.html src dist assets _site\//);
+ assert.match(build,/cp -R "\$preview" "_site\/\$\(basename "\$preview"\)"/);
+ assert.match(build,/path: _site\n/);
+ assert.doesNotMatch(build,/path: \.\n/);
+ // Staging comes after the build stamp and before the upload.
+ const order=['node scripts/stamp-build.mjs','name: Stage site','name: Include published PR previews','upload-pages-artifact'].map(text=>build.indexOf(text));
+ assert.ok(order.every((at,i)=>at>=0&&(i===0||at>order[i-1])),String(order));
+});
+
+test('everything the page references lives inside the staged folders',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ const refs=[...html.matchAll(/(?:src|href)="([^"#]+)"/g)].map(match=>match[1]).filter(ref=>!/^(?:[a-z]+:|\/\/)/i.test(ref));
+ assert.ok(refs.length>0);
+ for(const ref of refs)assert.match(ref.replace(/^\.\//,''),/^(?:src|dist|assets)\//,ref);
+ const audio=readFileSync(new URL('../src/create-residfp-audio.js',import.meta.url),'utf8');
+ assert.match(audio,/'\.\/dist\/residfp\.wasm\?v='/);
+});
