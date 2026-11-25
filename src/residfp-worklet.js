@@ -35,6 +35,8 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     this.monitorRecording=false;this.recordFrames=0;this.recordMaxFrames=0;
     this.modulationConfig=null;
     this.lfoPhase=[];
+    // Step 3a: copy of the page's sequencing state (sequencer-mirror.js).
+    this.mirror=null;this.mirrorError=null;this.mirrorStatusPending=false;this.mirrorStatusFrame=-Infinity;
     this.port.onmessage=({data})=>{
       if(data?.type==='load'){
         this.traceFirstRender=data.traceFirstRender===true;
@@ -54,6 +56,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
         if(Number.isInteger(data.chip)&&data.chip>=0&&data.chip<SID_CHIP_COUNT&&Number.isFinite(data.gainDb))
           this.exports?.sid_set_chip_gain?.(data.chip,Math.round(data.gainDb));
       }
+      else if(data?.type==='sequencer-mirror')this.applySequencerMirror(data);
       else if(data?.type==='modulation-config'){
         this.modulationConfig=data;
         this.lfoPhase=Array.isArray(data.lfos)?data.lfos.map(()=>data.phaseOffset??0):[];
@@ -148,6 +151,25 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       this.port.postMessage({type:'ready',renderer:true});
       this.port.postMessage(sequencerSupport());
     }catch(err){this.port.postMessage({type:'error',message:String(err)})}
+  }
+  // Mirror messages only update state; nothing here plays yet.
+  applySequencerMirror(message){
+    const api=globalThis.project6581Sequencer;
+    if(!api?.applyMirrorMessage)return;
+    try{
+      this.mirror=api.applyMirrorMessage(this.mirror??api.emptyMirror(),message);
+      this.mirrorError=null;
+    }catch(err){this.mirrorError=String(err?.message??err)}
+    this.mirrorStatusPending=true;
+    this.flushMirrorStatus();
+  }
+  // At most four status reports per second of audio.
+  flushMirrorStatus(){
+    if(!this.mirrorStatusPending||currentFrame-this.mirrorStatusFrame<sampleRate/4)return;
+    const api=globalThis.project6581Sequencer,mirror=this.mirror;
+    this.mirrorStatusPending=false;this.mirrorStatusFrame=currentFrame;
+    this.port.postMessage({type:'sequencer-mirror-status',revision:mirror?.revision??0,
+      digest:mirror?api.mirrorDigest(mirror):null,summary:mirror?api.mirrorSummary(mirror):null,error:this.mirrorError});
   }
   switchModel(model){
     const e=this.exports;
@@ -249,6 +271,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
   process(_inputs,outputs){
     const channels=outputs[0];
     for(const channel of channels)channel.fill(0);
+    if(this.mirrorStatusPending)this.flushMirrorStatus();
     const e=this.exports;if(!e)return true;
     this.applyAudioClockModulation();
     const queuedWrites=this.queue.length;

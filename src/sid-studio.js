@@ -49,6 +49,7 @@ import {mountMidiInput} from "./midi-input.js?v=__BUILD_ID__";
 import {mountPreferencesDialog} from "./studio-preferences-ui.js?v=__BUILD_ID__";
 import {bindHelpGesture} from "./ui-help-gesture.js?v=__BUILD_ID__";
 import {testHooksEnabled,mountStudioTestHooks} from "./studio-test-hooks.js?v=__BUILD_ID__";
+import {createMirrorSender,compareMirrorStatus,MIRROR_DRUM_LANES,MIRROR_MELODIC_CHIPS} from "./sequencer-mirror.js?v=__BUILD_ID__";
 
 export function startSidStudio(){
 const $=id=>document.getElementById(id);
@@ -68,6 +69,8 @@ function diagnosticTimingSnapshot(){
   }),
  };
 }
+// Step 3a: the worklet keeps a copy of the sequencing state (no playback change).
+const workletMirror=createMirrorSender(message=>sidAudio?.sendSequencerMirror?.(message));
 let sidController=null,sidAudio=null,sidContext=null,sidStarting=false;let sidKeys=0;let modulation=null;let lfoStarted=performance.now();let sidRecorder=null,recordTimer=null,recordBusy=false,recordDownloadUrl=null,activeSidModel=null;
 const {updateAudioTimingReport}=mountAudioTimingPanel({
  $,sidEventLog,audioTiming,sidStartupLog,
@@ -288,6 +291,7 @@ const transport=createTransportState();
 const transportDom=bindTransportDom($,transport);
 // Latch lives in the arp-state slice (bound to its checkbox); the transport mirrors it.
 performanceArp.subscribe(state=>transport.set({arp:{latch:state.latchOn}}));
+transport.subscribe(state=>{if(sidAudio)workletMirror.syncTransport(state)});
 const performanceDrum=createPerformanceDrumState();
 const performanceRouting=createPerformanceRoutingState($,{onChange:()=>refreshPresetDirty()});
 const performanceInstrument=createPerformanceInstrumentState($,{
@@ -345,6 +349,20 @@ function drumTimbreForLane(laneId){
  const factory=FACTORY_PRESETS.find(preset=>preset.id===lane.presetId);
  if(!factory)return null;
  return drumLaneTimbre(factory.settings,lane);
+}
+/** Sends whatever changed to the worklet's mirror. Base settings only; LFOs stay on the audio clock. */
+function syncWorkletMirror(){
+ if(!sidAudio)return;
+ workletMirror.syncTransport(transport.getState());
+ for(let chip=0;chip<MIRROR_MELODIC_CHIPS;chip++)workletMirror.syncVoice(chip,{...engines[chip].voice});
+ workletMirror.syncInstrument(performanceInstrument.getState());
+ const lanes=validateDrumKit(drumKit).lanes;
+ for(const laneId of MIRROR_DRUM_LANES){
+  const lane=lanes[laneId],timbre=drumTimbreForLane(laneId);
+  if(!lane||!timbre)continue;
+  const note=Math.max(0,Math.min(127,lane.midiNote+(lane.pitchOffsetSemitones??0)));
+  workletMirror.syncDrumLane(laneId,{note,level:lane.level,voice:timbre.voice,filter:timbre.filter});
+ }
 }
 const drumChipFilterStamp=['','','','','',''];
 function applyDrumChipFilter(chip,overrides={}){
@@ -874,6 +892,7 @@ function updateModulation({uiOnly=false}={}){
   :detuneBase.detune;
  presentModulatedSlider(detuneRoot,'detune',detuneBase.detune,globalDetune,detuneEnabled);
  syncModulationUiLoop();
+ if(!uiOnly)syncWorkletMirror();
  if(!sidController)return;
  if(uiOnly)return;
  if(useAudioClockLfo)pushAudioModulationConfig();
@@ -998,6 +1017,11 @@ async function startSid({gesture=false}={}){
         updateAudioTimingReport();
         return;
       }
+      if(event.type==='sequencer-mirror-status'){
+        audioTiming.sequencerMirror=compareMirrorStatus(event,workletMirror);
+        updateAudioTimingReport();
+        return;
+      }
       if(event.type==='latency-probe-skipped'){
         audioTiming.probeSkipped=true;
         updateAudioTimingReport();
@@ -1044,7 +1068,7 @@ async function startSid({gesture=false}={}){
     }});
     timeout=setTimeout(()=>rejectReady(new Error('SID initialization timed out at: '+sidProgress+' (context: '+context.state+')')),12000);
     try{await ready;if(startupError)throw startupError}finally{clearTimeout(timeout)}
-    panic();sidAudio=audio;sidKeys=0;modulation=lfoModule;updateSidLed();
+    panic();sidAudio=audio;workletMirror.reset();sidKeys=0;modulation=lfoModule;updateSidLed();
     audio.setKeyLatencyMeasureEnabled(true);
     audio.setTimingEnabled($('audioTimingDetails').open);
     audio.setEventLogging(sidEventLog.enabled);
@@ -1407,7 +1431,7 @@ function setPresetLoading(busy){
  for(const id of ['factoryPresetList','userPresetList'])
   $(id).querySelectorAll('button').forEach(button=>button.disabled=busy);
 }
-function refreshPresetDirty(){presetLibrary.refreshDirty()}
+function refreshPresetDirty(){presetLibrary.refreshDirty();syncWorkletMirror()}
 presetLibrary=mountPresetLibrary({
  $,
  snapshotSettings:snapshotPresetSettings,

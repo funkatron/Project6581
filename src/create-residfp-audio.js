@@ -176,6 +176,7 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
       setPan(chip,pan){if(!closed&&node)node.port.postMessage({type:'set-pan',chip,pan:Math.round(pan)});},
       setChipGain(chip,gainDb){if(!closed&&node)node.port.postMessage({type:'set-chip-gain',chip,gainDb:Math.round(gainDb)});},
       setModulationConfig(config){if(!closed&&node)node.port.postMessage({type:'modulation-config',...config});},
+      sendSequencerMirror(message){if(!closed&&node)node.port.postMessage(message);},
       startPitchEnvelope(slot,note,envelope){
         if(!Number.isInteger(slot)||slot<0||slot>=SID_CHIP_COUNT*3||!Number.isFinite(note))return;
         const register=Math.floor(slot/3)*0x20+(slot%3)*7;
