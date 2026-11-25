@@ -20,6 +20,7 @@ const MISLEADING_DOM={
 function mountPlay({transportPatch={},held=[60,64,67],game=false,root=false,seq=defaultSequence(),latch=false,directOwned=new Set(),restart=true,dom={},keepMountedPhrase=false,performanceNote=note=>note}={}){
  const restoreDocument=installFakeDocument();
  const timers=recordTimers();
+ const clock=fakeClock();
  const {$}=fakeDom({...MISLEADING_DOM,...dom});
  const transport=createTransportState();
  transport.set({...transportPatch,arp:{...transportPatch.arp,latch},notes:{held}});
@@ -40,27 +41,28 @@ function mountPlay({transportPatch={},held=[60,64,67],game=false,root=false,seq=
    latchOn:()=>latchOn,
    isSeqPreview:()=>seqPreview,setSeqPreview:value=>{seqPreview=value},
    getActiveSeqStep:()=>activeSeqStep,setActiveSeqStep:value=>{activeSeqStep=value},
-   performanceArp:{set:patch=>arpSets.push(patch)},transport
+   performanceArp:{set:patch=>arpSets.push(patch)},transport,
+   ...clock
   });
   // mountPerformance loads the selected built-in phrase; tests start from `seq`.
   if(!keepMountedPhrase){transport.setSequence(seq);api.renderSequenceSteps()}
-  timers.intervals.length=0;timers.timeouts.length=0;
+  timers.intervals.length=0;timers.timeouts.length=0;clock.delays.length=0;
   if(restart)api.restartGenerators();
  }finally{
   timers.restore();restoreDocument();
  }
- return {api,timers,plays,stops,visual,arpSets,arpState,gameState,transport,$,
+ return {api,timers,clock,plays,stops,visual,arpSets,arpState,gameState,transport,$,
   setLatch:value=>{latchOn=value},isSeqPreview:()=>seqPreview};
 }
 
 test('Root Arp and Game Arp timers use independent transport rates',()=>{
- const {timers}=mountPlay({root:true,game:true,transportPatch:{masterBpm:120,arp:{rate:2,sync:true},game:{rate:4}}});
- assert.deepEqual(timers.intervals.map(t=>t.ms),[250,125]);
+ const {clock}=mountPlay({root:true,game:true,transportPatch:{masterBpm:120,arp:{rate:2,sync:true},game:{rate:4}}});
+ assert.deepEqual(clock.delays,[250,125]);
 });
 
 test('arp clocks follow the local Arp BPM when Sync is off',()=>{
- const {timers}=mountPlay({root:true,transportPatch:{masterBpm:200,arp:{rate:1,sync:false,localBpm:60}}});
- assert.deepEqual(timers.intervals.map(t=>t.ms),[1000]);
+ const {clock}=mountPlay({root:true,transportPatch:{masterBpm:200,arp:{rate:1,sync:false,localBpm:60}}});
+ assert.deepEqual(clock.delays,[1000]);
 });
 
 test('Root Arp order comes from the transport',()=>{
@@ -124,18 +126,18 @@ test('Game Arp plays the transport phrase and updates the Root Arp root only on 
  const seq=defaultSequence();
  seq.length=4;
  seq.steps[0]={offset:12,gate:true,duration:100};
- const {plays,arpState,gameState,timers,transport}=mountPlay({root:true,game:true,held:[60,64],seq,transportPatch:{arp:{pattern:'up'}}});
+ const {plays,arpState,gameState,clock,transport}=mountPlay({root:true,game:true,held:[60,64],seq,transportPatch:{arp:{pattern:'up'}}});
  // First arp tick sets the root; the Game Arp voices root+12 on step 1.
  assert.equal(arpState.root,60);
  assert.deepEqual(plays,[[72,'game']]);
- const [arpTick]=timers.intervals;
+ const [arpStep]=clock.timerFns(); // the Root Arp clock starts first
  const saved=recordTimers();
  try{
-  arpTick.fn(); // game.step 1: mid-phrase, root holds
+  clock.run(arpStep); // game.step 1: mid-phrase, root holds
   assert.equal(arpState.root,60);
-  gameState.step=4;arpTick.fn(); // phrase boundary: root follows the arp
+  gameState.step=4;clock.run(arpStep); // phrase boundary: root follows the arp
   assert.equal(arpState.root,60,'up order wraps back to 60 on the third tick');
-  gameState.step=8;arpTick.fn();
+  gameState.step=8;clock.run(arpStep);
   assert.equal(arpState.root,64);
  }finally{saved.restore()}
  assert.equal(transport.sequence.length,4);
@@ -312,9 +314,9 @@ test('a stale note gate does not cut the next step; the next tick cancels it',()
  const seq=defaultSequence();
  seq.steps[0]={offset:0,gate:true,duration:50};
  seq.steps[1]={offset:2,gate:true,duration:100};
- const {timers,stops,gameState}=mountPlay({game:true,held:[60],seq});
- const [gate]=timers.timeouts,[tick]=timers.intervals;
- withTimers(()=>tick.fn());
+ const {timers,clock,stops,gameState}=mountPlay({game:true,held:[60],seq});
+ const [gate]=timers.timeouts,[gameMs]=clock.delays;
+ withTimers(()=>clock.run(gameMs));
  assert.equal(gameState.last,62);
  assert.equal(gameState.gateTimer,null,'a full-length step sets no gate timer');
  stops.length=0;
@@ -365,4 +367,41 @@ test('with scale lock remapping a short Game Arp step, the gate still releases i
  assert.deepEqual(stops,[[60,'game']]);
  assert.equal(gameState.last,null);
  assert.deepEqual(visual,[['clear','game']]);
+});
+
+test('Game Arp stays in phase after a stall: the passed step is skipped, never played late in a burst',()=>{
+ const seq=defaultSequence();
+ seq.length=8;
+ for(let i=0;i<8;i++)seq.steps[i]={offset:i,gate:true,duration:100};
+ const {plays,clock,gameState}=mountPlay({game:true,held:[60],seq,transportPatch:{masterBpm:120,game:{rate:4}}});
+ assert.deepEqual(clock.delays,[125]);
+ withTimers(()=>{
+  clock.advance(130);              // phrase step 1 at 125
+  clock.stall(300);clock.advance(0); // busy until 430: step 2 (250) passed, step 3 (375) is due
+  clock.advance(200);              // steps 4 (500) and 5 (625) on the grid
+ });
+ assert.deepEqual(plays.filter(([,s])=>s==='game').map(([n])=>n-60),[0,1,3,4,5]);
+ assert.equal(gameState.step,6);
+});
+
+test('Root Arp keeps its pattern position through a stall',()=>{
+ const {plays,clock,arpState}=mountPlay({root:true,held:[60,62,64,65,67],transportPatch:{masterBpm:120,arp:{pattern:'up',rate:4,sync:true}}});
+ assert.deepEqual(clock.delays,[125]);
+ withTimers(()=>{
+  clock.advance(130);                // up: 60, 62
+  clock.stall(300);clock.advance(0);   // 64 (250) skipped; 65 (375) plays at 430
+  clock.advance(200);                // 67 (500), then 60 again (625)
+ });
+ assert.deepEqual(plays.filter(([,s])=>s==='arp').map(([n])=>n),[60,62,65,67,60]);
+ assert.equal(arpState.step,6);
+});
+
+test('stopping the generators cancels both step clocks',()=>{
+ const {api,clock,arpState,gameState}=mountPlay({root:true,game:true});
+ assert.equal(clock.pending,2);
+ assert.ok(arpState.timer&&gameState.timer,'running clocks read as truthy, as keyboard-input expects');
+ withTimers(()=>api.stopGenerators());
+ assert.equal(clock.pending,0);
+ assert.equal(arpState.timer,null);
+ assert.equal(gameState.timer,null);
 });
