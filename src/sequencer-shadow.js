@@ -78,7 +78,7 @@ export function createDrumShadow(sampleRate){
 export function createShadowComparator({now,post}){
  let runId=0,run=null,n=0;
  const pageTicks=new Map(),workletSteps=new Map();
- const stats={compared:0,hitsMatch:0,lateSum:0,lateMax:-Infinity,lateMin:Infinity,lastLeadMs:null,dropped:0,error:null};
+ const stats={compared:0,hitsMatch:0,lateSum:0,lateMax:-Infinity,lateMin:Infinity,lastLeadMs:null,dropped:0,error:null,pageSkipped:0};
  const key=(id,count)=>id+':'+count;
  const trim=map=>{while(map.size>MATCH_WINDOW)map.delete(map.keys().next().value)};
  function compare(page,worklet,sampleRate){
@@ -100,9 +100,14 @@ export function createShadowComparator({now,post}){
    run=null;
    post({type:SHADOW_MESSAGE,source:'drum',action:'stop'});
   },
-  /** Called as the page's drum tick fires, before it triggers sounds. */
-  tick({index,hits}){
+  /**
+   * Called as the page's drum tick fires, before it triggers sounds. count is the
+   * tick's position in the run (steps the page skipped to stay in time included).
+   */
+  tick({index,hits,n:count,skipped=0}){
    if(run===null)return;
+   if(Number.isInteger(count))n=count;
+   stats.pageSkipped+=skipped;
    const entry={time:now(),index,lanes:hits.map(hit=>hit.lane).join(',')};
    const id=key(run,n++),worklet=workletSteps.get(id);
    if(worklet){workletSteps.delete(id);compare(entry,worklet,worklet.sampleRate)}
@@ -136,6 +141,7 @@ export function formatDrumShadow(summary){
  let line=label+summary.compared+' steps · hits match '+summary.hitsMatch+'/'+summary.compared
   +' · page timer vs audio clock avg '+ms(summary.lateAvg)+', range '+ms(summary.lateMin)+' to '+ms(summary.lateMax);
  if(summary.lastLeadMs!==null)line+=' · start message lead '+ms(summary.lastLeadMs);
+ if(summary.pageSkipped)line+=' · page skipped '+summary.pageSkipped+' steps to stay in time';
  if(summary.dropped)line+=' · '+summary.dropped+' reports dropped';
  return line;
 }

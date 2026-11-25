@@ -7,7 +7,7 @@ import {mountDrumPerformance,drumStepIntervalMs} from '../src/drum-performance.j
 import {createTransportState,drumSequence} from '../src/transport-state.js';
 import {drumStep} from '../src/sequencer-steps.js';
 import {createMirrorSender} from '../src/sequencer-mirror.js';
-import {fakeDom,recordTimers} from './fixtures/fake-dom.mjs';
+import {fakeDom,fakeClock} from './fixtures/fake-dom.mjs';
 
 const RATE=48000;
 
@@ -51,57 +51,93 @@ test('one block never emits more than eight steps',()=>{
  assert.equal(shadow.takeReport().steps.length,8);
 });
 
-// Drives the real drum performance with fake timers and a fake audio clock.
-function harness({lateMs=4}={}){
+// Drives the real drum performance on a fake clock shared by the page timer
+// (milliseconds) and the audio clock (seconds), with the worklet shadow alongside.
+function harness({lateMs=0}={}){
  const {$}=fakeDom({drumRate:{value:'4'},drumSync:{checked:true},drumBpm:{value:'120'}});
  const transport=createTransportState();
- let time=0;
+ const clock=fakeClock();
+ clock.lateBy=lateMs;
+ const audioTime=()=>clock.now()/1000;
  const worklet=createDrumShadow(RATE);
- const comparator=createShadowComparator({now:()=>time,post:message=>worklet.control(message,transport.getState(),Math.round(time*RATE))});
+ const comparator=createShadowComparator({now:audioTime,post:message=>worklet.control(message,transport.getState(),Math.round(audioTime()*RATE))});
  const drum={step:0,timer:null,running:false};
- const timers=recordTimers();
- let api;
- try{api=mountDrumPerformance({$,drum,transport,triggerDrumStep:()=>{},stopDrumVoices:()=>{},shadow:comparator})}
- finally{timers.restore()}
+ const played=[];
+ const api=mountDrumPerformance({$,drum,transport,triggerDrumStep:hits=>played.push({at:clock.now(),lanes:hits.map(h=>h.lane).join(',')}),
+  stopDrumVoices:()=>{},shadow:comparator,...clock});
  const deliver=()=>{
-  worklet.advance(Math.round(time*RATE)+128,transport.getState());
+  worklet.advance(Math.round(audioTime()*RATE)+128,transport.getState());
   if(worklet.hasReport())comparator.receive(worklet.takeReport());
  };
- // Fires the latest interval n times, each lateMs after its ideal time.
- const fire=(n,start,stepMs)=>{
-  for(let k=1;k<=n;k++){time=start+(k*stepMs+lateMs)/1000;deliver();timers.intervals.at(-1).fn()}
- };
- return {$,api,comparator,timers,transport,drum,deliver,fire,setTime:t=>{time=t},get time(){return time},
-  start:()=>{const saved=recordTimers();try{api.drumStart()}finally{saved.restore()};timers.intervals.push(...saved.intervals)},
-  restart:()=>{const saved=recordTimers();try{$('drumRate').dispatch('change')}finally{saved.restore()};timers.intervals.push(...saved.intervals)}};
+ // Advances in 1 ms slices so the worklet reports alongside the page ticks.
+ const run=ms=>{for(let i=0;i<ms;i++){clock.advance(1);deliver()}};
+ return {$,api,comparator,transport,drum,clock,played,deliver,run};
 }
 
 test('page ticks and worklet steps match through a tempo restart; lateness is measured',()=>{
  const h=harness({lateMs:4});
- h.start();
- h.fire(15,0,125);
+ h.api.drumStart();
+ h.run(15*125+10);
  let summary=h.comparator.summary();
  assert.equal(summary.compared,16);
  assert.equal(summary.hitsMatch,summary.compared);
  assert.ok(Math.abs(summary.lateMax-4)<0.05,'late '+summary.lateMax);
- assert.ok(Math.abs(summary.lateMin)<0.05);
- // Restart at 1/8 halfway between steps; the next tick comes one new interval later.
- const restartAt=h.time+0.03;
- h.setTime(restartAt);
+ assert.ok(Math.abs(summary.lateMin)<0.05,'the first tick is on time');
+ // Restart at 1/8 between steps; the next tick comes one new interval later.
+ h.clock.advance(20);
  h.transport.set({drum:{rate:2}});
- h.restart();
- assert.equal(h.timers.intervals.at(-1).ms,250);
- h.fire(8,restartAt,250);
- h.setTime(h.time+1);h.deliver();
+ h.$('drumRate').dispatch('change');
+ assert.equal(h.clock.delays.at(-1),250);
+ h.run(8*250+100);
  summary=h.comparator.summary();
  assert.equal(summary.compared,16+8);
  assert.equal(summary.hitsMatch,summary.compared);
  assert.ok(Math.abs(summary.lateAvg-4*23/24)<0.05,'avg '+summary.lateAvg);
  assert.ok(summary.lastLeadMs>249&&summary.lastLeadMs<=250,'lead '+summary.lastLeadMs);
+ assert.equal(summary.pageSkipped,0);
  h.api.drumStop();
  assert.equal(h.comparator.running,false);
+ assert.equal(h.clock.pending,0,'stop cancels the timer');
  assert.match(formatDrumShadow(h.comparator.summary()),
   /^Drum shadow clock: 24 steps · hits match 24\/24 · page timer vs audio clock avg \+3\.8 ms, range \+0\.0 ms to \+4\.0 ms · start message lead \+250\.0 ms$/);
+});
+
+test('a short stall delays one step; the next step is back on the grid',()=>{
+ const h=harness();
+ h.api.drumStart();
+ h.run(240);            // steps at 0 and 125 played; next due at 250
+ h.clock.stall(70);     // busy page: the 250 ms step runs at 310
+ h.run(400);
+ assert.deepEqual(h.played.map(p=>p.at),[0,125,310,375,500,625]);
+ const summary=h.comparator.summary();
+ assert.equal(summary.pageSkipped,0);
+ assert.equal(summary.hitsMatch,summary.compared);
+ assert.ok(Math.abs(summary.lateMax-60)<0.05,'max '+summary.lateMax);
+});
+
+test('a stall longer than a step skips the passed steps instead of dragging the groove',()=>{
+ const h=harness();
+ h.api.drumStart();
+ h.run(240);            // steps 0 (0 ms) and 1 (125 ms); step 2 due at 250
+ h.clock.stall(320);    // page busy until 560: steps 2 (250) and 3 (375) have passed
+ h.run(460);
+ // One hit at 560 (step 4, due 500), then back on the grid: no catch-up burst.
+ assert.deepEqual(h.played.map(p=>p.at),[0,125,560,625,750,875,1000]);
+ assert.equal(h.drum.step,9,'steps 0,1,4,5,6,7,8 played; 9 is next');
+ const summary=h.comparator.summary();
+ assert.equal(summary.pageSkipped,2);
+ assert.equal(summary.hitsMatch,summary.compared,'the skipped steps are not compared');
+ assert.ok(summary.lateMax<125,'lateness stays under one step: '+summary.lateMax);
+ assert.match(formatDrumShadow(summary),/ · page skipped 2 steps to stay in time$/);
+});
+
+test('the old setInterval behaviour would have dragged every later step',()=>{
+ // Same stall as above, modelled as "next tick one interval after the last".
+ const ticks=[0,125];let at=560;
+ for(let k=0;k<5;k++){ticks.push(at);at+=125}
+ const ideal=ticks.map((_,n)=>n*125);
+ const late=ticks.map((t,n)=>t-ideal[n]);
+ assert.deepEqual(late,[0,0,310,310,310,310,310]);
 });
 
 test('a step whose lanes differ (for example a grid edit in flight) counts as a mismatch',()=>{

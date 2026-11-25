@@ -24,6 +24,10 @@ export function mountDrumPerformance({
   onStep,
   onDrumStart,
   shadow,
+  // Injectable for tests. now() is in milliseconds.
+  now = () => performance.now(),
+  setTimer = (fn, ms) => setTimeout(fn, ms),
+  clearTimer = id => clearTimeout(id),
 }) {
   if (!$) throw new TypeError('mountDrumPerformance requires $');
   if (!transport) throw new TypeError('mountDrumPerformance requires transport');
@@ -53,10 +57,36 @@ export function mountDrumPerformance({
       (running ? 'Drum preview · ' + bpm + ' BPM · ' + rateLabel + step : '16 steps · 4 lanes · stopped');
   }
 
-  function drumTick() {
+  // The drum timer aims every tick at start + n × step (grid.anchor + grid.n × grid.ms)
+  // instead of "one interval after the last tick" (setInterval). A tick that is late
+  // by less than a step plays at once and the next aims back at the grid; when the
+  // page was busy for a whole step or more, the passed steps are skipped, so the
+  // groove stays in time instead of dragging (iPad, 2026-11-25: +2.3 s by the end
+  // of a run with setInterval while playing the keyboard with Game Arp on).
+  let grid = null;
+
+  function scheduleNext() {
+    const due = grid.anchor + grid.n * grid.ms;
+    drum.timer = setTimer(onGridTimer, Math.max(0, due - now()));
+  }
+
+  function onGridTimer() {
+    drum.timer = null;
+    if (!drum.running || !grid) return;
+    const behind = Math.floor((now() - (grid.anchor + grid.n * grid.ms)) / grid.ms);
+    if (behind > 0) {
+      drum.step = (drum.step + behind) % DRUM_STEP_COUNT;
+      grid.n += behind;
+    }
+    drumTick({n: grid.n - grid.first, skipped: Math.max(0, behind)});
+    grid.n++;
+    scheduleNext();
+  }
+
+  function drumTick({n, skipped = 0} = {}) {
     const {clock, index, hits} = drumStep({step: drum.step}, {sequence: liveSequence()});
     drum.step = clock.step;
-    shadow?.tick({index, hits});
+    shadow?.tick({index, hits, n, skipped});
     triggerDrumStep(hits);
     onStep?.(index);
     updateStatus(true, index);
@@ -64,9 +94,10 @@ export function mountDrumPerformance({
 
   function drumStop({resetStep = true} = {}) {
     if (drum.timer !== null) {
-      clearInterval(drum.timer);
+      clearTimer(drum.timer);
       drum.timer = null;
     }
+    grid = null;
     drum.running = false;
     shadow?.stop();
     if (resetStep) drum.step = 0;
@@ -81,9 +112,11 @@ export function mountDrumPerformance({
     drum.running = true;
     setTransportLabel(true);
     shadow?.run({step: drum.step, delayMs: 0});
-    drumTick();
     const ms = drumStepIntervalMs(liveSequence(), transport.masterBpm);
-    drum.timer = setInterval(drumTick, ms);
+    grid = {anchor: now(), ms, n: 0, first: 0};
+    drumTick({n: 0});
+    grid.n = 1;
+    scheduleNext();
     onDrumStart?.();
     refreshPresetDirty?.();
   }
@@ -95,7 +128,9 @@ export function mountDrumPerformance({
     setTransportLabel(true);
     const ms = drumStepIntervalMs(liveSequence(), transport.masterBpm);
     shadow?.run({step: drum.step, delayMs: ms});
-    drum.timer = setInterval(drumTick, ms);
+    // Keep the step; the next tick is one new interval from now.
+    grid = {anchor: now(), ms, n: 1, first: 1};
+    scheduleNext();
     updateStatus(true, drum.step);
   }
 
