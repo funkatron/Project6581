@@ -56,3 +56,35 @@ export function recordTimers(){
  globalThis.clearTimeout=()=>{};
  return {intervals,timeouts,restore:()=>Object.assign(globalThis,saved)};
 }
+
+/**
+ * A manual clock for code that takes now/setTimer/clearTimer. advance(ms) runs
+ * due timers in time order; stall(ms) moves time without running any (a busy page);
+ * lateBy delays every timer by a fixed amount (timer slack).
+ */
+export function fakeClock(start=0){
+ let time=start,id=0;
+ const pending=new Map(),delays=[];
+ const clock={
+  now:()=>time,
+  lateBy:0,
+  setTimer:(fn,ms)=>{delays.push(ms);pending.set(++id,{fn,at:time+ms+clock.lateBy});return id},
+  clearTimer:timer=>{pending.delete(timer)},
+  delays,
+  get pending(){return pending.size},
+  stall(ms){time+=ms},
+  advance(ms){
+   const end=time+ms;
+   for(;;){
+    let next=null;
+    for(const [key,timer] of pending)if(timer.at<=end&&(!next||timer.at<next[1].at))next=[key,timer];
+    if(!next)break;
+    pending.delete(next[0]);
+    time=Math.max(time,next[1].at);
+    next[1].fn();
+   }
+   time=end;
+  }
+ };
+ return clock;
+}

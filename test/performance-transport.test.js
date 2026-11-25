@@ -5,7 +5,7 @@ import {mountDrumPerformance} from '../src/drum-performance.js';
 import {createKeyGesture} from '../src/keyboard-input.js';
 import {createTransportState} from '../src/transport-state.js';
 import {defaultSequence,sequenceForStyle} from '../src/game-step-sequencer.js';
-import {fakeDom,installFakeDocument,recordTimers} from './fixtures/fake-dom.mjs';
+import {fakeDom,installFakeDocument,recordTimers,fakeClock} from './fixtures/fake-dom.mjs';
 
 // Playback reads tempo, rates, Root Arp order, the Game Arp phrase, latch and held
 // notes from transport-state, not the DOM.
@@ -103,18 +103,16 @@ test('drum clock uses transport rate and master BPM',()=>{
  const transport=createTransportState();
  transport.set({masterBpm:150,drum:{rate:4,sync:true}});
  const drum={step:0,timer:null,running:false};
- const timers=recordTimers();
- let api;
- try{
-  api=mountDrumPerformance({
-   $,drum,transport,
-   triggerDrumStep:()=>{},stopDrumVoices:()=>{}
-  });
-  api.drumStart();
-  transport.set({drum:{sync:false,localBpm:60,rate:2}});
-  $('drumRate').dispatch('change');
- }finally{timers.restore()}
- assert.deepEqual(timers.intervals.map(t=>t.ms),[100,500]);
+ const clock=fakeClock();
+ const api=mountDrumPerformance({
+  $,drum,transport,
+  triggerDrumStep:()=>{},stopDrumVoices:()=>{},
+  ...clock
+ });
+ api.drumStart();
+ transport.set({drum:{sync:false,localBpm:60,rate:2}});
+ $('drumRate').dispatch('change');
+ assert.deepEqual(clock.delays,[100,500]);
  assert.match($('drumStatus').textContent,/60 BPM · 1\/8/);
 });
 
@@ -349,12 +347,10 @@ test('drum clock triggers the hits in the transport grid',()=>{
  transport.setDrumGrid(grid);
  const hits=[];
  const drum={step:0,timer:null,running:false};
- const timers=recordTimers();
- try{
-  const api=mountDrumPerformance({$:fakeDom().$,drum,transport,triggerDrumStep:step=>hits.push(step.map(h=>h.lane)),stopDrumVoices:()=>{}});
-  api.drumStart();
-  timers.intervals[0].fn();
- }finally{timers.restore()}
+ const clock=fakeClock();
+ const api=mountDrumPerformance({$:fakeDom().$,drum,transport,triggerDrumStep:step=>hits.push(step.map(h=>h.lane)),stopDrumVoices:()=>{},...clock});
+ api.drumStart();
+ clock.advance(125);
  assert.deepEqual(hits,[['kick','ch'],['sn']]);
 });
 
