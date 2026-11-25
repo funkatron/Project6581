@@ -105,6 +105,10 @@ main>header #presetOpen{max-width:min(140px,28vw)}
 .drum-grid-corner{min-height:0}
 .drum-cell{min-width:34px;min-height:38px;border-radius:5px;border:1px solid #c9bdb3;background:#f3ebe2;cursor:pointer}
 .drum-cell.is-on{background:var(--drum-fill);border-color:var(--drum-chrome);box-shadow:inset 0 0 0 1px #fff6}
+/* On-steps take their lane colour (same as the lane rail); the playhead outline still shows. */
+.drum-cell.is-on[data-lane="kick"]{background:var(--drum-voice-kick);border-color:var(--drum-voice-kick)}
+.drum-cell.is-on[data-lane="sn"]{background:var(--drum-voice-sn);border-color:var(--drum-voice-sn)}
+.drum-cell.is-on:is([data-lane="ch"],[data-lane="oh"]){background:var(--drum-voice-hat);border-color:var(--drum-voice-hat)}
 .drum-cell.is-playing,.drum-grid-header .drum-step-num.is-playing{outline:2px solid #a94415;outline-offset:1px;background:#ffd9b642}
 .drum-summary{font-size:12px;color:#4d524b;margin:8px 0 0}
 .workspace .panel{scroll-padding-bottom:28px;padding:clamp(11px,1.4vw,20px);background:linear-gradient(#f5eee4,#eee5d8);color:#252925;border:2px solid #c8b8a4;border-top:3px solid var(--seq-orange);border-radius:12px;box-shadow:inset 0 1px #fff;scrollbar-gutter:stable}
