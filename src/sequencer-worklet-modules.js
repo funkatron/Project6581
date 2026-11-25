@@ -5,6 +5,7 @@ import {
 } from './transport-state.js?v=__BUILD_ID__';
 import {createNoteWriter} from './note-writes.js?v=__BUILD_ID__';
 import {emptyMirror,applyMirrorMessage,mirrorDigest,mirrorSummary,createMirrorSender} from './sequencer-mirror.js?v=__BUILD_ID__';
+import {createDrumShadow,drumStepSeconds} from './sequencer-shadow.js?v=__BUILD_ID__';
 
 // Loaded into the AudioWorklet with its own addModule() call, separate from
 // residfp-worklet.js, so a browser that rejects ES-module imports in worklets
@@ -46,6 +47,12 @@ export function sequencerSelfTest(){
   const mirror=sent.reduce(applyMirrorMessage,emptyMirror());
   expect('mirror digest',mirrorDigest(mirror),sender.digestAt(sender.revision));
   expect('mirror summary',mirrorSummary(mirror),{transport:true,voices:1,drumLanes:0,instrument:false});
+  // Drum shadow clock: 120 BPM, 1/16 → 0.125 s per step; two steps fall inside 0.25 s.
+  expect('drumStepSeconds',drumStepSeconds(state),0.125);
+  const shadow=createDrumShadow(48000);
+  shadow.control({action:'run',run:1,step:0,firstAt:0},state,0);
+  shadow.advance(12000,state);
+  expect('shadow steps',shadow.takeReport().steps,[[1,0,0,0,'kick,ch'],[1,1,6000,1,'kick,ch']]);
   expect('noteOff gate',writer.noteOff(60,on.token),[{type:'pitch-envelope-stop',register:0},{type:'write',register:4,value:0x40}]);
   return {ok:true};
  }catch(error){
@@ -54,12 +61,13 @@ export function sequencerSelfTest(){
 }
 
 const api=Object.freeze({
- version:3,
+ version:4,
  arpStep,gameStep,drumStep,
  createTransportState,applyTransportPatch,defaultTransport,
  activeNotes,arpNotes,resolveNote,drumSequence,arpStepMs,gameStepMs,
  createNoteWriter,
  emptyMirror,applyMirrorMessage,mirrorDigest,mirrorSummary,
+ createDrumShadow,
  selfTest:sequencerSelfTest
 });
 globalThis.project6581Sequencer=api;

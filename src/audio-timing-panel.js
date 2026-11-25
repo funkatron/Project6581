@@ -2,6 +2,7 @@ import {formatSidDiagnosticReport} from './sid-event-log.js?v=__BUILD_ID__';
 import {formatPlaybackLatencyStatus} from './sid-engine-status-ui.js?v=__BUILD_ID__';
 import {formatChipRenderDiagnosticLines} from './sid-chip-render-diagnostic.js?v=__BUILD_ID__';
 import {formatSequencerMirror} from './sequencer-mirror.js?v=__BUILD_ID__';
+import {formatDrumShadow} from './sequencer-shadow.js?v=__BUILD_ID__';
 
 /** One diagnostics line for the worklet sequencer probe (step 3). */
 export function formatSequencerSupport(support){
@@ -43,6 +44,7 @@ export function mountAudioTimingPanel({
    'Browser base/output latency: '+show(audioTiming.baseMs)+' / '+show(audioTiming.outputMs),
    formatSequencerSupport(audioTiming.sequencerModules),
    formatSequencerMirror(audioTiming.sequencerMirror),
+   formatDrumShadow(audioTiming.drumShadow),
    'Device output line is an estimate from loud PCM + AudioContext.outputLatency; not a DAC measurement. Screen recording A/V sync can differ.',
    ...sidStartupLog
   );
