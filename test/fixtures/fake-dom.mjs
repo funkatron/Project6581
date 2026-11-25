@@ -8,8 +8,10 @@ export function fakeElement(props={}){
   classList:{
    set:new Set(),
    add(name){this.set.add(name)},remove(name){this.set.delete(name)},
-   contains(name){return this.set.has(name)}
+   contains(name){return this.set.has(name)},
+   toggle(name,force){const on=force===undefined?!this.set.has(name):Boolean(force);if(on)this.set.add(name);else this.set.delete(name);return on}
   },
+  style:{},
   addEventListener(type,fn){(listeners.get(type)??listeners.set(type,[]).get(type)).push(fn)},
   dispatch(type){for(const fn of listeners.get(type)??[])fn({type,currentTarget:el,target:el})},
   setAttribute(name,value){el.attributes[name]=String(value)},

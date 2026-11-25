@@ -389,7 +389,8 @@ function applyDrumEngineFilterForLane(laneId){
 }
 function triggerDrumStep(rawHits){
  if(!sidController||!rawHits?.length)return;
- const hits=resolveDrumHitsOnStep(rawHits);
+ // Mute/solo first, so a muted open hat cannot choke the closed hat.
+ const hits=resolveDrumHitsOnStep(rawHits.filter(hit=>transport.drumLaneAudible(hit.lane)));
  if(!hits.length)return;
  for(const hit of hits)triggerDrumLane(hit.lane,{drumSlot:hit.slot,skipFilter:true});
 }
@@ -654,6 +655,10 @@ drumPanelUi=mountDrumPanel({
  getDrumKit:()=>drumKit,
  setDrumKit:setDrumKitState,
  triggerDrumLane,
+ getDrumMix:()=>{const {mute,solo}=transport.drum;return {mute,solo}},
+ isLaneAudible:lane=>transport.drumLaneAudible(lane),
+ setDrumMute:(lane,on)=>transport.setDrumMute(lane,on),
+ setDrumSolo:(lane,on)=>transport.setDrumSolo(lane,on),
  onPatternChange:()=>refreshPresetDirty()
 });
 const drumBusMetersUi=mountDrumBusMeters({$,getLevels:()=>drumBusPeakLevels});

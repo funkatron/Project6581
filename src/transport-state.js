@@ -1,6 +1,6 @@
 import {stepMilliseconds} from './arp-composition.js?v=__BUILD_ID__';
 import {defaultSequence,validateSequence} from './game-step-sequencer.js?v=__BUILD_ID__';
-import {defaultDrumSequence,validateDrumSequence,DRUM_STEP_COUNT} from './drum-step-sequencer.js?v=__BUILD_ID__';
+import {defaultDrumSequence,validateDrumSequence,DRUM_STEP_COUNT,DRUM_LANE_IDS} from './drum-step-sequencer.js?v=__BUILD_ID__';
 import {normalizeScaleState,resolvePerformanceNote} from './western-scales.js?v=__BUILD_ID__';
 
 // What the Root Arp, Game Arp and drum clocks play from, held as plain data:
@@ -19,11 +19,27 @@ export function defaultTransport(){
   masterBpm:120,
   arp:{pattern:'up',rate:1,sync:true,localBpm:120,latch:false},
   game:{rate:4,sequence:defaultSequence()},
-  drum:{rate:4,sync:true,localBpm:120,grid:defaultDrumSequence().grid},
+  // mute/solo: per-lane performance switches; not saved with presets or grooves.
+  drum:{rate:4,sync:true,localBpm:120,grid:defaultDrumSequence().grid,mute:laneFlags(),solo:laneFlags()},
   scale:normalizeScaleState({}),
   // Insertion order: held notes replay in the order they were pressed.
   notes:{held:[],latched:[]}
  };
+}
+
+function laneFlags(){return Object.fromEntries(DRUM_LANE_IDS.map(lane=>[lane,false]))}
+/** Merges a partial {lane: boolean} patch; unknown lanes and non-booleans are ignored. */
+function laneFlagsOr(patch,current){
+ const out={...current};
+ if(patch&&typeof patch==='object')for(const lane of DRUM_LANE_IDS)if(typeof patch[lane]==='boolean')out[lane]=patch[lane];
+ return out;
+}
+
+/** True when the drum sequencer should play this lane: not muted, and soloed if any lane is. */
+export function drumLaneAudible(state,lane){
+ const {mute,solo}=state.drum;
+ if(mute[lane])return false;
+ return !DRUM_LANE_IDS.some(id=>solo[id])||solo[lane]===true;
 }
 
 function bpmOr(value,fallback){
@@ -76,7 +92,9 @@ export function applyTransportPatch(state,patch={}){
    rate:rateOr(drum.rate,state.drum.rate),
    sync:boolOr(drum.sync,state.drum.sync),
    localBpm:bpmOr(drum.localBpm,state.drum.localBpm),
-   grid:drum.grid===undefined?state.drum.grid.map(row=>[...row]):drumGridOf(drum.grid)
+   grid:drum.grid===undefined?state.drum.grid.map(row=>[...row]):drumGridOf(drum.grid),
+   mute:laneFlagsOr(drum.mute,state.drum.mute??laneFlags()),
+   solo:laneFlagsOr(drum.solo,state.drum.solo??laneFlags())
   },
   scale:scalePatch(state.scale,scale),
   notes:{
@@ -135,7 +153,7 @@ function cloneTransport(state){
  return {
   masterBpm:state.masterBpm,arp:{...state.arp},
   game:{rate:state.game.rate,sequence:cloneSequence(state.game.sequence)},
-  drum:{...state.drum,grid:state.drum.grid.map(row=>[...row])},
+  drum:{...state.drum,grid:state.drum.grid.map(row=>[...row]),mute:{...state.drum.mute},solo:{...state.drum.solo}},
   scale:{...state.scale},
   notes:{held:[...state.notes.held],latched:[...state.notes.latched]}
  };
@@ -157,7 +175,10 @@ export function createTransportState(initial=defaultTransport()){
   get masterBpm(){return state.masterBpm},
   get arp(){return {...state.arp}},
   get game(){return {rate:state.game.rate,sequence:cloneSequence(state.game.sequence)}},
-  get drum(){return {...state.drum,grid:state.drum.grid.map(row=>[...row])}},
+  get drum(){return {...state.drum,grid:state.drum.grid.map(row=>[...row]),mute:{...state.drum.mute},solo:{...state.drum.solo}}},
+  drumLaneAudible:lane=>drumLaneAudible(state,lane),
+  setDrumMute:(lane,on)=>set({drum:{mute:{[lane]:on===true}}}),
+  setDrumSolo:(lane,on)=>set({drum:{solo:{[lane]:on===true}}}),
   get drumSequence(){return drumSequence(state)},
   get scale(){return {...state.scale}},
   resolveNote:note=>resolveNote(state,note),

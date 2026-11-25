@@ -83,7 +83,7 @@ main>header #presetOpen{max-width:min(140px,28vw)}
 .drum-grid-table{display:grid;grid-template-columns:auto repeat(16,minmax(34px,1fr));gap:2px;min-width:600px}
 .drum-grid-row{display:contents}
 .drum-grid-header .drum-step-num{font-variant-numeric:tabular-nums;font-weight:800;font-size:12px;text-align:center;color:#3d3832;padding:4px 0}
-.drum-lane-head{display:flex;flex-direction:row;align-items:center;gap:4px;padding:0 6px 0 0;min-width:clamp(92px,15vw,128px);min-height:38px;border-right:1px solid #c9bdb3;box-sizing:border-box}
+.drum-lane-head{display:flex;flex-direction:row;align-items:center;gap:4px;padding:0 6px 0 0;min-width:clamp(136px,19vw,172px);min-height:38px;border-right:1px solid #c9bdb3;box-sizing:border-box}
 .drum-lane-head.is-muted .drum-lane-label{opacity:.55}
 .drum-lane-head--hat-stack{align-self:stretch;min-height:calc(38px * 2 + 2px);padding:0 6px 0 0;background:#f0ebe4;border-radius:4px 0 0 4px}
 .drum-lane-head--hat-stack .drum-lane-rail{border-radius:4px}
@@ -109,6 +109,12 @@ main>header #presetOpen{max-width:min(140px,28vw)}
 .drum-cell.is-on[data-lane="kick"]{background:var(--drum-voice-kick);border-color:var(--drum-voice-kick)}
 .drum-cell.is-on[data-lane="sn"]{background:var(--drum-voice-sn);border-color:var(--drum-voice-sn)}
 .drum-cell.is-on:is([data-lane="ch"],[data-lane="oh"]){background:var(--drum-voice-hat);border-color:var(--drum-voice-hat)}
+/* Mute / solo: small toggles at the end of each lane's mixer row. */
+.drum-lane-ms{display:flex;flex:0 0 auto;gap:2px}
+.drum-lane-ms-btn{min-width:20px;height:20px;padding:0 3px;border:1px solid #b8aca1;border-radius:4px;background:#f8f4ef;color:#4d524b;font:800 10px/1 inherit;cursor:pointer}
+.drum-lane-ms-btn--mute[aria-pressed="true"]{background:#a94415;border-color:#a94415;color:#fff}
+.drum-lane-ms-btn--solo[aria-pressed="true"]{background:#c99a1e;border-color:#c99a1e;color:#2b2620}
+.drum-cell.is-silent{opacity:.35}
 .drum-cell.is-playing,.drum-grid-header .drum-step-num.is-playing{outline:2px solid #a94415;outline-offset:1px;background:#ffd9b642}
 .drum-summary{font-size:12px;color:#4d524b;margin:8px 0 0}
 .workspace .panel{scroll-padding-bottom:28px;padding:clamp(11px,1.4vw,20px);background:linear-gradient(#f5eee4,#eee5d8);color:#252925;border:2px solid #c8b8a4;border-top:3px solid var(--seq-orange);border-radius:12px;box-shadow:inset 0 1px #fff;scrollbar-gutter:stable}

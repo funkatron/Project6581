@@ -118,7 +118,36 @@ function buildLaneMixerRow(laneId, ctx) {
   levelStack.append(level);
   mixer.append(levelStack, readout);
   row.append(title, mixer);
+  if (ctx.mixButtons) row.append(buildMuteSolo(laneId, ctx));
   return row;
+}
+
+/** Small M / S toggles. State lives in the transport; syncMix() redraws every lane. */
+function buildMuteSolo(laneId, {getDrumMix, setDrumMute, setDrumSolo, syncMix, mixButtons}) {
+  const group = document.createElement('span');
+  group.className = 'drum-lane-ms';
+  group.setAttribute('role', 'group');
+  group.setAttribute('aria-label', (LANE_LABEL[laneId] ?? laneId) + ' mute and solo');
+  for (const [kind, text, label, set] of [
+    ['mute', 'M', 'Mute', setDrumMute],
+    ['solo', 'S', 'Solo', setDrumSolo],
+  ]) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'drum-lane-ms-btn drum-lane-ms-btn--' + kind;
+    button.textContent = text;
+    button.dataset.lane = laneId;
+    button.dataset.kind = kind;
+    button.setAttribute('aria-label', label + ' ' + (LANE_LABEL[laneId] ?? laneId));
+    button.title = label + ' ' + (LANE_LABEL[laneId] ?? laneId);
+    button.addEventListener('click', () => {
+      set?.(laneId, !getDrumMix()[kind][laneId]);
+      syncMix();
+    });
+    mixButtons.push(button);
+    group.append(button);
+  }
+  return group;
 }
 
 function buildMergedHatLaneHead(gridRowStart, ctx) {
@@ -158,6 +187,10 @@ export function mountDrumPanel({
   setDrumKit,
   triggerDrumLane,
   onPatternChange,
+  getDrumMix,
+  isLaneAudible,
+  setDrumMute,
+  setDrumSolo,
   help$ = id => document.getElementById(id),
 } = {}) {
   if (!$) throw new TypeError('mountDrumPanel requires $');
@@ -168,6 +201,20 @@ export function mountDrumPanel({
   let activeStep = -1;
   const cellByStep = Array.from({length: DRUM_STEP_COUNT}, () => []);
   const stepHeaders = [];
+  const mixButtons = [];
+  const hasMix = typeof getDrumMix === 'function' && typeof isLaneAudible === 'function';
+
+  /** Redraws M/S buttons and dims the steps of lanes the sequencer will skip. */
+  function syncMix() {
+    if (!hasMix) return;
+    const mix = getDrumMix();
+    for (const button of mixButtons) {
+      button.setAttribute('aria-pressed', String(mix[button.dataset.kind][button.dataset.lane] === true));
+    }
+    for (const cells of cellByStep) {
+      for (const cell of cells) cell.classList.toggle('is-silent', !isLaneAudible(cell.dataset.lane));
+    }
+  }
 
   function setActiveStep(stepIndex) {
     if (activeStep === stepIndex) return;
@@ -220,6 +267,7 @@ export function mountDrumPanel({
       cellByStep[i] = [];
     });
     stepHeaders.length = 0;
+    mixButtons.length = 0;
     activeStep = -1;
 
     const table = document.createElement('div');
@@ -254,6 +302,7 @@ export function mountDrumPanel({
       setDrumKit,
       onPatternChange,
       help$,
+      ...(hasMix ? {getDrumMix, setDrumMute, setDrumSolo, syncMix, mixButtons} : {}),
     };
 
     DRUM_LANE_IDS.forEach((laneId, rowIndex) => {
@@ -319,8 +368,9 @@ export function mountDrumPanel({
 
     host.append(table);
     if (scroller && !scroller.contains(host)) scroller.append(host);
+    syncMix();
   }
 
   render();
-  return {render, setActiveStep};
+  return {render, setActiveStep, syncMix};
 }
