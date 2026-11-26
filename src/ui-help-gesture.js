@@ -29,6 +29,14 @@ export function bindHelpGesture(element,{helpId,onTap=null,longMs=550,moveTolera
   if(onTap)onTap(event);
  });
  element.addEventListener('pointercancel',clear);
+ // The release after a long press still produces a click; keep it from running the control's action.
+ element.addEventListener('click',event=>{
+  if(!longFired)return;
+  longFired=false;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+ },true);
+ element.addEventListener('keydown',()=>{longFired=false});
  element.addEventListener('contextmenu',event=>{
   event.preventDefault();
   openHelp(helpId,{leadIn:'Help',$});

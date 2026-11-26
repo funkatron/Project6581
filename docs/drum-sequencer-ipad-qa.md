@@ -27,7 +27,7 @@ See [ipad-safari-automation-map.md](ipad-safari-automation-map.md) for CI covera
 ## Grid and kit
 
 - [ ] Tap cells on/off; mis-taps are rare on portrait for all four lanes.
-- [ ] Lane **Level** sliders change balance; long-press help on a level slider opens **Lane level** help.
+- [ ] Lane **Level** sliders change balance; resting a finger on a slider opens no help.
 - [ ] Long-press a step cell opens **Drum step cell** help without toggling the cell.
 - [ ] Tap **?** on the voice-allocation hint or long-press a **lane name** opens kick / hat / flex lane help; main topic **Drum voice allocation (SID 4)** matches kick+sn priority and CH xor OH behavior.
 
@@ -61,7 +61,7 @@ Open **Prefs** (⚙) → **Drum timing** → tick **Worklet drum timing**. The s
 ## Help
 
 - [ ] Section **?** on DRUM STEP SEQUENCER opens overview help and focuses the tab.
-- [ ] **DRUM** LED long-press opens generator help; transport buttons can open transport help via **?** triggers where wired.
+- [ ] **DRUM** LED long-press opens generator help; a tap on **▶ Preview** or **■ Stop** opens no help; a long press opens **Drum transport** help without starting or stopping.
 
 ## Session log template
 
