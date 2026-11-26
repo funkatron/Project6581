@@ -195,7 +195,7 @@ test('worklet reports the sequencer modules when the probe module shares its sco
  scope.project6581Sequencer=sequencer;
  vm.runInContext(source,scope);
  await new Processor().load(new ArrayBuffer(0),6581);
- assert.deepEqual(JSON.parse(JSON.stringify(messages.at(-1))),{type:'sequencer-support',available:true,version:6,selfTest:{ok:true}});
+ assert.deepEqual(JSON.parse(JSON.stringify(messages.at(-1))),{type:'sequencer-support',available:true,version:7,selfTest:{ok:true}});
  messages.length=0;
  scope.project6581Sequencer={version:1,selfTest(){throw new Error('boom')}};
  await new Processor().load(new ArrayBuffer(0),6581);
