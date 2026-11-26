@@ -15,11 +15,11 @@ test('steps land on start + n × interval, with or without an immediate first st
  const clock=fakeClock();
  const {steps}=stepper(clock);
  clock.advance(350);
- assert.deepEqual(steps,[{n:0,skipped:0,at:0},{n:1,skipped:0,at:100},{n:2,skipped:0,at:200},{n:3,skipped:0,at:300}]);
+ assert.deepEqual(steps,[{n:0,skipped:0,at:0,nextAt:100},{n:1,skipped:0,at:100,nextAt:200},{n:2,skipped:0,at:200,nextAt:300},{n:3,skipped:0,at:300,nextAt:400}]);
  const later=fakeClock(1000);
  const {steps:delayed}=stepper(later,{immediate:false});
  later.advance(250);
- assert.deepEqual(delayed.map(s=>[s.n,s.at]),[[0,1100],[1,1200]]);
+ assert.deepEqual(delayed.map(s=>[s.n,s.at,s.nextAt]),[[0,1100,1200],[1,1200,1300]]);
 });
 
 test('constant timer slack does not accumulate',()=>{

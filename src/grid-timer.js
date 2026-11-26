@@ -30,7 +30,7 @@ export function createGridTimer({
   current.n+=skipped;
   const n=current.n-current.first;
   current.n++;
-  current.onStep({n,skipped});
+  current.onStep({n,skipped,nextAt:current.anchor+current.n*current.ms});
   // onStep may stop or restart this timer.
   if(grid===current&&pending===null)schedule();
  }
@@ -39,7 +39,8 @@ export function createGridTimer({
    * Starts stepping every ms. immediate: the first step runs now (n = 0);
    * otherwise the first step is one interval from now. delayMs, when given,
    * puts the first step (n = 0) that far from now instead. onStep({n, skipped}):
-   * n counts grid positions since start, skipped steps included.
+   * n counts grid positions since start, skipped steps included; nextAt is
+   * when (on the now() clock) the next step is due.
    */
   start({ms,onStep,immediate=true,delayMs=null}){
    api.stop();
@@ -54,7 +55,7 @@ export function createGridTimer({
    grid=current;
    if(immediate){
     current.n=1;
-    onStep({n:0,skipped:0});
+    onStep({n:0,skipped:0,nextAt:current.anchor+current.ms});
     if(grid!==current||pending!==null)return api;
    }
    schedule();
