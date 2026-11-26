@@ -45,7 +45,6 @@ function bindLaneLevelInput({
   getDrumKit,
   setDrumKit,
   onPatternChange,
-  help$,
 }) {
   level.value = String(kit.lanes[laneId]?.level ?? 80);
   level.setAttribute('aria-label', (LANE_LABEL[laneId] ?? laneId) + ' level');
@@ -69,7 +68,6 @@ function bindLaneLevelInput({
     level.setAttribute('aria-valuenow', String(nextLevel));
     onPatternChange?.();
   });
-  bindHelpGesture(level, {helpId: 'drum-lane-level', $: help$});
   syncLaneLevelReadout(head, level, readout);
 }
 
@@ -112,7 +110,6 @@ function buildLaneMixerRow(laneId, ctx) {
     getDrumKit,
     setDrumKit,
     onPatternChange,
-    help$,
   });
 
   levelStack.append(level);

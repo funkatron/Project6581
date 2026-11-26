@@ -301,7 +301,7 @@ const performanceInstrument=createPerformanceInstrumentState($,{
  onChange:()=>{refreshPresetDirty();updateUnison()},
  formatDetune:value=>formatControlValue('detune',value)
 });
-for(const [id,helpId] of [['rootArpTitle','root-arp'],['gameArpTitle','game-arp']]){
+for(const [id,helpId] of [['rootArpTitle','root-arp'],['gameArpTitle','game-arp'],['drumSeqRun','drum-transport'],['drumSeqStop','drum-transport']]){
  const el=$(id);
  if(el)bindHelpGesture(el,{helpId,$});
 }
