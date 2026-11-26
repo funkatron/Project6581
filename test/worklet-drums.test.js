@@ -77,7 +77,8 @@ test('nothing plays until a run asks for it; stop and a non-playing run release 
  drums.control({action:'run',play:true});
  drums.block([{frame:512,index:0}],mirror,640);
  assert.ok(drums.control({action:'run',play:false}).length>0,'switching to page drums releases worklet drums');
- assert.deepEqual(drums.takeStats(),{hits:4,auditions:0,skipped:{}});
+ const {events:_events,eventsDropped:_dropped,...counts}=drums.takeStats();
+ assert.deepEqual(counts,{hits:4,auditions:0,skipped:{}});
 });
 
 test('a re-hit before release gates off first; a release due inside a block is written in that block', () => {
@@ -109,7 +110,7 @@ test('missing mirror data skips the hit and is counted, not thrown', () => {
  assert.deepEqual(drums.audition('sn',{...mirror,drumLanes:{...mirror.drumLanes,sn:null}},0),[]);
  const disabled={...mirror,drumBuses:mirror.drumBuses.map(bus=>({...bus,enabled:false}))};
  assert.deepEqual(drums.audition('kick',disabled,0),[]);
- assert.deepEqual(drums.takeStats(),{hits:0,auditions:0,skipped:{'no-transport':1,'no-bus':2,'no-lane':1,'voice-disabled':1}});
+ assert.deepEqual(drums.takeStats(),{hits:0,auditions:0,skipped:{'no-transport':1,'no-bus':2,'no-lane':1,'voice-disabled':1},events:[],eventsDropped:0});
  assert.throws(()=>drums.audition('tom',mirror,0),RangeError);
 });
 
@@ -177,4 +178,47 @@ test('a grid-cell audition plays one lane on the next block and releases it', as
  assert.equal(sn[0].frame,1280);
  assert.equal(sn.at(-1).value&1,0,'released');
  assert.ok(h.writes.some(w=>w.register===0x98&&w.frame===1280),'snare bus filter written with the hit');
+});
+
+test('note events: each hit an on, each release, re-hit or stop an off, with frames', () => {
+ const {mirror}=pageMirror({drum:{grid:grid({kick:'xx..............',ch:'x...............',oh:'.x..............'})}});
+ const drums=createWorkletDrums({sampleRate:RATE});
+ drums.control({action:'run',play:true});
+ drums.block([{frame:0,index:0}],mirror,128);
+ drums.block([{frame:3000,index:1}],mirror,3072);// kick re-hit while still sounding; OH plays
+ let stats=drums.takeStats();
+ assert.deepEqual(stats.events.map(e=>e.slice(0,2).concat(e[3],e[4])),[
+  ['on','kick',0,0],['on','ch',0,0],
+  ['off','ch',2544,-1],// CH's own release (53 ms) falls before the step
+  ['off','kick',3000,-1],['on','kick',3000,1],['on','oh',3000,1]
+ ]);
+ assert.equal(drums.hasEvents,false);
+ // Run to the kick's release, then stop with the open hat still sounding.
+ for(let start=3072;start<3000+Math.round(121*RATE/1000)+128;start+=128)drums.block([],mirror,start+128);
+ drums.control({action:'stop'},9000);
+ stats=drums.takeStats();
+ assert.deepEqual(stats.events.map(e=>[e[0],e[1],e[3]]),[['off','kick',3000+Math.round(121*RATE/1000)],['off','oh',9000]]);
+ assert.equal(stats.eventsDropped,0);
+});
+
+test('worklet note events become drum:* trace lines on the page clock', async () => {
+ const {workletDrumTraceEntries}=await import('../src/sequencer-shadow.js');
+ const lines=workletDrumTraceEntries([['on','kick',36,48000,0],['off','kick',36,53808,-1],['on','sn',38,60000,-1]],
+  {sampleRate:RATE,audioNowSec:1.5,pageNowMs:10000});
+ assert.deepEqual(lines,[
+  {type:'note-on',details:{atMs:9500,note:36,source:'drum:kick',player:'worklet',frame:48000,step:0}},
+  {type:'note-off',details:{atMs:9621,note:36,source:'drum:kick',player:'worklet',frame:53808}},
+  {type:'note-on',details:{atMs:9750,note:38,source:'drum:sn',player:'worklet',frame:60000}}
+ ]);
+ assert.deepEqual(workletDrumTraceEntries(null,{sampleRate:RATE,audioNowSec:0,pageNowMs:0}),[]);
+});
+
+test('the processor reports tap note events even when the drum preview is stopped', async () => {
+ const h=await processorHarness();
+ for(const m of pageMirror().sent)h.send(m);
+ h.runTo(1280);
+ h.send({type:'sequencer-drums',action:'audition',lane:'kick'});
+ h.runTo(RATE);
+ const events=h.messages.filter(m=>m.type==='sequencer-shadow-status').flatMap(m=>m.drums?.events??[]);
+ assert.deepEqual(events.map(e=>[e[0],e[1],e[3]]),[['on','kick',1280],['off','kick',1280+Math.round(121*RATE/1000)]]);
 });

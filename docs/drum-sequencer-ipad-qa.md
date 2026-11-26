@@ -46,9 +46,9 @@ See [ipad-safari-automation-map.md](ipad-safari-automation-map.md) for CI covera
 - [ ] Enable **Drum LFO** on DRUM SEQ; cutoff or volume motion affects **SID 4** hits and card, not engines 1–3.
 - [ ] Save preset, reload — `sound.drumLfo` returns with the same motion.
 
-## Worklet drum timing (Prefs, experimental)
+## Worklet drum timing (Prefs, on by default since 0.28)
 
-Open **Prefs** (⚙) → **Drum timing** → tick **Worklet drum timing**. The status line should read *On: the audio engine plays the drums*.
+Open **Prefs** (⚙) → **Drum timing**: **Worklet drum timing** is ticked unless this browser saved it off. The status line should read *On: the audio engine plays the drums*. Note: iPad Safari's diagnostics export shows a Mac user agent ("Macintosh … Safari") because iPad requests desktop sites by default.
 
 - [ ] Start the drum preview: the groove sounds the same as with the setting off (same kit, levels, hat choke, mute/solo).
 - [ ] Play the keyboard with **Game Arp** on during the preview, ~60 s, no app switching: no late or skipped drum hits.
@@ -56,7 +56,7 @@ Open **Prefs** (⚙) → **Drum timing** → tick **Worklet drum timing**. The s
 - [ ] Change **BPM** and **Rate** while running: the groove continues from the same step.
 - [ ] Untick the setting while running: drums carry on (now from the page timer) without a stuck note.
 - [ ] Reload: the setting is remembered.
-- [ ] **Audio timing** shows `Drum timing: worklet plays the drums` and the drum shadow line `worklet played N hits` with no `worklet skipped`. Export diagnostics and attach.
+- [ ] **Audio timing** shows `Drum timing: worklet plays the drums` and the drum shadow line `worklet played N hits` with no `worklet skipped`. Export diagnostics and attach: `trace.entries` include `drum:*` note-on/off lines with `player: worklet`.
 
 ## Help
 

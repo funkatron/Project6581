@@ -75,6 +75,14 @@ for (const engine of engines) {
       .split('\n').find(line => line.startsWith('Worklet sequencer mirror:'));
     console.log(engine + ' ' + mirrorLine);
     assert.match(mirrorLine, /voices 3\/3 · drum lanes 4\/4 · drum buses 3\/3 · allocation ✓/);
+    // Step 3c-3: worklet drum timing is on by default; first run the page timer path (setting off).
+    const setWorkletDrums = on => page.evaluate(value => {
+      const input = document.getElementById('workletDrumTiming');
+      input.checked = value;
+      input.dispatchEvent(new Event('change'));
+    }, on);
+    assert.equal(await page.locator('#workletDrumTiming').isChecked(), true, 'worklet drum timing is on by default');
+    await setWorkletDrums(false);
     // Step 3b: run the drum preview and let the worklet shadow clock compare at least 16 steps.
     await page.evaluate(() => document.getElementById('drumSeqRun').click());
     await page.waitForFunction(() => {
@@ -88,11 +96,6 @@ for (const engine of engines) {
     const [, compared, matched] = /(\d+) steps · hits match (\d+)\//.exec(shadowLine);
     assert.equal(matched, compared, 'worklet shadow hits differ from the page');
     // Step 3c-2: Prefs → Worklet drum timing on; the worklet plays the preview.
-    const setWorkletDrums = on => page.evaluate(value => {
-      const input = document.getElementById('workletDrumTiming');
-      input.checked = value;
-      input.dispatchEvent(new Event('change'));
-    }, on);
     await setWorkletDrums(true);
     assert.match(await page.locator('#workletDrumTimingStatus').textContent(), /^On: the audio engine plays the drums/);
     await page.evaluate(() => document.getElementById('drumSeqRun').click());
@@ -106,7 +109,6 @@ for (const engine of engines) {
       .split('\n').find(line => line.startsWith('Drum shadow clock:'));
     console.log(engine + ' ' + workletLine);
     assert.doesNotMatch(workletLine, /worklet skipped/);
-    await setWorkletDrums(false);
     const initialWasmFetches = await page.evaluate(() => performance.getEntriesByType('resource')
       .filter(entry => entry.name.includes('/dist/residfp.wasm')).length);
     assert.equal(initialWasmFetches, 1, 'initial SID startup must fetch WASM once');

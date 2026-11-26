@@ -30,11 +30,11 @@
  </section>
  <section class="preferences-section" aria-labelledby="drumTimingPrefsTitle">
   <h3 id="drumTimingPrefsTitle">Drum timing</h3>
-  <p class="preferences-hint">Experimental. The audio engine plays drum steps on its own clock instead of the page timer. Turn off if the drums sound wrong.</p>
+  <p class="preferences-hint">The audio engine plays drum steps on its own clock (within 3 ms). Turn off to let the page timer play them, for comparison or if the drums sound wrong.</p>
   <div class="preferences-grid">
-   <label><input id="workletDrumTiming" type="checkbox"> Worklet drum timing</label>
+   <label><input id="workletDrumTiming" type="checkbox" checked> Worklet drum timing</label>
   </div>
-  <p id="workletDrumTimingStatus" class="midi-status" role="status">Off: the page timer plays the drums.</p>
+  <p id="workletDrumTimingStatus" class="midi-status" role="status">On: waiting for the audio engine to start.</p>
  </section>
 </dialog>
 <div class="statusbar"><span id="sidLed" class="sid-led" data-state="off" role="img" aria-label="SID engine off"></span><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine" hidden></span><p id="sidEngineStatus" role="status">Initializing SID…</p><output id="recordStatus" role="status" aria-live="polite"></output><a id="recordDownload" hidden>Download recording</a></div>
