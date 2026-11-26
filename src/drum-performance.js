@@ -73,9 +73,11 @@ export function mountDrumPerformance({
   // Steps follow the grid (see grid-timer.js): a busy page delays a step at most
   // until the page is free; passed steps are skipped instead of dragging the groove.
   const gridTimer = createGridTimer({now, setTimer, clearTimer});
-  function onGridStep({n, skipped}) {
+  function onGridStep({n, skipped, nextAt}) {
     if (skipped > 0) drum.step = (drum.step + skipped) % DRUM_STEP_COUNT;
     drumTick({n, skipped});
+    // Keep the worklet's drum grid on the page clock (it can lose time when audio stalls).
+    if (drum.worklet && drum.running && Number.isFinite(nextAt)) shadow?.sync?.({n: n + 1, delayMs: nextAt - now()});
   }
 
   function drumTick({n, skipped = 0} = {}) {
