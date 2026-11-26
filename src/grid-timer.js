@@ -37,12 +37,19 @@ export function createGridTimer({
  const api={
   /**
    * Starts stepping every ms. immediate: the first step runs now (n = 0);
-   * otherwise the first step is one interval from now. onStep({n, skipped}):
+   * otherwise the first step is one interval from now. delayMs, when given,
+   * puts the first step (n = 0) that far from now instead. onStep({n, skipped}):
    * n counts grid positions since start, skipped steps included.
    */
-  start({ms,onStep,immediate=true}){
+  start({ms,onStep,immediate=true,delayMs=null}){
    api.stop();
    if(!(ms>0))throw new RangeError('grid timer interval must be positive');
+   if(delayMs!==null){
+    if(!(delayMs>=0))throw new RangeError('grid timer delay must be zero or more');
+    grid={anchor:now()+delayMs,ms,n:0,first:0,onStep};
+    schedule();
+    return api;
+   }
    const current={anchor:now(),ms,n:immediate?0:1,first:immediate?0:1,onStep};
    grid=current;
    if(immediate){

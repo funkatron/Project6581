@@ -14,11 +14,14 @@ import {applyTransportPatch,defaultTransport} from './transport-state.js?v=__BUI
 //   voice       {chip 0–2, settings}: engine voice for a melodic SID
 //   drum-lane   {lane, note, level, voice, filter}: what one drum hit plays
 //   instrument  {voiceCount, unisonCount, mode, detune}: voice allocation
+//   drum-bus    {bus 0–2, filter, enabled}: SID 4–6 bus filter and whether the chip plays
 
 export const MIRROR_MESSAGE='sequencer-mirror';
 export const MIRROR_STATUS='sequencer-mirror-status';
 export const MIRROR_MELODIC_CHIPS=3;
 export const MIRROR_DRUM_LANES=Object.freeze(['kick','sn','ch','oh']);
+export const MIRROR_DRUM_BUSES=3;
+const FILTER_MODES=Object.freeze(['lowpass','bandpass','highpass']);
 const TRANSPORT_SECTIONS=Object.freeze(['masterBpm','arp','game','drum','scale','notes']);
 const DIGEST_HISTORY=64;
 
@@ -28,7 +31,8 @@ export function emptyMirror(revision=0){
   transport:null,
   voices:Array.from({length:MIRROR_MELODIC_CHIPS},()=>null),
   drumLanes:Object.fromEntries(MIRROR_DRUM_LANES.map(lane=>[lane,null])),
-  instrument:null
+  instrument:null,
+  drumBuses:Array.from({length:MIRROR_DRUM_BUSES},()=>null)
  };
 }
 
@@ -64,6 +68,16 @@ export function applyMirrorMessage(mirror,message){
   next.drumLanes={...mirror.drumLanes,[lane]:hit};
  }else if(part==='instrument'){
   next.instrument=requireObject(value,'instrument');
+ }else if(part==='drum-bus'){
+  requireObject(value,'drum bus');
+  if(!Number.isInteger(value.bus)||value.bus<0||value.bus>=MIRROR_DRUM_BUSES)throw new RangeError('drum bus');
+  const filter=requireObject(value.filter,'drum bus filter');
+  for(const key of ['cutoff','resonance','volume'])
+   if(!Number.isFinite(filter[key]))throw new RangeError('drum bus filter '+key);
+  if(!FILTER_MODES.includes(filter.mode))throw new RangeError('drum bus filter mode');
+  if(typeof value.enabled!=='boolean')throw new TypeError('drum bus enabled must be a boolean');
+  const {bus,...rest}=value;
+  next.drumBuses=(mirror.drumBuses??emptyMirror().drumBuses).map((entry,index)=>index===bus?rest:entry);
  }else{
   throw new RangeError('unknown mirror part '+part);
  }
@@ -72,7 +86,7 @@ export function applyMirrorMessage(mirror,message){
 
 /** FNV-1a over the mirrored data (revision excluded), as 8 hex digits. */
 export function mirrorDigest(mirror){
- const text=JSON.stringify([mirror.transport,mirror.voices,mirror.drumLanes,mirror.instrument]);
+ const text=JSON.stringify([mirror.transport,mirror.voices,mirror.drumLanes,mirror.instrument,mirror.drumBuses]);
  let hash=0x811c9dc5;
  for(let i=0;i<text.length;i++){
   hash^=text.charCodeAt(i);
@@ -86,7 +100,8 @@ export function mirrorSummary(mirror){
   transport:mirror.transport!==null,
   voices:mirror.voices.filter(Boolean).length,
   drumLanes:MIRROR_DRUM_LANES.filter(lane=>mirror.drumLanes[lane]).length,
-  instrument:mirror.instrument!==null
+  instrument:mirror.instrument!==null,
+  drumBuses:(mirror.drumBuses??[]).filter(Boolean).length
  };
 }
 
@@ -131,6 +146,7 @@ export function createMirrorSender(post){
   syncVoice:(chip,settings)=>sendIfChanged('voice:'+chip,'voice',{chip,settings}),
   syncDrumLane:(lane,hit)=>sendIfChanged('drum-lane:'+lane,'drum-lane',{lane,...hit}),
   syncInstrument:instrument=>sendIfChanged('instrument','instrument',instrument),
+  syncDrumBus:(bus,value)=>sendIfChanged('drum-bus:'+bus,'drum-bus',{bus,...value}),
   get revision(){return mirror.revision},
   get mirror(){return mirror},
   /** Page digest at a recent revision, or null if that revision is too old. */
@@ -153,7 +169,8 @@ export function formatSequencerMirror(compared){
  if(compared.state==='error')return 'Worklet sequencer mirror: error ('+compared.error+')';
  const s=compared.summary??{};
  const parts='transport '+(s.transport?'✓':'–')+' · voices '+(s.voices??0)+'/'+MIRROR_MELODIC_CHIPS
-  +' · drum lanes '+(s.drumLanes??0)+'/'+MIRROR_DRUM_LANES.length+' · allocation '+(s.instrument?'✓':'–');
+  +' · drum lanes '+(s.drumLanes??0)+'/'+MIRROR_DRUM_LANES.length+' · drum buses '+(s.drumBuses??0)+'/'+MIRROR_DRUM_BUSES
+  +' · allocation '+(s.instrument?'✓':'–');
  const behind=compared.pageRevision>compared.revision?' (page at '+compared.pageRevision+')':'';
  const state={'in-sync':'in sync','mismatch':'MISMATCH','unknown':'not comparable'}[compared.state];
  return 'Worklet sequencer mirror: revision '+compared.revision+behind+', '+state+' · '+parts;

@@ -46,6 +46,18 @@ See [ipad-safari-automation-map.md](ipad-safari-automation-map.md) for CI covera
 - [ ] Enable **Drum LFO** on DRUM SEQ; cutoff or volume motion affects **SID 4** hits and card, not engines 1–3.
 - [ ] Save preset, reload — `sound.drumLfo` returns with the same motion.
 
+## Worklet drum timing (Prefs, experimental)
+
+Open **Prefs** (⚙) → **Drum timing** → tick **Worklet drum timing**. The status line should read *On: the audio engine plays the drums*.
+
+- [ ] Start the drum preview: the groove sounds the same as with the setting off (same kit, levels, hat choke, mute/solo).
+- [ ] Play the keyboard with **Game Arp** on during the preview, ~60 s, no app switching: no late or skipped drum hits.
+- [ ] Tap grid cells with the preview stopped and running: each tap sounds once.
+- [ ] Change **BPM** and **Rate** while running: the groove continues from the same step.
+- [ ] Untick the setting while running: drums carry on (now from the page timer) without a stuck note.
+- [ ] Reload: the setting is remembered.
+- [ ] **Audio timing** shows `Drum timing: worklet plays the drums` and the drum shadow line `worklet played N hits` with no `worklet skipped`. Export diagnostics and attach.
+
 ## Help
 
 - [ ] Section **?** on DRUM STEP SEQUENCER opens overview help and focuses the tab.

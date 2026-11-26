@@ -39,6 +39,8 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     this.mirror=null;this.mirrorError=null;this.mirrorStatusPending=false;this.mirrorStatusFrame=-Infinity;
     // Step 3b: drum shadow clock (sequencer-shadow.js). Counts steps; plays nothing.
     this.drumShadow=null;this.shadowStatusFrame=-Infinity;
+    // Step 3c-2: the worklet plays drum steps (worklet-drums.js) when the page asks.
+    this.workletDrums=null;this.drumCommands=[];
     this.port.onmessage=({data})=>{
       if(data?.type==='load'){
         this.traceFirstRender=data.traceFirstRender===true;
@@ -89,29 +91,10 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
           }
         }
       }
-      else if(data?.type==='pitch-envelope-start'){
-        // Explicit opt-in protocol. Existing note messages are unchanged.
-        const {register,baseFrequency,points,interpolation='linear',end='hold'}=data;
-        if(!Number.isInteger(register)||register<0||register>=SID_CHIP_COUNT*0x20||register%0x20>0x14||register%0x20%7!==0||
-          !Number.isInteger(baseFrequency)||baseFrequency<0||baseFrequency>65535||
-          !Array.isArray(points)||points.length<1||points.length>16||
-          !['linear','curve'].includes(interpolation)||!['hold','zero'].includes(end))return;
-        let previous=-1;
-        if(!points.every(p=>p&&typeof p==='object'&&!Array.isArray(p)&&Number.isFinite(p.ms)&&p.ms>=0&&p.ms<=10000&&p.ms>previous&&
-          (previous=p.ms)>=0&&Number.isFinite(p.semitones)&&Math.abs(p.semitones)<=48)||points[0].ms!==0)return;
-        this.pitchEnvelopes.set(register,{baseFrequency,points:points.map(p=>({ms:p.ms,semitones:p.semitones})),
-          interpolation,end,startFrame:null,lastFrequency:null});
-      }
-      else if(data?.type==='pitch-envelope-retune'){
-        const state=this.pitchEnvelopes.get(data.register);
-        if(state&&Number.isInteger(data.baseFrequency)&&data.baseFrequency>=0&&data.baseFrequency<=65535){
-          state.baseFrequency=data.baseFrequency;
-          state.lastFrequency=null;
-        }
-      }
-      else if(data?.type==='pitch-envelope-stop'){
-        if(Number.isInteger(data.register))this.pitchEnvelopes.delete(data.register);
-      }
+      else if(data?.type==='pitch-envelope-start')this.startPitchEnvelope(data);
+      else if(data?.type==='pitch-envelope-retune')this.retunePitchEnvelope(data);
+      else if(data?.type==='pitch-envelope-stop')this.stopPitchEnvelope(data);
+      else if(data?.type==='sequencer-drums')this.applySequencerDrums(data);
       else if(data?.type==='reset'){
         this.pitchEnvelopes.clear();this.exports?.sid_reset();
       }
@@ -170,15 +153,68 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     const api=globalThis.project6581Sequencer;
     if(!api?.createDrumShadow||message.source!=='drum')return;
     this.drumShadow??=api.createDrumShadow(sampleRate);
-    try{this.drumShadow.control(message,this.mirror?.transport,currentFrame)}
+    try{
+      this.drumShadow.control(message,this.mirror?.transport,currentFrame);
+      if(message.play===true||this.workletDrums)this.drumCommands.push(...this.drumsApi()?.control(message)??[]);
+    }
     catch(err){this.port.postMessage({type:'sequencer-shadow-status',sampleRate,steps:[],dropped:0,lead:null,error:String(err?.message??err)})}
+  }
+  drumsApi(){
+    const api=globalThis.project6581Sequencer;
+    if(!api?.createWorkletDrums)return null;
+    this.workletDrums??=api.createWorkletDrums({sampleRate});
+    return this.workletDrums;
+  }
+  // Grid-cell taps and stop while "Worklet drum timing" is on: {type:'sequencer-drums', action:'audition'|'stop', lane}.
+  applySequencerDrums(message){
+    const drums=this.drumsApi();
+    if(!drums)return;
+    try{
+      if(message.action==='audition')this.drumCommands.push(...drums.audition(message.lane,this.mirror,currentFrame));
+      else if(message.action==='stop')this.drumCommands.push(...drums.stopAll());
+    }catch(err){this.port.postMessage({type:'sequencer-shadow-status',sampleRate,steps:[],dropped:0,lead:null,error:String(err?.message??err)})}
+  }
+  startPitchEnvelope(data){
+    // Explicit opt-in protocol. Existing note messages are unchanged.
+    const {register,baseFrequency,points,interpolation='linear',end='hold'}=data;
+    if(!Number.isInteger(register)||register<0||register>=SID_CHIP_COUNT*0x20||register%0x20>0x14||register%0x20%7!==0||
+      !Number.isInteger(baseFrequency)||baseFrequency<0||baseFrequency>65535||
+      !Array.isArray(points)||points.length<1||points.length>16||
+      !['linear','curve'].includes(interpolation)||!['hold','zero'].includes(end))return;
+    let previous=-1;
+    if(!points.every(p=>p&&typeof p==='object'&&!Array.isArray(p)&&Number.isFinite(p.ms)&&p.ms>=0&&p.ms<=10000&&p.ms>previous&&
+      (previous=p.ms)>=0&&Number.isFinite(p.semitones)&&Math.abs(p.semitones)<=48)||points[0].ms!==0)return;
+    this.pitchEnvelopes.set(register,{baseFrequency,points:points.map(p=>({ms:p.ms,semitones:p.semitones})),
+      interpolation,end,startFrame:null,lastFrequency:null});
+  }
+  retunePitchEnvelope(data){
+    const state=this.pitchEnvelopes.get(data.register);
+    if(state&&Number.isInteger(data.baseFrequency)&&data.baseFrequency>=0&&data.baseFrequency<=65535){
+      state.baseFrequency=data.baseFrequency;
+      state.lastFrequency=null;
+    }
+  }
+  stopPitchEnvelope(data){
+    if(Number.isInteger(data.register))this.pitchEnvelopes.delete(data.register);
+  }
+  // Drum player commands: register writes go straight to the chip; pitch-envelope
+  // commands use the same handlers as the page's messages.
+  applyDrumCommands(commands){
+    const e=this.exports;
+    for(const command of commands){
+      if(command.type==='write'){e.sid_write(command.register,command.value);this.writes++}
+      else if(command.type==='pitch-envelope-start')this.startPitchEnvelope(command);
+      else if(command.type==='pitch-envelope-retune')this.retunePitchEnvelope(command);
+      else if(command.type==='pitch-envelope-stop')this.stopPitchEnvelope(command);
+    }
   }
   // At most four shadow reports per second of audio.
   flushShadowStatus(){
     const shadow=this.drumShadow;
     if(!shadow?.hasReport()||currentFrame-this.shadowStatusFrame<sampleRate/4)return;
     this.shadowStatusFrame=currentFrame;
-    this.port.postMessage({type:'sequencer-shadow-status',...shadow.takeReport()});
+    const drums=this.workletDrums?.takeStats()??null;
+    this.port.postMessage({type:'sequencer-shadow-status',...shadow.takeReport(),drums});
   }
   // At most four status reports per second of audio.
   flushMirrorStatus(){
@@ -289,8 +325,10 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     const channels=outputs[0];
     for(const channel of channels)channel.fill(0);
     if(this.mirrorStatusPending)this.flushMirrorStatus();
+    const blockEnd=currentFrame+(channels[0]?.length??128);
+    let drumSteps=[];
     if(this.drumShadow){
-      if(this.drumShadow.running)this.drumShadow.advance(currentFrame+(channels[0]?.length??128),this.mirror?.transport);
+      if(this.drumShadow.running)drumSteps=this.drumShadow.advance(blockEnd,this.mirror?.transport)??[];
       this.flushShadowStatus();
     }
     const e=this.exports;if(!e)return true;
@@ -299,6 +337,14 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     for(const [reg,value] of this.queue)e.sid_write(reg,value);
     this.writes+=this.queue.length;
     this.queue.length=0;
+    // After the page's writes, so a drum hit's bus filter wins over a page
+    // filter write to SID 4–6 in the same block.
+    if(this.workletDrums){
+      const commands=this.drumCommands;this.drumCommands=[];
+      try{commands.push(...this.workletDrums.block(drumSteps,this.mirror,blockEnd))}
+      catch(err){this.port.postMessage({type:'sequencer-shadow-status',sampleRate,steps:[],dropped:0,lead:null,error:String(err?.message??err)})}
+      this.applyDrumCommands(commands);
+    }
     if((this.keyLatencyEnabled||this.timingEnabled)&&queuedWrites>0){
       this.energyArmed=true;this.energyBlocks=0;
     }

@@ -68,3 +68,15 @@ test('no page sequencer uses setInterval any more',()=>{
   assert.doesNotMatch(src,/setInterval\(|clearInterval\(/,file);
  }
 });
+
+test('delayMs puts the first step (n = 0) that far ahead, then steps on the grid',()=>{
+ const clock=fakeClock();
+ const timer=createGridTimer(clock);
+ const ticks=[];
+ timer.start({ms:125,delayMs:50,onStep:({n,skipped})=>ticks.push([clock.now(),n,skipped])});
+ assert.deepEqual(ticks,[]);
+ clock.advance(50+2*125);
+ assert.deepEqual(ticks,[[50,0,0],[175,1,0],[300,2,0]]);
+ timer.stop();
+ assert.throws(()=>timer.start({ms:125,delayMs:-1,onStep:()=>{}}),RangeError);
+});
