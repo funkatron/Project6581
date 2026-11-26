@@ -8,6 +8,7 @@ import {emptyMirror,applyMirrorMessage,mirrorDigest,mirrorSummary,createMirrorSe
 import {createDrumShadow,drumStepSeconds} from './sequencer-shadow.js?v=__BUILD_ID__';
 import {createDrumPlayer} from './drum-player.js?v=__BUILD_ID__';
 import {createWorkletDrums} from './worklet-drums.js?v=__BUILD_ID__';
+import {createWorkletGameArp} from './worklet-game-arp.js?v=__BUILD_ID__';
 
 // Loaded into the AudioWorklet with its own addModule() call, separate from
 // residfp-worklet.js, so a browser that rejects ES-module imports in worklets
@@ -71,6 +72,12 @@ export function sequencerSelfTest(){
   worklet.control({action:'run',play:true});
   const gates=worklet.block([{frame:0,index:0}],drumMirror,128).filter(c=>c.register===0x64||c.register===0xa4).map(c=>c.register);
   expect('worklet drums step 0',gates,[0x64,0x64,0xa4,0xa4]);
+  // Game Arp: step 0 of the default phrase plays the held note, gated off at 75 %.
+  const gameArp=createWorkletGameArp({sampleRate:48000});
+  const first=gameArp.gameStep({frame:0,stepFrames:6000,arpEnabled:false,heldNotes:[60],seqPreview:false,
+   previewRootMidi:48,sequence:state.game.sequence,resolve:note=>note});
+  expect('game arp step 0',[first.events,first.gateAt,gameArp.releaseDue(4500)],
+   [[{type:'on',note:60,source:'game',frame:0}],4500,[{type:'off',note:60,source:'game',frame:4500}]]);
   return {ok:true};
  }catch(error){
   return {ok:false,error:String(error?.message??error)};
@@ -78,14 +85,14 @@ export function sequencerSelfTest(){
 }
 
 const api=Object.freeze({
- version:6,
+ version:7,
  arpStep,gameStep,drumStep,
  createTransportState,applyTransportPatch,defaultTransport,
  activeNotes,arpNotes,resolveNote,drumSequence,arpStepMs,gameStepMs,
  createNoteWriter,
  emptyMirror,applyMirrorMessage,mirrorDigest,mirrorSummary,
  createDrumShadow,
- createDrumPlayer,createWorkletDrums,
+ createDrumPlayer,createWorkletDrums,createWorkletGameArp,
  selfTest:sequencerSelfTest
 });
 globalThis.project6581Sequencer=api;
