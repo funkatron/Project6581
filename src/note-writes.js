@@ -56,6 +56,11 @@ export function createNoteWriter({voiceCount=1,unisonCount=1,mode='mono',detune=
   },
   noteOff(note,token){return run(()=>controller.noteOff(note,token)).commands},
   setLiveDetune(cents){return run(()=>controller.setLiveDetune(cents)).commands},
+  /** Filter registers for one chip (SidRegisters.setFilter units); unchanged registers are not rewritten. */
+  setFilter(settings,chip){
+   if(!Number.isInteger(chip)||chip<0||chip>=SID_CHIP_COUNT)throw new RangeError('filter chip');
+   return run(()=>controller.setFilter(settings,chip)).commands;
+  },
   panic(){return run(()=>controller.panic()).commands}
  };
 }
