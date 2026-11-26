@@ -50,17 +50,20 @@ export function createDrumShadow(sampleRate){
    run={id:message.run,start:message.step%STEP_COUNT,n:0,anchor,stepFrames};
    lead=anchor-currentFrame;error=null;
   },
-  /** Counts every step whose frame falls before untilFrame. */
+  /** Counts every step whose frame falls before untilFrame; returns those steps as [{n, frame, index}]. */
   advance(untilFrame,transport){
-   if(!run||!transport)return;
+   const counted=[];
+   if(!run||!transport)return counted;
    for(let i=0;i<MAX_STEPS_PER_BLOCK;i++){
     const frame=run.anchor+Math.round(run.n*run.stepFrames);
-    if(frame>=untilFrame)return;
+    if(frame>=untilFrame)break;
     const index=(run.start+run.n)%STEP_COUNT;
     steps.push([run.id,run.n,frame,index,lanesOnStep(transport,index)]);
     if(steps.length>MAX_REPORTED_STEPS){steps.shift();dropped++}
+    counted.push({n:run.n,frame,index});
     run.n++;
    }
+   return counted;
   },
   hasReport:()=>steps.length>0||lead!==null||error!==null,
   takeReport(){
@@ -78,7 +81,8 @@ export function createDrumShadow(sampleRate){
 export function createShadowComparator({now,post}){
  let runId=0,run=null,n=0;
  const pageTicks=new Map(),workletSteps=new Map();
- const stats={compared:0,hitsMatch:0,lateSum:0,lateMax:-Infinity,lateMin:Infinity,lastLeadMs:null,dropped:0,error:null,pageSkipped:0};
+ const stats={compared:0,hitsMatch:0,lateSum:0,lateMax:-Infinity,lateMin:Infinity,lastLeadMs:null,dropped:0,error:null,pageSkipped:0,
+  workletHits:0,workletAuditions:0,workletSkipped:{}};
  const key=(id,count)=>id+':'+count;
  const trim=map=>{while(map.size>MATCH_WINDOW)map.delete(map.keys().next().value)};
  function compare(page,worklet,sampleRate){
@@ -90,10 +94,13 @@ export function createShadowComparator({now,post}){
   stats.lateMin=Math.min(stats.lateMin,lateMs);
  }
  return {
-  /** The page's drum timer (re)starts; its first tick is delayMs from now. */
-  run({step,delayMs=0}){
+  /**
+   * The page's drum timer (re)starts; its first tick is delayMs from now.
+   * play: the worklet plays the steps too ("Worklet drum timing").
+   */
+  run({step,delayMs=0,play=false}){
    run=++runId;n=0;
-   post({type:SHADOW_MESSAGE,source:'drum',action:'run',run,step,firstAt:now()+delayMs/1000});
+   post({type:SHADOW_MESSAGE,source:'drum',action:'run',run,step,firstAt:now()+delayMs/1000,play});
   },
   stop(){
    if(run===null)return;
@@ -117,6 +124,12 @@ export function createShadowComparator({now,post}){
    if(report.lead!==null&&report.lead!==undefined)stats.lastLeadMs=report.lead/report.sampleRate*1000;
    if(report.error)stats.error=report.error;
    stats.dropped+=report.dropped??0;
+   if(report.drums){
+    stats.workletHits+=report.drums.hits??0;
+    stats.workletAuditions+=report.drums.auditions??0;
+    for(const [reason,count] of Object.entries(report.drums.skipped??{}))
+     stats.workletSkipped[reason]=(stats.workletSkipped[reason]??0)+count;
+   }
    for(const [id,count,frame,index,lanes] of report.steps??[]){
     const k=key(id,count),page=pageTicks.get(k),worklet={frame,index,lanes,sampleRate:report.sampleRate};
     if(page){pageTicks.delete(k);compare(page,worklet,report.sampleRate)}
@@ -143,5 +156,8 @@ export function formatDrumShadow(summary){
  if(summary.lastLeadMs!==null)line+=' · start message lead '+ms(summary.lastLeadMs);
  if(summary.pageSkipped)line+=' · page skipped '+summary.pageSkipped+' steps to stay in time';
  if(summary.dropped)line+=' · '+summary.dropped+' reports dropped';
+ if(summary.workletHits)line+=' · worklet played '+summary.workletHits+' hits';
+ const skipped=Object.entries(summary.workletSkipped??{});
+ if(skipped.length)line+=' · worklet skipped '+skipped.map(([reason,count])=>reason+' '+count).join(', ');
  return line;
 }

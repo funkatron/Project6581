@@ -36,7 +36,7 @@ test('the worklet rebuilds the page mirror; digests match at every revision',()=
   assert.equal(mirrorDigest(h.worklet),h.sender.digestAt(message.revision),message.part);
  }
  assert.deepEqual(h.worklet.transport,transport.getState());
- assert.deepEqual(mirrorSummary(h.worklet),{transport:true,voices:3,drumLanes:1,instrument:true});
+ assert.deepEqual(mirrorSummary(h.worklet),{transport:true,voices:3,drumLanes:1,instrument:true,drumBuses:0});
  assert.deepEqual(h.worklet.drumLanes.kick,lane);
 });
 
@@ -64,7 +64,7 @@ test('a reset resends everything, and the worklet starts over',()=>{
  h.sender.reset();
  assert.equal(h.sender.syncVoice(1,voice(1)),true);
  h.deliver();
- assert.deepEqual(mirrorSummary(h.worklet),{transport:false,voices:1,drumLanes:0,instrument:false});
+ assert.deepEqual(mirrorSummary(h.worklet),{transport:false,voices:1,drumLanes:0,instrument:false,drumBuses:0});
 });
 
 test('gaps and bad parts are rejected without changing the mirror',()=>{
@@ -89,7 +89,7 @@ test('status comparison and the Audio timing line',()=>{
  const status={revision:h.worklet.revision,digest:mirrorDigest(h.worklet),summary:mirrorSummary(h.worklet),error:null};
  assert.equal(formatSequencerMirror(null),'Worklet sequencer mirror: not reported yet');
  assert.equal(formatSequencerMirror(compareMirrorStatus(status,h.sender)),
-  'Worklet sequencer mirror: revision 2, in sync · transport – · voices 1/3 · drum lanes 0/4 · allocation –');
+  'Worklet sequencer mirror: revision 2, in sync · transport – · voices 1/3 · drum lanes 0/4 · drum buses 0/3 · allocation –');
  assert.match(formatSequencerMirror(compareMirrorStatus({...status,digest:'00000000'},h.sender)),/revision 2, MISMATCH/);
  h.sender.syncVoice(1,voice(1));
  assert.match(formatSequencerMirror(compareMirrorStatus(status,h.sender)),/revision 2 \(page at 3\), in sync/);
@@ -133,4 +133,24 @@ test('without the sequencer modules the processor ignores mirror messages',()=>{
  vm.runInContext(source,scope);
  new Processor().port.onmessage({data:{type:'sequencer-mirror',revision:1,part:'reset',value:null}});
  assert.equal(messages.length,0);
+});
+
+test('drum buses: SID 4–6 filter and enabled flag reach the worklet; bad values are rejected',()=>{
+ const h=harness();
+ h.sender.reset();
+ const bus=chip=>({filter:{...engines[chip].filter},enabled:Boolean(engines[chip].voice.enabled)});
+ for(let index=0;index<3;index++)h.sender.syncDrumBus(index,bus(3+index));
+ assert.equal(h.sender.syncDrumBus(1,bus(4)),false,'unchanged bus is not resent');
+ h.deliver();
+ assert.deepEqual(h.worklet.drumBuses,[bus(3),bus(4),bus(5)]);
+ assert.equal(mirrorDigest(h.worklet),h.sender.digestAt(h.sender.revision));
+ assert.equal(mirrorSummary(h.worklet).drumBuses,3);
+ h.sender.syncDrumBus(2,{...bus(5),enabled:false});
+ h.deliver();
+ assert.equal(h.worklet.drumBuses[2].enabled,false);
+ const at=h.worklet.revision+1,filter=bus(3).filter;
+ assert.throws(()=>applyMirrorMessage(h.worklet,{revision:at,part:'drum-bus',value:{bus:3,filter,enabled:true}}),RangeError);
+ assert.throws(()=>applyMirrorMessage(h.worklet,{revision:at,part:'drum-bus',value:{bus:0,filter:{...filter,mode:'notch'},enabled:true}}),RangeError);
+ assert.throws(()=>applyMirrorMessage(h.worklet,{revision:at,part:'drum-bus',value:{bus:0,filter:{...filter,volume:NaN},enabled:true}}),RangeError);
+ assert.throws(()=>applyMirrorMessage(h.worklet,{revision:at,part:'drum-bus',value:{bus:0,filter,enabled:1}}),TypeError);
 });

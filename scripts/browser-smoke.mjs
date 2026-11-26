@@ -69,12 +69,12 @@ for (const engine of engines) {
     // Mirror and shadow lines redraw only while Audio timing is open.
     await page.evaluate(() => { document.getElementById('audioTimingDetails').open = true; });
     // The first report (the reset) is immediate; the full state follows within ~250 ms.
-    await page.waitForFunction(() => /Worklet sequencer mirror: revision \d+, in sync · transport ✓ · voices 3\/3 · drum lanes 4\/4 · allocation ✓/
+    await page.waitForFunction(() => /Worklet sequencer mirror: revision \d+, in sync · transport ✓ · voices 3\/3 · drum lanes 4\/4 · drum buses 3\/3 · allocation ✓/
       .test(document.querySelector('#audioTimingSummary')?.textContent || ''), null, { timeout: 10000 });
     const mirrorLine = (await page.locator('#audioTimingSummary').textContent())
       .split('\n').find(line => line.startsWith('Worklet sequencer mirror:'));
     console.log(engine + ' ' + mirrorLine);
-    assert.match(mirrorLine, /voices 3\/3 · drum lanes 4\/4 · allocation ✓/);
+    assert.match(mirrorLine, /voices 3\/3 · drum lanes 4\/4 · drum buses 3\/3 · allocation ✓/);
     // Step 3b: run the drum preview and let the worklet shadow clock compare at least 16 steps.
     await page.evaluate(() => document.getElementById('drumSeqRun').click());
     await page.waitForFunction(() => {
@@ -87,6 +87,26 @@ for (const engine of engines) {
     console.log(engine + ' ' + shadowLine);
     const [, compared, matched] = /(\d+) steps · hits match (\d+)\//.exec(shadowLine);
     assert.equal(matched, compared, 'worklet shadow hits differ from the page');
+    // Step 3c-2: Prefs → Worklet drum timing on; the worklet plays the preview.
+    const setWorkletDrums = on => page.evaluate(value => {
+      const input = document.getElementById('workletDrumTiming');
+      input.checked = value;
+      input.dispatchEvent(new Event('change'));
+    }, on);
+    await setWorkletDrums(true);
+    assert.match(await page.locator('#workletDrumTimingStatus').textContent(), /^On: the audio engine plays the drums/);
+    await page.evaluate(() => document.getElementById('drumSeqRun').click());
+    await page.waitForFunction(() => {
+      const text = document.querySelector('#audioTimingSummary')?.textContent || '';
+      const match = /worklet played (\d+) hits/.exec(text);
+      return text.includes('Drum timing: worklet plays the drums') && match && Number(match[1]) >= 16;
+    }, null, { timeout: 15000 });
+    await page.evaluate(() => document.getElementById('drumSeqStop').click());
+    const workletLine = (await page.locator('#audioTimingSummary').textContent())
+      .split('\n').find(line => line.startsWith('Drum shadow clock:'));
+    console.log(engine + ' ' + workletLine);
+    assert.doesNotMatch(workletLine, /worklet skipped/);
+    await setWorkletDrums(false);
     const initialWasmFetches = await page.evaluate(() => performance.getEntriesByType('resource')
       .filter(entry => entry.name.includes('/dist/residfp.wasm')).length);
     assert.equal(initialWasmFetches, 1, 'initial SID startup must fetch WASM once');

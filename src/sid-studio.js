@@ -46,10 +46,10 @@ import {mountSidEnginePanels,querySidEngineCard} from "./sid-engine-panels-ui.js
 import {mountMasterLoudnessMeter} from "./master-loudness-meter-ui.js?v=__BUILD_ID__";
 import {mountHelpDialog,mountHelpTriggers} from "./ui-help-dialog.js?v=__BUILD_ID__";
 import {mountMidiInput} from "./midi-input.js?v=__BUILD_ID__";
-import {mountPreferencesDialog} from "./studio-preferences-ui.js?v=__BUILD_ID__";
+import {mountPreferencesDialog,mountWorkletDrumTimingPref} from "./studio-preferences-ui.js?v=__BUILD_ID__";
 import {bindHelpGesture} from "./ui-help-gesture.js?v=__BUILD_ID__";
 import {testHooksEnabled,mountStudioTestHooks} from "./studio-test-hooks.js?v=__BUILD_ID__";
-import {createMirrorSender,compareMirrorStatus,MIRROR_DRUM_LANES,MIRROR_MELODIC_CHIPS} from "./sequencer-mirror.js?v=__BUILD_ID__";
+import {createMirrorSender,compareMirrorStatus,MIRROR_DRUM_LANES,MIRROR_DRUM_BUSES,MIRROR_MELODIC_CHIPS} from "./sequencer-mirror.js?v=__BUILD_ID__";
 import {createShadowComparator} from "./sequencer-shadow.js?v=__BUILD_ID__";
 
 export function startSidStudio(){
@@ -366,6 +366,10 @@ function syncWorkletMirror(){
   const note=Math.max(0,Math.min(127,lane.midiNote+(lane.pitchOffsetSemitones??0)));
   workletMirror.syncDrumLane(laneId,{note,level:lane.level,voice:timbre.voice,filter:timbre.filter});
  }
+ for(let bus=0;bus<MIRROR_DRUM_BUSES;bus++){
+  const engine=engines[drumChipForBus(bus)];
+  workletMirror.syncDrumBus(bus,{filter:{...engine.filter},enabled:Boolean(engine.voice.enabled)});
+ }
 }
 const drumChipFilterStamp=['','','','','',''];
 function applyDrumChipFilter(chip,overrides={}){
@@ -395,7 +399,22 @@ function triggerDrumStep(rawHits){
  // Mute/solo first, so a muted open hat cannot choke the closed hat.
  const hits=resolveDrumHitsOnStep(rawHits.filter(hit=>transport.drumLaneAudible(hit.lane)));
  if(!hits.length)return;
+ // Worklet drum timing: the worklet plays this step on the audio clock; the page only shows it.
+ if(drum.worklet){for(const hit of hits)bumpDrumBusMeter(hit.lane);return}
  for(const hit of hits)triggerDrumLane(hit.lane,{drumSlot:hit.slot,skipFilter:true});
+}
+/**
+ * Grid-cell tap: whoever plays the drums plays the tap, so SID 4–6 have one writer.
+ * While the transport runs that is its player; when stopped, the setting decides.
+ */
+function auditionDrumLane(laneId){
+ const worklet=drum.running?drum.worklet:workletDrumTiming.active();
+ if(sidAudio&&worklet){
+  sidAudio.sendSequencerMirror?.({type:'sequencer-drums',action:'audition',lane:laneId});
+  bumpDrumBusMeter(laneId);
+  return;
+ }
+ triggerDrumLane(laneId);
 }
 function triggerDrumLane(laneId,{drumSlot,skipFilter=false}={}){
  if(!sidController)return;
@@ -582,10 +601,11 @@ const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 const arp={timer:null,step:0,root:null,last:null};
 const directOwned=new Set(); // Physical notes sounding independently of either generator.
 const game={timer:null,last:null,step:0,gateTimer:null};
-const drum={timer:null,step:0,running:false};
+const drum={timer:null,step:0,running:false,worklet:false};
 const drumReleaseTimers=new Map();
 let drumStop=()=>{};
 let drumStart=()=>{};
+let drumRestartIfRunning=()=>{};
 let drumPanelUi={setActiveStep:()=>{},render:()=>{}};
 let seqPreview=false,activeSeqStep=-1;
 let gameStop=()=>{};
@@ -658,7 +678,7 @@ drumPanelUi=mountDrumPanel({
  setDrumSequence:value=>{transport.setDrumGrid(validateDrumSequence(value).grid)},
  getDrumKit:()=>drumKit,
  setDrumKit:setDrumKitState,
- triggerDrumLane,
+ triggerDrumLane:auditionDrumLane,
  getDrumMix:()=>{const {mute,solo}=transport.drum;return {mute,solo}},
  isLaneAudible:lane=>transport.drumLaneAudible(lane),
  setDrumMute:(lane,on)=>transport.setDrumMute(lane,on),
@@ -666,15 +686,29 @@ drumPanelUi=mountDrumPanel({
  onPatternChange:()=>refreshPresetDirty()
 });
 const drumBusMetersUi=mountDrumBusMeters({$,getLevels:()=>drumBusPeakLevels});
-({drumStart,drumStop}=mountDrumPerformance({
+const workletDrumTiming=mountWorkletDrumTimingPref($,{
+ getSupport:()=>audioTiming.sequencerModules,
+ onChange:enabled=>{
+  traceStudio('worklet-drum-timing',{enabled,active:workletDrumTiming.active()});
+  // Switch who plays the drums at the next step: stop the old player's drums, keep the step.
+  if(drum.running)drumRestartIfRunning();
+  syncWorkletDrumTimingReport();
+ }
+});
+function syncWorkletDrumTimingReport(){
+ audioTiming.workletDrumTiming={enabled:workletDrumTiming.enabled,active:workletDrumTiming.active(),playing:drum.running&&drum.worklet};
+}
+syncWorkletDrumTimingReport();
+({drumStart,drumStop,drumRestartIfRunning}=mountDrumPerformance({
  $,drum,
  transport,
  triggerDrumStep,
   stopDrumVoices,
  refreshPresetDirty,
- onTransportChange:running=>performanceDrum.setRunning(running),
  onStep:index=>drumPanelUi.setActiveStep(index),
  shadow:drumShadow,
+ workletDrums:()=>Boolean(sidAudio)&&workletDrumTiming.active(),
+ onTransportChange:running=>{performanceDrum.setRunning(running);syncWorkletDrumTimingReport()},
  onDrumStart:()=>{
   if(performanceArp.gameOn&&seqPreview){
    game.step=0;
@@ -1024,6 +1058,7 @@ async function startSid({gesture=false}={}){
       if(event.type==='sequencer-support'){
         const {type:_type,...support}=event;
         audioTiming.sequencerModules=support;
+        workletDrumTiming.refresh();syncWorkletDrumTimingReport();
         updateAudioTimingReport();
         return;
       }

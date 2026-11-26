@@ -5,6 +5,14 @@ import {stepMilliseconds} from './arp-composition.js?v=__BUILD_ID__';
 import {drumBpm} from './drum-lane-trigger.js?v=__BUILD_ID__';
 import {drumSequence} from './transport-state.js?v=__BUILD_ID__';
 
+/**
+ * "Worklet drum timing": the page asks the worklet to play steps from this far
+ * ahead, because its start message can arrive late (iPad −5 to −11 ms, CI WebKit
+ * down to −64 ms). The page's own step clock starts with the same delay so the
+ * grid highlight and the shadow comparison stay on the same steps.
+ */
+export const WORKLET_DRUM_LEAD_MS = 50;
+
 const RATE_LABEL = {0.25: '1/1', 0.5: '1/2', 1: '1/4', 2: '1/8', 4: '1/16', 8: '1/32', 16: '1/64', 32: '1/128'};
 
 export function drumStepIntervalMs(sequence, masterBpm) {
@@ -25,6 +33,10 @@ export function mountDrumPerformance({
   onStep,
   onDrumStart,
   shadow,
+  // True when the worklet should play the drums (Prefs → Worklet drum timing,
+  // and the worklet modules loaded). Read at each start/restart.
+  workletDrums = () => false,
+  leadMs = WORKLET_DRUM_LEAD_MS,
   // Injectable for tests. now() is in milliseconds.
   now = () => performance.now(),
   setTimer = (fn, ms) => setTimeout(fn, ms),
@@ -79,6 +91,7 @@ export function mountDrumPerformance({
     gridTimer.stop();
     drum.timer = null;
     drum.running = false;
+    drum.worklet = false;
     shadow?.stop();
     if (resetStep) drum.step = 0;
     stopDrumVoices();
@@ -90,11 +103,17 @@ export function mountDrumPerformance({
   function drumStart() {
     drumStop({resetStep: true});
     drum.running = true;
+    drum.worklet = Boolean(shadow) && workletDrums() === true;
     setTransportLabel(true);
-    shadow?.run({step: drum.step, delayMs: 0});
     const ms = drumStepIntervalMs(liveSequence(), transport.masterBpm);
     drum.timer = gridTimer;
-    gridTimer.start({ms, onStep: onGridStep, immediate: true});
+    if (drum.worklet) {
+      shadow.run({step: drum.step, delayMs: leadMs, play: true});
+      gridTimer.start({ms, onStep: onGridStep, delayMs: leadMs});
+    } else {
+      shadow?.run({step: drum.step, delayMs: 0});
+      gridTimer.start({ms, onStep: onGridStep, immediate: true});
+    }
     onDrumStart?.();
     refreshPresetDirty?.();
   }
@@ -103,12 +122,14 @@ export function mountDrumPerformance({
     if (!drum.running) return;
     drumStop({resetStep: false});
     drum.running = true;
+    drum.worklet = Boolean(shadow) && workletDrums() === true;
     setTransportLabel(true);
     const ms = drumStepIntervalMs(liveSequence(), transport.masterBpm);
-    shadow?.run({step: drum.step, delayMs: ms});
-    // Keep the step; the next tick is one new interval from now.
+    // Keep the step; the next tick is one new interval from now (worklet: at least the lead).
+    const delayMs = drum.worklet ? Math.max(ms, leadMs) : ms;
+    shadow?.run({step: drum.step, delayMs, play: drum.worklet});
     drum.timer = gridTimer;
-    gridTimer.start({ms, onStep: onGridStep, immediate: false});
+    gridTimer.start({ms, onStep: onGridStep, delayMs});
     updateStatus(true, drum.step);
   }
 

@@ -45,6 +45,8 @@ export function mountAudioTimingPanel({
    formatSequencerSupport(audioTiming.sequencerModules),
    formatSequencerMirror(audioTiming.sequencerMirror),
    formatDrumShadow(audioTiming.drumShadow),
+   'Drum timing: '+(audioTiming.workletDrumTiming?.active?'worklet plays the drums':
+    audioTiming.workletDrumTiming?.enabled?'page timer (worklet drum timing is on but unavailable)':'page timer'),
    'Device output line is an estimate from loud PCM + AudioContext.outputLatency; not a DAC measurement. Screen recording A/V sync can differ.',
    ...sidStartupLog
   );

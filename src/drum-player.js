@@ -35,11 +35,14 @@ export function drumReleaseFrames(voice,sampleRate){
 }
 
 /**
- * @param {{sampleRate:number, writer?:ReturnType<typeof createNoteWriter>}} options
+ * @param {{sampleRate:number, writer?:ReturnType<typeof createNoteWriter>, forceFilter?:boolean}} options
  * writer defaults to a new note writer; drum chips do not use the melodic
  * voice budget, so its instrument settings do not matter here.
+ * forceFilter writes all four filter registers on every hit. The worklet sets
+ * it because the page still writes SID 4–6 filters (engine card edits, LFO
+ * updates), so this writer's record of them can be stale.
  */
-export function createDrumPlayer({sampleRate,writer=createNoteWriter()}={}){
+export function createDrumPlayer({sampleRate,writer=createNoteWriter(),forceFilter=false}={}){
  if(!(sampleRate>0))throw new RangeError('sample rate');
  const owners=new Map();// laneId → {note, token, chip, releaseAt}
 
@@ -75,7 +78,7 @@ export function createDrumPlayer({sampleRate,writer=createNoteWriter()}={}){
    release(laneId,out);
    for(const [other,owner] of [...owners])if(owner.chip===chip)release(other,out);
    const filter=filterRegistersFromUi(drumHitFilter(busFilter,laneId,lane.level));
-   out.push(...writer.setFilter(drumSlotFilterRegisters(filter,0),chip));
+   out.push(...writer.setFilter(drumSlotFilterRegisters(filter,0),chip,{force:forceFilter}));
    writer.setSettings(chip,{...lane.voice,pitchEnvelope:lane.voice.pitchEnvelope});
    const on=writer.noteOn(lane.note,{chipMask:[chip],layerChip:chip,drumSlot:0});
    out.push(...forgetEvicted(on.commands));

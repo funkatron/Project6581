@@ -200,3 +200,56 @@ test('the worklet processor runs the shadow from mirrored transport and reports 
  for(let frame=RATE*1.5;frame<RATE*3;frame+=128){scope.currentFrame=frame;processor.process([],[block])}
  assert.ok(messages.length-before<=1,'at most the last pending report after stop');
 });
+
+test('worklet drum timing: the run carries play:true and a 50 ms lead; page ticks only highlight',()=>{
+ const {$}=fakeDom({drumRate:{value:'4'},drumSync:{checked:true},drumBpm:{value:'120'}});
+ const transport=createTransportState();
+ const clock=fakeClock();
+ const audioTime=()=>clock.now()/1000;
+ const worklet=createDrumShadow(RATE);
+ const posted=[];
+ const comparator=createShadowComparator({now:audioTime,post:message=>{posted.push(message);worklet.control(message,transport.getState(),Math.round(audioTime()*RATE))}});
+ const drum={step:0,timer:null,running:false};
+ let useWorklet=true;
+ const steps=[];
+ const api=mountDrumPerformance({$,drum,transport,triggerDrumStep:()=>steps.push({at:clock.now(),worklet:drum.worklet}),
+  stopDrumVoices:()=>{},shadow:comparator,workletDrums:()=>useWorklet,...clock});
+ const run=ms=>{for(let i=0;i<ms;i++){
+  clock.advance(1);
+  worklet.advance(Math.round(audioTime()*RATE)+128,transport.getState());
+  if(worklet.hasReport())comparator.receive(worklet.takeReport());
+ }};
+ api.drumStart();
+ assert.equal(drum.worklet,true);
+ assert.deepEqual(posted.at(-1),{type:'sequencer-shadow',source:'drum',action:'run',run:1,step:0,firstAt:0.05,play:true});
+ assert.deepEqual(steps,[],'no step at start: the first one is 50 ms ahead');
+ run(50+3*125+10);
+ assert.deepEqual(steps.map(s=>s.at),[50,175,300,425]);
+ assert.ok(steps.every(s=>s.worklet));
+ const summary=comparator.summary();
+ assert.equal(summary.compared,4);
+ assert.ok(Math.abs(summary.lateMax)<0.05,'page highlight and worklet steps share the grid');
+ // 1/64 at 240 BPM is 15.6 ms: a restart still gives the worklet the full lead.
+ transport.set({masterBpm:240,drum:{rate:16}});
+ $('masterBpm').dispatch('change');
+ assert.equal(posted.at(-1).play,true);
+ assert.ok(Math.abs(posted.at(-1).firstAt-(audioTime()+0.05))<1e-9);
+ // Turning the setting off: the next restart hands the drums back to the page.
+ useWorklet=false;
+ $('drumRate').dispatch('change');
+ assert.equal(drum.worklet,false);
+ assert.equal(posted.at(-1).play,false);
+ api.drumStop();
+ assert.deepEqual(posted.at(-1),{type:'sequencer-shadow',source:'drum',action:'stop'});
+ assert.equal(drum.worklet,false);
+});
+
+test('without a shadow comparator the page always plays the drums',()=>{
+ const {$}=fakeDom({drumRate:{value:'4'},drumSync:{checked:true},drumBpm:{value:'120'}});
+ const clock=fakeClock();
+ const drum={step:0,timer:null,running:false};
+ const api=mountDrumPerformance({$,drum,transport:createTransportState(),triggerDrumStep:()=>{},stopDrumVoices:()=>{},workletDrums:()=>true,...clock});
+ api.drumStart();
+ assert.equal(drum.worklet,false);
+ api.drumStop();
+});

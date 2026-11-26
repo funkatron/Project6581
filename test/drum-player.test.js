@@ -175,3 +175,14 @@ test('releaseDue, nextReleaseAt and stopAll', () => {
  assert.equal(player.nextReleaseAt(),null);
  assert.throws(()=>createDrumPlayer({sampleRate:0}),RangeError);
 });
+
+test('forceFilter rewrites all four bus filter registers on every hit (another writer may have changed them)', () => {
+ const lanes=mirroredLanes(defaultDrumKit());
+ const busFilter=createDefaultEngines()[3].filter;
+ const filterWrites=commands=>commands.filter(c=>c.type==='write'&&c.register>=0x75&&c.register<=0x78).length;
+ for(const [forceFilter,second] of [[false,0],[true,4]]){
+  const player=createDrumPlayer({sampleRate:SAMPLE_RATE,forceFilter});
+  assert.equal(filterWrites(player.hit('kick',lanes.kick,{busFilter}).commands),4);
+  assert.equal(filterWrites(player.hit('kick',lanes.kick,{busFilter,frame:6000}).commands),second,'forceFilter '+forceFilter);
+ }
+});
