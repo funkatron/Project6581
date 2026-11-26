@@ -155,7 +155,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     this.drumShadow??=api.createDrumShadow(sampleRate);
     try{
       this.drumShadow.control(message,this.mirror?.transport,currentFrame);
-      if(message.play===true||this.workletDrums)this.drumCommands.push(...this.drumsApi()?.control(message)??[]);
+      if(message.play===true||this.workletDrums)this.drumCommands.push(...this.drumsApi()?.control(message,currentFrame)??[]);
     }
     catch(err){this.port.postMessage({type:'sequencer-shadow-status',sampleRate,steps:[],dropped:0,lead:null,error:String(err?.message??err)})}
   }
@@ -171,7 +171,7 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     if(!drums)return;
     try{
       if(message.action==='audition')this.drumCommands.push(...drums.audition(message.lane,this.mirror,currentFrame));
-      else if(message.action==='stop')this.drumCommands.push(...drums.stopAll());
+      else if(message.action==='stop')this.drumCommands.push(...drums.stopAll(currentFrame));
     }catch(err){this.port.postMessage({type:'sequencer-shadow-status',sampleRate,steps:[],dropped:0,lead:null,error:String(err?.message??err)})}
   }
   startPitchEnvelope(data){
@@ -208,13 +208,14 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       else if(command.type==='pitch-envelope-stop')this.stopPitchEnvelope(command);
     }
   }
-  // At most four shadow reports per second of audio.
+  // At most four shadow reports per second of audio. Worklet drum note events
+  // (taps, releases after stop) are reported even when the shadow is idle.
   flushShadowStatus(){
-    const shadow=this.drumShadow;
-    if(!shadow?.hasReport()||currentFrame-this.shadowStatusFrame<sampleRate/4)return;
+    const shadow=this.drumShadow,drums=this.workletDrums;
+    if(!(shadow?.hasReport()||drums?.hasEvents)||currentFrame-this.shadowStatusFrame<sampleRate/4)return;
     this.shadowStatusFrame=currentFrame;
-    const drums=this.workletDrums?.takeStats()??null;
-    this.port.postMessage({type:'sequencer-shadow-status',...shadow.takeReport(),drums});
+    const report=shadow?.hasReport()?shadow.takeReport():{sampleRate,steps:[],dropped:0,lead:null,error:null};
+    this.port.postMessage({type:'sequencer-shadow-status',...report,drums:drums?.takeStats()??null});
   }
   // At most four status reports per second of audio.
   flushMirrorStatus(){
@@ -327,10 +328,8 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     if(this.mirrorStatusPending)this.flushMirrorStatus();
     const blockEnd=currentFrame+(channels[0]?.length??128);
     let drumSteps=[];
-    if(this.drumShadow){
-      if(this.drumShadow.running)drumSteps=this.drumShadow.advance(blockEnd,this.mirror?.transport)??[];
-      this.flushShadowStatus();
-    }
+    if(this.drumShadow?.running)drumSteps=this.drumShadow.advance(blockEnd,this.mirror?.transport)??[];
+    if(this.drumShadow||this.workletDrums)this.flushShadowStatus();
     const e=this.exports;if(!e)return true;
     this.applyAudioClockModulation();
     const queuedWrites=this.queue.length;

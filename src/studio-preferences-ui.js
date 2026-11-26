@@ -24,14 +24,15 @@ export function workletDrumTimingStatus(enabled,support){
 }
 
 /**
- * Prefs → "Worklet drum timing" (experimental, off by default; saved in this browser).
+ * Prefs → "Worklet drum timing" (on by default since 3c-3; an explicit choice is
+ * saved in this browser, so a browser that turned it off stays off).
  * onChange(enabled) runs after the user toggles it. getSupport() returns the
  * worklet's sequencer-support report, or null before the engine starts.
  */
 export function mountWorkletDrumTimingPref($,{storage=globalThis.localStorage,getSupport=()=>null,onChange=()=>{}}={}){
  const input=$('workletDrumTiming');
- let enabled=false;
- try{enabled=storage?.getItem(WORKLET_DRUM_TIMING_KEY)==='on'}catch{enabled=false}
+ let enabled=true;
+ try{enabled=storage?.getItem(WORKLET_DRUM_TIMING_KEY)!=='off'}catch{enabled=true}
  const refresh=()=>{
   const status=$('workletDrumTimingStatus');
   if(status)status.textContent=workletDrumTimingStatus(enabled,getSupport());

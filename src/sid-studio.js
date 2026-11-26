@@ -50,7 +50,7 @@ import {mountPreferencesDialog,mountWorkletDrumTimingPref} from "./studio-prefer
 import {bindHelpGesture} from "./ui-help-gesture.js?v=__BUILD_ID__";
 import {testHooksEnabled,mountStudioTestHooks} from "./studio-test-hooks.js?v=__BUILD_ID__";
 import {createMirrorSender,compareMirrorStatus,MIRROR_DRUM_LANES,MIRROR_DRUM_BUSES,MIRROR_MELODIC_CHIPS} from "./sequencer-mirror.js?v=__BUILD_ID__";
-import {createShadowComparator} from "./sequencer-shadow.js?v=__BUILD_ID__";
+import {createShadowComparator,workletDrumTraceEntries} from "./sequencer-shadow.js?v=__BUILD_ID__";
 
 export function startSidStudio(){
 const $=id=>document.getElementById(id);
@@ -1065,6 +1065,12 @@ async function startSid({gesture=false}={}){
       if(event.type==='sequencer-shadow-status'){
         drumShadow.receive(event);
         audioTiming.drumShadow=drumShadow.summary();
+        if(event.drums?.events?.length){
+         const lines=workletDrumTraceEntries(event.drums.events,{sampleRate:event.sampleRate,
+          audioNowSec:sidAudio?.context.currentTime??0,pageNowMs:performance.now()});
+         for(const {type,details} of lines)studioTrace.add(type,details);
+         if(diagnosticsUi.isVisible?.())diagnosticsUi.refresh();
+        }
         // Redraw only while the panel is open: a layout 4×/s can delay the drum timer.
         if($('audioTimingDetails').open)updateAudioTimingReport();
         return;
@@ -1544,7 +1550,7 @@ if(testHooksEnabled()){
   getDrumSequence:()=>transport.drumSequence,
   setDrumSequence:value=>{transport.setDrumGrid(validateDrumSequence(value).grid)},
   renderDrumPanel:()=>drumPanelUi.render(),
-  triggerDrumLane,
+  triggerDrumLane:auditionDrumLane,
   drumStart,
   drumStop,
   getDrumRunning:()=>drum.running,

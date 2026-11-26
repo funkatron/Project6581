@@ -206,3 +206,18 @@ export function formatDrumShadow(summary){
   +summary.workletResyncMaxMs.toFixed(1)+' ms'+(summary.workletResyncSkipped?', '+summary.workletResyncSkipped+' steps skipped':'')+')';
  return line;
 }
+
+/**
+ * Studio trace lines for drum notes the worklet played (Worklet drum timing).
+ * Events are [kind 'on'|'off', lane, note, frame, step]; atMs puts each one on
+ * the page clock: now minus how long ago its frame was on the audio clock.
+ */
+export function workletDrumTraceEntries(events,{sampleRate,audioNowSec,pageNowMs}){
+ if(!Array.isArray(events)||!(sampleRate>0))return [];
+ return events.map(([kind,lane,note,frame,step])=>{
+  const atMs=pageNowMs-(audioNowSec-frame/sampleRate)*1000;
+  const details={atMs,note,source:'drum:'+lane,player:'worklet',frame};
+  if(kind==='on'&&step>=0)details.step=step;
+  return {type:kind==='on'?'note-on':'note-off',details};
+ });
+}

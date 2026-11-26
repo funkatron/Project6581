@@ -88,6 +88,10 @@ async function main(){
    hooks.drumPreview(true);
   },fixtureJson);
   await delay(steps*125+200);
+  // Worklet drum timing reports its hits to the trace up to 4×/s: wait for them before stopping.
+  const minimum=fixture==='ch-only-16'?steps:2;
+  await page.waitForFunction(min=>globalThis.__project6581Test.listDrumNoteOns().length>=min,{timeout:5000},minimum)
+   .catch(()=>{});
   const result=await page.evaluate(expected=>{
    const hooks=globalThis.__project6581Test;
    hooks.drumPreview(false);
