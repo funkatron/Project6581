@@ -6,6 +6,7 @@ import {
 import {createNoteWriter} from './note-writes.js?v=__BUILD_ID__';
 import {emptyMirror,applyMirrorMessage,mirrorDigest,mirrorSummary,createMirrorSender} from './sequencer-mirror.js?v=__BUILD_ID__';
 import {createDrumShadow,drumStepSeconds} from './sequencer-shadow.js?v=__BUILD_ID__';
+import {createDrumPlayer} from './drum-player.js?v=__BUILD_ID__';
 
 // Loaded into the AudioWorklet with its own addModule() call, separate from
 // residfp-worklet.js, so a browser that rejects ES-module imports in worklets
@@ -54,6 +55,13 @@ export function sequencerSelfTest(){
   shadow.advance(12000,state);
   expect('shadow steps',shadow.takeReport().steps,[[1,0,0,0,'kick,ch'],[1,1,6000,1,'kick,ch']]);
   expect('noteOff gate',writer.noteOff(60,on.token),[{type:'pitch-envelope-stop',register:0},{type:'write',register:4,value:0x40}]);
+  // Drum player: a kick retriggers SID 4 voice 1 (gate off, on), then off 40 ms (1,920 frames) later.
+  const drums=createDrumPlayer({sampleRate:48000});
+  const kick=drums.hit('kick',{note:36,level:100,voice:{wave:'triangle',attack:0,decay:0.01,sustain:0,release:0.01}},
+   {busFilter:{cutoff:2583,resonance:100,volume:100,mode:'lowpass'},frame:0});
+  expect('drum kick gate',kick.commands.filter(c=>c.register===0x64).map(c=>c.value),[0x10,0x11]);
+  expect('drum kick release',[kick.releaseAt,drums.releaseDue(1919).length,drums.releaseDue(1920).at(-1)],
+   [1920,0,{type:'write',register:0x64,value:0x10}]);
   return {ok:true};
  }catch(error){
   return {ok:false,error:String(error?.message??error)};
@@ -61,13 +69,14 @@ export function sequencerSelfTest(){
 }
 
 const api=Object.freeze({
- version:4,
+ version:5,
  arpStep,gameStep,drumStep,
  createTransportState,applyTransportPatch,defaultTransport,
  activeNotes,arpNotes,resolveNote,drumSequence,arpStepMs,gameStepMs,
  createNoteWriter,
  emptyMirror,applyMirrorMessage,mirrorDigest,mirrorSummary,
  createDrumShadow,
+ createDrumPlayer,
  selfTest:sequencerSelfTest
 });
 globalThis.project6581Sequencer=api;
