@@ -20,6 +20,18 @@ import {stepMilliseconds} from './arp-composition.js?v=__BUILD_ID__';
 //   firstAt  audio time (s) of that first tick
 // Report:  {type:'sequencer-shadow-status', sampleRate, steps:[[run,n,frame,index,lanes]], dropped, lead}
 //   lead     frames between the worklet receiving 'run' and firstAt (negative: arrived late)
+//
+// Follow the page clock (fix after 0.27.2, iPad): the audio clock can lose time
+// against the page clock when the audio thread stalls (unrendered frames are
+// gone; iPad export 2026-11-26: −190 ms in ~4 s). Steps counted in frames then
+// stay late against the page's step highlight, arps and keyboard. While the
+// worklet plays the drums, the page sends where each next step should land:
+//   {type:'sequencer-shadow', source:'drum', action:'sync', run, n, at}
+//   n   the step's position in the run; at  its audio time (s), from the page clock
+// When the worklet's grid differs by SYNC_THRESHOLD_MS or more on SYNC_CONFIRM
+// syncs in a row (same sign), it moves its anchor by the smallest of those
+// differences (currentTime readings are coarse, so single readings are noisy),
+// then skips steps more than one step in the past, as the page grid timer does.
 
 export const SHADOW_MESSAGE='sequencer-shadow';
 export const SHADOW_STATUS='sequencer-shadow-status';
@@ -27,6 +39,8 @@ const STEP_COUNT=16;
 const MAX_REPORTED_STEPS=64;
 const MAX_STEPS_PER_BLOCK=8;
 const MATCH_WINDOW=512;
+export const SYNC_THRESHOLD_MS=8;
+export const SYNC_CONFIRM=4;
 
 /** Seconds per drum step; the same tempo and rate the page's drum timer uses. */
 export function drumStepSeconds(transport){
@@ -39,11 +53,30 @@ const lanesOnStep=(transport,index)=>drumStep({step:index},{sequence:drumSequenc
 /** Worklet side. All times in frames. */
 export function createDrumShadow(sampleRate){
  let run=null,steps=[],dropped=0,lead=null,error=null;
+ let syncs=0,syncShiftMax=0,syncSkipped=0,pending=[];
+ const threshold=SYNC_THRESHOLD_MS*sampleRate/1000;
+ function sync(message,currentFrame){
+  if(!run||message.run!==run.id||!Number.isInteger(message.n)||!Number.isFinite(message.at))return;
+  const want=Math.round(message.at*sampleRate-message.n*run.stepFrames);
+  const shift=want-run.anchor;
+  if(Math.abs(shift)<threshold){pending=[];return}
+  if(pending.length&&Math.sign(pending[0])!==Math.sign(shift))pending=[];
+  pending.push(shift);
+  if(pending.length<SYNC_CONFIRM)return;
+  const move=pending.reduce((a,b)=>Math.abs(b)<Math.abs(a)?b:a);
+  pending=[];
+  run.anchor+=move;
+  syncs++;syncShiftMax=Math.max(syncShiftMax,Math.abs(move));
+  // Skip steps more than one step in the past; one late by less still plays.
+  while(run.anchor+Math.round(run.n*run.stepFrames)<currentFrame-run.stepFrames){run.n++;syncSkipped++}
+ }
  return {
   get running(){return run!==null},
   control(message,transport,currentFrame){
-   if(message.action==='stop'){run=null;return}
+   if(message.action==='stop'){run=null;pending=[];return}
+   if(message.action==='sync'){sync(message,currentFrame);return}
    if(message.action!=='run')throw new RangeError('shadow action '+message.action);
+   pending=[];
    if(!transport){error='no transport mirrored';run=null;return}
    const stepFrames=drumStepSeconds(transport)*sampleRate;
    const anchor=Math.round(message.firstAt*sampleRate);
@@ -65,10 +98,10 @@ export function createDrumShadow(sampleRate){
    }
    return counted;
   },
-  hasReport:()=>steps.length>0||lead!==null||error!==null,
+  hasReport:()=>steps.length>0||lead!==null||error!==null||syncs>0,
   takeReport(){
-   const report={sampleRate,steps,dropped,lead,error};
-   steps=[];dropped=0;lead=null;error=null;
+   const report={sampleRate,steps,dropped,lead,error,syncs,syncShiftMax,syncSkipped};
+   steps=[];dropped=0;lead=null;error=null;syncs=0;syncShiftMax=0;syncSkipped=0;
    return report;
   }
  };
@@ -82,7 +115,7 @@ export function createShadowComparator({now,post}){
  let runId=0,run=null,n=0;
  const pageTicks=new Map(),workletSteps=new Map();
  const stats={compared:0,hitsMatch:0,lateSum:0,lateMax:-Infinity,lateMin:Infinity,lastLeadMs:null,dropped:0,error:null,pageSkipped:0,
-  workletHits:0,workletAuditions:0,workletSkipped:{}};
+  workletHits:0,workletAuditions:0,workletSkipped:{},workletResyncs:0,workletResyncMaxMs:0,workletResyncSkipped:0};
  const key=(id,count)=>id+':'+count;
  const trim=map=>{while(map.size>MATCH_WINDOW)map.delete(map.keys().next().value)};
  function compare(page,worklet,sampleRate){
@@ -101,6 +134,11 @@ export function createShadowComparator({now,post}){
   run({step,delayMs=0,play=false}){
    run=++runId;n=0;
    post({type:SHADOW_MESSAGE,source:'drum',action:'run',run,step,firstAt:now()+delayMs/1000,play});
+  },
+  /** While the worklet plays: step `n` of this run is due delayMs from now on the page clock. */
+  sync({n:count,delayMs}){
+   if(run===null)return;
+   post({type:SHADOW_MESSAGE,source:'drum',action:'sync',run,n:count,at:now()+delayMs/1000});
   },
   stop(){
    if(run===null)return;
@@ -124,6 +162,11 @@ export function createShadowComparator({now,post}){
    if(report.lead!==null&&report.lead!==undefined)stats.lastLeadMs=report.lead/report.sampleRate*1000;
    if(report.error)stats.error=report.error;
    stats.dropped+=report.dropped??0;
+   if(report.syncs){
+    stats.workletResyncs+=report.syncs;
+    stats.workletResyncMaxMs=Math.max(stats.workletResyncMaxMs,report.syncShiftMax/report.sampleRate*1000);
+    stats.workletResyncSkipped+=report.syncSkipped??0;
+   }
    if(report.drums){
     stats.workletHits+=report.drums.hits??0;
     stats.workletAuditions+=report.drums.auditions??0;
@@ -159,6 +202,8 @@ export function formatDrumShadow(summary){
  if(summary.workletHits)line+=' · worklet played '+summary.workletHits+' hits';
  const skipped=Object.entries(summary.workletSkipped??{});
  if(skipped.length)line+=' · worklet skipped '+skipped.map(([reason,count])=>reason+' '+count).join(', ');
+ if(summary.workletResyncs)line+=' · worklet re-synced to the page clock '+summary.workletResyncs+'× (largest '
+  +summary.workletResyncMaxMs.toFixed(1)+' ms'+(summary.workletResyncSkipped?', '+summary.workletResyncSkipped+' steps skipped':'')+')';
  return line;
 }
 

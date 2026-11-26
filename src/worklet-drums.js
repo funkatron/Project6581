@@ -73,6 +73,7 @@ export function createWorkletDrums({sampleRate}){
    * run or a stop ends it. Returns note-offs for drums still sounding.
    */
   control(message,frame){
+   if(message?.action==='sync')return [];
    const next=message?.action==='run'&&message.play===true;
    const wasPlaying=playing;
    playing=next;

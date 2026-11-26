@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
-import {createDrumShadow,createShadowComparator,drumStepSeconds,formatDrumShadow} from '../src/sequencer-shadow.js';
+import {createDrumShadow,createShadowComparator,drumStepSeconds,formatDrumShadow,SYNC_THRESHOLD_MS} from '../src/sequencer-shadow.js';
 import {mountDrumPerformance,drumStepIntervalMs} from '../src/drum-performance.js';
 import {createTransportState,drumSequence} from '../src/transport-state.js';
 import {drumStep} from '../src/sequencer-steps.js';
@@ -252,4 +252,100 @@ test('without a shadow comparator the page always plays the drums',()=>{
  api.drumStart();
  assert.equal(drum.worklet,false);
  api.drumStop();
+});
+
+// iPad 0.27.2 export (2026-11-26): the audio clock lost ~190 ms against the page
+// clock in a few seconds, and worklet drums stayed 1.5 steps late. Same drift here:
+// audio = page time minus a loss that ramps 0 → 190 ms between 1 s and 3 s.
+function driftHarness({sync=true}={}){
+ const {$}=fakeDom({drumRate:{value:'4'},drumSync:{checked:true},drumBpm:{value:'120'}});
+ const transport=createTransportState();
+ const clock=fakeClock();
+ const lost=t=>t<1000?0:t<3000?190*(t-1000)/2000:190;
+ const audioMs=()=>clock.now()-lost(clock.now());
+ const worklet=createDrumShadow(RATE);
+ let frame=0;
+ const comparator=createShadowComparator({now:()=>audioMs()/1000,post:message=>worklet.control(message,transport.getState(),frame)});
+ const shadow=sync?comparator:{run:o=>comparator.run(o),stop:()=>comparator.stop(),tick:o=>comparator.tick(o)};
+ const drum={step:0,timer:null,running:false};
+ const pageTicks=[];
+ const workletSteps=[];
+ const api=mountDrumPerformance({$,drum,transport,triggerDrumStep:()=>{},
+  onStep:index=>{if(index>=0)pageTicks.push(clock.now())},
+  stopDrumVoices:()=>{},shadow,workletDrums:()=>true,...clock});
+ const run=ms=>{for(let i=0;i<ms;i++){
+  clock.advance(1);
+  // Render every whole block the audio clock has reached.
+  while(frame+128<=Math.floor(audioMs()*RATE/1000)){
+   frame+=128;
+   const steps=worklet.advance(frame,transport.getState());
+   assert.ok(steps.length<=1,'never a burst of steps in one block');
+   for(const step of steps)workletSteps.push({n:step.n,wall:clock.now()});
+  }
+ }};
+ return {api,run,pageTicks,workletSteps,worklet,comparator};
+}
+
+test('after the audio clock loses time, worklet drum steps come back to the page grid',()=>{
+ const h=driftHarness();
+ h.api.drumStart();
+ h.run(6000);
+ h.api.drumStop();
+ // Step n is due at 50 + 125 n ms on the page clock (50 ms lead).
+ const late=h.workletSteps.map(s=>({n:s.n,lateMs:s.wall-(50+125*s.n)}));
+ const after=late.filter(s=>50+125*s.n>=4000);
+ assert.ok(after.length>=15,String(after.length));
+ for(const s of after)assert.ok(Math.abs(s.lateMs)<=SYNC_THRESHOLD_MS+3,'step '+s.n+' late '+s.lateMs+' ms');
+ const worst=Math.max(...late.map(s=>s.lateMs));
+ assert.ok(worst<125,'never a whole step late: '+worst);
+ const ns=h.workletSteps.map(s=>s.n);
+ assert.deepEqual(ns,[...new Set(ns)].sort((a,b)=>a-b),'no step played twice');
+ h.comparator.receive(h.worklet.takeReport());
+ const summary=h.comparator.summary();
+ assert.ok(summary.workletResyncs>=1&&summary.workletResyncs<=10,'resyncs '+summary.workletResyncs);
+ assert.match(formatDrumShadow(summary),/ · worklet re-synced to the page clock \d+× \(largest \d+\.\d ms\)/);
+});
+
+test('without the page sync the same drift leaves worklet drums ~190 ms late (the 0.27.2 bug)',()=>{
+ const h=driftHarness({sync:false});
+ h.api.drumStart();
+ h.run(6000);
+ const after=h.workletSteps.filter(s=>50+125*s.n>=4000).map(s=>s.wall-(50+125*s.n));
+ assert.ok(after.every(lateMs=>lateMs>=185&&lateMs<=195),JSON.stringify(after.slice(0,4)));
+});
+
+test('sync ignores noise under 8 ms, a stale run, and needs four same-sign readings',()=>{
+ const state=createTransportState().getState();
+ const shadow=createDrumShadow(RATE);
+ shadow.control({action:'run',run:1,step:0,firstAt:0},state,0);
+ const sync=(n,atMs,frame=0)=>shadow.control({action:'sync',run:1,n,at:atMs/1000},state,frame);
+ // Step n is at n × 125 ms. Readings 6 ms off: ignored.
+ for(let n=1;n<=5;n++)sync(n,n*125+6);
+ // Three late readings, then an early one: the run of readings restarts.
+ sync(5,625+40);sync(6,750+40);sync(6,750+40);sync(7,875-30);
+ shadow.control({action:'sync',run:9,n:8,at:2},state,0);// stale run
+ assert.equal(shadow.takeReport().syncs,0);
+ // Four readings 40, 30, 35, 38 ms late: the anchor moves by the smallest (30 ms).
+ sync(8,1000+40);sync(9,1125+30);sync(10,1250+35);sync(11,1375+38);
+ const report=shadow.takeReport();
+ assert.equal(report.syncs,1);
+ assert.equal(report.syncShiftMax,30*48);
+ shadow.advance(RATE*2,state);
+ assert.equal(shadow.takeReport().steps[0][2],30*48,'step 0 now at 30 ms');
+});
+
+test('a large backward correction skips steps more than one step in the past',()=>{
+ const state=createTransportState().getState();
+ const shadow=createDrumShadow(RATE);
+ shadow.control({action:'run',run:1,step:0,firstAt:0},state,0);
+ shadow.advance(6000*4,state);// steps 0–3 counted
+ shadow.takeReport();
+ // The page says the grid is 400 ms earlier than the worklet thinks (frame now: step 4's old frame).
+ for(let n=4;n<8;n++)shadow.control({action:'sync',run:1,n,at:(n*125-400)/1000},state,6000*4);
+ const report=shadow.takeReport();
+ assert.equal(report.syncs,1);
+ // New grid: step n at n×125−400 ms. Now = 500 ms: steps 4–6 (100…350 ms) are more than a step past; 7 (475) plays.
+ assert.equal(report.syncSkipped,3);
+ const next=shadow.advance(6000*4+128,state);
+ assert.deepEqual(next.map(s=>s.n),[7]);
 });
