@@ -69,3 +69,52 @@ export function mountWorkletDrumTimingPref($,{storage=globalThis.localStorage,ge
   refresh
  };
 }
+
+export const WORKLET_GAME_ARP_TIMING_KEY='project6581.worklet-game-arp-timing';
+
+/** Whether the loaded worklet modules can play the Game Arp (bundle API v9+, self-test passed). */
+export function workletGeneratorsSupported(support){
+ return support?.available===true&&support.selfTest?.ok===true&&Number(support.version)>=9;
+}
+
+/** Status line under the "Worklet Game Arp timing" checkbox. */
+export function workletGameArpTimingStatus(enabled,support){
+ if(!enabled)return 'Off: the page timer plays the Game Arp.';
+ if(!support)return 'On: waiting for the audio engine to start.';
+ if(!workletGeneratorsSupported(support)){
+  const why=!support.available?'sequencer modules did not load':
+   support.selfTest?.ok!==true?'self-test failed':'modules too old (v'+support.version+')';
+  return 'Unavailable ('+why+'): the page timer plays the Game Arp.';
+ }
+ return 'On: the audio engine plays the Game Arp and writes all notes.';
+}
+
+/**
+ * Prefs → "Worklet Game Arp timing" (Step G3; off by default, saved in this browser).
+ * Turning it on also hands note writing to the worklet (G2 note controller).
+ */
+export function mountWorkletGameArpTimingPref($,{storage=globalThis.localStorage,getSupport=()=>null,onChange=()=>{}}={}){
+ const input=$('workletGameArpTiming');
+ let enabled=false;
+ try{enabled=storage?.getItem(WORKLET_GAME_ARP_TIMING_KEY)==='on'}catch{enabled=false}
+ const refresh=()=>{
+  const status=$('workletGameArpTimingStatus');
+  if(status)status.textContent=workletGameArpTimingStatus(enabled,getSupport());
+ };
+ if(input){
+  input.checked=enabled;
+  input.addEventListener('change',()=>{
+   enabled=input.checked===true;
+   try{storage?.setItem(WORKLET_GAME_ARP_TIMING_KEY,enabled?'on':'off')}catch{/* private mode: keep for this session */}
+   refresh();
+   onChange(enabled);
+  });
+ }
+ refresh();
+ return {
+  get enabled(){return enabled},
+  /** True when the worklet modules can play the Game Arp and the setting is on. */
+  supported(){return enabled&&workletGeneratorsSupported(getSupport())},
+  refresh
+ };
+}

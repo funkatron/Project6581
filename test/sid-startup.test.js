@@ -43,6 +43,7 @@ function app({closeHangs=false,closeRejects=false,moduleHang=false,engineError=f
   sidAudio:null,sidContext:null,sidController:null,sidRecorder:null,activeSidModel:null,sidStarting:false,
   sidEventLog:{enabled:false,add(){}},sidKeys:0,lfoTimer:1,modulation:null,sidStartupLog:[],audioTiming:{},
   noteControllers:null,noteControllerOptions:()=>({}),syncNoteControllerReport(){},selectNoteController(){},
+  workletGameArpTiming:{refresh(){},enabled:false},syncWorkletGameArpReport(){},receiveGeneratorReport(){},
   panic(){},updateModulation(){},updateAudioTimingReport(){},createSidRecorder:()=>({supportsM4a:false}),
   flushQueuedKeys(){},refreshEngineStatus(){},
   stopAndSaveRecording(){},
@@ -196,7 +197,7 @@ test('worklet reports the sequencer modules when the probe module shares its sco
  scope.project6581Sequencer=sequencer;
  vm.runInContext(source,scope);
  await new Processor().load(new ArrayBuffer(0),6581);
- assert.deepEqual(JSON.parse(JSON.stringify(messages.at(-1))),{type:'sequencer-support',available:true,version:8,selfTest:{ok:true}});
+ assert.deepEqual(JSON.parse(JSON.stringify(messages.at(-1))),{type:'sequencer-support',available:true,version:9,selfTest:{ok:true}});
  messages.length=0;
  scope.project6581Sequencer={version:1,selfTest(){throw new Error('boom')}};
  await new Processor().load(new ArrayBuffer(0),6581);

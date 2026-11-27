@@ -11,6 +11,7 @@ import {createDrumPlayer} from './drum-player.js?v=__BUILD_ID__';
 import {createWorkletDrums} from './worklet-drums.js?v=__BUILD_ID__';
 import {createWorkletGameArp} from './worklet-game-arp.js?v=__BUILD_ID__';
 import {createWorkletNoteController,createNoteControllerProxy} from './worklet-note-controller.js?v=__BUILD_ID__';
+import {createWorkletGenerators} from './worklet-generators.js?v=__BUILD_ID__';
 
 // Loaded into the AudioWorklet with its own addModule() call, separate from
 // residfp-worklet.js, so a browser that rejects ES-module imports in worklets
@@ -93,6 +94,14 @@ export function sequencerSelfTest(){
   const notes=createWorkletNoteController({write:(register,value)=>workletWrites.push([register,value])});
   for(const op of ops)notes.apply(op);
   expect('note controller writes',workletWrites,pageWrites);
+  // Generators (G3): a run 0 s ahead plays the default phrase's first step on SID 1–3 (route all → layers).
+  notes.apply({type:'note-op',op:'live',chip:0,values:voice});notes.apply({type:'note-op',op:'live',chip:1,values:voice});
+  notes.apply({type:'note-op',op:'live',chip:2,values:voice});
+  const generators=createWorkletGenerators({sampleRate:48000,notes});
+  const held=createTransportState();held.set({notes:{held:[60]}});
+  generators.control({action:'run',run:1,firstAt:0,gameOn:true,route:'sid1'},held.getState(),0);
+  generators.block(128,held.getState());
+  expect('generators step 0',generators.takeReport().events,[['on',60,'game',0]]);
   return {ok:true};
  }catch(error){
   return {ok:false,error:String(error?.message??error)};
@@ -100,7 +109,7 @@ export function sequencerSelfTest(){
 }
 
 const api=Object.freeze({
- version:8,
+ version:9,
  arpStep,gameStep,drumStep,
  createTransportState,applyTransportPatch,defaultTransport,
  activeNotes,arpNotes,resolveNote,drumSequence,arpStepMs,gameStepMs,
@@ -108,7 +117,7 @@ const api=Object.freeze({
  emptyMirror,applyMirrorMessage,mirrorDigest,mirrorSummary,
  createDrumShadow,
  createDrumPlayer,createWorkletDrums,createWorkletGameArp,
- createWorkletNoteController,
+ createWorkletNoteController,createWorkletGenerators,
  selfTest:sequencerSelfTest
 });
 globalThis.project6581Sequencer=api;

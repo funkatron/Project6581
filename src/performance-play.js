@@ -12,6 +12,9 @@ export function mountPerformance({
  gameEnabled,arpEnabled,activeNotes,arpNotes,latchOn,
  isSeqPreview,setSeqPreview,getActiveSeqStep,setActiveSeqStep,performanceArp,
  alignDrumTransport,transport,
+ // Worklet Game Arp timing (G3): {active(), leadMs, run({rootOn,seqPreview,delayMs}) → run id,
+ // sync({clock,n,delayMs}), stop()}. Read at each restart; null keeps everything on the page.
+ workletGenerators=null,
  // Step clocks (grid-timer.js); injectable for tests. now() is in milliseconds.
  now=()=>performance.now(),setTimer=(fn,ms)=>setTimeout(fn,ms),clearTimer=id=>clearTimeout(id)
 }){
@@ -96,6 +99,7 @@ export function mountPerformance({
   refreshPresetDirty();
  }
  function gameStop(){
+  if(game.worklet){game.worklet=false;game.workletRun=null;workletGenerators?.stop()}
   gameTimer.stop();game.timer=null;
   if(game.gateTimer!==null){clearTimeout(game.gateTimer);game.gateTimer=null}
   if(game.last!==null){stop(game.last,'game');game.last=null}
@@ -206,6 +210,7 @@ export function mountPerformance({
   releaseDirectNotes();
   if(!activeNotes().length&&!seqPreview){$('arpStatus').textContent='No notes held';return}
   const timing=transport.getState();
+  if(gameEnabled()&&workletGenerators?.active()){startWorkletGenerators(timing,seqPreview);return}
   if(arpEnabled()){
    arp.timer=arpTimer;
    arpTimer.start({ms:arpStepMs(timing),onStep:({skipped})=>{arp.step+=skipped;arpTick()}});
@@ -213,6 +218,48 @@ export function mountPerformance({
   if(gameEnabled()){
    game.timer=gameTimer;
    gameTimer.start({ms:gameStepMs(timing),onStep:({skipped})=>{game.step+=skipped;gameTick()}});
+  }
+ }
+ // The worklet plays the Game Arp (and picks the Root Arp root) from leadMs ahead. The page's
+ // grid timers keep running silently, only to keep the worklet on the page clock.
+ function startWorkletGenerators(timing,seqPreview){
+  const delayMs=workletGenerators.leadMs??50;
+  const run=workletGenerators.run({rootOn:arpEnabled(),seqPreview,delayMs});
+  if(run===null||run===undefined)return;
+  game.worklet=true;game.workletRun=run;
+  const sync=clock=>({n,nextAt})=>{
+   if(game.workletRun===run&&Number.isFinite(nextAt))workletGenerators.sync({clock,n:n+1,delayMs:nextAt-now()});
+  };
+  if(arpEnabled()){
+   arp.timer=arpTimer;
+   arpTimer.start({ms:arpStepMs(timing),delayMs,onStep:sync('root')});
+  }
+  game.timer=gameTimer;
+  gameTimer.start({ms:gameStepMs(timing),delayMs,onStep:sync('game')});
+ }
+ /** Step highlight, key highlight and status line from the worklet's step reports. */
+ function applyWorkletReport(report){
+  for(const step of report?.steps??[]){
+   if(!game.worklet||step.run!==game.workletRun)continue;
+   if(step.clock==='gate'){getArpKeyVisual().clear('game');continue}
+   if(step.clock==='root'){
+    applyStep({events:[],highlight:step.highlight??{}});
+    $('arpStatus').textContent=step.status?.type==='idle'?'No notes held':
+     'Root Arp · '+noteName(step.status.note)+' · '+step.status.count+' notes';
+    continue;
+   }
+   if(step.stop){
+    // The worklet's gameTick() found no root: its Game clock has stopped, as the page's would.
+    gameTimer.stop();game.timer=null;
+    clearStepHighlight();getArpKeyVisual().clear('game');
+    $('arpStatus').textContent='No notes held';
+    continue;
+   }
+   highlightStep(step.stepIndex);
+   applyStep({events:[],highlight:step.highlight??{}});
+   const status=step.status;
+   $('arpStatus').textContent=phraseLabel()+' step '+(status.index+1)+' · '+
+    (status.type==='rest'?'rest':noteName(status.root));
   }
  }
  function gameRestart(){restartGenerators()}
@@ -269,5 +316,5 @@ export function mountPerformance({
   if(gameEnabled()||arpEnabled())restartGenerators();
   $('arpStatus').textContent='Latch cleared';
  });
- return {gameStop,arpStopVoice,stopArpClock,restartGenerators,stopGenerators,gameRestart,setSeqTransportLabel,renderSequenceSteps,loadBuiltInPhrase};
+ return {gameStop,arpStopVoice,stopArpClock,restartGenerators,stopGenerators,gameRestart,setSeqTransportLabel,renderSequenceSteps,loadBuiltInPhrase,applyWorkletReport};
 }

@@ -1,4 +1,4 @@
-import {resolveGameRoot} from './arp-composition.js?v=__BUILD_ID__';
+import {resolveGameRoot,selectRoot} from './arp-composition.js?v=__BUILD_ID__';
 import {arpStep,gameStep} from './sequencer-steps.js?v=__BUILD_ID__';
 
 // Step G1 (Game Arp in the worklet): the Game Arp, and the Root Arp's root
@@ -47,7 +47,15 @@ export function createWorkletGameArp({sampleRate}){
   rootStep({notes,pattern,phraseLength,resolve}){
    const result=arpStep(root,{notes,pattern,gameOn:true,gameStep:game.step,phraseLength,resolve});
    root=result.clock;
-   return {note:result.highlight.root??null,status:result.status};
+   return {note:result.highlight.root??null,highlight:result.highlight,status:result.status};
+  },
+  /**
+   * The page's keyUp() while the Root Arp runs unlatched: releasing the key that
+   * is the current root picks the root again from the notes still held (no note).
+   */
+  releaseRoot(note,{notes,pattern}){
+   if(root.root!==note)return;
+   root={...root,root:notes.length?selectRoot(notes,pattern,root.step):null};
   },
   /**
    * One Game Arp step at `frame`. stepFrames: one Game step in frames (for the gate).
@@ -77,6 +85,14 @@ export function createWorkletGameArp({sampleRate}){
    if(game.step!==step||game.last!==note)return [];
    game={...game,last:null};
    return [offAt(note,at)];
+  },
+  /**
+   * Steps a clock skipped to stay on the grid (the page's `arp.step += skipped`,
+   * `game.step += skipped`). Only the counters move; nothing sounds.
+   */
+  skip({root:rootSteps=0,game:gameSteps=0}={}){
+   if(rootSteps>0)root={...root,step:root.step+rootSteps};
+   if(gameSteps>0)game={...game,step:game.step+gameSteps};
   },
   /** The frame of the pending gate-off, or null. */
   nextGateAt(){return gate?.at??null},

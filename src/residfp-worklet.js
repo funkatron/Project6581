@@ -44,6 +44,8 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     // Step G2: page note-controller calls arrive as ops in the write queue
     // (worklet-note-controller.js); null until the first op.
     this.noteController=null;this.noteControllerMissing=0;
+    // Step G3: Game Arp + Root Arp root clock (worklet-generators.js), when the page asks.
+    this.generators=null;
     this.port.onmessage=({data})=>{
       if(data?.type==='load'){
         this.traceFirstRender=data.traceFirstRender===true;
@@ -98,6 +100,8 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       else if(data?.type==='pitch-envelope-retune')this.retunePitchEnvelope(data);
       else if(data?.type==='pitch-envelope-stop')this.stopPitchEnvelope(data);
       else if(data?.type==='sequencer-drums')this.applySequencerDrums(data);
+      // Queued, so it applies in order with the page's note ops.
+      else if(data?.type==='sequencer-generators')this.queue.push(data);
       else if(data?.type==='reset'){
         this.pitchEnvelopes.clear();this.exports?.sid_reset();
       }
@@ -195,6 +199,22 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     if(!controller){this.noteControllerMissing++;return}
     try{this.writes+=controller.apply(op)}
     catch{/* counted in the controller's stats */}
+  }
+  generatorsApi(){
+    if(this.generators)return this.generators;
+    const api=globalThis.project6581Sequencer,notes=this.noteControllerApi();
+    if(!api?.createWorkletGenerators||!notes)return null;
+    this.generators=api.createWorkletGenerators({sampleRate,notes});
+    return this.generators;
+  }
+  generatorError(err){
+    this.port.postMessage({type:'sequencer-generators-status',sampleRate,steps:[],events:[],dropped:0,lead:null,
+      error:String(err?.message??err),counts:null,sync:null});
+  }
+  applyGeneratorControl(message){
+    const generators=this.generatorsApi();
+    if(!generators){if(message.action==='run')this.generatorError('worklet generators unavailable');return}
+    try{generators.control(message,this.mirror?.transport,currentFrame)}catch(err){this.generatorError(err)}
   }
   startPitchEnvelope(data){
     // Explicit opt-in protocol. Existing note messages are unchanged.
@@ -358,7 +378,12 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     for(const item of this.queue){
       if(Array.isArray(item)){e.sid_write(item[0],item[1]);this.writes++}
       else if(item?.type==='note-op')this.applyNoteOp(item);
+      else if(item?.type==='sequencer-generators')this.applyGeneratorControl(item);
     }
+    if(this.generators?.running){
+      try{this.generators.block(blockEnd,this.mirror?.transport)}catch(err){this.generatorError(err)}
+    }
+    if(this.generators?.hasReport())this.port.postMessage({type:'sequencer-generators-status',...this.generators.takeReport()});
     this.queue.length=0;
     // After the page's writes, so a drum hit's bus filter wins over a page
     // filter write to SID 4–6 in the same block.

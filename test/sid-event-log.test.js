@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {createSidEventLog,formatSidDiagnosticReport} from '../src/sid-event-log.js';
-import {routeMask,routingKeyForSource,DEFAULT_ROUTING} from '../src/sid-engines.js';
+import {routeMask,routingKeyForSource,dispatchUsesLayer,DEFAULT_ROUTING} from '../src/sid-engines.js';
 import {createSidWriteBatcher} from '../src/sid-write-batcher.js';
 import {closeSidContext} from '../src/sid-audio-lifecycle.js';
 import {canDispatchNote,needsAudioResume,shouldBlockMusicalInput} from '../src/sid-note-gate.js';
@@ -130,7 +130,7 @@ test('actual app note commands retain their physical input parent and tag on/off
   canDispatchNote,shouldBlockMusicalInput,needsAudioResume,restoreSidOutput(){},
   pendingSidStartup:null,pendingSidClose:null,presetLoading:false,sidCleanupBlocked:false,sidStarting:false,
   engines,currentSidSettings:{enabled:true},$:id=>({value:'all'}),
-  routingKeyForSource,routeMask,DEFAULT_ROUTING,
+  routingKeyForSource,routeMask,dispatchUsesLayer,DEFAULT_ROUTING,
   performanceRouting:{getState:()=>({keyboard:'sid1',arp:'sid1',game:'sid1'})},
   transport:{resolveNote:note=>note},
   traceStudio(){},diagnosticsUi:{afterNoteEvent(){}}});

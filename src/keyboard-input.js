@@ -7,7 +7,9 @@ import {countHeldResolvingTo} from './western-scales.js?v=__BUILD_ID__';
 export function createKeyGesture({
   audioTiming,sidEventLog,getSidContext,sidMusicalInputBlocked,armSidResume,hasController,countKeyPress,
   activeNotes,arp,game,gameEnabled,arpEnabled,latchOn,directOwned,play,stop,restartGenerators,stopGenerators,
-  gameRestart,arpStopVoice,arpNotes,isSeqPreview,performanceNote,$,transport
+  gameRestart,arpStopVoice,arpNotes,isSeqPreview,performanceNote,$,transport,
+  // Worklet Game Arp timing (G3): the worklet holds the Root Arp root; it re-picks it there.
+  releaseWorkletRoot=null
 }){
  if(!transport)throw new TypeError('createKeyGesture requires transport');
  if(!latchOn)latchOn=()=>transport.arp.latch;
@@ -65,6 +67,7 @@ export function createKeyGesture({
    stopGenerators();$('arpStatus').textContent='No notes held';return;
   }
   // Game Arp keeps its clock while the held set changes; gameTick() picks up the new root.
+  if(arpEnabled()&&!latchOn()&&game.worklet&&releaseWorkletRoot){releaseWorkletRoot(note);return}
   if(arpEnabled()&&!latchOn()&&arp.root===note){
    // Keep the root valid, without firing an extra off-grid arpeggio note.
    const notes=arpNotes();

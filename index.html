@@ -36,6 +36,14 @@
   </div>
   <p id="workletDrumTimingStatus" class="midi-status" role="status">On: waiting for the audio engine to start.</p>
  </section>
+ <section class="preferences-section" aria-labelledby="gameArpTimingPrefsTitle">
+  <h3 id="gameArpTimingPrefsTitle">Game Arp timing</h3>
+  <p class="preferences-hint">Test setting: the audio engine plays the Game Arp (and picks the Root Arp root) on its own clock, like the drums. Off: the page timer plays them.</p>
+  <div class="preferences-grid">
+   <label><input id="workletGameArpTiming" type="checkbox"> Worklet Game Arp timing</label>
+  </div>
+  <p id="workletGameArpTimingStatus" class="midi-status" role="status">Off: the page timer plays the Game Arp.</p>
+ </section>
 </dialog>
 <div class="statusbar"><span id="sidLed" class="sid-led" data-state="off" role="img" aria-label="SID engine off"></span><span id="sidSpinner" class="sid-spinner" role="img" aria-label="Loading SID engine" hidden></span><p id="sidEngineStatus" role="status">Initializing SID…</p><output id="recordStatus" role="status" aria-live="polite"></output><a id="recordDownload" hidden>Download recording</a></div>
 <div class="tabbar" role="tablist" aria-label="Editor sections"><button id="tabVoice" type="button" role="tab" aria-selected="true" aria-controls="voicePanel">SYNTH</button><button id="tabPlay" type="button" role="tab" aria-selected="false" aria-controls="playPanel">ARP / SEQ</button><button id="tabDrum" type="button" role="tab" aria-selected="false" aria-controls="drumPanel">DRUM SEQ</button><button id="tabLfos" type="button" role="tab" aria-selected="false" aria-controls="lfoPanel">LFOs</button></div>
