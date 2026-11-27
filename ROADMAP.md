@@ -408,6 +408,12 @@ Distinguish **in-app timing** (footer, Diagnostics Activity log, worklet metrics
 
 **Completion checks:** At default **+6 dB**, owner-agreed drum grooves sit in the same ballpark as PWM patches; **0 dB** matches unboosted chip level.
 
+### Drum mix follow-ups (owner 2026-11-19)
+
+- [ ] **+18 dB boost** — extend SID 4 **Boost** menu **Off / +6 / +12 / +18** (`DRUM_BOOST_DB`, `validateDrumEngineBoost`, UI help, preset round-trip); iPad + CI clip check vs full unison.
+- [ ] **Snare / clap resonance** — refresh factory `noise-snare` / `noise-clap` (and kit overrides) with higher **filter resonance** and band shaping; owner listening pass before locking JSON.
+- [ ] **Architecture spike** — [agents/drum-architecture-research.md](agents/drum-architecture-research.md): compare one SID 4 (3 voices) vs **DR-660-style** expectations; evaluate **+1–2 drum-only SID chips** (SID 5–6) for per-group filters and zero cross-lane steal. Outcome: decision record + optional UI wireframe, not a blind WASM expand.
+
 ## Planned investigation: audio-clock LFO scheduling
 
 **Goal:** Replace main-thread timer-driven SID modulation with timing derived from the audio engine, without increasing audible latency or undermining future multi-SID operation.
