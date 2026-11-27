@@ -179,6 +179,8 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
       setChipGain(chip,gainDb){if(!closed&&node)node.port.postMessage({type:'set-chip-gain',chip,gainDb:Math.round(gainDb)});},
       setModulationConfig(config){if(!closed&&node)node.port.postMessage({type:'modulation-config',...config});},
       sendSequencerMirror(message){if(!closed&&node)node.port.postMessage(message);},
+      // Step G3: generator control goes after any queued note ops, so the worklet applies them in order.
+      sendGenerators(message){if(!closed&&node){batcher.flush();node.port.postMessage(message)}},
       startPitchEnvelope(slot,note,envelope){
         if(!Number.isInteger(slot)||slot<0||slot>=SID_CHIP_COUNT*3||!Number.isFinite(note))return;
         const register=Math.floor(slot/3)*0x20+(slot%3)*7;

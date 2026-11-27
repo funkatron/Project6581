@@ -82,6 +82,18 @@ export function routeMask(route){
  return [0,1,2];
 }
 
+/**
+ * Whether a note from `source` plays one layer per chip (one owner per chip,
+ * 'source@chip') rather than one note across the chip mask.
+ */
+export function dispatchUsesLayer(route,source,chips){
+ if(route==='layer')return true;
+ if(route!=='all'||chips.length<=1)return false;
+ const root=typeof source==='string'&&source.includes('@')?source.slice(0,source.lastIndexOf('@')):source;
+ if(root==='keyboard'||root.startsWith('key:'))return false;
+ return root==='arp'||root==='game';
+}
+
 export function routingKeyForSource(source){
  if(source==='game')return 'game';
  if(source==='arp')return 'arp';

@@ -17,7 +17,7 @@ import {isPitchInScale} from "./western-scales.js?v=__BUILD_ID__";
 import {mountEditorTabs} from "./editor-tabs.js?v=__BUILD_ID__";
 import {mountDrumPanel} from "./drum-panel-ui.js?v=__BUILD_ID__";
 import {createPerformanceDrumState} from "./performance-drum-state.js?v=__BUILD_ID__";
-import {mountDrumPerformance} from "./drum-performance.js?v=__BUILD_ID__";
+import {mountDrumPerformance,WORKLET_DRUM_LEAD_MS} from "./drum-performance.js?v=__BUILD_ID__";
 import {mountDrumGrooveIo} from "./drum-groove-ui.js?v=__BUILD_ID__";
 import {mountDrumLfoPanel} from "./drum-lfo-panel-ui.js?v=__BUILD_ID__";
 import {mountDrumSlotVoicePanels,effectiveLaneTimbre} from "./drum-slot-voice-ui.js?v=__BUILD_ID__";
@@ -41,12 +41,12 @@ import {setLayoutInert} from "./ui-layout.js?v=__BUILD_ID__";
 import {mountLfoPanel} from "./lfo-panel-ui.js?v=__BUILD_ID__";
 import {mountAudioTimingPanel} from "./audio-timing-panel.js?v=__BUILD_ID__";
 import {applyFirstEnergyTiming} from "./audio-timing-metrics.js?v=__BUILD_ID__";
-import {createDefaultEngines,clampVoiceCount,maxVoicesForEngines,routeMask,routingKeyForSource} from "./sid-engines.js?v=__BUILD_ID__";
+import {createDefaultEngines,clampVoiceCount,maxVoicesForEngines,routeMask,routingKeyForSource,dispatchUsesLayer} from "./sid-engines.js?v=__BUILD_ID__";
 import {mountSidEnginePanels,querySidEngineCard} from "./sid-engine-panels-ui.js?v=__BUILD_ID__";
 import {mountMasterLoudnessMeter} from "./master-loudness-meter-ui.js?v=__BUILD_ID__";
 import {mountHelpDialog,mountHelpTriggers} from "./ui-help-dialog.js?v=__BUILD_ID__";
 import {mountMidiInput} from "./midi-input.js?v=__BUILD_ID__";
-import {mountPreferencesDialog,mountWorkletDrumTimingPref,workletNotesRequested} from "./studio-preferences-ui.js?v=__BUILD_ID__";
+import {mountPreferencesDialog,mountWorkletDrumTimingPref,mountWorkletGameArpTimingPref,workletNotesRequested} from "./studio-preferences-ui.js?v=__BUILD_ID__";
 import {bindHelpGesture} from "./ui-help-gesture.js?v=__BUILD_ID__";
 import {testHooksEnabled,mountStudioTestHooks} from "./studio-test-hooks.js?v=__BUILD_ID__";
 import {createMirrorSender,compareMirrorStatus,MIRROR_DRUM_LANES,MIRROR_DRUM_BUSES,MIRROR_MELODIC_CHIPS} from "./sequencer-mirror.js?v=__BUILD_ID__";
@@ -497,13 +497,6 @@ function playOne(note,ownerKey,chipMask,{layer=false}={}){
  traceStudio('note-on',{note,source:ownerKey,chipMask});
  diagnosticsUi.afterNoteEvent?.();
 }
-function dispatchUsesLayer(route,source,chips){
- if(route==='layer')return true;
- if(route!=='all'||chips.length<=1)return false;
- const root=typeof source==='string'&&source.includes('@')?source.slice(0,source.lastIndexOf('@')):source;
- if(root==='keyboard'||root.startsWith('key:'))return false;
- return root==='arp'||root==='game';
-}
 function play(note,source='key:'+note){
  note=transport.resolveNote(note);
  restoreSidOutput();
@@ -617,6 +610,7 @@ let gameRestart=()=>{};
 let setSeqTransportLabel=()=>{};
 let renderSequenceSteps=()=>{};
 let loadBuiltInPhrase=()=>false;
+let applyWorkletReport=()=>{};
 let flushQueuedKeys=()=>{};
 let keyDown=()=>{},keyUp=()=>{};
 let releaseMidiNotes=()=>{};
@@ -629,7 +623,43 @@ const keyboardState={octave:3};
 const keys=new Map();
 const arpKeyVisual=createArpKeyVisual({getKey:note=>keys.get(note)});
 const performanceNote=note=>transport.resolveNote(note);
-({gameStop,arpStopVoice,stopArpClock,restartGenerators,stopGenerators,gameRestart,setSeqTransportLabel,renderSequenceSteps,loadBuiltInPhrase}=mountPerformance({
+// Step G3, "Worklet Game Arp timing": the worklet plays the Game Arp and picks the
+// Root Arp root on the audio clock. Control messages go after queued note ops.
+let generatorRun=0,generatorConfigStamp=null;
+function sendGenerators(message){sidAudio?.sendGenerators?.({type:'sequencer-generators',...message})}
+function generatorConfig(){
+ return {seqPreview,previewRootMidi:(keyboardState.octave+1)*12,route:performanceRouting.getState().game,
+  voiceEnabled:[0,1,2].map(chip=>Boolean(engines[chip].voice.enabled))};
+}
+const workletGenerators={
+ leadMs:WORKLET_DRUM_LEAD_MS,
+ active:()=>Boolean(sidAudio)&&Boolean(sidController?.worklet)&&workletGameArpTiming.supported(),
+ run({rootOn,seqPreview:preview,delayMs}){
+  if(!sidAudio)return null;
+  restoreSidOutput();
+  sidController?.syncLive?.();
+  const config=generatorConfig();
+  generatorConfigStamp=JSON.stringify(config);
+  sendGenerators({action:'run',run:++generatorRun,firstAt:sidAudio.context.currentTime+delayMs/1000,
+   rootOn,gameOn:true,...config,seqPreview:preview});
+  traceStudio('worklet-game-arp-run',{run:generatorRun,rootOn});
+  syncWorkletGameArpReport();
+  return generatorRun;
+ },
+ sync({clock,n,delayMs}){
+  if(sidAudio)sendGenerators({action:'sync',run:generatorRun,clock,n,at:sidAudio.context.currentTime+delayMs/1000});
+ },
+ stop(){sendGenerators({action:'stop'});syncWorkletGameArpReport()}
+};
+/** Route, voices on/off, preview root: sent when they change while the worklet plays the Game Arp. */
+function syncGeneratorConfig(){
+ if(!game.worklet)return;
+ const config=generatorConfig(),stamp=JSON.stringify(config);
+ if(stamp===generatorConfigStamp)return;
+ generatorConfigStamp=stamp;
+ sendGenerators({action:'config',...config});
+}
+({gameStop,arpStopVoice,stopArpClock,restartGenerators,stopGenerators,gameRestart,setSeqTransportLabel,renderSequenceSteps,loadBuiltInPhrase,applyWorkletReport}=mountPerformance({
  $,names,keyboardState,arp,game,directOwned,play,stop,silenceSidOutput,refreshPresetDirty,
  getArpKeyVisual:()=>arpKeyVisual,performanceNote,
  gameEnabled,arpEnabled,activeNotes,arpNotes,
@@ -640,6 +670,7 @@ const performanceNote=note=>transport.resolveNote(note);
  getActiveSeqStep:()=>activeSeqStep,
  setActiveSeqStep:value=>{activeSeqStep=value},
  performanceArp,
+ workletGenerators,
  alignDrumTransport:()=>{
   if(!drum.running)return;
   drumStop({resetStep:true});
@@ -695,13 +726,51 @@ const workletDrumTiming=mountWorkletDrumTimingPref($,{
   syncWorkletDrumTimingReport();
  }
 });
+const workletGameArpTiming=mountWorkletGameArpTimingPref($,{
+ getSupport:()=>audioTiming.sequencerModules,
+ onChange:enabled=>{
+  traceStudio('worklet-game-arp-timing',{enabled});
+  // The setting also hands note writing to the worklet; switching releases every note.
+  selectNoteController();
+  if(gameEnabled())restartGenerators();
+  syncWorkletGameArpReport();
+ }
+});
+function syncWorkletGameArpReport(){
+ const prior=audioTiming.workletGameArp??{};
+ audioTiming.workletGameArp={...prior,enabled:workletGameArpTiming.enabled,active:workletGenerators.active(),playing:Boolean(game.worklet)};
+}
+function receiveGeneratorReport(event){
+ applyWorkletReport(event);
+ const prior=audioTiming.workletGameArp??{};
+ const skipped={...(prior.skipped??{})};
+ for(const [reason,count] of Object.entries(event.counts?.skipped??{}))skipped[reason]=(skipped[reason]??0)+count;
+ const sync=CLOCK_NAMES.reduce((total,clock)=>{
+  const stats=event.sync?.[clock];
+  if(!stats)return total;
+  return {syncs:total.syncs+stats.syncs,shiftMaxMs:Math.max(total.shiftMaxMs,stats.shiftMax/event.sampleRate*1000),skipped:total.skipped+stats.skipped};
+ },{syncs:prior.syncs??0,shiftMaxMs:prior.shiftMaxMs??0,skipped:prior.syncSkipped??0});
+ audioTiming.workletGameArp={...prior,steps:(prior.steps??0)+(event.counts?.steps??0),notes:(prior.notes??0)+(event.counts?.notes??0),
+  skipped,syncs:sync.syncs,shiftMaxMs:sync.shiftMaxMs,syncSkipped:sync.skipped,dropped:(prior.dropped??0)+(event.dropped??0),
+  leadMs:event.lead!==null&&event.lead!==undefined?event.lead/event.sampleRate*1000:prior.leadMs??null,
+  error:event.error??prior.error??null,playing:Boolean(game.worklet)};
+ if(event.error)traceStudio('worklet-game-arp-error',{error:event.error});
+ if(event.events?.length&&sidAudio){
+  const audioNowSec=sidAudio.context.currentTime,pageNowMs=performance.now();
+  for(const [kind,note,source,frame] of event.events){
+   studioTrace.add(kind==='on'?'note-on':'note-off',{atMs:pageNowMs-(audioNowSec-frame/event.sampleRate)*1000,note,source,player:'worklet',frame});
+  }
+ }
+ if($('audioTimingDetails').open)updateAudioTimingReport();
+}
+const CLOCK_NAMES=['root','game'];
 // Step G2: who turns note calls into SID 1–6 writes. Off by default (`?workletNotes=1`);
 // the worklet's controller makes the same writes, applied at block start.
 let noteControllers=null;
 function noteControllerOptions(){
  const inst=performanceInstrument.getState();
  return {voiceCount:inst.voiceCount,unisonCount:inst.unisonCount,mode:inst.mode,detune:inst.detune,
-  onDrumNoteEvicted:note=>clearDrumOwnersForMidiNote(note)};
+  onDrumNoteEvicted:note=>clearDrumOwnersForMidiNote(note),liveGetter:voiceSettingsForSlot};
 }
 function syncNoteControllerReport(){
  const prior=audioTiming.noteController??{};
@@ -709,7 +778,7 @@ function syncNoteControllerReport(){
 }
 function selectNoteController(){
  if(!sidController||!noteControllers)return;
- const worklet=workletNotesRequested()&&noteControllers.supported(audioTiming.sequencerModules);
+ const worklet=(workletNotesRequested()||workletGameArpTiming.enabled)&&noteControllers.supported(audioTiming.sequencerModules);
  if(Boolean(sidController.worklet)!==worklet){
   // Release every note through the old controller first: one writer at a time.
   panic('note-controller-switch');
@@ -774,7 +843,8 @@ let renderKeyboard=()=>{};
  isSeqPreview:()=>seqPreview,
  getScaleState:()=>transport.scale,
  pitchInScale:note=>isPitchInScale(note,transport.scale),
- traceInput,panic,refreshPresetDirty,getArpKeyVisual:()=>arpKeyVisual
+ traceInput,panic,refreshPresetDirty,getArpKeyVisual:()=>arpKeyVisual,
+ releaseWorkletRoot:note=>sendGenerators({action:'release-root',note})
 }));
 for(const id of ['scaleKey','scaleId','scaleLock']){
  $(id)?.addEventListener('change',()=>{
@@ -960,7 +1030,9 @@ function updateModulation({uiOnly=false}={}){
   :detuneBase.detune;
  presentModulatedSlider(detuneRoot,'detune',detuneBase.detune,globalDetune,detuneEnabled);
  syncModulationUiLoop();
- if(!uiOnly)syncWorkletMirror();
+ if(!uiOnly){syncWorkletMirror();syncGeneratorConfig()}
+ // Worklet note controller: its copy of the live settings, for notes the worklet starts itself.
+ sidController?.syncLive?.();
  if(!sidController)return;
  if(uiOnly)return;
  if(useAudioClockLfo)pushAudioModulationConfig();
@@ -1084,10 +1156,13 @@ async function startSid({gesture=false}={}){
         const {type:_type,...support}=event;
         audioTiming.sequencerModules=support;
         workletDrumTiming.refresh();syncWorkletDrumTimingReport();
+        workletGameArpTiming.refresh();
         selectNoteController();
+        syncWorkletGameArpReport();
         updateAudioTimingReport();
         return;
       }
+      if(event.type==='sequencer-generators-status'){receiveGeneratorReport(event);return}
       if(event.type==='note-controller-status'){
         const total=audioTiming.noteController??{};
         audioTiming.noteController={...total,ops:(total.ops??0)+event.ops,writes:(total.writes??0)+event.writes,
@@ -1529,7 +1604,7 @@ function setPresetLoading(busy){
  for(const id of ['factoryPresetList','userPresetList'])
   $(id).querySelectorAll('button').forEach(button=>button.disabled=busy);
 }
-function refreshPresetDirty(){presetLibrary.refreshDirty();syncWorkletMirror()}
+function refreshPresetDirty(){presetLibrary.refreshDirty();syncWorkletMirror();syncGeneratorConfig()}
 presetLibrary=mountPresetLibrary({
  $,
  snapshotSettings:snapshotPresetSettings,

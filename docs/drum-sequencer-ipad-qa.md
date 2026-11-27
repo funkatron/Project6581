@@ -70,6 +70,20 @@ Open the studio with `?workletNotes=1` once (the choice is kept in this browser;
 - [ ] **Stop all**, then play again: no stuck note.
 - [ ] Export diagnostics and attach (`environment.timing.noteController`).
 
+## Worklet Game Arp timing (G3, Prefs, off by default)
+
+Open **Prefs** (⚙) → **Game Arp timing** → tick **Worklet Game Arp timing**. The status should read *On: the audio engine plays the Game Arp and writes all notes* (turning it on also turns on the worklet note controller, so held notes are released once).
+
+- [ ] Hold a note with **Game Arp** on: the phrase sounds the same as with the setting off (notes, rests, lengths, scale lock).
+- [ ] **Root Arp** on as well: the Root Arp stays silent and transposes the phrase at the phrase start, as before.
+- [ ] Routing for the Game Arp: SID 1 / 2 / 3, All, Layer: notes come from the chosen SIDs; turning a SID's voice off silences it there.
+- [ ] Change held notes, release all keys (Game Arp stops), press again (restarts); with Root Arp on and Latch off, release the key that is the current root.
+- [ ] **▶ Preview** with no keys held plays from the keyboard octave; change octave while previewing.
+- [ ] The step highlight, key highlight and status line follow the sound.
+- [ ] Drum preview + Game Arp + keyboard, ~60 s, no app switching: no late, doubled or stuck notes.
+- [ ] **Audio timing** shows `Game Arp timing: worklet (playing) · N steps, M notes` with no `error` or `skipped` (other than SIDs you turned off), and `Note writes: worklet note controller`. Export diagnostics and attach: `trace.entries` include `game` note-on/off lines with `player: worklet`.
+- [ ] Untick the setting while playing: the Game Arp carries on from the page timer without a stuck note.
+
 ## Help
 
 - [ ] Section **?** on DRUM STEP SEQUENCER opens overview help and focuses the tab.

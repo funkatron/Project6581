@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {UnisonSidController} from '../src/unison-sid-controller.js';
-import {createNoteControllerProxy,createWorkletNoteController,workletNotesSupported,NOTE_OP} from '../src/worklet-note-controller.js';
+import {createNoteControllerProxy,createWorkletNoteController,workletNotesSupported,NOTE_OP,WORKLET_TOKEN_BASE} from '../src/worklet-note-controller.js';
 import {createSidWriteBatcher} from '../src/sid-write-batcher.js';
 import {createDefaultEngines} from '../src/sid-engines.js';
 import {simplePitchEnvelope} from '../src/pitch-envelope.js';
@@ -35,7 +35,7 @@ function direct(options,log){
 }
 
 // With G2: proxy on the page → structured clone (postMessage) → worklet controller.
-function viaWorklet(options,log){
+function viaWorklet(options,log,liveGetter){
  const worklet=createWorkletNoteController({
   write:(register,value)=>log.push(['write',register,value]),
   startPitchEnvelope:c=>log.push(['pitch-start',c.register,c.baseFrequency,c.points,c.interpolation,c.end]),
@@ -43,23 +43,23 @@ function viaWorklet(options,log){
   stopPitchEnvelope:c=>log.push(['pitch-stop',c.register])
  });
  const evicted=[];
- const proxy=createNoteControllerProxy(op=>worklet.apply(structuredClone(op)),{...options,onDrumNoteEvicted:note=>evicted.push(note)});
+ const proxy=createNoteControllerProxy(op=>worklet.apply(structuredClone(op)),{...options,liveGetter,onDrumNoteEvicted:note=>evicted.push(note)});
  return {proxy,worklet,evicted};
 }
 
 /**
- * Runs one script on both paths. Each step is (controller, settingsGetter, state) => token|void.
- * The getter reads mutable page state, as sid-studio.js voiceSettingsForSlot does.
+ * Runs one script on both paths. Each step is (controller, liveGetter, state) => token|void.
+ * The live getter reads mutable page state, as sid-studio.js voiceSettingsForSlot does.
  */
 function assertParity(options,script){
  const pageLog=[],workletLog=[];
- const page=direct(options,pageLog);
- const {proxy,worklet,evicted}=viaWorklet(options,workletLog);
  const stateA={voices:makeVoices(),tokens:new Map()},stateB={voices:makeVoices(),tokens:new Map()};
- const getterFor=state=>slot=>state.voices[Math.floor(slot/3)];
+ const getA=slot=>stateA.voices[Math.floor(slot/3)],getB=slot=>stateB.voices[Math.floor(slot/3)];
+ const page=direct(options,pageLog);
+ const {proxy,worklet,evicted}=viaWorklet(options,workletLog,getB);
  script.forEach((step,index)=>{
   const a=pageLog.length,b=workletLog.length;
-  const ta=step(page,getterFor(stateA),stateA),tb=step(proxy,getterFor(stateB),stateB);
+  const ta=step(page,getA,stateA),tb=step(proxy,getB,stateB);
   assert.equal(tb,ta,'token at step '+index);
   const pageStep=pageLog.slice(a).filter(entry=>entry[0]!=='evicted');
   assert.deepEqual(workletLog.slice(b),pageStep,'writes at step '+index);
@@ -67,7 +67,7 @@ function assertParity(options,script){
  assert.deepEqual(evicted,pageLog.filter(entry=>entry[0]==='evicted').map(entry=>entry[1]),'drum evictions reach the page');
  assert.equal(worklet.takeStats().errors,0);
  assert.ok(pageLog.some(entry=>entry[0]==='write'),'the script made writes');
- return {pageLog,proxy};
+ return {pageLog,proxy,worklet};
 }
 
 const on=(note,routing)=>(c,get,s)=>{const token=c.noteOn(note,get,routing);s.tokens.set(note,token);return token};
@@ -124,29 +124,56 @@ test('configure, panic and forceSilent go through in order',()=>{
  assert.equal(proxy.mode,'mono');assert.equal(proxy.voiceCount,2);assert.equal(proxy.worklet,true);
 });
 
-test('unison layers send one settings object and indexes',()=>{
+test('live settings are sent once per change, before the op that reads them; drum settings travel with the hit',()=>{
  const ops=[];
- const proxy=createNoteControllerProxy(op=>ops.push(op),{voiceCount:9,unisonCount:9,mode:'mono'});
- const voice={wave:'square',attack:0,decay:0.1,sustain:0.5,release:0.1,pulse:50};
- proxy.noteOn(60,()=>voice);
- assert.deepEqual(ops.map(op=>op.op),['init','noteOn']);
+ const voices=makeVoices();
+ const live=slot=>voices[Math.floor(slot/3)];
+ const proxy=createNoteControllerProxy(op=>ops.push(op),{voiceCount:9,unisonCount:9,mode:'mono',liveGetter:live});
+ proxy.noteOn(60,live);proxy.noteOff(60);
+ assert.deepEqual(ops.map(op=>op.op),['init','live','live','live','noteOn','noteOff']);
  assert.equal(ops[0].type,NOTE_OP);
- assert.equal(ops[1].settings.length,1);
- assert.deepEqual(ops[1].calls,Array(9).fill(0));
- assert.equal(ops[1].token,1);
+ assert.equal(ops[4].live,true);assert.equal(ops[4].fixed,undefined);assert.equal(ops[4].token,1);
+ voices[1]={...voices[1],attack:0.9};
+ proxy.syncLive();
+ assert.deepEqual(ops.slice(6).map(op=>[op.op,op.chip]),[['live',1]]);
+ const kick={wave:'triangle',attack:0,decay:0.01,sustain:0,release:0.01};
+ proxy.noteOn(36,()=>kick,{chipMask:[3],layerChip:3,drumSlot:0});
+ assert.deepEqual(ops.at(-1).fixed,kick);assert.equal(ops.at(-1).live,undefined);
 });
 
-test('a settings count the worklet disagrees with is an error, not a silent wrong note',()=>{
+test('bad ops are errors, not silent wrong notes',()=>{
  const worklet=createWorkletNoteController({write:()=>{}});
  worklet.apply({type:NOTE_OP,op:'init',options:{voiceCount:2,unisonCount:2,mode:'mono'}});
- assert.throws(()=>worklet.apply({type:NOTE_OP,op:'noteOn',note:60,token:1,options:{},settings:[{}],calls:[0]}),/fewer voice settings/);
- assert.throws(()=>worklet.apply({type:NOTE_OP,op:'noteOn',note:62,token:2,options:{},settings:[{}],calls:[0,0,0]}),/sent 3 voice settings, worklet used 2/);
- assert.throws(()=>worklet.apply({type:NOTE_OP,op:'noteOn',note:64,options:{},settings:[{}],calls:[0,0]}),/without a token/);
+ assert.throws(()=>worklet.apply({type:NOTE_OP,op:'noteOn',note:60,token:1,options:{},live:true}),/no live voice settings for SID 1/);
+ assert.throws(()=>worklet.apply({type:NOTE_OP,op:'noteOn',note:62,token:2,options:{}}),/without voice settings/);
+ assert.throws(()=>worklet.apply({type:NOTE_OP,op:'noteOn',note:64,options:{},fixed:{}}),/without a token/);
+ assert.throws(()=>worklet.apply({type:NOTE_OP,op:'live',chip:4,values:{}}),/bad live settings/);
  const stats=worklet.takeStats();
- assert.equal(stats.errors,3);assert.match(stats.lastError,/token/);
+ assert.equal(stats.errors,4);assert.match(stats.lastError,/live settings/);
  assert.equal(worklet.takeStats().errors,0);
  const fresh=createWorkletNoteController({write:()=>{}});
  assert.throws(()=>fresh.apply({type:NOTE_OP,op:'panic'}),/before init/);
+});
+
+test("worklet-played notes (G3) make the writes the page's play() would, with their own tokens",()=>{
+ const options={voiceCount:3,unisonCount:1,mode:'poly'};
+ const voices=makeVoices(),live=slot=>voices[Math.floor(slot/3)];
+ const pageLog=[],workletLog=[];
+ const page=direct(options,pageLog);
+ const {proxy,worklet}=viaWorklet(options,workletLog,live);
+ const step=(fa,fb)=>{const a=pageLog.length,b=workletLog.length;const ra=fa(),rb=fb();assert.deepEqual(workletLog.slice(b),pageLog.slice(a));return [ra,rb]};
+ const [t1]=step(()=>page.noteOn(60,live),()=>proxy.noteOn(60,live));
+ // A Game Arp note: on the page it is one more noteOn; in the worklet, play().
+ const [pageGame,workletGame]=step(()=>page.noteOn(67,live,{chipMask:[1],layerChip:1}),()=>worklet.play(67,{chipMask:[1],layerChip:1}));
+ assert.ok(workletGame.token>=WORKLET_TOKEN_BASE);
+ const [t2,t2b]=step(()=>page.noteOn(64,live),()=>proxy.noteOn(64,live));
+ assert.equal(t2b,2,'the page numbers its notes as before');void t2;
+ step(()=>page.noteOff(67,pageGame),()=>worklet.release(67,workletGame.token));
+ step(()=>page.noteOff(60,t1),()=>proxy.noteOff(60,1));
+ // Settings change between notes: the worklet's next note uses the new sound.
+ voices[1]={...voices[1],wave:'triangle',attack:0.2};proxy.syncLive();
+ step(()=>page.noteOn(69,live,{chipMask:[1],layerChip:1}),()=>worklet.play(69,{chipMask:[1],layerChip:1}));
+ assert.equal(worklet.takeStats().errors,0);
 });
 
 test('the batcher keeps ops in order with the register writes around them',()=>{
@@ -163,7 +190,7 @@ test('the batcher keeps ops in order with the register writes around them',()=>{
 test('the worklet processor applies ops at block start, in order with page writes, and reports stats',async()=>{
  const source=readFileSync(new URL('../src/residfp-worklet.js',import.meta.url),'utf8');
  const {default:sequencer}=await import('../src/sequencer-worklet-modules.js');
- assert.equal(sequencer.version,8);
+ assert.equal(sequencer.version,9);
  const messages=[];let Processor;
  const scope=vm.createContext({AudioWorkletProcessor:class{port={postMessage:m=>messages.push(m)}},sampleRate:48000,currentFrame:0,
   registerProcessor(_name,type){Processor=type}});
@@ -176,10 +203,10 @@ test('the worklet processor applies ops at block start, in order with page write
  // What the page sends: the proxy's ops through a batcher, between plain writes.
  const posted=[];
  const batcher=createSidWriteBatcher(message=>posted.push(structuredClone(message)),()=>{});
- const proxy=createNoteControllerProxy(op=>batcher.op(op),{voiceCount:1,unisonCount:1,mode:'mono'});
- const voices=makeVoices();
+ const voices=makeVoices(),live=slot=>voices[Math.floor(slot/3)];
+ const proxy=createNoteControllerProxy(op=>batcher.op(op),{voiceCount:1,unisonCount:1,mode:'mono',liveGetter:live});
  batcher.write(0x18,0x1f);
- const token=proxy.noteOn(50,slot=>voices[Math.floor(slot/3)],{chipMask:[2],layerChip:2});
+ const token=proxy.noteOn(50,live,{chipMask:[2],layerChip:2});
  batcher.write(0x58,0x1f);
  batcher.flush();
  for(const message of posted.splice(0))processor.port.onmessage({data:message});
@@ -199,7 +226,7 @@ test('the worklet processor applies ops at block start, in order with page write
  for(let i=0;i<127;i++){scope.currentFrame+=128;processor.process([],[block])}
  assert.equal(processor.pitchEnvelopes.has(0x40),false);
  const status=messages.find(m=>m.type==='note-controller-status');
- assert.equal(status.ops,3);assert.equal(status.errors,0);assert.equal(status.missing,0);
+ assert.equal(status.ops,6,'init, 3 live, noteOn, noteOff');assert.equal(status.errors,0);assert.equal(status.missing,0);
  assert.ok(status.writes>=noteWrites.length+1);
 });
 

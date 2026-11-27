@@ -5,6 +5,20 @@ import {formatSequencerMirror} from './sequencer-mirror.js?v=__BUILD_ID__';
 import {formatDrumShadow} from './sequencer-shadow.js?v=__BUILD_ID__';
 
 /** One diagnostics line for the worklet sequencer probe (step 3). */
+/** Step G3: who plays the Game Arp, and how the worklet's run went. */
+export function formatWorkletGameArp(report){
+ if(!report?.enabled)return 'Game Arp timing: page timer';
+ if(!report.active&&!report.steps)return 'Game Arp timing: page timer (worklet Game Arp timing is on but unavailable)';
+ let line='Game Arp timing: worklet'+(report.playing?' (playing)':'')+' · '+(report.steps??0)+' steps, '+(report.notes??0)+' notes';
+ if(Number.isFinite(report.leadMs))line+=' · start lead '+(report.leadMs>=0?'+':'')+report.leadMs.toFixed(1)+' ms';
+ const skipped=Object.entries(report.skipped??{});
+ if(skipped.length)line+=' · skipped '+skipped.map(([reason,count])=>reason+' '+count).join(', ');
+ if(report.syncs)line+=' · re-synced to the page clock '+report.syncs+'× (largest '+report.shiftMaxMs.toFixed(1)+' ms'
+  +(report.syncSkipped?', '+report.syncSkipped+' steps skipped':'')+')';
+ if(report.dropped)line+=' · '+report.dropped+' report entries dropped';
+ if(report.error)line+=' · error: '+report.error;
+ return line;
+}
 /** Step G2: who turns note calls into register writes. */
 export function formatNoteController(report){
  if(report?.active){
@@ -58,6 +72,7 @@ export function mountAudioTimingPanel({
    'Drum timing: '+(audioTiming.workletDrumTiming?.active?'worklet plays the drums':
     audioTiming.workletDrumTiming?.enabled?'page timer (worklet drum timing is on but unavailable)':'page timer'),
    formatNoteController(audioTiming.noteController),
+   formatWorkletGameArp(audioTiming.workletGameArp),
    'Device output line is an estimate from loud PCM + AudioContext.outputLatency; not a DAC measurement. Screen recording A/V sync can differ.',
    ...sidStartupLog
   );

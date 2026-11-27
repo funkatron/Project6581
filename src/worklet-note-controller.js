@@ -13,16 +13,19 @@ import {slotRegister,noteFrequency} from './note-writes.js?v=__BUILD_ID__';
 // Page side (createNoteControllerProxy):
 // - A shadow UnisonSidController with no writer runs every call first, so
 //   noteOn returns its token at once and drum-slot evictions still reach the page.
-// - Voice settings come from page getters (functions cannot cross postMessage).
-//   The proxy records each getter call the shadow makes, in order, and sends the
-//   values with the op. The worklet controller is in the same state, so it makes
-//   the same calls in the same order and gets the same values back. That also
-//   covers getters stored with a held note and called later (mono fallback).
+// - Voice settings: functions cannot cross postMessage. The page's live getter
+//   (sid-studio.js voiceSettingsForSlot) depends only on the chip, so the proxy
+//   keeps the worklet's copy of each melodic chip's live settings current ('live'
+//   ops, sent only when they change, always before the op that may read them).
+//   A note played with the live getter reads that copy whenever the controller
+//   asks, as the page's getter reads page state (mono fallback included). Any
+//   other getter (drum hits pass ()=>settings) is sent as a fixed snapshot.
 // - Pitch-envelope callbacks run in the worklet, not on the page.
 //
 // Worklet side (createWorkletNoteController): apply(op) runs one op and returns
-// the number of register writes it made. A settings count that does not match
-// the page's is reported as an error (the two controllers disagree).
+// the number of register writes it made. play()/release() let the worklet's own
+// generators (G3, Game Arp) start notes with the live settings; their tokens
+// come from a separate range so they never collide with the page's.
 
 export const NOTE_OP='note-op';
 
@@ -35,34 +38,33 @@ export function workletNotesSupported(support){
  * Page side. `send(op)` queues one op behind any pending register writes.
  * Same methods and read-only allocation fields as UnisonSidController.
  */
-export function createNoteControllerProxy(send,{voiceCount=1,unisonCount=1,mode='mono',detune=0,onDrumNoteEvicted=()=>{}}={}){
- let recording=null;
+export const LIVE_CHIPS=3;
+export function createNoteControllerProxy(send,{voiceCount=1,unisonCount=1,mode='mono',detune=0,onDrumNoteEvicted=()=>{},liveGetter=null}={}){
  const shadow=new UnisonSidController(()=>{},{voiceCount,unisonCount,mode,detune,onDrumNoteEvicted});
- const record=getter=>slot=>{
-  const value=getter(slot);
-  recording?.push(value);
-  return value;
- };
- const run=(op,call)=>{
-  const values=[];recording=values;
-  let result;
-  try{result=call()}finally{recording=null}
-  if(values.length){
-   // Unison layers share one settings object: send each once, then indexes.
-   const settings=[],calls=values.map(value=>{
-    let index=settings.indexOf(value);
-    if(index<0){index=settings.length;settings.push(value)}
-    return index;
-   });
-   op.settings=settings;op.calls=calls;
+ const liveStamps=Array.from({length:LIVE_CHIPS},()=>null);
+ const post=op=>send({type:NOTE_OP,...op});
+ /** Sends each melodic chip's live settings that changed since the last send. */
+ function syncLive(){
+  if(typeof liveGetter!=='function')return;
+  for(let chip=0;chip<LIVE_CHIPS;chip++){
+   const values=liveGetter(chip*3);
+   const stamp=JSON.stringify(values);
+   if(stamp===liveStamps[chip])continue;
+   liveStamps[chip]=stamp;
+   post({op:'live',chip,values});
   }
-  send({type:NOTE_OP,...op});
+ }
+ const run=(op,call)=>{
+  syncLive();
+  const result=call();
+  post(op);
   return result;
  };
- send({type:NOTE_OP,op:'init',options:{voiceCount:shadow.voiceCount,unisonCount:shadow.unisonCount,mode:shadow.mode,detune:shadow.detune}});
- const proxy={
+ post({op:'init',options:{voiceCount:shadow.voiceCount,unisonCount:shadow.unisonCount,mode:shadow.mode,detune:shadow.detune}});
+ return {
   worklet:true,
   shadow,
+  syncLive,
   get voiceCount(){return shadow.voiceCount},
   get unisonCount(){return shadow.unisonCount},
   get mode(){return shadow.mode},
@@ -70,11 +72,12 @@ export function createNoteControllerProxy(send,{voiceCount=1,unisonCount=1,mode=
   get capacity(){return shadow.capacity},
   configure(options={}){return run({op:'configure',options:{...options}},()=>shadow.configure(options))},
   noteOn(note,settings,{chipMask=null,layerChip=null,drumSlot=null}={}){
-   const getter=typeof settings==='function'?settings:()=>settings;
    const options={chipMask:Array.isArray(chipMask)?[...chipMask]:null,layerChip,drumSlot};
-   const op={op:'noteOn',note,options};
+   const live=settings===liveGetter&&typeof liveGetter==='function';
+   const fixed=live?null:(typeof settings==='function'?settings(0):settings);
+   const op={op:'noteOn',note,options,...(live?{live:true}:{fixed})};
    return run(op,()=>{
-    const token=shadow.noteOn(note,record(getter),options);
+    const token=shadow.noteOn(note,live?settings:()=>fixed,options);
     op.token=token;
     return token;
    });
@@ -87,19 +90,24 @@ export function createNoteControllerProxy(send,{voiceCount=1,unisonCount=1,mode=
   setFilter(settings,chip){return run({op:'setFilter',values:settings,chip},()=>shadow.setFilter(settings,chip))},
   setPulse(voice,percent,chip){return run({op:'setPulse',voice,percent,chip},()=>shadow.setPulse(voice,percent,chip))}
  };
- return proxy;
 }
 
 /**
  * Worklet side. `write(register, value)` writes to the chip; the pitch callbacks
  * take the processor's existing message shapes ({register, baseFrequency, …}).
  */
+/** First token of the worklet's own notes (G3 generators); page tokens count up from 1. */
+export const WORKLET_TOKEN_BASE=1e9;
+
 export function createWorkletNoteController({write,startPitchEnvelope=()=>{},retunePitchEnvelope=()=>{},stopPitchEnvelope=()=>{}}){
- let pending=null,cursor=0,writes=0,controller=null;
+ let writes=0,controller=null,localTokens=0;
+ const live=Array.from({length:LIVE_CHIPS},()=>null);
  const stats={ops:0,writes:0,errors:0,lastError:null};
- const settingsGetter=()=>{
-  if(!pending||cursor>=pending.length)throw new Error('note op: page sent fewer voice settings than the worklet needs');
-  return pending[cursor++];
+ const liveGetter=slot=>{
+  const chip=Math.floor(slot/3);
+  const values=live[chip];
+  if(!values)throw new Error('note op: no live voice settings for SID '+(chip+1));
+  return values;
  };
  const create=options=>new UnisonSidController((register,value)=>{writes++;write(register,value)},{...options,
   onPitchStart:(slot,note,envelope)=>startPitchEnvelope({register:slotRegister(slot),baseFrequency:noteFrequency(note),
@@ -109,15 +117,22 @@ export function createWorkletNoteController({write,startPitchEnvelope=()=>{},ret
  });
  function dispatch(op){
   if(op.op==='init'){controller=create(op.options??{});return}
+  if(op.op==='live'){
+   if(!Number.isInteger(op.chip)||op.chip<0||op.chip>=LIVE_CHIPS||!op.values||typeof op.values!=='object')throw new Error('note op: bad live settings');
+   live[op.chip]=op.values;return;
+  }
   if(!controller)throw new Error('note op before init: '+op.op);
   switch(op.op){
    case 'configure':controller.configure(op.options??{});break;
-   case 'noteOn':
+   case 'noteOn':{
     if(!Number.isInteger(op.token)||op.token<1)throw new Error('note op: noteOn without a token');
+    if(op.live!==true&&(!op.fixed||typeof op.fixed!=='object'))throw new Error('note op: noteOn without voice settings');
     // The page's shadow numbered this note; take its number so later noteOffs match.
     controller.sequence=op.token-1;
-    controller.noteOn(op.note,settingsGetter,op.options??{});
+    const fixed=op.fixed;
+    controller.noteOn(op.note,op.live===true?liveGetter:()=>fixed,op.options??{});
     break;
+   }
    case 'noteOff':controller.noteOff(op.note,op.token);break;
    case 'panic':controller.panic();break;
    case 'forceSilent':controller.forceSilent();break;
@@ -128,23 +143,41 @@ export function createWorkletNoteController({write,startPitchEnvelope=()=>{},ret
    default:throw new Error('unknown note op: '+op.op);
   }
  }
+ const counted=fn=>{
+  writes=0;
+  try{return fn()}
+  catch(error){stats.errors++;stats.lastError=String(error?.message??error);throw error}
+  finally{stats.writes+=writes}
+ };
  return {
-  get ready(){return controller!==null},
+  get ready(){return controller!==null&&live.every(Boolean)},
   get controller(){return controller},
-  /** Runs one op; returns the register writes it made. Throws on a bad op or a settings mismatch. */
+  /** Runs one page op; returns the register writes it made. Throws on a bad op. */
   apply(op){
-   pending=Array.isArray(op?.calls)?op.calls.map(index=>op.settings[index]):[];
-   cursor=0;writes=0;
-   try{
-    dispatch(op);
-    if(cursor!==pending.length)throw new Error('note op: page sent '+pending.length+' voice settings, worklet used '+cursor);
-    stats.ops++;
-   }catch(error){
-    stats.errors++;stats.lastError=String(error?.message??error);
-    throw error;
-   }finally{
-    stats.writes+=writes;pending=null;
-   }
+   counted(()=>dispatch(op));
+   stats.ops++;
+   return writes;
+  },
+  /**
+   * The worklet's own note-on (G3 generators), with the page's live settings:
+   * what the page's playOne() asks of its controller. Returns {token, writes}.
+   */
+  play(note,{chipMask=null,layerChip=null}={}){
+   if(!controller)throw new Error('worklet note before init');
+   const token=counted(()=>{
+    const saved=controller.sequence;
+    controller.sequence=WORKLET_TOKEN_BASE+localTokens++;
+    const value=controller.noteOn(note,liveGetter,{chipMask,layerChip});
+    // Page tokens keep counting where they were.
+    controller.sequence=saved;
+    return value;
+   });
+   return {token,writes};
+  },
+  /** The worklet's own note-off; returns the register writes it made. */
+  release(note,token){
+   if(!controller)return 0;
+   counted(()=>controller.noteOff(note,token));
    return writes;
   },
   /** {ops, writes, errors, lastError} since the last call. */
