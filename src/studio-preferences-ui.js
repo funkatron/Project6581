@@ -5,6 +5,21 @@ export function mountPreferencesDialog($){
  $('preferencesClose')?.addEventListener('click',()=>dialog.close());
  dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close()});
 }
+export const WORKLET_NOTES_KEY='project6581.worklet-note-controller';
+/**
+ * Step G2: whether the worklet note controller is requested (off by default; no
+ * Prefs control until G3). `?workletNotes=1` turns it on and `?workletNotes=0`
+ * off, and the choice is kept in this browser.
+ */
+export function workletNotesRequested({search=globalThis.location?.search??'',storage=globalThis.localStorage}={}){
+ const param=new URLSearchParams(search).get('workletNotes');
+ try{
+  if(param==='1')storage?.setItem(WORKLET_NOTES_KEY,'on');
+  else if(param==='0')storage?.removeItem(WORKLET_NOTES_KEY);
+ }catch{/* private mode: this load only */}
+ if(param==='1'||param==='0')return param==='1';
+ try{return storage?.getItem(WORKLET_NOTES_KEY)==='on'}catch{return false}
+}
 export const WORKLET_DRUM_TIMING_KEY='project6581.worklet-drum-timing';
 
 /** Whether the loaded worklet modules can play drums (bundle API v6+, self-test passed). */
