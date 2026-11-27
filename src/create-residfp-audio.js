@@ -147,6 +147,8 @@ export async function createReSidFpAudio({model=6581,onStatus=()=>{},onContext=(
         node.port.postMessage({type:'event-log-enable',enabled:eventLogEnabled});
       },
       write:(register,value)=>batcher.write(register,value),
+      // Step G2: a worklet note-controller op, queued in order with register writes.
+      noteOp:op=>batcher.op(op),
       setModel(nextModel){
         if(closed||!node)return Promise.reject(new Error('SID engine is closed'));
         return new Promise((resolve,reject)=>{

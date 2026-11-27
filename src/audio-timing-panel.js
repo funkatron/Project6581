@@ -5,6 +5,16 @@ import {formatSequencerMirror} from './sequencer-mirror.js?v=__BUILD_ID__';
 import {formatDrumShadow} from './sequencer-shadow.js?v=__BUILD_ID__';
 
 /** One diagnostics line for the worklet sequencer probe (step 3). */
+/** Step G2: who turns note calls into register writes. */
+export function formatNoteController(report){
+ if(report?.active){
+  const counts=(report.ops??0)+' ops, '+(report.writes??0)+' writes';
+  const problems=(report.errors?', '+report.errors+' errors'+(report.lastError?' (last: '+report.lastError+')':''):'')
+   +(report.missing?', '+report.missing+' ops dropped (no worklet controller)':'');
+  return 'Note writes: worklet note controller ('+counts+problems+')';
+ }
+ return 'Note writes: page'+(report?.requested?' (worklet note controller requested; waiting for or missing sequencer modules v8)':'');
+}
 export function formatSequencerSupport(support){
  if(!support)return 'Worklet sequencer modules: not reported yet';
  if(support.loadError)return 'Worklet sequencer modules: failed to load ('+support.loadError+')';
@@ -47,6 +57,7 @@ export function mountAudioTimingPanel({
    formatDrumShadow(audioTiming.drumShadow),
    'Drum timing: '+(audioTiming.workletDrumTiming?.active?'worklet plays the drums':
     audioTiming.workletDrumTiming?.enabled?'page timer (worklet drum timing is on but unavailable)':'page timer'),
+   formatNoteController(audioTiming.noteController),
    'Device output line is an estimate from loud PCM + AudioContext.outputLatency; not a DAC measurement. Screen recording A/V sync can differ.',
    ...sidStartupLog
   );

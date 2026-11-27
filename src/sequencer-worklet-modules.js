@@ -4,11 +4,13 @@ import {
  activeNotes,arpNotes,resolveNote,drumSequence,arpStepMs,gameStepMs
 } from './transport-state.js?v=__BUILD_ID__';
 import {createNoteWriter} from './note-writes.js?v=__BUILD_ID__';
+import {UnisonSidController} from './unison-sid-controller.js?v=__BUILD_ID__';
 import {emptyMirror,applyMirrorMessage,mirrorDigest,mirrorSummary,createMirrorSender} from './sequencer-mirror.js?v=__BUILD_ID__';
 import {createDrumShadow,drumStepSeconds} from './sequencer-shadow.js?v=__BUILD_ID__';
 import {createDrumPlayer} from './drum-player.js?v=__BUILD_ID__';
 import {createWorkletDrums} from './worklet-drums.js?v=__BUILD_ID__';
 import {createWorkletGameArp} from './worklet-game-arp.js?v=__BUILD_ID__';
+import {createWorkletNoteController,createNoteControllerProxy} from './worklet-note-controller.js?v=__BUILD_ID__';
 
 // Loaded into the AudioWorklet with its own addModule() call, separate from
 // residfp-worklet.js, so a browser that rejects ES-module imports in worklets
@@ -16,6 +18,9 @@ import {createWorkletGameArp} from './worklet-game-arp.js?v=__BUILD_ID__';
 // global scope: the SID processor finds these functions on globalThis and
 // reports whether they loaded and passed the self-test (step 3, worklet
 // sequencing). Also importable from Node and the page for tests.
+
+// JSON round trip: what postMessage would deliver for these plain ops.
+const structuredCloneSafe=value=>JSON.parse(JSON.stringify(value));
 
 /** Runs each pure step function once on known input. Returns {ok, error?}. */
 export function sequencerSelfTest(){
@@ -78,6 +83,16 @@ export function sequencerSelfTest(){
    previewRootMidi:48,sequence:state.game.sequence,resolve:note=>note});
   expect('game arp step 0',[first.events,first.gateAt,gameArp.releaseDue(4500)],
    [[{type:'on',note:60,source:'game',frame:0}],4500,[{type:'off',note:60,source:'game',frame:4500}]]);
+  // Note controller (G2): a page call becomes an op; the worklet makes the page's writes.
+  const ops=[],pageWrites=[];
+  const proxy=createNoteControllerProxy(op=>ops.push(structuredCloneSafe(op)));
+  const direct=new UnisonSidController((register,value)=>pageWrites.push([register,value]));
+  const token=proxy.noteOn(60,()=>voice);direct.noteOn(60,()=>voice);
+  proxy.noteOff(60,token);direct.noteOff(60);
+  const workletWrites=[];
+  const notes=createWorkletNoteController({write:(register,value)=>workletWrites.push([register,value])});
+  for(const op of ops)notes.apply(op);
+  expect('note controller writes',workletWrites,pageWrites);
   return {ok:true};
  }catch(error){
   return {ok:false,error:String(error?.message??error)};
@@ -85,7 +100,7 @@ export function sequencerSelfTest(){
 }
 
 const api=Object.freeze({
- version:7,
+ version:8,
  arpStep,gameStep,drumStep,
  createTransportState,applyTransportPatch,defaultTransport,
  activeNotes,arpNotes,resolveNote,drumSequence,arpStepMs,gameStepMs,
@@ -93,6 +108,7 @@ const api=Object.freeze({
  emptyMirror,applyMirrorMessage,mirrorDigest,mirrorSummary,
  createDrumShadow,
  createDrumPlayer,createWorkletDrums,createWorkletGameArp,
+ createWorkletNoteController,
  selfTest:sequencerSelfTest
 });
 globalThis.project6581Sequencer=api;

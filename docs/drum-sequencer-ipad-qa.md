@@ -58,6 +58,18 @@ Open **Prefs** (⚙) → **Drum timing**: **Worklet drum timing** is ticked unle
 - [ ] Reload: the setting is remembered.
 - [ ] **Audio timing** shows `Drum timing: worklet plays the drums` and the drum shadow line `worklet played N hits` with no `worklet skipped`. Export diagnostics and attach: `trace.entries` include `drum:*` note-on/off lines with `player: worklet`.
 
+## Worklet note controller (G2, off by default)
+
+Open the studio with `?workletNotes=1` once (the choice is kept in this browser; `?workletNotes=0` turns it off). Nothing should sound different: the worklet now makes the same SID writes the page made, at the start of the next audio block.
+
+- [ ] **Audio timing** shows `Note writes: worklet note controller (N ops, M writes)` with no `errors` or `dropped`.
+- [ ] Keyboard in mono, legato, duo and poly, with unison + detune: notes start, release and fall back to held keys as before.
+- [ ] Root Arp and Game Arp, with layer routing to SID 2–3: no stuck or missing notes.
+- [ ] A preset with a pitch envelope: the sweep sounds as before.
+- [ ] Drum preview with **Worklet drum timing** off and on: hits as before.
+- [ ] **Stop all**, then play again: no stuck note.
+- [ ] Export diagnostics and attach (`environment.timing.noteController`).
+
 ## Help
 
 - [ ] Section **?** on DRUM STEP SEQUENCER opens overview help and focuses the tab.

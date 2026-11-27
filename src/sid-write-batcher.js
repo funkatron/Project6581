@@ -1,4 +1,4 @@
-// Preserve SID register order while reducing AudioWorklet port messages.
+// Preserve SID register order (and note-controller op order) while reducing AudioWorklet port messages.
 export function createSidWriteBatcher(post,enqueue=queueMicrotask){
   let pending=[],scheduled=false,closed=false,diagnostics=null;
   const flush=()=>{
@@ -12,6 +12,12 @@ export function createSidWriteBatcher(post,enqueue=queueMicrotask){
     write(register,value){
       if(closed)return;
       pending.push([register,value]);
+      if(!scheduled){scheduled=true;enqueue(flush)}
+    },
+    // Step G2: a note-controller op, kept in order with the register writes around it.
+    op(item){
+      if(closed)return;
+      pending.push(item);
       if(!scheduled){scheduled=true;enqueue(flush)}
     },
     get pendingCount(){return pending.length},

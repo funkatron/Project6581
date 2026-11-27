@@ -46,7 +46,7 @@ import {mountSidEnginePanels,querySidEngineCard} from "./sid-engine-panels-ui.js
 import {mountMasterLoudnessMeter} from "./master-loudness-meter-ui.js?v=__BUILD_ID__";
 import {mountHelpDialog,mountHelpTriggers} from "./ui-help-dialog.js?v=__BUILD_ID__";
 import {mountMidiInput} from "./midi-input.js?v=__BUILD_ID__";
-import {mountPreferencesDialog,mountWorkletDrumTimingPref} from "./studio-preferences-ui.js?v=__BUILD_ID__";
+import {mountPreferencesDialog,mountWorkletDrumTimingPref,workletNotesRequested} from "./studio-preferences-ui.js?v=__BUILD_ID__";
 import {bindHelpGesture} from "./ui-help-gesture.js?v=__BUILD_ID__";
 import {testHooksEnabled,mountStudioTestHooks} from "./studio-test-hooks.js?v=__BUILD_ID__";
 import {createMirrorSender,compareMirrorStatus,MIRROR_DRUM_LANES,MIRROR_DRUM_BUSES,MIRROR_MELODIC_CHIPS} from "./sequencer-mirror.js?v=__BUILD_ID__";
@@ -695,6 +695,30 @@ const workletDrumTiming=mountWorkletDrumTimingPref($,{
   syncWorkletDrumTimingReport();
  }
 });
+// Step G2: who turns note calls into SID 1–6 writes. Off by default (`?workletNotes=1`);
+// the worklet's controller makes the same writes, applied at block start.
+let noteControllers=null;
+function noteControllerOptions(){
+ const inst=performanceInstrument.getState();
+ return {voiceCount:inst.voiceCount,unisonCount:inst.unisonCount,mode:inst.mode,detune:inst.detune,
+  onDrumNoteEvicted:note=>clearDrumOwnersForMidiNote(note)};
+}
+function syncNoteControllerReport(){
+ const prior=audioTiming.noteController??{};
+ audioTiming.noteController={...prior,requested:workletNotesRequested(),active:Boolean(sidController?.worklet)};
+}
+function selectNoteController(){
+ if(!sidController||!noteControllers)return;
+ const worklet=workletNotesRequested()&&noteControllers.supported(audioTiming.sequencerModules);
+ if(Boolean(sidController.worklet)!==worklet){
+  // Release every note through the old controller first: one writer at a time.
+  panic('note-controller-switch');
+  sidController=noteControllers[worklet?'worklet':'direct'](noteControllerOptions());
+  traceStudio('note-controller',{worklet});
+  updateModulation();
+ }
+ syncNoteControllerReport();
+}
 function syncWorkletDrumTimingReport(){
  audioTiming.workletDrumTiming={enabled:workletDrumTiming.enabled,active:workletDrumTiming.active(),playing:drum.running&&drum.worklet};
 }
@@ -1028,8 +1052,9 @@ async function startSid({gesture=false}={}){
     progress('Loading SID JavaScript modules…');
     let moduleTimeout;
     const modules=Promise.all([
-      import('./create-residfp-audio.js?v=__BUILD_ID__'),import('./unison-sid-controller.js?v=__BUILD_ID__'),import('./lfo-modulation.js?v=__BUILD_ID__')]);
-    const [{createReSidFpAudio},{UnisonSidController},lfoModule]=await Promise.race([
+      import('./create-residfp-audio.js?v=__BUILD_ID__'),import('./unison-sid-controller.js?v=__BUILD_ID__'),import('./lfo-modulation.js?v=__BUILD_ID__'),
+      import('./worklet-note-controller.js?v=__BUILD_ID__')]);
+    const [{createReSidFpAudio},{UnisonSidController},lfoModule,noteControllerModule]=await Promise.race([
       modules,
       new Promise((_,reject)=>{moduleTimeout=setTimeout(()=>reject(new Error('SID JavaScript module loading timed out after 15 seconds')),15000)})
     ]).finally(()=>clearTimeout(moduleTimeout));
@@ -1059,7 +1084,16 @@ async function startSid({gesture=false}={}){
         const {type:_type,...support}=event;
         audioTiming.sequencerModules=support;
         workletDrumTiming.refresh();syncWorkletDrumTimingReport();
+        selectNoteController();
         updateAudioTimingReport();
+        return;
+      }
+      if(event.type==='note-controller-status'){
+        const total=audioTiming.noteController??{};
+        audioTiming.noteController={...total,ops:(total.ops??0)+event.ops,writes:(total.writes??0)+event.writes,
+         errors:(total.errors??0)+event.errors,missing:(total.missing??0)+(event.missing??0),lastError:event.lastError??total.lastError??null};
+        if(event.errors||event.missing)traceStudio('note-controller-error',{errors:event.errors,missing:event.missing??0,lastError:event.lastError});
+        if($('audioTimingDetails').open)updateAudioTimingReport();
         return;
       }
       if(event.type==='sequencer-shadow-status'){
@@ -1135,8 +1169,14 @@ async function startSid({gesture=false}={}){
     if(!sidRecorder.supportsM4a)$('recordFormat').value='wav';
     $('recordToggle').disabled=false;
     $('recordStatus').textContent=sidRecorder.supportsM4a?'WAV / M4A ready':'WAV ready';
-    const inst=performanceInstrument.getState();
-    sidController=new UnisonSidController((register,value)=>audio.write(register,value),{voiceCount:inst.voiceCount,unisonCount:inst.unisonCount,mode:inst.mode,detune:inst.detune,onPitchStart:(slot,note,envelope)=>audio.startPitchEnvelope(slot,note,envelope),onPitchStop:slot=>audio.stopPitchEnvelope(slot),onPitchRetune:(slot,note)=>audio.retunePitchEnvelope(slot,note),onDrumNoteEvicted:note=>clearDrumOwnersForMidiNote(note)});
+    noteControllers={
+     direct:options=>new UnisonSidController((register,value)=>audio.write(register,value),{...options,onPitchStart:(slot,note,envelope)=>audio.startPitchEnvelope(slot,note,envelope),onPitchStop:slot=>audio.stopPitchEnvelope(slot),onPitchRetune:(slot,note)=>audio.retunePitchEnvelope(slot,note)}),
+     worklet:options=>noteControllerModule.createNoteControllerProxy(op=>audio.noteOp(op),options),
+     supported:noteControllerModule.workletNotesSupported
+    };
+    // The page writes notes until the worklet reports it can run note ops (sequencer-support).
+    sidController=noteControllers.direct(noteControllerOptions());
+    syncNoteControllerReport();
     activeSidModel=requestedModel;
     progress('SID '+activeSidModel+' ready.');
     sidEventLog.add('sid-ready',{contextId:attempt,model:activeSidModel});
@@ -1155,7 +1195,7 @@ async function startSid({gesture=false}={}){
     // Retire callbacks before cleanup, including delayed resume/port events.
     ++sidAttempt;sidContextRetired=true;
     if(context)context.onstatechange=null;
-    sidAudio=null;sidController=null;sidRecorder=null;activeSidModel=null;
+    sidAudio=null;sidController=null;noteControllers=null;sidRecorder=null;activeSidModel=null;
     $('recordToggle').disabled=true;
     let message=err.message||String(err);
     try{if(audio)await audio.close();else if(context)await closeSidContext(context)}catch(cleanup){sidCleanupBlocked=true;message+='; '+cleanup.message}
@@ -1177,7 +1217,7 @@ async function retireSidAudio(){
   ++sidAttempt;sidContextRetired=true;
   if(context)context.onstatechange=null;
   panic();
-  sidAudio=null;sidController=null;sidRecorder=null;activeSidModel=null;
+  sidAudio=null;sidController=null;noteControllers=null;sidRecorder=null;activeSidModel=null;
   pendingSidClose=(async()=>{
     try{if(audio)await audio.close();else if(context)await closeSidContext(context)}
     catch(error){sidCleanupBlocked=true;throw error}

@@ -41,6 +41,9 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     this.drumShadow=null;this.shadowStatusFrame=-Infinity;
     // Step 3c-2: the worklet plays drum steps (worklet-drums.js) when the page asks.
     this.workletDrums=null;this.drumCommands=[];
+    // Step G2: page note-controller calls arrive as ops in the write queue
+    // (worklet-note-controller.js); null until the first op.
+    this.noteController=null;this.noteControllerMissing=0;
     this.port.onmessage=({data})=>{
       if(data?.type==='load'){
         this.traceFirstRender=data.traceFirstRender===true;
@@ -173,6 +176,25 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
       if(message.action==='audition')this.drumCommands.push(...drums.audition(message.lane,this.mirror,currentFrame));
       else if(message.action==='stop')this.drumCommands.push(...drums.stopAll(currentFrame));
     }catch(err){this.port.postMessage({type:'sequencer-shadow-status',sampleRate,steps:[],dropped:0,lead:null,error:String(err?.message??err)})}
+  }
+  noteControllerApi(){
+    if(this.noteController)return this.noteController;
+    const api=globalThis.project6581Sequencer;
+    if(!api?.createWorkletNoteController)return null;
+    this.noteController=api.createWorkletNoteController({
+      write:(register,value)=>this.exports.sid_write(register,value),
+      startPitchEnvelope:command=>this.startPitchEnvelope(command),
+      retunePitchEnvelope:command=>this.retunePitchEnvelope(command),
+      stopPitchEnvelope:command=>this.stopPitchEnvelope(command)
+    });
+    return this.noteController;
+  }
+  // One queued note op: the same writes the page's controller would have queued.
+  applyNoteOp(op){
+    const controller=this.noteControllerApi();
+    if(!controller){this.noteControllerMissing++;return}
+    try{this.writes+=controller.apply(op)}
+    catch{/* counted in the controller's stats */}
   }
   startPitchEnvelope(data){
     // Explicit opt-in protocol. Existing note messages are unchanged.
@@ -333,8 +355,10 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
     const e=this.exports;if(!e)return true;
     this.applyAudioClockModulation();
     const queuedWrites=this.queue.length;
-    for(const [reg,value] of this.queue)e.sid_write(reg,value);
-    this.writes+=this.queue.length;
+    for(const item of this.queue){
+      if(Array.isArray(item)){e.sid_write(item[0],item[1]);this.writes++}
+      else if(item?.type==='note-op')this.applyNoteOp(item);
+    }
     this.queue.length=0;
     // After the page's writes, so a drum hit's bus filter wins over a page
     // filter write to SID 4–6 in the same block.
@@ -478,6 +502,11 @@ class ReSidFpProcessor extends AudioWorkletProcessor {
         renderMaxMs:this.timedRenderBlocks?this.renderMsMax:null,
         renderBudgetMs:frames*1000/sampleRate
       });
+      if(this.noteController||this.noteControllerMissing){
+        this.port.postMessage({type:'note-controller-status',...(this.noteController?.takeStats()??{ops:0,writes:0,errors:0,lastError:null}),
+          missing:this.noteControllerMissing});
+        this.noteControllerMissing=0;
+      }
       this.lastPeak=0;this.writes=0;
       this.chipPeakInterval=zeroChipPeaks();
       this.renderMsTotal=0;this.renderMsMax=0;this.timedRenderBlocks=0;
