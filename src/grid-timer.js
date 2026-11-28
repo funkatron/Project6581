@@ -65,6 +65,17 @@ export function createGridTimer({
    if(pending!==null)clearTimer(pending);
    pending=null;grid=null;
   },
+  /**
+   * Milliseconds from now to this grid's first step at least minDelayMs away,
+   * never before its first step; null when stopped. Another clock started with
+   * this delay steps in phase with this one (arps ↔ drums).
+   */
+  delayToGrid(minDelayMs=0){
+   if(!grid)return null;
+   const at=now()+minDelayMs;
+   const k=Math.max(grid.first,Math.ceil((at-grid.anchor)/grid.ms-1e-9));
+   return Math.max(0,grid.anchor+k*grid.ms-now());
+  },
   get running(){return grid!==null}
  };
  return api;

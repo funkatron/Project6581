@@ -134,6 +134,13 @@ export function activeNotes(state){
 export function arpTempo(state){
  return state.arp.sync?state.masterBpm:state.arp.localBpm;
 }
+/**
+ * The arps and the drum sequence share one phase only when both follow the master BPM:
+ * a drum sequence on its own local BPM (or arps on theirs) keeps its own clock.
+ */
+export function phaseLocked(state){
+ return Boolean(state.drum.sync)&&Boolean(state.arp.sync);
+}
 export function arpStepMs(state){
  return stepMilliseconds(arpTempo(state),state.arp.rate);
 }

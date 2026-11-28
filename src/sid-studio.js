@@ -33,7 +33,7 @@ import {filterRegistersFromUi} from "./sid-filter-ui.js?v=__BUILD_ID__";
 import {projectedChipRenderMs} from "./sid-chip-render-diagnostic.js?v=__BUILD_ID__";
 import {mountGeneratorLeds} from "./generator-led-ui.js?v=__BUILD_ID__";
 import {createPerformanceArpState} from "./performance-arp-state.js?v=__BUILD_ID__";
-import {createTransportState,activeNotes as transportActiveNotes} from "./transport-state.js?v=__BUILD_ID__";
+import {createTransportState,activeNotes as transportActiveNotes,phaseLocked} from "./transport-state.js?v=__BUILD_ID__";
 import {bindTransportDom} from "./transport-dom.js?v=__BUILD_ID__";
 import {createPerformanceRoutingState} from "./performance-routing-state.js?v=__BUILD_ID__";
 import {createPerformanceInstrumentState} from "./performance-instrument-state.js?v=__BUILD_ID__";
@@ -599,6 +599,8 @@ const drumReleaseTimers=new Map();
 let drumStop=()=>{};
 let drumStart=()=>{};
 let drumRestartIfRunning=()=>{};
+// Arps ↔ drums phase lock: each side's running grid timer, or null.
+let drumGrid=()=>null,generatorGrid=()=>null;
 let drumPanelUi={setActiveStep:()=>{},render:()=>{}};
 let seqPreview=false,activeSeqStep=-1;
 let gameStop=()=>{};
@@ -659,7 +661,7 @@ function syncGeneratorConfig(){
  generatorConfigStamp=stamp;
  sendGenerators({action:'config',...config});
 }
-({gameStop,arpStopVoice,stopArpClock,restartGenerators,stopGenerators,gameRestart,setSeqTransportLabel,renderSequenceSteps,loadBuiltInPhrase,applyWorkletReport}=mountPerformance({
+({gameStop,arpStopVoice,stopArpClock,restartGenerators,stopGenerators,gameRestart,setSeqTransportLabel,renderSequenceSteps,loadBuiltInPhrase,applyWorkletReport,generatorGrid}=mountPerformance({
  $,names,keyboardState,arp,game,directOwned,play,stop,silenceSidOutput,refreshPresetDirty,
  getArpKeyVisual:()=>arpKeyVisual,performanceNote,
  gameEnabled,arpEnabled,activeNotes,arpNotes,
@@ -671,6 +673,7 @@ function syncGeneratorConfig(){
  setActiveSeqStep:value=>{activeSeqStep=value},
  performanceArp,
  workletGenerators,
+ drumGrid:()=>phaseLocked(transport.getState())?drumGrid():null,
  alignDrumTransport:()=>{
   if(!drum.running)return;
   drumStop({resetStep:true});
@@ -792,7 +795,7 @@ function syncWorkletDrumTimingReport(){
  audioTiming.workletDrumTiming={enabled:workletDrumTiming.enabled,active:workletDrumTiming.active(),playing:drum.running&&drum.worklet};
 }
 syncWorkletDrumTimingReport();
-({drumStart,drumStop,drumRestartIfRunning}=mountDrumPerformance({
+({drumStart,drumStop,drumRestartIfRunning,drumGrid}=mountDrumPerformance({
  $,drum,
  transport,
  triggerDrumStep,
@@ -801,6 +804,7 @@ syncWorkletDrumTimingReport();
  onStep:index=>drumPanelUi.setActiveStep(index),
  shadow:drumShadow,
  workletDrums:()=>Boolean(sidAudio)&&workletDrumTiming.active(),
+ arpGrid:()=>phaseLocked(transport.getState())?generatorGrid():null,
  onTransportChange:running=>{performanceDrum.setRunning(running);syncWorkletDrumTimingReport()},
  onDrumStart:()=>{
   if(performanceArp.gameOn&&seqPreview){

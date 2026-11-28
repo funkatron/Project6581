@@ -84,6 +84,17 @@ Open **Prefs** (⚙) → **Game Arp timing** → tick **Worklet Game Arp timing*
 - [ ] **Audio timing** shows `Game Arp timing: worklet (playing) · N steps, M notes` with no `error` or `skipped` (other than SIDs you turned off), and `Note writes: worklet note controller`. Export diagnostics and attach: `trace.entries` include `game` note-on/off lines with `player: worklet`.
 - [ ] Untick the setting while playing: the Game Arp carries on from the page timer without a stuck note.
 
+## Arps and drums in sync (0.30)
+
+Drums on **Sync** (master BPM), arp **Sync** on. Try with Worklet Game Arp timing off, then on.
+
+- [ ] Start the drum preview, then press a key with Game Arp on: the first Game step lands on a drum step (no flam), and stays there for ~60 s.
+- [ ] Same with Root Arp on (with and without Game Arp).
+- [ ] Hold a key with Game Arp running, then start the drum preview: the first drum hit lands on an arp step.
+- [ ] Move master BPM while both run: they stay together after the slider stops.
+- [ ] Untick drum **Sync** (local BPM): arps start at once again, no lock (expected).
+- [ ] Export diagnostics (Game Arp timing on): Game note-ons sit on the drum grid (the G3 export showed a constant +34.7 ms; expect about 0 ms, within a few ms).
+
 ## Help
 
 - [ ] Section **?** on DRUM STEP SEQUENCER opens overview help and focuses the tab.
