@@ -6,6 +6,7 @@
 const CONTROLS=[
  ['masterBpm','value',(patch,v)=>{patch.masterBpm=v}],
  ['arpPattern','value',(patch,v)=>{(patch.arp??={}).pattern=v}],
+ ['arpGameTrigger','value',(patch,v)=>{(patch.arp??={}).gameTrigger=v}],
  ['arpRate','value',(patch,v)=>{(patch.arp??={}).rate=v}],
  ['arpSync','checked',(patch,v)=>{(patch.arp??={}).sync=v}],
  ['arpBpm','value',(patch,v)=>{(patch.arp??={}).localBpm=v}],

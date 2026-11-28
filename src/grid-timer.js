@@ -66,6 +66,18 @@ export function createGridTimer({
    pending=null;grid=null;
   },
   /**
+   * Runs the pending step now if it is due within toleranceMs (another clock on the
+   * same grid instant fired first). Returns true when it ran. Keeps a defined order
+   * for steps that share an instant: the Root Arp step before the Game Arp step.
+   */
+  runDue(toleranceMs=1){
+   if(!grid||pending===null)return false;
+   if(grid.anchor+grid.n*grid.ms>now()+toleranceMs)return false;
+   clearTimer(pending);
+   fire();
+   return true;
+  },
+  /**
    * Milliseconds from now to this grid's first step at least minDelayMs away,
    * never before its first step; null when stopped. Another clock started with
    * this delay steps in phase with this one (arps ↔ drums).

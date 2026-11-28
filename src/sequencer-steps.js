@@ -18,10 +18,14 @@ const off=(note,source)=>({type:'off',note,source});
 /**
  * One Root Arp tick.
  * clock: {step, root, last}. notes: sorted active notes.
- * With the Game Arp on, the Root Arp only picks the root (on a phrase boundary,
- * or the first time) and sounds nothing.
+ * With the Game Arp on, the Root Arp only picks the root and sounds nothing.
+ * gameTrigger (transport-state.js GAME_TRIGGERS) decides when the Game Arp takes it:
+ *   every-step: every Root step, and the phrase restarts (`retrigger: true`);
+ *   new-root: every Root step; the phrase restarts when the root note changes;
+ *   phrase-start: on a phrase boundary (or the first time); never restarts.
+ * On `retrigger`, the caller sets the Game Arp step counter to 0 before its next step.
  */
-export function arpStep(clock,{notes,pattern,gameOn=false,gameStep=0,phraseLength=16,resolve=identity}){
+export function arpStep(clock,{notes,pattern,gameOn=false,gameStep=0,phraseLength=16,gameTrigger='phrase-start',resolve=identity}){
  if(!notes.length){
   if(gameOn)return {clock:{...clock,root:null},events:[],highlight:{},status:{type:'idle'}};
   return {
@@ -35,8 +39,12 @@ export function arpStep(clock,{notes,pattern,gameOn=false,gameStep=0,phraseLengt
  const step=clock.step+1;
  const status={type:'root',note,count:notes.length};
  if(gameOn){
+  if(gameTrigger==='every-step'||gameTrigger==='new-root'){
+   const retrigger=gameTrigger==='every-step'||note!==clock.root;
+   return {clock:{step,root:note,last:clock.last},events:[],highlight:{root:note},status,retrigger};
+  }
   const root=clock.root===null||gamePhraseBoundary(gameStep,phraseLength)?note:clock.root;
-  return {clock:{step,root,last:clock.last},events:[],highlight:{root:note},status};
+  return {clock:{step,root,last:clock.last},events:[],highlight:{root:note},status,retrigger:false};
  }
  const events=clock.last===null?[]:[off(clock.last,'arp')];
  events.push(on(note,'arp'));

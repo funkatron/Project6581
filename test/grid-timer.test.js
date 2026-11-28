@@ -80,3 +80,19 @@ test('delayMs puts the first step (n = 0) that far ahead, then steps on the grid
  timer.stop();
  assert.throws(()=>timer.start({ms:125,delayMs:-1,onStep:()=>{}}),RangeError);
 });
+
+test('runDue runs a step that is due now, once, and leaves a future step alone',()=>{
+ const clock=fakeClock();
+ const {timer,steps}=stepper(clock,{ms:100});
+ clock.advance(99);
+ assert.equal(timer.runDue(0),false,'100 ms is not due at 99 ms');
+ assert.equal(timer.runDue(1),true,'within the tolerance');
+ assert.deepEqual(steps.map(s=>[s.n,s.at]),[[0,0],[1,99]]);
+ assert.equal(clock.pending,1);
+ clock.advance(1);
+ assert.equal(steps.length,2,'no second run at 100 ms');
+ clock.advance(100);
+ assert.deepEqual(steps.at(-1),{n:2,skipped:0,at:200,nextAt:300});
+ timer.stop();
+ assert.equal(timer.runDue(),false);
+});

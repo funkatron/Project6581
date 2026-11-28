@@ -96,7 +96,7 @@ test('bindTransportDom reads every control on mount and on input/change',()=>{
  const state=transport.getState();
  const {grid:_grid,mute:_mute,solo:_solo,...drum}=state.drum;
  assert.deepEqual({masterBpm:state.masterBpm,arp:state.arp,gameRate:state.game.rate,drum},{
-  masterBpm:130,arp:{pattern:'updown',rate:2,sync:false,localBpm:90,latch:false},
+  masterBpm:130,arp:{pattern:'updown',rate:2,sync:false,localBpm:90,latch:false,gameTrigger:'every-step'},
   gameRate:8,drum:{rate:16,sync:false,localBpm:180}
  });
  $('gameRate').value='32';$('gameRate').dispatch('change');
@@ -123,7 +123,7 @@ test('transport listener runs before later listeners on the same control',()=>{
 test('missing controls are skipped, not read as defaults',()=>{
  const patch=readTransportPatchFromDom(id=>id==='masterBpm'?{value:'99'}:null);
  assert.deepEqual(patch,{masterBpm:'99'});
- assert.equal(TRANSPORT_CONTROL_IDS.length,12);
+ assert.equal(TRANSPORT_CONTROL_IDS.length,13);
 });
 
 test('the Game Arp phrase is validated, cloned on read and edited per step',()=>{

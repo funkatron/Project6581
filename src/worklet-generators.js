@@ -207,7 +207,7 @@ export function createWorkletGenerators({sampleRate,notes}){
     if(step.clock==='root'){
      if(!clocks.root.running)continue;
      const result=arp.rootStep({notes:arpNotes(transport),pattern:transport.arp.pattern,
-      phraseLength:transport.game.sequence.length,resolve});
+      phraseLength:transport.game.sequence.length,gameTrigger:transport.arp.gameTrigger,resolve});
      counts.steps++;
      report(steps,{run:run.id,clock:'root',n:step.n,frame:step.frame,highlight:result.highlight,status:result.status});
      continue;

@@ -1451,7 +1451,8 @@ function snapshotPresetSettings(){
    masterBpm:Number($('masterBpm').value),
    routing:performanceRouting.getState(),
    arp:{enabled:performanceArp.rootOn,latch:performanceArp.latchOn,pattern:arpPattern,
-    rate:Number($('arpRate').value),sync:$('arpSync').checked,localBpm:Number($('arpBpm').value)},
+    rate:Number($('arpRate').value),sync:$('arpSync').checked,localBpm:Number($('arpBpm').value),
+    gameTrigger:transport.arp.gameTrigger},
    game:{enabled:performanceArp.gameOn,style:$('gameArpStyle').value||'action',
     rate:Number($('gameRate').value),sequence:transport.sequence},
    drumSequence:validateDrumSequence(transport.drumSequence),
@@ -1535,6 +1536,7 @@ function applyPresetControls(next,{silenceAudio=true}={}){
  $('masterBpmValue').textContent=String(next.performance.masterBpm);
  performanceArp.applyFromPreset(next.performance);
  $('arpPattern').value=next.performance.arp.pattern;
+ $('arpGameTrigger').value=next.performance.arp.gameTrigger;
  $('arpRate').value=String(next.performance.arp.rate);
  $('arpSync').checked=next.performance.arp.sync;
  $('arpBpm').value=String(next.performance.arp.localBpm);

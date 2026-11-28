@@ -122,11 +122,11 @@ test('mountDrumPerformance requires a transport',()=>{
  assert.throws(()=>mountDrumPerformance({$:fakeDom().$,drum:{}}),/requires transport/);
 });
 
-test('Game Arp plays the transport phrase and updates the Root Arp root only on a phrase boundary',()=>{
+test('Game trigger Phrase start: the Root Arp root changes only on a phrase boundary',()=>{
  const seq=defaultSequence();
  seq.length=4;
  seq.steps[0]={offset:12,gate:true,duration:100};
- const {plays,arpState,gameState,clock,transport}=mountPlay({root:true,game:true,held:[60,64],seq,transportPatch:{arp:{pattern:'up'}}});
+ const {plays,arpState,gameState,clock,transport}=mountPlay({root:true,game:true,held:[60,64],seq,transportPatch:{arp:{pattern:'up',gameTrigger:'phrase-start'}}});
  // First arp tick sets the root; the Game Arp voices root+12 on step 1.
  assert.equal(arpState.root,60);
  assert.deepEqual(plays,[[72,'game']]);
