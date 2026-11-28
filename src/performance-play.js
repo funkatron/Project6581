@@ -15,6 +15,9 @@ export function mountPerformance({
  // Worklet Game Arp timing (G3): {active(), leadMs, run({rootOn,seqPreview,delayMs}) → run id,
  // sync({clock,n,delayMs}), stop()}. Read at each restart; null keeps everything on the page.
  workletGenerators=null,
+ // The running drum grid timer when the arps should share its phase (drums running, both on
+ // the master BPM), else null. Arp starts/restarts then wait for the next drum step.
+ drumGrid=()=>null,
  // Step clocks (grid-timer.js); injectable for tests. now() is in milliseconds.
  now=()=>performance.now(),setTimer=(fn,ms)=>setTimeout(fn,ms),clearTimer=id=>clearTimeout(id)
 }){
@@ -211,19 +214,30 @@ export function mountPerformance({
   if(!activeNotes().length&&!seqPreview){$('arpStatus').textContent='No notes held';return}
   const timing=transport.getState();
   if(gameEnabled()&&workletGenerators?.active()){startWorkletGenerators(timing,seqPreview);return}
+  // Phase lock: first step on the next drum step (now, if a drum step is due now).
+  const lockMs=drumGrid()?.delayToGrid(0)??null;
+  const first=lockMs!==null&&lockMs>=0.5?{delayMs:lockMs}:{immediate:true};
   if(arpEnabled()){
    arp.timer=arpTimer;
-   arpTimer.start({ms:arpStepMs(timing),onStep:({skipped})=>{arp.step+=skipped;arpTick()}});
+   arpTimer.start({ms:arpStepMs(timing),...first,onStep:({skipped})=>{arp.step+=skipped;arpTick()}});
   }
   if(gameEnabled()){
    game.timer=gameTimer;
-   gameTimer.start({ms:gameStepMs(timing),onStep:({skipped})=>{game.step+=skipped;gameTick()}});
+   gameTimer.start({ms:gameStepMs(timing),...first,onStep:({skipped})=>{game.step+=skipped;gameTick()}});
   }
+ }
+ /** The running arp clock the drums should start in phase with (Game Arp first), else null. */
+ function generatorGrid(){
+  if(gameTimer.running)return gameTimer;
+  if(arpTimer.running)return arpTimer;
+  return null;
  }
  // The worklet plays the Game Arp (and picks the Root Arp root) from leadMs ahead. The page's
  // grid timers keep running silently, only to keep the worklet on the page clock.
  function startWorkletGenerators(timing,seqPreview){
-  const delayMs=workletGenerators.leadMs??50;
+  const leadMs=workletGenerators.leadMs??50;
+  // Phase lock: the first step on the first drum step at least the lead away.
+  const delayMs=drumGrid()?.delayToGrid(leadMs)??leadMs;
   const run=workletGenerators.run({rootOn:arpEnabled(),seqPreview,delayMs});
   if(run===null||run===undefined)return;
   game.worklet=true;game.workletRun=run;
@@ -316,5 +330,5 @@ export function mountPerformance({
   if(gameEnabled()||arpEnabled())restartGenerators();
   $('arpStatus').textContent='Latch cleared';
  });
- return {gameStop,arpStopVoice,stopArpClock,restartGenerators,stopGenerators,gameRestart,setSeqTransportLabel,renderSequenceSteps,loadBuiltInPhrase,applyWorkletReport};
+ return {gameStop,arpStopVoice,stopArpClock,restartGenerators,stopGenerators,gameRestart,setSeqTransportLabel,renderSequenceSteps,loadBuiltInPhrase,applyWorkletReport,generatorGrid};
 }

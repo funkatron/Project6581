@@ -37,6 +37,9 @@ export function mountDrumPerformance({
   // and the worklet modules loaded). Read at each start/restart.
   workletDrums = () => false,
   leadMs = WORKLET_DRUM_LEAD_MS,
+  // The running arp grid timer when the drums should share its phase (arps running, both on
+  // the master BPM), else null. Drum starts/restarts then wait for the next arp step.
+  arpGrid = () => null,
   // Injectable for tests. now() is in milliseconds.
   now = () => performance.now(),
   setTimer = (fn, ms) => setTimeout(fn, ms),
@@ -110,11 +113,19 @@ export function mountDrumPerformance({
     const ms = drumStepIntervalMs(liveSequence(), transport.masterBpm);
     drum.timer = gridTimer;
     if (drum.worklet) {
-      shadow.run({step: drum.step, delayMs: leadMs, play: true});
-      gridTimer.start({ms, onStep: onGridStep, delayMs: leadMs});
+      const delayMs = arpGrid()?.delayToGrid(leadMs) ?? leadMs;
+      shadow.run({step: drum.step, delayMs, play: true});
+      gridTimer.start({ms, onStep: onGridStep, delayMs});
     } else {
-      shadow?.run({step: drum.step, delayMs: 0});
-      gridTimer.start({ms, onStep: onGridStep, immediate: true});
+      // Phase lock: first step on the next arp step (now, if one is due now).
+      const lockMs = arpGrid()?.delayToGrid(0) ?? null;
+      if (lockMs !== null && lockMs >= 0.5) {
+        shadow?.run({step: drum.step, delayMs: lockMs});
+        gridTimer.start({ms, onStep: onGridStep, delayMs: lockMs});
+      } else {
+        shadow?.run({step: drum.step, delayMs: 0});
+        gridTimer.start({ms, onStep: onGridStep, immediate: true});
+      }
     }
     onDrumStart?.();
     refreshPresetDirty?.();
@@ -128,7 +139,9 @@ export function mountDrumPerformance({
     setTransportLabel(true);
     const ms = drumStepIntervalMs(liveSequence(), transport.masterBpm);
     // Keep the step; the next tick is one new interval from now (worklet: at least the lead).
-    const delayMs = drum.worklet ? Math.max(ms, leadMs) : ms;
+    const unlocked = drum.worklet ? Math.max(ms, leadMs) : ms;
+    // Phase lock: the next arp step at least the worklet lead away instead.
+    const delayMs = arpGrid()?.delayToGrid(drum.worklet ? leadMs : 0) ?? unlocked;
     shadow?.run({step: drum.step, delayMs, play: drum.worklet});
     drum.timer = gridTimer;
     gridTimer.start({ms, onStep: onGridStep, delayMs});
@@ -153,5 +166,8 @@ export function mountDrumPerformance({
   setTransportLabel(false);
   updateStatus(false, 0);
 
-  return {drumStart, drumStop, drumRestartIfRunning, drumTick};
+  /** The running drum grid timer (for the arps' phase lock), else null. */
+  const drumGrid = () => (drum.running && gridTimer.running ? gridTimer : null);
+
+  return {drumStart, drumStop, drumRestartIfRunning, drumTick, drumGrid};
 }
