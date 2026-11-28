@@ -135,7 +135,7 @@ test('Root Arp on: silent root picking transposes the phrase on its boundary, sc
  sequence.length=8;
  sequence.steps=sequence.steps.map((step,index)=>({...step,offset:[0,7,12,3,-5,0,2,10][index%8]??0,
   gate:index%5!==3,duration:[25,50,75,100][index%4]}));
- assertParity({transport:transportWith({masterBpm:117,arp:{rate:1,pattern:'up'},game:{rate:4},
+ assertParity({transport:transportWith({masterBpm:117,arp:{rate:1,pattern:'up',gameTrigger:'phrase-start'},game:{rate:4},
   scale:{tonic:2,id:'dorian',lock:true}},[60,64,67]),sequence,route:'layer',root:true,ms:4990});
 });
 
@@ -398,4 +398,79 @@ test('a sync that finds the worklet behind skips steps and moves the phrase on, 
  assert.ok(report.sync.game.skipped>=3);
  const step=report.steps.find(entry=>entry.clock==='game');
  assert.equal(step.stepIndex,(1+report.sync.game.skipped)%16,'the phrase moved past the skipped steps');
+});
+
+// G4: Root→Game trigger modes. Owner's example: Root 1/2, Game 1/16 → 8 Game steps per Root step.
+const G4_OFFSETS=[0,7,12,3,-5,2,10,5,0,12,7,19,3,-2,14,9];
+function g4Sequence(){
+ const sequence=defaultSequence();
+ sequence.length=16;
+ sequence.steps=sequence.steps.map((step,index)=>({...step,offset:G4_OFFSETS[index],gate:true,duration:100}));
+ return sequence;
+}
+const ons=calls=>calls.filter(call=>call[0]==='on').map(call=>call[1]);
+
+test('G4 Every root step: each Root step restarts the phrase on its root (page = worklet)',()=>{
+ const {page}=assertParity({transport:transportWith({masterBpm:120,arp:{rate:0.5,pattern:'up',gameTrigger:'every-step'},game:{rate:4}},[60,64,67]),
+  sequence:g4Sequence(),route:'sid1',root:true,ms:3990});
+ const first8=G4_OFFSETS.slice(0,8);
+ assert.deepEqual(ons(page),[...first8.map(o=>60+o),...first8.map(o=>64+o),...first8.map(o=>67+o),...first8.map(o=>60+o)]);
+});
+
+test('G4 New root only: the phrase restarts when the root changes, runs on when it repeats',()=>{
+ // One held note: the root never changes, so the 16-step phrase runs through.
+ const {page:same}=assertParity({transport:transportWith({masterBpm:120,arp:{rate:0.5,gameTrigger:'new-root'},game:{rate:4}},[60]),
+  sequence:g4Sequence(),route:'sid1',root:true,ms:3990});
+ assert.deepEqual(ons(same),[...G4_OFFSETS,...G4_OFFSETS].map(o=>60+o));
+ const {page:moving}=assertParity({transport:transportWith({masterBpm:120,arp:{rate:0.5,pattern:'up',gameTrigger:'new-root'},game:{rate:4}},[60,64]),
+  sequence:g4Sequence(),route:'sid1',root:true,ms:1990});
+ const first8=G4_OFFSETS.slice(0,8);
+ assert.deepEqual(ons(moving),[...first8.map(o=>60+o),...first8.map(o=>64+o)]);
+});
+
+test('G4 Phrase start: no restart; the new root is taken when the phrase comes round',()=>{
+ const {page}=assertParity({transport:transportWith({masterBpm:120,arp:{rate:0.5,pattern:'up',gameTrigger:'phrase-start'},game:{rate:4}},[60,64]),
+  sequence:g4Sequence(),route:'sid1',root:true,ms:3990});
+ // Root steps at 0, 1, 2, 3 s pick 60, 64, 60, 64; the phrase boundaries (0 s, 2 s) take 60 both times.
+ assert.deepEqual(ons(page),[...G4_OFFSETS,...G4_OFFSETS].map(o=>60+o));
+});
+
+test('G4 page timers: a Game step that fires before the Root step of the same instant still restarts the phrase',()=>{
+ const restoreDocument=installFakeDocument();
+ const clock=fakeClock();
+ const saved={setTimeout:globalThis.setTimeout,clearTimeout:globalThis.clearTimeout};
+ globalThis.setTimeout=(fn,delay)=>clock.setTimer(fn,delay);
+ globalThis.clearTimeout=id=>clock.clearTimer(id);
+ const played=[];
+ try{
+  const transport=transportWith({masterBpm:120,arp:{rate:0.5,pattern:'up',gameTrigger:'every-step'},game:{rate:4}},[60,64])();
+  const {$}=fakeDom({gameArpStyle:{value:'custom',selectedOptions:[{text:'Custom'}]}});
+  let activeSeqStep=-1;
+  const api=mountPerformance({
+   $,names:NAMES,keyboardState:{octave:3},
+   arp:{step:0,root:null,timer:null,last:null},game:{step:0,timer:null,last:null,gateTimer:null},
+   directOwned:new Set(),performanceNote:note=>note,
+   play:note=>played.push(note),stop:()=>{},silenceSidOutput(){},refreshPresetDirty(){},
+   getArpKeyVisual:()=>({show(){},clear(){}}),
+   gameEnabled:()=>true,arpEnabled:()=>true,
+   activeNotes:()=>transport.activeNotes(),arpNotes:()=>transport.arpNotes(),
+   latchOn:()=>false,isSeqPreview:()=>false,setSeqPreview(){},
+   getActiveSeqStep:()=>activeSeqStep,setActiveSeqStep:value=>{activeSeqStep=value},
+   performanceArp:{set(){}},transport,...clock
+  });
+  transport.setSequence(g4Sequence());api.renderSequenceSteps();
+  api.restartGenerators();
+  clock.advance(999);
+  // Both clocks are due at 1000 ms; the browser runs the Game timer's callback first.
+  clock.stall(1);
+  const [rootFn,gameFn]=clock.timerFns();
+  assert.notEqual(rootFn,gameFn);
+  clock.run(gameFn);
+  assert.equal(played.at(-1),64+G4_OFFSETS[0],'the Root step ran first: phrase step 1 on the new root');
+  assert.equal(clock.timerFns().length,2,'both clocks are rescheduled once');
+  clock.advance(125);
+  assert.equal(played.at(-1),64+G4_OFFSETS[1]);
+ }finally{
+  Object.assign(globalThis,saved);restoreDocument();
+ }
 });

@@ -20,6 +20,7 @@ const ASSIGNMENTS=['mono','legato','duo','poly'];
 const TARGETS=LFO_TARGET_ORDER;
 const DIVISIONS=[.25,.5,1,2,4,8,16,32];
 const PATTERNS=['up','down','updown','random'];
+const GAME_TRIGGERS=['every-step','new-root','phrase-start'];// transport-state.js GAME_TRIGGERS
 const STYLES=['action','adventure','arcade','custom'];
 function object(v,name){
  if(!v||typeof v!=='object'||Array.isArray(v))throw new TypeError(name+' must be an object');
@@ -80,7 +81,7 @@ export function defaultPresetSettings(){
   performance:{
    masterBpm:120,
    routing:{...DEFAULT_ROUTING},
-   arp:{enabled:false,latch:false,pattern:'up',rate:4,sync:true,localBpm:120},
+   arp:{enabled:false,latch:false,pattern:'up',rate:4,sync:true,localBpm:120,gameTrigger:'every-step'},
    game:{enabled:false,style:'action',rate:4,sequence:defaultSequence()},
    drumSequence:defaultDrumSequence(),
    drumKit:defaultDrumKit(),
@@ -217,7 +218,9 @@ export function validatePresetSettings(value){
     enabled:boolean(arp.enabled,'Arp enabled'),latch:boolean(arp.latch,'Arp latch'),
     pattern:choice(arp.pattern,'Arp pattern',PATTERNS),
     rate:divisionChoice(arp.rate,'Arp rate',DIVISIONS,4),
-    sync:boolean(arp.sync,'Arp sync'),localBpm:integer(arp.localBpm,'local BPM',40,240)
+    sync:boolean(arp.sync,'Arp sync'),localBpm:integer(arp.localBpm,'local BPM',40,240),
+    // Presets saved before G4 keep the Root→Game behaviour they were made with.
+    gameTrigger:choice(arp.gameTrigger??'phrase-start','Game trigger',GAME_TRIGGERS)
    },
    game:{enabled:boolean(game.enabled,'Game Arp enabled'),style:choice(game.style,'Game Arp style',STYLES),
     rate:divisionChoice(game.rate,'Game Arp pattern rate',DIVISIONS,4),
@@ -349,7 +352,8 @@ export const FACTORY_PRESETS=Object.freeze([
   performance:{
    masterBpm:96,
    routing:{keyboard:'layer',arp:'layer',game:'layer'},
-   arp:{enabled:true,latch:true,pattern:'up',rate:2,sync:true,localBpm:96},
+   // Made before G4: keeps its transposing phrase.
+   arp:{enabled:true,latch:true,pattern:'up',rate:2,sync:true,localBpm:96,gameTrigger:'phrase-start'},
    game:{enabled:true,style:'adventure',rate:4},
    scale:{tonic:0,id:'chromatic',lock:false}
   }

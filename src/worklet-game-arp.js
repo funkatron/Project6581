@@ -6,8 +6,9 @@ import {arpStep,gameStep} from './sequencer-steps.js?v=__BUILD_ID__';
 //
 // It makes the same decisions, in the same order, as the page's
 // performance-play.js gameTick() / arpTick() / gameStop():
-//   - Root step (Game Arp on): arpStep() picks the root silently; the Game Arp
-//     takes a new root on a phrase boundary (or the first time).
+//   - Root step (Game Arp on): arpStep() picks the root silently; transport
+//     arp.gameTrigger decides whether the phrase restarts on it (G4) or the Game
+//     Arp takes it on a phrase boundary.
 //   - Game step: resolveGameRoot() (Root Arp root, else the last held note, else
 //     the preview root); no root stops the Game Arp. Otherwise gameStep(): note-off
 //     for the last note, note-on (or a rest), and a gate-off after
@@ -44,9 +45,11 @@ export function createWorkletGameArp({sampleRate}){
    * notes: the Root Arp's sorted notes (scale-resolved); pattern: transport.arp.pattern.
    * Returns {note|null, status} for the key highlight and status line.
    */
-  rootStep({notes,pattern,phraseLength,resolve}){
-   const result=arpStep(root,{notes,pattern,gameOn:true,gameStep:game.step,phraseLength,resolve});
+  rootStep({notes,pattern,phraseLength,gameTrigger,resolve}){
+   const result=arpStep(root,{notes,pattern,gameOn:true,gameStep:game.step,phraseLength,gameTrigger,resolve});
    root=result.clock;
+   // G4: the phrase restarts on this root (the Game step on this frame comes after).
+   if(result.retrigger)game={...game,step:0};
    return {note:result.highlight.root??null,highlight:result.highlight,status:result.status};
   },
   /**

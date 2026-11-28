@@ -95,6 +95,16 @@ Drums on **Sync** (master BPM), arp **Sync** on. Try with Worklet Game Arp timin
 - [ ] Untick drum **Sync** (local BPM): arps start at once again, no lock (expected).
 - [ ] Export diagnostics (Game Arp timing on): Game note-ons sit on the drum grid (the G3 export showed a constant +34.7 ms; expect about 0 ms, within a few ms).
 
+## Game trigger (G4, 0.31)
+
+Root Arp **and** Game Arp on, Root **1/2**, Game **1/16**, an 8- or 16-step phrase, hold a chord (e.g. C E G). Try each with Worklet Game Arp timing off, then on.
+
+- [ ] **Every root step** (default): each half note restarts the phrase at step 1 on the next root (the step highlight jumps back to 1).
+- [ ] **New root only**: same while the root changes; hold one key and the whole phrase runs through without restarting.
+- [ ] **Phrase start (transpose)**: the phrase runs through; the root changes only when the phrase comes round (as before 0.31).
+- [ ] Switch the mode while playing: takes effect on the next Root step, no stuck note.
+- [ ] Save a preset with **New root only**, load another, reload it: the mode comes back. Older presets load as **Phrase start**.
+
 ## Help
 
 - [ ] Section **?** on DRUM STEP SEQUENCER opens overview help and focuses the tab.

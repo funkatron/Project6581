@@ -4,7 +4,7 @@ export const HELP_CONTENT={
  'play-target-arp-root':{title:'Root Arp target',relatedTab:'play',focusId:'arpRoute',bullets:['Root Arp notes route here or to a layer preset.']},
  'play-target-arp-game':{title:'Game Arp target',relatedTab:'play',focusId:'gameRoute',bullets:['Game Arp melody uses this routing.']},
  latch:{title:'Latch',relatedTab:'play',focusId:'arpLatch',bullets:['Held notes stay for Root and Game arpeggiators.', 'Clear latch removes latched notes.']},
- 'root-arp':{title:'Root arpeggiator',relatedTab:'play',focusId:'rootArpTitle',bullets:['Cycles held notes in pattern order.','Picks the root for Game Arp.','Teal keys show root steps.']},
+ 'root-arp':{title:'Root arpeggiator',relatedTab:'play',focusId:'rootArpTitle',bullets:['Cycles held notes in pattern order.','Picks the root for Game Arp.','Game trigger: every root step restarts the Game Arp phrase on its root; New root only restarts when the note changes; Phrase start transposes when the phrase comes round.','Teal keys show root steps.']},
  'game-arp':{title:'Game Arp step sequencer',relatedTab:'play',focusId:'gameArpTitle',bullets:['Built-in phrases or custom steps.','Preview at the current octave.']},
  'game-arp-steps':{title:'Step lanes',relatedTab:'play',focusId:'seqGrid',bullets:['NOTE: pitch offset.','GATE: rest or play.','LENGTH: step duration %.']},
  'voice-allocation':{title:'Voice allocation',relatedTab:'voice',focusId:'voiceAssign',bullets:['Assign mode, voice count, unison, detune.','Up to nine oscillators across three chips.']},

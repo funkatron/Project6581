@@ -136,3 +136,20 @@ test('drumStep returns the hits for the step and wraps after sixteen',()=>{
  assert.deepEqual(last.clock,{step:0});
  assert.equal(drumStep({step:33},{sequence}).index,1);
 });
+
+test('arpStep gameTrigger (G4): every-step and new-root take each root; retrigger flags a phrase restart',()=>{
+ const clock={step:1,root:60,last:null};
+ const notes=[60,64];
+ const every=arpStep(clock,{notes,pattern:'up',gameOn:true,gameStep:3,phraseLength:8,gameTrigger:'every-step'});
+ assert.equal(every.clock.root,64);assert.equal(every.retrigger,true);assert.deepEqual(every.events,[]);
+ const same=arpStep({step:0,root:60,last:null},{notes,pattern:'up',gameOn:true,gameStep:3,gameTrigger:'every-step'});
+ assert.equal(same.retrigger,true,'every step, even on the same note');
+ const changed=arpStep(clock,{notes,pattern:'up',gameOn:true,gameStep:3,gameTrigger:'new-root'});
+ assert.equal(changed.clock.root,64);assert.equal(changed.retrigger,true);
+ const repeated=arpStep({step:0,root:60,last:null},{notes,pattern:'up',gameOn:true,gameStep:3,gameTrigger:'new-root'});
+ assert.equal(repeated.clock.root,60);assert.equal(repeated.retrigger,false);
+ const phrase=arpStep(clock,{notes,pattern:'up',gameOn:true,gameStep:3,phraseLength:8,gameTrigger:'phrase-start'});
+ assert.equal(phrase.clock.root,60,'mid-phrase: root holds');assert.equal(phrase.retrigger,false);
+ const off=arpStep(clock,{notes,pattern:'up',gameOn:false,gameTrigger:'every-step'});
+ assert.equal(off.retrigger,undefined,'Game Arp off: the Root Arp plays, nothing to retrigger');
+});

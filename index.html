@@ -93,6 +93,7 @@
 <div class="root-arp-transport controls" aria-label="Root arpeggiator transport">
  <label>Enabled <input id="arpOn" type="checkbox"></label>
  <label>Root order <select id="arpPattern"><option value="up" selected>Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></label>
+ <label>Game trigger <select id="arpGameTrigger" aria-label="How Root Arp steps trigger the Game Arp phrase"><option value="every-step" selected>Every root step</option><option value="new-root">New root only</option><option value="phrase-start">Phrase start (transpose)</option></select></label>
  <label>Root rate <select id="arpRate"><option value="0.25">1/1</option><option value="0.5">1/2</option><option value="1" selected>1/4</option><option value="2">1/8</option><option value="4">1/16</option><option value="8">1/32</option><option value="16">1/64</option><option value="32">1/128</option></select></label>
  <label class="arp-local-bpm layout-inert" aria-hidden="true" inert>Arp BPM <input id="arpBpm" type="range" min="40" max="240" value="120"><output id="bpmValue">120</output></label>
 </div>

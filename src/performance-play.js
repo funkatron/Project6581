@@ -170,9 +170,12 @@ export function mountPerformance({
   const notes=arpNotes();
   const result=arpStep({step:arp.step,root:arp.root,last:arp.last},{
    notes,pattern:transport.arp.pattern,gameOn:gameEnabled(),
-   gameStep:game.step,phraseLength:transport.sequence.length,resolve:performanceNote
+   gameStep:game.step,phraseLength:transport.sequence.length,
+   gameTrigger:transport.arp.gameTrigger,resolve:performanceNote
   });
   Object.assign(arp,result.clock);
+  // G4: the phrase restarts on this root at the Game Arp's next step.
+  if(result.retrigger)game.step=0;
   applyStep(result);
   $('arpStatus').textContent=result.status.type==='idle'?'No notes held':
    'Root Arp · '+noteName(result.status.note)+' · '+result.status.count+' notes';
@@ -223,7 +226,11 @@ export function mountPerformance({
   }
   if(gameEnabled()){
    game.timer=gameTimer;
-   gameTimer.start({ms:gameStepMs(timing),...first,onStep:({skipped})=>{game.step+=skipped;gameTick()}});
+   gameTimer.start({ms:gameStepMs(timing),...first,onStep:({skipped})=>{
+    // A Root step due on this same instant goes first (it may restart the phrase).
+    if(arpEnabled())arpTimer.runDue(1);
+    game.step+=skipped;gameTick();
+   }});
   }
  }
  /** The running arp clock the drums should start in phase with (Game Arp first), else null. */
@@ -321,6 +328,8 @@ export function mountPerformance({
   restartGenerators();refreshPresetDirty();
  });
  ['arpPattern','arpRate'].forEach(id=>$(id).addEventListener('change',arpRestart));
+ // Takes effect on the next Root step; no restart.
+ $('arpGameTrigger').addEventListener('change',()=>refreshPresetDirty());
  $('arpBpm').addEventListener('input',()=>{
   $('bpmValue').textContent=$('arpBpm').value;restartGenerators();
  });

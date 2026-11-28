@@ -12,12 +12,19 @@ import {normalizeScaleState,resolvePerformanceNote} from './western-scales.js?v=
 
 export const TRANSPORT_RATES=Object.freeze([0.25,0.5,1,2,4,8,16,32]);
 export const ARP_PATTERNS=Object.freeze(['up','down','updown','random']);
+/**
+ * With Root Arp and Game Arp both on, how a Root step drives the Game Arp phrase (G4):
+ * every-step: each Root step restarts the phrase on its root (default);
+ * new-root: restart only when the root note changes;
+ * phrase-start: no restart; a new root is taken when the phrase comes round (before G4).
+ */
+export const GAME_TRIGGERS=Object.freeze(['every-step','new-root','phrase-start']);
 export const MIN_BPM=40,MAX_BPM=240;
 
 export function defaultTransport(){
  return {
   masterBpm:120,
-  arp:{pattern:'up',rate:1,sync:true,localBpm:120,latch:false},
+  arp:{pattern:'up',rate:1,sync:true,localBpm:120,latch:false,gameTrigger:'every-step'},
   game:{rate:4,sequence:defaultSequence()},
   // mute/solo: per-lane performance switches; not saved with presets or grooves.
   drum:{rate:4,sync:true,localBpm:120,grid:defaultDrumSequence().grid,mute:laneFlags(),solo:laneFlags()},
@@ -82,7 +89,8 @@ export function applyTransportPatch(state,patch={}){
    rate:rateOr(arp.rate,state.arp.rate),
    sync:boolOr(arp.sync,state.arp.sync),
    localBpm:bpmOr(arp.localBpm,state.arp.localBpm),
-   latch:boolOr(arp.latch,state.arp.latch)
+   latch:boolOr(arp.latch,state.arp.latch),
+   gameTrigger:GAME_TRIGGERS.includes(arp.gameTrigger)?arp.gameTrigger:state.arp.gameTrigger??'every-step'
   },
   game:{
    rate:rateOr(game.rate,state.game.rate),
